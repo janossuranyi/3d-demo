@@ -4,49 +4,13 @@
 #include "demo.h"
 #include "filesystem.h"
 #include "logger.h"
-#include "gl_common.h"
+#include "gpu_types.h"
+#include "gpu_utils.h"
 #include "gpu_program.h"
 
 #undef _std
 #define _std std::
 
-static GLenum GL_castShaderType(shaderStageType type)
-{
-	switch (type)
-	{
-	case shaderStageType::COMPUTE:
-		return GL_COMPUTE_SHADER;
-	case shaderStageType::VERTEX:
-		return GL_VERTEX_SHADER;
-	case shaderStageType::GEOMETRY:
-		return GL_GEOMETRY_SHADER;
-	case shaderStageType::FRAGMENT:
-		return GL_FRAGMENT_SHADER;
-	case shaderStageType::TESS_CONTROL:
-		return GL_TESS_CONTROL_SHADER;
-	case shaderStageType::TESS_EVALUATION:
-		return GL_TESS_EVALUATION_SHADER;
-	}
-}
-
-static const char* GetShaderStageTitle(shaderStageType type)
-{
-	switch (type)
-	{
-	case shaderStageType::COMPUTE:
-		return "Compute";
-	case shaderStageType::VERTEX:
-		return "Vertex";
-	case shaderStageType::GEOMETRY:
-		return "Geometry";
-	case shaderStageType::FRAGMENT:
-		return "Fragment";;
-	case shaderStageType::TESS_CONTROL:
-		return "Tesselation control";
-	case shaderStageType::TESS_EVALUATION:
-		return "Tesselation evaluation";
-	}
-}
 
 
 GpuProgram::GpuProgram()
@@ -91,10 +55,10 @@ bool GpuProgram::loadComputeShader(const std::string& shader)
 	return createComputeProgramFromShaderSource(cs_c);
 }
 
-GLuint GpuProgram::createShaderInternal(shaderStageType stage, const std::vector<const char*>& sources)
+GLuint GpuProgram::createShaderInternal(eShaderStage stage, const std::vector<const char*>& sources)
 {
 	GLuint shader;
-	GL_CHECK(shader = glCreateShader(GL_castShaderType(stage)));
+	GL_CHECK(shader = glCreateShader(GL_castShaderStage(stage)));
 
 	if (!shader) return 0;
 
@@ -113,17 +77,17 @@ bool GpuProgram::createProgramFromShaderSource(const std::vector<const char*>& v
 
 	GL_CHECK(mProgId = glCreateProgram());
 
-	GLuint vertShader = createShaderInternal(shaderStageType::VERTEX, vert_sources);
+	GLuint vertShader = createShaderInternal(eShaderStage::VERTEX, vert_sources);
 
-	if (!compileSingleStage(vertShader, shaderStageType::VERTEX))
+	if (!compileSingleStage(vertShader, eShaderStage::VERTEX))
 	{
 		destroy();
 		return false;
 	}
 
-	GLuint fragShader = createShaderInternal(shaderStageType::FRAGMENT, frag_sources);
+	GLuint fragShader = createShaderInternal(eShaderStage::FRAGMENT, frag_sources);
 
-	if (!compileSingleStage(fragShader, shaderStageType::FRAGMENT))
+	if (!compileSingleStage(fragShader, eShaderStage::FRAGMENT))
 	{
 		GL_CHECK(glDeleteShader(vertShader));
 		destroy();
@@ -166,9 +130,9 @@ bool GpuProgram::createComputeProgramFromShaderSource(const std::vector<const ch
 
 	GL_CHECK(mProgId = glCreateProgram());
 
-	GLuint shader = createShaderInternal(shaderStageType::COMPUTE, sources);
+	GLuint shader = createShaderInternal(eShaderStage::COMPUTE, sources);
 
-	if (!compileSingleStage(shader, shaderStageType::COMPUTE))
+	if (!compileSingleStage(shader, eShaderStage::COMPUTE))
 	{
 		destroy();
 		return false;
@@ -303,7 +267,7 @@ void GpuProgram::destroy()
 		mProgId = 0xFFFF;
 	}
 }
-bool GpuProgram::compileSingleStage(GLuint shaderId, shaderStageType type)
+bool GpuProgram::compileSingleStage(GLuint shaderId, eShaderStage type)
 {
 	GLint result = GL_FALSE;
 

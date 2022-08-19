@@ -5,10 +5,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
-enum class shaderStageType
-{
-	VERTEX,FRAGMENT,GEOMETRY,TESS_CONTROL, TESS_EVALUATION ,COMPUTE,ENUM_SIZE
-};
+#include "gpu_types.h"
 
 class GpuProgram
 {
@@ -49,8 +46,8 @@ public:
 
 private:
 	GLuint programId() const { return mProgId; }
-	GLuint createShaderInternal(shaderStageType stage, const std::vector<const char*>& sources);
-	bool compileSingleStage(GLuint shaderId, shaderStageType type);
+	GLuint createShaderInternal(eShaderStage stage, const std::vector<const char*>& sources);
+	bool compileSingleStage(GLuint shaderId, eShaderStage type);
 	GLuint mProgId;
 	std::vector<GLint> mMapVar;
 };

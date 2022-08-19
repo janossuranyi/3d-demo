@@ -1,6 +1,7 @@
 #include "effect_compute_test.h"
 #include "filesystem.h"
 #include "unit_rect.h"
+#include "gpu_utils.h"
 
 bool ComputeTestEffect::Init()
 {

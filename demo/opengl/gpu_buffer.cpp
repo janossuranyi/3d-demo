@@ -1,7 +1,7 @@
 #include <cassert>
 #include <GL/glew.h>
 #include "gpu_buffer.h"
-#include "gl_common.h"
+#include "gpu_utils.h"
 #include "logger.h"
 /*
 OpenGL buffer implementation
@@ -68,13 +68,13 @@ uint8_t* GpuBuffer::map(eGpuBufferAccess pAccess)
 	GLbitfield access;
 	switch (pAccess)
 	{
-	case MAP_READONLY:
+	case eGpuBufferAccess::MAP_READONLY:
 		access = GL_MAP_READ_BIT;
 		break;
-	case MAP_WRITEONLY:
+	case eGpuBufferAccess::MAP_WRITEONLY:
 		access = GL_MAP_WRITE_BIT;
 		break;
-	case MAP_READWRITE:
+	case eGpuBufferAccess::MAP_READWRITE:
 		access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
 		break;
 	default:

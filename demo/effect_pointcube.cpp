@@ -12,57 +12,16 @@
 #include "filesystem.h"
 #include "gpu_buffer.h"
 #include "stb_image.h"
-#include "gl_common.h"
+#include "gpu_types.h"
+#include "gpu_utils.h"
+#include "gpu_texture.h"
 #include "unit_rect.h"
+#include "unit_box.h"
 
 //#define USE_RENDERBUFFER_Z
 
 GLsizei FB_X, FB_Y;
 
-static float skyboxVertices[] = {
-	// positions          
-	-1.0f,  1.0f, -1.0f,
-	-1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-
-	-1.0f, -1.0f,  1.0f,
-	-1.0f, -1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f,  1.0f,
-	-1.0f, -1.0f,  1.0f,
-
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-
-	-1.0f, -1.0f,  1.0f,
-	-1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f, -1.0f,  1.0f,
-	-1.0f, -1.0f,  1.0f,
-
-	-1.0f,  1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f, -1.0f,
-
-	-1.0f, -1.0f, -1.0f,
-	-1.0f, -1.0f,  1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	-1.0f, -1.0f,  1.0f,
-	 1.0f, -1.0f,  1.0f
-};
 
 PointCubeEffect::~PointCubeEffect()
 {
@@ -107,6 +66,23 @@ bool PointCubeEffect::Init()
 		"assets/textures/skybox/back.jpg",
 	};
 
+	GpuTexture2D t2d;
+	t2d
+		.withMinFilter(eTexMinFilter::LINEAR)
+		.withMagFilter(eTexMagFilter::LINEAR)
+		.withWrapS(eTexWrap::CLAMP_TO_EDGE)
+		.withWrapT(eTexWrap::CLAMP_TO_BORDER)
+		.updateParameters();
+
+	GpuTextureCubeMap tc;
+	tc
+		.withMinFilter(eTexMinFilter::LINEAR)
+		.withMagFilter(eTexMagFilter::LINEAR)
+		.withWrapS(eTexWrap::CLAMP_TO_EDGE)
+		.withWrapT(eTexWrap::CLAMP_TO_BORDER)
+		.withWrapR(eTexWrap::CLAMP_TO_BORDER)
+		.updateParameters();
+
 	int width, height, nrChannels;
 	unsigned char* data;
 	for (unsigned int i = 0; i < textures_faces.size(); i++)
@@ -119,10 +95,8 @@ bool PointCubeEffect::Init()
 			return false;
 		}
 
-		GL_CHECK(glTexImage2D(
-			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-			0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
-		));
+		GLenum tFormat = nrChannels == 4 ? GL_RGBA : GL_RGB;
+		GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_COMPRESSED_SRGB, width, height, 0, tFormat, GL_UNSIGNED_BYTE, data));
 		stbi_image_free(data);
 	}
 
@@ -132,12 +106,12 @@ bool PointCubeEffect::Init()
 	GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 	GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
 
-	GL_CHECK(glGenFramebuffers(1, &fbo));
-	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
 
 	GL_CHECK(glGenTextures(1, &fbTex));
+	GL_CHECK(glGenFramebuffers(1, &fbo));
+	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
 	GL_CHECK(glBindTexture(GL_TEXTURE_2D, fbTex));
-	GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FB_X, FB_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, (const void*)0));
+	GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FB_X, FB_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr));
 	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
@@ -187,7 +161,7 @@ bool PointCubeEffect::Init()
 	const GLsizeiptr bufSize = sizeof(VertexLayout) * NUMPOINTS;
 	vbo_points.create(bufSize, eGpuBufferUsage::STATIC);
 
-	uint8_t *ptr = vbo_points.map(MAP_WRITEONLY);
+	uint8_t *ptr = vbo_points.map(eGpuBufferAccess::MAP_WRITEONLY);
 	VertexLayout* buffer = reinterpret_cast<VertexLayout*>(ptr);
 
 	Info("VertexBuffer: allocated %d bytes, mapped at %p", (int)bufSize, buffer);
@@ -214,7 +188,7 @@ bool PointCubeEffect::Init()
 
 	vbo_pp.create(6 * sizeof(PPLayout), eGpuBufferUsage::STATIC, UNIT_RECT_WITH_ST);
 
-	vbo_skybox.create(sizeof(skyboxVertices), eGpuBufferUsage::STATIC, skyboxVertices);
+	vbo_skybox.create(sizeof(UNIT_BOX_POSITIONS), eGpuBufferUsage::STATIC, UNIT_BOX_POSITIONS);
 
 	if (!prgPoints.loadShader(g_fileSystem.resolve("assets/shaders/draw_point.vs.glsl"), g_fileSystem.resolve("assets/shaders/draw_point.fs.glsl")))
 	{
@@ -237,7 +211,7 @@ bool PointCubeEffect::Init()
 
 	prgPP.use();
 	prgPP.set(2, pp_offset);
-	prgPP.set(1, 9, kernels[KERNEL_SHARPEN]);
+	prgPP.set(1, 9, kernels[KERNEL_BLUR]);
 	GL_CHECK(glUseProgram(0));
 
 	if (!prgSkybox.loadShader(g_fileSystem.resolve("assets/shaders/skybox.vs.glsl"), g_fileSystem.resolve("assets/shaders/skybox.fs.glsl")))
@@ -334,9 +308,9 @@ bool PointCubeEffect::Init()
 
 bool PointCubeEffect::Update(float time)
 {
-	//rotX += time * 0.01f;
+	rotX += time * 0.015f;
 	rotY += time * 0.01f;
-	rotX = 15.0f;
+	//rotX = 15.0f;
 	rotX = std::fmodf(rotX, 360.0f);
 	rotY = std::fmodf(rotY, 360.0f);
 
@@ -345,11 +319,11 @@ bool PointCubeEffect::Update(float time)
 
 void PointCubeEffect::Render()
 {
-	glm::mat4 M(1.0f);
-	M = glm::rotate(M, glm::radians(rotX), glm::vec3(1, 0, 0));
-	M = glm::rotate(M, glm::radians(rotY), glm::vec3(0, 1, 0));
+	glm::mat4 W(1.0f);
+	W = glm::rotate(W, glm::radians(rotX), glm::vec3(1, 0, 0));
+	W = glm::rotate(W, glm::radians(rotY), glm::vec3(0, 1, 0));
 	
-	glm::mat4 MVP = VP * M;
+	const glm::mat4 WVP = VP * W;
 
 	glDisable(GL_BLEND);
 
@@ -366,7 +340,7 @@ void PointCubeEffect::Render()
 	glBindVertexArray(vao_points);
 
 	prgPoints.use();
-	prgPoints.set(0, false, MVP);
+	prgPoints.set(0, false, WVP);
 
 	glDrawArrays(GL_POINTS, 0, NUMPOINTS);
 
@@ -376,7 +350,7 @@ void PointCubeEffect::Render()
 	glBindVertexArray(vao_skybox);
 	prgSkybox.use();
 
-	glm::mat4 sky_view = glm::mat4(glm::mat3(M));
+	const glm::mat4 sky_view = glm::mat4(glm::mat3(W));
 	prgSkybox.set(0, false, sky_view);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -393,12 +367,15 @@ void PointCubeEffect::Render()
 
 	glBindTexture(GL_TEXTURE_2D, fbTex);
 	glDisable(GL_DEPTH_TEST);
-	
+	glEnable(GL_FRAMEBUFFER_SRGB);
+
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisable(GL_FRAMEBUFFER_SRGB);
 
 	//glEnable(GL_BLEND);
 
 	//glViewport(0, 0, 400, 250);
+
 	prgTextureRect.use();
 	glBindTexture(GL_TEXTURE_2D, depthTex);
 	glDrawArrays(GL_TRIANGLES, 0, 6);

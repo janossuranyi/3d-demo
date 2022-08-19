@@ -4,9 +4,9 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 #include "effect.h"
+#include "gpu_types.h"
 #include "gpu_buffer.h"
 #include "gpu_program.h"
-#include "gl_common.h"
 
 struct ComputeTestEffect : public Effect
 {

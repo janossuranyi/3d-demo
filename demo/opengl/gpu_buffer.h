@@ -3,22 +3,7 @@
 #include <GL/glew.h>
 #include <cinttypes>
 
-enum class eGpuBufferTarget
-{
-	VERTEX, INDEX, UNIFORM, ENUM_SIZE
-};
-
-enum class eGpuBufferUsage
-{
-	STATIC, DYNAMIC, DEFAULT
-} ;
-
-enum eGpuBufferAccess
-{
-	MAP_READONLY, MAP_WRITEONLY, MAP_READWRITE, DEFAULT_ACCESSs
-};
-
-#define INVALID_BUFFER 0xFFFF
+#include "gpu_types.h"
 
 class GpuBuffer
 {
@@ -61,7 +46,7 @@ inline GpuBuffer::GpuBuffer(eGpuBufferTarget const type)
 	mIsReference = false;
 	mMapPtr = NULL;
 	mUsage = eGpuBufferUsage::STATIC;
-	mAccess = DEFAULT_ACCESSs;
+	mAccess = eGpuBufferAccess::DEFAULT_ACCESS;
 }
 
 inline bool GpuBuffer::isMapped() const

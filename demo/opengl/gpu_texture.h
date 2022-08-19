@@ -2,21 +2,58 @@
 
 #include <GL/glew.h>
 #include <cinttypes>
-#include "gl_common.h"
-
-enum class eTextureTarget { TEX_1D, TEX_2D, TEX_3D, TEX_CUBE_MAP, ENUM_SIZE };
-enum class eTextureFormat { RGB, RGBA, RGBA16F, RGBA32F, DEPTH24_STENCIL_8, ENUM_SITZE };
+#include <utility>
+#include <vector>
+#include "gpu_types.h"
 
 class GpuTexture
 {
 public:
-	GpuTexture();
-	GpuTexture(GpuTexture&) = delete;
-	~GpuTexture();
-	GpuTexture& operator=(GpuTexture&) = delete;
-	bool Create2D(uint32_t width, uint32_t height, DataType format);
-private:
+	GpuTexture() : mTexture(INVALID_TEXTURE) {}
+	virtual bool create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void** data) = 0;
+	virtual void bind() const = 0;
+	virtual eTextureTarget getTarget() const = 0;
+	GpuTexture& withMinFilter(eTexMinFilter p);
+	GpuTexture& withMagFilter(eTexMagFilter p);
+	GpuTexture& withWrapS(eTexWrap p);
+	GpuTexture& withWrapT(eTexWrap p);
+	GpuTexture& withWrapR(eTexWrap p);
+
+	void updateParameters();
+
+protected:
+	virtual GLenum getApiTarget() const = 0;
+
 	GLuint mTexture;
-	GLuint mTarget;
-	eTextureTarget mType;
+
+	using IntegerParamsVec = std::vector<std::pair<GLenum, GLint>>;
+	using FloatParamsVec = std::vector<std::pair<GLenum, GLfloat>>;
+
+	IntegerParamsVec mIntParams;
+	FloatParamsVec mFloatParams;
+};
+
+class GpuTexture2D : public GpuTexture
+{
+public:
+	GpuTexture2D() : GpuTexture() {}
+	~GpuTexture2D() {}
+	bool create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void** data) override;
+	eTextureTarget getTarget() const override { return eTextureTarget::TEX_2D; }
+	void bind() const override;
+protected:
+	inline GLenum getApiTarget() const override { return GL_TEXTURE_2D; };
+
+};
+
+class GpuTextureCubeMap : public GpuTexture
+{
+public:
+	GpuTextureCubeMap() : GpuTexture() {}
+	~GpuTextureCubeMap() {}
+	eTextureTarget getTarget() const override { return eTextureTarget::TEX_CUBE_MAP; }
+	void bind() const override {}
+protected:
+	inline GLenum getApiTarget() const override { return GL_TEXTURE_CUBE_MAP; };
+
 };

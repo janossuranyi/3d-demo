@@ -7,7 +7,8 @@
 #include "filesystem.h"
 #include "effect_pointcube.h"
 #include "effect_compute_test.h"
-#include "gl_common.h"
+#include "gpu_types.h"
+#include "gpu_utils.h"
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
@@ -122,9 +123,10 @@ static bool V_Init(int w, int h, int multisample, bool fullscreen)
     const float gl_version = float(atof(version.c_str()));
     videoConf.glVersion = gl_version * 100;
 
-    if (videoConf.glVersion < 330)
+    if (videoConf.glVersion < 450)
     {
-        Error("Sorry, I need at least OpenGL 3.3");
+        Error("Sorry, I need at least OpenGL 4.5");
+        return false;
     }
 
     SDL_version ver;
@@ -140,7 +142,6 @@ static bool V_Init(int w, int h, int multisample, bool fullscreen)
     SDL_GetWindowSize(videoConf.hWindow, &_w, &_h);
     glViewport(0, 0, _w, _h);
     glScissor(0, 0, _w, _h);
-//    glEnable(GL_FRAMEBUFFER_SRGB);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
