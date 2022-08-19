@@ -13,11 +13,12 @@ enum class ePixelFormat { RGB, RGBA, RGB8, RGBA8, RGBA16, RGBA16F, RGBA32F};
 Texture related types
 */
 enum class eTextureTarget { TEX_1D, TEX_2D, TEX_3D, TEX_CUBE_MAP, ENUM_SIZE };
-enum class eTextureFormat { RGB, RGBA, SRGB, RGBA16F, RGBA32F, DEPTH24_STENCIL_8, ENUM_SITZE };
+enum class eTextureFormat { RGB, RGBA, SRGB, RGBA16F, RGBA32F, DEPTH24_STENCIL_8, COMPRESSED_RGBA, COMPRESSED_SRGB, ENUM_SITZE };
 enum class eTexMinFilter { NEAREST, LINEAR, NEAREST_MIPMAP_NEAREST, LINEAR_MIPMAP_NEAREST, NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_LINEAR };
 enum class eTexMagFilter { NEAREST, LINEAR };
 enum class eTexWrap { CLAMP_TO_BORDER, MIRRORED_REPEAT, REPEAT, MIRROR_CLAMP_TO_EDGE, CLAMP_TO_EDGE };
-
+enum class eImageAccess { READ_ONLY, WRITE_ONLY, READ_WRITE };
+enum class eImageFormat { RGBA32F, RGBA16F, RGBA8 };
 /*
 GPU Shader related types
 */

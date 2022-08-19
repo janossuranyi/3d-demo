@@ -19,7 +19,7 @@ VideoConfig videoConf;
 bool V_Init(int w, int h, int multisample, bool fullscreen);
 void V_Shutdown();
 
-const char* BASE_DIR = "d:/src/3d-demo/";
+const char* BASE_DIR = "d:/src/3d-demo-git/";
 
 
 template<typename Ty, int N>
@@ -250,7 +250,7 @@ void App_EventLoop()
 
 int main(int argc, char** argv)
 {
-    g_fileSystem.set_working_dir("d:/src/3d-demo");
+    g_fileSystem.set_working_dir(BASE_DIR);
 
     Info("V_Init Start");
     if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 0, FULLSCREEN))

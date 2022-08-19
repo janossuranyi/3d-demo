@@ -7,6 +7,7 @@
 #include "gpu_types.h"
 #include "gpu_buffer.h"
 #include "gpu_program.h"
+#include "gpu_texture.h"
 
 struct ComputeTestEffect : public Effect
 {
@@ -21,7 +22,8 @@ struct ComputeTestEffect : public Effect
 	GpuProgram prg_view;
 	GLuint tex_w = 512, tex_h = 512;
 
-	GLuint tex0;
+	GpuTexture2D tex0_;
+
 	GLuint vao;
 	float angle;
 	GLint u_angle;
@@ -38,10 +40,10 @@ struct ComputeTestEffect : public Effect
 		prg_compute(),
 		prg_view(),
 		vao(0xffff),
-		tex0(0xffff),
 		angle(0.0f),
 		u_angle(-1),
-		syncObj()
+		syncObj(),
+		tex0_()
 	{}
 
 	~ComputeTestEffect() noexcept;

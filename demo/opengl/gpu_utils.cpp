@@ -65,6 +65,10 @@ GLint GL_castTextureFormat(eTextureFormat f)
         return GL_RGBA32F;
     case eTextureFormat::SRGB:
         return GL_SRGB;
+    case eTextureFormat::COMPRESSED_RGBA:
+        return GL_COMPRESSED_RGBA;
+    case eTextureFormat::COMPRESSED_SRGB:
+        return GL_COMPRESSED_SRGB;
     }
 }
 
@@ -96,6 +100,26 @@ GLint GL_castTexWrap(eTexWrap p)
         case eTexWrap::MIRRORED_REPEAT:     return GL_MIRRORED_REPEAT;
         case eTexWrap::MIRROR_CLAMP_TO_EDGE:return GL_MIRROR_CLAMP_TO_EDGE;
         case eTexWrap::REPEAT:              return GL_REPEAT;
+    }
+}
+
+GLenum GL_castImageAccess(eImageAccess p)
+{
+    switch (p)
+    {
+        case eImageAccess::READ_ONLY:   return GL_READ_ONLY;
+        case eImageAccess::WRITE_ONLY:  return GL_WRITE_ONLY;
+        case eImageAccess::READ_WRITE:  return GL_READ_WRITE;
+    }
+}
+
+GLenum GL_castImageFormat(eImageFormat p)
+{
+    switch (p)
+    {
+        case eImageFormat::RGBA16F:     return GL_RGBA16F;
+        case eImageFormat::RGBA32F:     return GL_RGBA32F;
+        case eImageFormat::RGBA8:       return GL_RGBA8;
     }
 }
 

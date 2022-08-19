@@ -35,7 +35,6 @@ PointCubeEffect::~PointCubeEffect()
 	if (fbo != 0xffff) glDeleteFramebuffers(1, &fbo);
 	if (fbTex != 0xffff) glDeleteTextures(1, &fbTex);
 	if (depthTex != 0xffff) glDeleteTextures(1, &depthTex);
-	if (skyTex != 0xffff) glDeleteTextures(1, &skyTex);
 	if (rboZ != 0xffff) glDeleteRenderbuffers(1, &rboZ);
 }
 
@@ -54,8 +53,6 @@ bool PointCubeEffect::Init()
 	while (glGetError() != GL_NO_ERROR) {}
 
 	// skybox cube map
-	GL_CHECK(glGenTextures(1, &skyTex));
-	GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex));
 
 	std::vector<std::string> textures_faces = {
 		"assets/textures/skybox/right.jpg",
@@ -66,50 +63,30 @@ bool PointCubeEffect::Init()
 		"assets/textures/skybox/back.jpg",
 	};
 
-	GpuTexture2D t2d;
-	t2d
-		.withMinFilter(eTexMinFilter::LINEAR)
-		.withMagFilter(eTexMagFilter::LINEAR)
-		.withWrapS(eTexWrap::CLAMP_TO_EDGE)
-		.withWrapT(eTexWrap::CLAMP_TO_BORDER)
-		.updateParameters();
+	int width = 0, height = 0, nrChannels = 0;
 
-	GpuTextureCubeMap tc;
-	tc
-		.withMinFilter(eTexMinFilter::LINEAR)
-		.withMagFilter(eTexMagFilter::LINEAR)
-		.withWrapS(eTexWrap::CLAMP_TO_EDGE)
-		.withWrapT(eTexWrap::CLAMP_TO_BORDER)
-		.withWrapR(eTexWrap::CLAMP_TO_BORDER)
-		.updateParameters();
+	assert(textures_faces.size() == 6);
 
-	int width, height, nrChannels;
-	unsigned char* data;
-	for (unsigned int i = 0; i < textures_faces.size(); i++)
+	for (unsigned int i = 0; i < 6; ++i)
 	{
 		const std::string filename = g_fileSystem.resolve(textures_faces[i]);
-		data = stbi_load(filename.c_str(), &width, &height, &nrChannels, 0);
+		unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrChannels, 0);
 		if (!data)
 		{
 			Error("Cannot load texture %s", filename);
 			return false;
 		}
-
-		GLenum tFormat = nrChannels == 4 ? GL_RGBA : GL_RGB;
-		GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_COMPRESSED_SRGB, width, height, 0, tFormat, GL_UNSIGNED_BYTE, data));
+		skyTex_.create(i, width, height, 0, eTextureFormat::COMPRESSED_SRGB, ePixelFormat::RGB, eDataType::UNSIGNED_BYTE, data);
 		stbi_image_free(data);
 	}
 
-	GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
+	skyTex_.withDefaultLinearClampEdge().updateParameters();
 
 
-	GL_CHECK(glGenTextures(1, &fbTex));
 	GL_CHECK(glGenFramebuffers(1, &fbo));
 	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
+
+	GL_CHECK(glGenTextures(1, &fbTex));
 	GL_CHECK(glBindTexture(GL_TEXTURE_2D, fbTex));
 	GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FB_X, FB_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr));
 	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -345,7 +322,8 @@ void PointCubeEffect::Render()
 	glDrawArrays(GL_POINTS, 0, NUMPOINTS);
 
 	glDepthMask(GL_FALSE);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex);
+	//glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex);
+	skyTex_.bind();
 
 	glBindVertexArray(vao_skybox);
 	prgSkybox.use();

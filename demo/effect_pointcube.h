@@ -6,7 +6,7 @@
 #include "effect.h"
 #include "gpu_buffer.h"
 #include "gpu_program.h"
-
+#include "gpu_texture.h"
 
 #define KERNEL_BLUR 0
 #define KERNEL_BOTTOM_SOBEL 1
@@ -84,7 +84,7 @@ struct PointCubeEffect : public Effect
 		rboZ(0xffff),
 		pp_offset(1.0f/1000.0f),
 		fbTex(0xffff),
-		skyTex(0xffff),
+		skyTex_(),
 		depthTex(0xffff),
 		rectWMtx(),
 		vbo_points(eGpuBufferTarget::VERTEX),
@@ -108,7 +108,7 @@ struct PointCubeEffect : public Effect
 	GLuint fbo;
 	GLuint rboZ;
 	GLuint fbTex;
-	GLuint skyTex;
+	GpuTextureCubeMap skyTex_;
 	GLuint depthTex;
 
 	GLint rectWMtx;
