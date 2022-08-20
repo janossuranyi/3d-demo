@@ -7,6 +7,7 @@
 
 class GpuBuffer
 {
+	friend class Pipeline;
 public:
 	GpuBuffer() = delete;
 	~GpuBuffer();

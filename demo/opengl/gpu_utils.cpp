@@ -126,6 +126,27 @@ GLenum GL_castImageFormat(eImageFormat p)
     }
 }
 
+GLenum GL_castDrawMode(eDrawMode p)
+{
+    switch (p)
+    {
+    case eDrawMode::LINES:
+        return GL_LINES;
+    case eDrawMode::LINE_LOOP:
+        return GL_LINE_LOOP;
+    case eDrawMode::LINE_STRIP:
+        return GL_LINE_STRIP;
+    case eDrawMode::POINTS:
+        return GL_POINTS;
+    case eDrawMode::TRIANGLES:
+        return GL_TRIANGLES;
+    case eDrawMode::TRIANGLE_FAN:
+        return GL_TRIANGLE_FAN;
+    case eDrawMode::TRIANGLE_STRIP:
+        return GL_TRIANGLE_STRIP;
+    }
+}
+
 const char* GetShaderStageTitle(eShaderStage type)
 {
     switch (type)

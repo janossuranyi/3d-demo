@@ -31,3 +31,9 @@ GPU Buffer related types
 enum class eGpuBufferTarget { VERTEX, INDEX, UNIFORM, ENUM_SIZE };
 enum class eGpuBufferUsage { STATIC, DYNAMIC, DEFAULT };
 enum class eGpuBufferAccess { MAP_READONLY, MAP_WRITEONLY, MAP_READWRITE, DEFAULT_ACCESS };
+
+/*
+Drawing related types
+*/
+
+enum class eDrawMode { POINTS, LINE_STRIP, LINE_LOOP, LINES, TRIANGLE_STRIP, TRIANGLE_FAN, TRIANGLES };

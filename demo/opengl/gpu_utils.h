@@ -12,6 +12,7 @@ extern GLenum GL_castShaderStage(eShaderStage type);
 extern GLint GL_castTexWrap(eTexWrap p);
 extern GLenum GL_castImageAccess(eImageAccess p);
 extern GLenum GL_castImageFormat(eImageFormat p);
+extern GLenum GL_castDrawMode(eDrawMode p);
 
 extern const char* GetShaderStageTitle(eShaderStage type);
 

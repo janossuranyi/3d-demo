@@ -6,6 +6,7 @@
 #include <vector>
 #include <functional>
 #include "gpu_types.h"
+//#include "pipeline.h"
 
 #define STD_METHODS(T) \
 	T (T&) = delete; \
@@ -16,6 +17,7 @@
 class GpuTexture
 {
 	friend class GpuFrameBuffer;
+	friend class Pipeline;
 public:
 	GpuTexture() :
 		mTexture(INVALID_TEXTURE),
@@ -59,6 +61,7 @@ protected:
 class GpuTexture2D : public GpuTexture
 {
 	friend class GpuFrameBuffer;
+	friend class Pipeline;
 public:
 	GpuTexture2D() : GpuTexture() {}
 	~GpuTexture2D();
@@ -83,6 +86,7 @@ protected:
 class GpuTextureCubeMap : public GpuTexture
 {
 	friend class GpuFrameBuffer;
+	friend class Pipeline;
 public:
 	GpuTextureCubeMap() : GpuTexture() {}
 	~GpuTextureCubeMap();
