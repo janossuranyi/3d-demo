@@ -37,9 +37,9 @@ void GpuBuffer::unBind() const
 	GL_CHECK(glBindBuffer(target, 0));
 }
 
-void GpuBuffer::bindVertexBuffer(uint32_t index, uint32_t offset, uint32_t stride)
+void GpuBuffer::bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stride)
 {
-	GL_CHECK(glBindVertexBuffer(index, mBuffer, offset, stride));
+	GL_CHECK(glBindVertexBuffer(stream, mBuffer, offset, stride));
 }
 
 void GpuBuffer::unMap()

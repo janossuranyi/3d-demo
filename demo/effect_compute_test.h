@@ -8,6 +8,7 @@
 #include "gpu_buffer.h"
 #include "gpu_program.h"
 #include "gpu_texture.h"
+#include "gpu_vertex_layout.h"
 
 struct ComputeTestEffect : public Effect
 {
@@ -23,8 +24,7 @@ struct ComputeTestEffect : public Effect
 	GLuint tex_w = 512, tex_h = 512;
 
 	GpuTexture2D tex0_;
-
-	GLuint vao;
+	VertexLayout layout;
 	float angle;
 	GLint u_angle;
 	GLsync syncObj;
@@ -39,11 +39,11 @@ struct ComputeTestEffect : public Effect
 		vbo_rect(eGpuBufferTarget::VERTEX),
 		prg_compute(),
 		prg_view(),
-		vao(0xffff),
 		angle(0.0f),
 		u_angle(-1),
 		syncObj(),
-		tex0_()
+		tex0_(),
+		layout()
 	{}
 
 	~ComputeTestEffect() noexcept;

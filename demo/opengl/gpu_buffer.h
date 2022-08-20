@@ -23,7 +23,7 @@ public:
 	void reference(uint32_t offset, uint32_t size, GpuBuffer& ref);
 	bool isOwnBuffer() const;
 	void unBind() const;
-	void bindVertexBuffer(uint32_t index, uint32_t offset, uint32_t stride);
+	void bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stride);
 private:
 	GLuint mBuffer;
 	bool mIsMapped;

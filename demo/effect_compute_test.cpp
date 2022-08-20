@@ -11,23 +11,20 @@ bool ComputeTestEffect::Init()
     while (glGetError() != GL_NO_ERROR) {}
 
     tex0_.selectUnit(0);
-    tex0_.create(tex_w, tex_h, 0, eTextureFormat::RGBA, ePixelFormat::RGBA, eDataType::UNSIGNED_BYTE, nullptr);
+    //tex0_.create(tex_w, tex_h, 0, eTextureFormat::RGBA, ePixelFormat::RGBA, eDataType::UNSIGNED_BYTE, nullptr);
+    tex0_.createRGB8(tex_w, tex_h, 0);
     tex0_.withDefaultLinearClampEdge().updateParameters();
     tex0_.bindImage(0, 0, eImageAccess::WRITE_ONLY, eImageFormat::RGBA8);
 
     vbo_rect.create(sizeof(UNIT_RECT_WITH_ST), eGpuBufferUsage::STATIC, UNIT_RECT_WITH_ST);
 
-    /* setup vertex layout */
-    GL_CHECK(glCreateVertexArrays(1, &vao));
-    GL_CHECK(glBindVertexArray(vao));
-    GL_CHECK(glEnableVertexAttribArray(0));
-    GL_CHECK(glEnableVertexAttribArray(1));
-    vbo_rect.bind();
-    GL_CHECK(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vertexLayout_t), (const void*)0));
-    GL_CHECK(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertexLayout_t), (const void*)8));
-    GL_CHECK(glBindVertexArray(0));
-    GL_CHECK(glDisableVertexAttribArray(0));
-    GL_CHECK(glDisableVertexAttribArray(1));
+    layout.begin()
+        .with(0, 2, eDataType::FLOAT, false, 0, 0)
+        .with(1, 2, eDataType::FLOAT, false, 8, 0)
+        .end();
+
+    layout.bind();
+    vbo_rect.bindVertexBuffer(0, 0, sizeof(vertexLayout_t));
 
     if (!prg_compute.loadComputeShader(g_fileSystem.resolve("assets/shaders/test_compute.cs.glsl")))
     {
@@ -42,8 +39,6 @@ bool ComputeTestEffect::Init()
     {
         return false;
     }
-
-    glBindVertexArray(vao);
 
     return true;
 }
@@ -73,11 +68,10 @@ void ComputeTestEffect::Render()
     GL_CHECK(glWaitSync(syncObj, 0, GL_TIMEOUT_IGNORED));
 
     prg_view.use();
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
 
 }
 
 ComputeTestEffect::~ComputeTestEffect() noexcept
 {
-    if (vao != 0xffff) glDeleteVertexArrays(1, &vao);
 }

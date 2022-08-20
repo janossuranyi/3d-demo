@@ -13,20 +13,10 @@ offset: offset from the first attrib in bytes
 
 */
 
-struct VertexAttrib
-{
-	unsigned int index;
-	unsigned int stream;
-	unsigned int size;
-	eDataType type;
-	bool normalized;
-	unsigned int offset;
-};
-
 struct VertexLayout
 {
 	~VertexLayout();
-	VertexLayout& create();
+	VertexLayout& begin();
 	VertexLayout& with(
 		unsigned int index,
 		unsigned int size,
@@ -35,7 +25,9 @@ struct VertexLayout
 		unsigned int offset,
 		unsigned int stream);
 
+	void end() const;
 	void bind() const;
 
 	GLuint m_vao{0};	// vertex array object
+	int m_numAttribs;
 };
