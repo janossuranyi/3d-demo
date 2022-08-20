@@ -13,5 +13,5 @@ float linearize_depth(float original_depth) {
 
 void main() {
 	float depth = linearize_depth( texture(samp0, vso_TexCoord).r );
-	FS_OUT = vec4(vec3(depth,0,0), 1-depth);
+	FS_OUT = vec4(vec3(depth), 1-depth);
 }

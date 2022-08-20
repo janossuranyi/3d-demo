@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 #include <vector>
+#include <memory>
 
 #include "effect_pointcube.h"
 #include "demo.h"
@@ -25,17 +26,14 @@ GLsizei FB_X, FB_Y;
 
 PointCubeEffect::~PointCubeEffect()
 {
+	GL_FLUSH_ERRORS
 	GL_CHECK(glUseProgram(0));
 	GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
-	if (vao_points != 0xffff) glDeleteVertexArrays(1, &vao_points);
-	if (vao_pp != 0xffff) glDeleteVertexArrays(1, &vao_pp);
-	if (vao_skybox != 0xffff) glDeleteVertexArrays(1, &vao_skybox);
-	if (fbo != 0xffff) glDeleteFramebuffers(1, &fbo);
-	if (fbTex != 0xffff) glDeleteTextures(1, &fbTex);
-	if (depthTex != 0xffff) glDeleteTextures(1, &depthTex);
-	if (rboZ != 0xffff) glDeleteRenderbuffers(1, &rboZ);
+	if (vao_points != 0xffff)	GL_CHECK(glDeleteVertexArrays(1, &vao_points));
+	if (vao_pp != 0xffff)		GL_CHECK(glDeleteVertexArrays(1, &vao_pp));
+	if (vao_skybox != 0xffff)	GL_CHECK(glDeleteVertexArrays(1, &vao_skybox));
 }
 
 bool PointCubeEffect::Init()
@@ -54,78 +52,38 @@ bool PointCubeEffect::Init()
 
 	// skybox cube map
 
-	std::vector<std::string> textures_faces = {
-		"assets/textures/skybox/right.jpg",
-		"assets/textures/skybox/left.jpg",
-		"assets/textures/skybox/top.jpg",
-		"assets/textures/skybox/bottom.jpg",
-		"assets/textures/skybox/front.jpg",
-		"assets/textures/skybox/back.jpg",
+	const std::vector<std::string> textures_faces = {
+		g_fileSystem.resolve("assets/textures/skybox/right.jpg"),
+		g_fileSystem.resolve("assets/textures/skybox/left.jpg"),
+		g_fileSystem.resolve("assets/textures/skybox/top.jpg"),
+		g_fileSystem.resolve("assets/textures/skybox/bottom.jpg"),
+		g_fileSystem.resolve("assets/textures/skybox/front.jpg"),
+		g_fileSystem.resolve("assets/textures/skybox/back.jpg"),
 	};
-
-	int width = 0, height = 0, nrChannels = 0;
 
 	assert(textures_faces.size() == 6);
 
-	for (unsigned int i = 0; i < 6; ++i)
+	if (!skyTex_.createFromImage(textures_faces, true, false, true))
 	{
-		const std::string filename = g_fileSystem.resolve(textures_faces[i]);
-		unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrChannels, 0);
-		if (!data)
-		{
-			Error("Cannot load texture %s", filename);
-			return false;
-		}
-		skyTex_.create(i, width, height, 0, eTextureFormat::COMPRESSED_SRGB, ePixelFormat::RGB, eDataType::UNSIGNED_BYTE, data);
-		stbi_image_free(data);
+		Error("load cubemap error");
+		return false;
 	}
 
 	skyTex_.withDefaultLinearClampEdge().updateParameters();
 
+	depthTex = std::make_shared<GpuTexture2D>();
+	depthTex->createDepthStencil(FB_X, FB_Y);
 
-	GL_CHECK(glGenFramebuffers(1, &fbo));
-	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
+	fbTex = std::make_shared<GpuTexture2D>();
+	fbTex->createRGB8(FB_X, FB_Y, 0);
+	fbTex->withDefaultLinearClampEdge().updateParameters();
 
-	GL_CHECK(glGenTextures(1, &fbTex));
-	GL_CHECK(glBindTexture(GL_TEXTURE_2D, fbTex));
-	GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FB_X, FB_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
-
-	GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbTex, 0));
-
-#ifdef USE_RENDERBUFFER_Z
-	GL_CHECK(glGenRenderbuffers(1, &rboZ));
-	GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, rboZ));
-	GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, FB_X, FB_Y));
-	GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, 0));
-
-	GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboZ));
-#else
-	GL_CHECK(glGenTextures(1, &depthTex));
-	GL_CHECK(glBindTexture(GL_TEXTURE_2D, depthTex));
-	GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, FB_X, FB_Y, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
-
-	GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0));
-#endif
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	if (!m_fb.create()
+		.addColorAttachment(0, fbTex)
+		.setDepthStencilAttachment(depthTex)
+		.checkCompletness())
 	{
-		Error("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
 		return false;
-	}
-
-	for (int i = 0; i < 15; ++i)
-	{
-		GL_CHECK(glDisableVertexAttribArray(i));
 	}
 
 	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
@@ -302,62 +260,63 @@ void PointCubeEffect::Render()
 	
 	const glm::mat4 WVP = VP * W;
 
-	glDisable(GL_BLEND);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	glViewport(0, 0, FB_X, FB_Y);
+	m_fb.bind();
+	
+	GL_CHECK(glDisable(GL_BLEND));
 
-	glEnable(GL_DEPTH_TEST);
+	GL_CHECK(glViewport(0, 0, FB_X, FB_Y));
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	GL_CHECK(glEnable(GL_DEPTH_TEST));
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
 
 
-	glBindVertexArray(vao_points);
+	GL_CHECK(glBindVertexArray(vao_points));
 
 	prgPoints.use();
 	prgPoints.set(0, false, WVP);
 
-	glDrawArrays(GL_POINTS, 0, NUMPOINTS);
+	GL_CHECK(glDrawArrays(GL_POINTS, 0, NUMPOINTS));
 
-	glDepthMask(GL_FALSE);
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex);
+	GL_CHECK(glDepthMask(GL_FALSE));
 	skyTex_.bind();
 
-	glBindVertexArray(vao_skybox);
+	GL_CHECK(glBindVertexArray(vao_skybox));
 	prgSkybox.use();
 
 	const glm::mat4 sky_view = glm::mat4(glm::mat3(W));
 	prgSkybox.set(0, false, sky_view);
 
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 36));
 
-	glDepthMask(GL_TRUE);
-	glViewport(0, 0, videoConf.width, videoConf.height);
+	GL_CHECK(glDepthMask(GL_TRUE));
+	GL_CHECK(glViewport(0, 0, videoConf.width, videoConf.height));
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
-	glBindVertexArray(vao_pp);
+	GL_CHECK(glBindVertexArray(vao_pp));
 
 	prgPP.use();
 	prgPP.set(2, pp_offset);
 
-	glBindTexture(GL_TEXTURE_2D, fbTex);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_FRAMEBUFFER_SRGB);
+	fbTex->bind();
+	GL_CHECK(glDisable(GL_DEPTH_TEST));
+	GL_CHECK(glEnable(GL_FRAMEBUFFER_SRGB));
 
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glDisable(GL_FRAMEBUFFER_SRGB);
+	GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
+
+	GL_CHECK(glDisable(GL_FRAMEBUFFER_SRGB));
 
 	//glEnable(GL_BLEND);
 
 	//glViewport(0, 0, 400, 250);
 
 	prgTextureRect.use();
-	glBindTexture(GL_TEXTURE_2D, depthTex);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	
+	depthTex->bind();
+	GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
 
 }
 

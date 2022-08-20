@@ -1,3 +1,5 @@
+#include <SOIL2.h>
+
 #include "effect_compute_test.h"
 #include "filesystem.h"
 #include "unit_rect.h"
@@ -7,17 +9,6 @@ bool ComputeTestEffect::Init()
 {
 
     while (glGetError() != GL_NO_ERROR) {}
-
-    //GL_CHECK(glGenTextures(1, &tex0));
-    //glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, tex0);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_w, tex_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL));
-    //GL_CHECK(glBindImageTexture(0, tex0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8));
-    //GL_CHECK(glBindTexture(GL_TEXTURE_2D, tex0));
 
     tex0_.selectUnit(0);
     tex0_.create(tex_w, tex_h, 0, eTextureFormat::RGBA, ePixelFormat::RGBA, eDataType::UNSIGNED_BYTE, nullptr);

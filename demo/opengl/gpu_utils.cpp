@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 #include <SDL.h>
+#include "logger.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
 
@@ -8,7 +9,7 @@ void CheckOpenGLError(const char* stmt, const char* fname, int line)
     GLenum err = glGetError();
     if (err != GL_NO_ERROR)
     {
-        SDL_Log("OpenGL error %08x, at %s:%i - for %s\n", err, fname, line, stmt);
+        Error("OpenGL error %08x, at %s:%i - for %s\n", err, fname, line, stmt);
         abort();
     }
 }
@@ -46,6 +47,8 @@ GLenum GL_castPixelFormat(ePixelFormat pf)
         return GL_RGBA16;
     case PF::RGBA16F:
         return GL_RGBA16F;
+    case PF::RGBA32F:
+        return GL_RGBA32F;
     }
 }
 
@@ -142,3 +145,103 @@ const char* GetShaderStageTitle(eShaderStage type)
     }
 }
 
+void GLAPIENTRY DebugMessageCallback(GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const GLvoid* userParam)
+{
+    // Convert enums into a humen readable text
+    // See: https://www.opengl.org/registry/specs/ARB/debug_output.txt
+
+//    if (severity > GL_DEBUG_SEVERITY_MEDIUM) return;
+
+    const char* sourceText = "Unknown";
+    switch (source)
+    {
+    case GL_DEBUG_SOURCE_API_ARB:
+        // The GL
+        sourceText = "API";
+        break;
+        // The GLSL shader compiler or compilers for other extension - provided languages
+    case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
+        sourceText = "Shader compiler";
+        break;
+        // The window system, such as WGL or GLX
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
+        sourceText = "Window system";
+        break;
+        // External debuggers or third-party middleware libraries
+    case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
+        sourceText = "Third party";
+        break;
+        // The application
+    case GL_DEBUG_SOURCE_APPLICATION_ARB:
+        sourceText = "Application";
+        break;
+        // Sources that do not fit to any of the ones listed above
+    case GL_DEBUG_SOURCE_OTHER_ARB:
+        sourceText = "Other";
+        break;
+    }
+
+    const char* typeText = "Unknown";
+    switch (type)
+    {
+        // Events that generated an error
+    case GL_DEBUG_TYPE_ERROR_ARB:
+        typeText = "Error";
+        break;
+        // Behavior that has been marked for deprecation
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
+        typeText = "Deprecated behavior";
+        break;
+        // Behavior that is undefined according to the specification
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
+        typeText = "Undefined behavior";
+        break;
+        // Implementation-dependent performance warnings
+    case GL_DEBUG_TYPE_PERFORMANCE_ARB:
+        typeText = "Performance";
+        break;
+        // Use of extensions or shaders in a way that is highly vendor - specific
+    case GL_DEBUG_TYPE_PORTABILITY_ARB:
+        typeText = "Portability";
+        break;
+        // Types of events that do not fit any of the ones listed above
+    case GL_DEBUG_TYPE_OTHER_ARB:
+        typeText = "Other";
+        break;
+    }
+
+    const char* severityText = "Unknown";
+    switch (severity)
+    {
+        // Any GL error; dangerous undefined behavior; any GLSL or ARB shader compiler and linker errors;
+    case GL_DEBUG_SEVERITY_HIGH_ARB:
+        severityText = "High";
+        break;
+        // Severe performance warnings; GLSL or other shader compiler and linker warnings; use of currently deprecated behavior
+    case GL_DEBUG_SEVERITY_MEDIUM_ARB:
+        severityText = "Medium";
+        break;
+        // Performance warnings from redundant state changes; trivial undefined behavior
+    case GL_DEBUG_SEVERITY_LOW_ARB:
+        severityText = "Low";
+        break;
+    }
+
+    // Unused params
+    (void)id;
+    (void)length;
+    (void)userParam;
+
+    // Replace LogDebug with your logging function
+    Info("[OpenGL:source='%s', type='%s', severity='%s'] %s",
+        sourceText,
+        typeText,
+        severityText,
+        message);
+}

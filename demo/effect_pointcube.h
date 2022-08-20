@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <SDL.h>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -7,6 +9,7 @@
 #include "gpu_buffer.h"
 #include "gpu_program.h"
 #include "gpu_texture.h"
+#include "gpu_framebuffer.h"
 
 #define KERNEL_BLUR 0
 #define KERNEL_BOTTOM_SOBEL 1
@@ -80,13 +83,12 @@ struct PointCubeEffect : public Effect
 		vao_points(0xffff),
 		vao_pp(0xffff),
 		vao_skybox(0xffff),
-		fbo(0xffff),
-		rboZ(0xffff),
 		pp_offset(1.0f/1000.0f),
-		fbTex(0xffff),
+		fbTex(),
 		skyTex_(),
-		depthTex(0xffff),
+		depthTex(),
 		rectWMtx(),
+		m_fb(),
 		vbo_points(eGpuBufferTarget::VERTEX),
 		vbo_pp(eGpuBufferTarget::VERTEX),
 		vbo_skybox(eGpuBufferTarget::VERTEX) {};
@@ -105,11 +107,10 @@ struct PointCubeEffect : public Effect
 	GLuint vao_pp;
 	GLuint vao_skybox;
 
-	GLuint fbo;
-	GLuint rboZ;
-	GLuint fbTex;
+	GpuFrameBuffer m_fb;
+	std::shared_ptr<GpuTexture2D> fbTex;
+	std::shared_ptr<GpuTexture2D> depthTex;
 	GpuTextureCubeMap skyTex_;
-	GLuint depthTex;
 
 	GLint rectWMtx;
 

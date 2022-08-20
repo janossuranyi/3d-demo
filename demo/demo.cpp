@@ -10,8 +10,8 @@
 #include "gpu_types.h"
 #include "gpu_utils.h"
 
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
+#define SCREEN_WIDTH 1440
+#define SCREEN_HEIGHT 900
 #define FULLSCREEN false
 
 VideoConfig videoConf;
@@ -28,14 +28,6 @@ class xArray
 public:
     Ty v[N];
 };
-
-void GLAPIENTRY OGLDebugOutputCallback(GLenum alSource, GLenum alType, GLuint alID, GLenum alSeverity, GLsizei alLength, const GLchar* apMessage, const void* apUserParam)
-{
-    if (alSeverity <= GL_DEBUG_SEVERITY_MEDIUM)
-    {
-        Info("Source: %d Type: %d Id: %d Severity: %d '%s'", alSource, alType, alID, alSeverity, apMessage);
-    }
-}
 
 
 static bool V_Init(int w, int h, int multisample, bool fullscreen)
@@ -148,8 +140,12 @@ static bool V_Init(int w, int h, int multisample, bool fullscreen)
 #ifdef _DEBUG
     if (GLEW_ARB_debug_output)
     {
-        glDebugMessageCallbackARB(&OGLDebugOutputCallback, NULL);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+
+        glDebugMessageCallbackARB(&DebugMessageCallback, NULL);
+        //glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
+        //glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
+
     }
 #endif
     if (GLEW_ARB_explicit_uniform_location)
@@ -222,15 +218,19 @@ void App_EventLoop()
             }
         }
 
-        if (sync) GL_CHECK( glDeleteSync(sync) );
 
         Uint32 tick1 = SDL_GetTicks();
+
+        GL_FLUSH_ERRORS
+
+        if (sync) GL_CHECK(glDeleteSync(sync));
 
         activeEffect->Render();
 
         GL_CHECK(sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
 
-        // glFinish();
+        //glFinish();
+
         GL_CHECK(glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, ~GLuint64(0)));
 
         Uint32 tick2 = SDL_GetTicks();

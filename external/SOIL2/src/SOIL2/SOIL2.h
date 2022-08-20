@@ -49,6 +49,19 @@
 extern "C" {
 #endif
 
+#define SOIL_MAJOR_VERSION 1
+#define SOIL_MINOR_VERSION 3
+#define SOIL_PATCH_LEVEL 0
+
+#define SOIL_VERSION_NUM( X, Y, Z ) ( (X)*1000 + (Y)*100 + ( Z ) )
+
+#define SOIL_COMPILED_VERSION \
+	SOIL_VERSION_NUM( SOIL_MAJOR_VERSION, SOIL_MINOR_VERSION, SOIL_PATCH_LEVEL )
+
+#define SOIL_VERSION_ATLEAST( X, Y, Z ) ( SOIL_COMPILED_VERSION >= SOIL_VERSION_NUM( X, Y, Z ) )
+
+unsigned long SOIL_version();
+
 /**
 	The format of images that may be loaded (force_channels).
 	SOIL_LOAD_AUTO leaves the image in whatever format it was found.
@@ -113,8 +126,7 @@ enum
 	SOIL_FLAG_PVR_LOAD_DIRECT = 1024,
 	SOIL_FLAG_ETC1_LOAD_DIRECT = 2048,
 	SOIL_FLAG_GL_MIPMAPS = 4096,
-	SOIL_FLAG_SRGB_COLOR_SPACE = 8192,
-	SOIL_FLAG_NEAREST = 16384,
+	SOIL_FLAG_SRGB_COLOR_SPACE = 8192
 };
 
 /**

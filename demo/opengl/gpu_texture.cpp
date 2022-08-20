@@ -1,5 +1,6 @@
 #include <utility>
 #include <cassert>
+#include <SOIL2.h>
 #include "logger.h"
 #include "gpu_utils.h"
 #include "gpu_texture.h"
@@ -142,13 +143,20 @@ void GpuTexture::generateMipMaps() const
     GL_CHECK(glGenerateMipmap(getApiTarget()));
 }
 
+void GpuTexture::getDimensions(unsigned int& w, unsigned int& h, unsigned int& d)
+{
+    w = m_width;
+    h = m_height;
+    d = m_depth;
+}
+
 GpuTexture2D::~GpuTexture2D()
 {
     if (mTexture != INVALID_TEXTURE)
         GL_CHECK(glDeleteTextures(1, &mTexture));
 }
 
-bool GpuTexture2D::create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void** data)
+bool GpuTexture2D::create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void* data)
 {
     if (mTexture == INVALID_TEXTURE) GL_CHECK(glGenTextures(1, &mTexture));
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
@@ -157,7 +165,88 @@ bool GpuTexture2D::create(int w, int h, int level, eTextureFormat internalFormat
     const GLenum pixFormat = GL_castPixelFormat(format);
     const GLint texFormat = GL_castTextureFormat(internalFormat);
 
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, texFormat, w, h, 0, pixFormat, dataType, (data ? *data : nullptr)));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, texFormat, w, h, 0, pixFormat, dataType, (data ? data : nullptr)));
+
+    return true;
+}
+
+bool GpuTexture2D::createFromImage(const std::string& fromFile, bool srgb, bool autoMipmap, bool compress)
+{
+    GLuint texID = mTexture != INVALID_TEXTURE ? mTexture : SOIL_CREATE_NEW_ID;
+    unsigned int flags = 0;
+    if (autoMipmap)
+    {
+        flags |= SOIL_FLAG_MIPMAPS;
+    }
+    if (compress)
+    {
+        flags |= SOIL_FLAG_COMPRESS_TO_DXT;
+    }
+    if (srgb)
+    {
+        flags |= SOIL_FLAG_SRGB_COLOR_SPACE;
+    }
+
+    texID = SOIL_load_OGL_texture(fromFile.c_str(), 0, texID, flags);
+    if (texID) mTexture = texID;
+
+    return texID != 0;
+
+}
+
+bool GpuTexture2D::createRGB8(int w, int h, int level)
+{
+    if (mTexture == INVALID_TEXTURE)
+    {
+        GL_CHECK(glGenTextures(1, &mTexture));
+    }
+
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr));
+
+    return true;
+}
+
+bool GpuTexture2D::createRGB32F(int w, int h, int level)
+{
+    if (mTexture == INVALID_TEXTURE)
+    {
+        GL_CHECK(glGenTextures(1, &mTexture));
+    }
+
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA32F, w, h, 0, GL_RGB, GL_FLOAT, nullptr));
+
+    return true;
+}
+
+bool GpuTexture2D::createRGB16F(int w, int h, int level)
+{
+    if (mTexture == INVALID_TEXTURE)
+    {
+        GL_CHECK(glGenTextures(1, &mTexture));
+    }
+
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA16F, w, h, 0, GL_RGB, GL_FLOAT, nullptr));
+
+    return true;
+}
+
+bool GpuTexture2D::createDepthStencil(int w, int h)
+{
+    if (mTexture == INVALID_TEXTURE)
+    {
+        GL_CHECK(glGenTextures(1, &mTexture));
+    }
+
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
+
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, w, h, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
     return true;
 }
@@ -206,12 +295,14 @@ bool GpuTextureCubeMap::create(int w, int h, int level, eTextureFormat internalF
         }
     }
 
+    m_width = w;
+    m_height = h;
     return true;
 }
 
 bool GpuTextureCubeMap::create(unsigned int side, int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void* data)
 {
-    assert(data != nullptr);
+    //assert(data != nullptr);
 
     if (mTexture == INVALID_TEXTURE)
     {
@@ -224,6 +315,9 @@ bool GpuTextureCubeMap::create(unsigned int side, int w, int h, int level, eText
     const GLint texFormat = GL_castTextureFormat(internalFormat);
 
     GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side, level, texFormat, w, h, 0, pixFormat, dataType, data));
+
+    m_width = w;
+    m_height = h;
 
     return false;
 }
@@ -253,7 +347,41 @@ bool GpuTextureCubeMap::create(int level, eTextureFormat internalFormat, ePixelF
             freeImageCB(k, data);
         }
     }
+
+    m_width = w;
+    m_height = h;
+
     return true;
+}
+
+bool GpuTextureCubeMap::createFromImage(const std::vector<std::string>& fromFile, bool srgb, bool autoMipmap, bool compress)
+{
+    GLuint texID = mTexture != INVALID_TEXTURE ? mTexture : SOIL_CREATE_NEW_ID;
+    unsigned int flags = 0;
+    if (autoMipmap)
+    {
+        flags |= SOIL_FLAG_MIPMAPS;
+    }
+    if (compress)
+    {
+        flags |= SOIL_FLAG_COMPRESS_TO_DXT;
+    }
+    if (srgb)
+    {
+        flags |= SOIL_FLAG_SRGB_COLOR_SPACE;
+    }
+
+    texID = SOIL_load_OGL_cubemap(
+        fromFile[0].c_str(),
+        fromFile[1].c_str(),
+        fromFile[2].c_str(),
+        fromFile[3].c_str(),
+        fromFile[4].c_str(),
+        fromFile[5].c_str(), 0, texID, flags);
+
+    if (texID) mTexture = texID;
+
+    return texID != 0;
 }
 
 void GpuTextureCubeMap::bind() const

@@ -8,6 +8,8 @@ find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
 # find_package(assimp REQUIRED HINTS ${ASSIMP_DIR}) 
 
+add_subdirectory(external/SOIL2)
+
 add_definitions(
   -DGLEW_STATIC
 )
@@ -16,18 +18,10 @@ add_definitions(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True) 
 
-file(GLOB SOIL2_INCLUDE external/soil2/incs/*.h)
-file(GLOB SOIL2_SOURCE external/soil2/srcs/*.c)
-
 file(GLOB DEMO_GL_H demo/opengl/*.h)
 file(GLOB DEMO_GL_C demo/opengl/*.cpp)
 file(GLOB DEMO_H demo/*.h)
 file(GLOB DEMO_C demo/*.cpp)
-
-add_library(SOIL2 STATIC
-  ${SOIL2_INCLUDE}
-  ${SOIL2_SOURCE}
-)
 
 add_library(glew STATIC
   external/glew-2.1.0/src/glew.c
@@ -51,7 +45,7 @@ include_directories(
   external/glew-2.1.0/include/
   external/glm/
   external/stb/
-  external/soil2/incs/
+  external/SOIL2/src/SOIL2/
   external/tinygltf/
   ${SDL2_INCLUDE_DIR}
 )
@@ -75,6 +69,7 @@ target_link_libraries(demo
   glew
   stb_image
   tinygltf
+  soil2
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}
 )
