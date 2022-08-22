@@ -45,10 +45,6 @@ GLenum GL_castPixelFormat(ePixelFormat pf)
         return GL_RGBA8;
     case PF::RGBA16:
         return GL_RGBA16;
-    case PF::RGBA16F:
-        return GL_RGBA16F;
-    case PF::RGBA32F:
-        return GL_RGBA32F;
     }
 }
 
@@ -58,20 +54,42 @@ GLint GL_castTextureFormat(eTextureFormat f)
     {
     case eTextureFormat::DEPTH24_STENCIL_8:
         return GL_DEPTH24_STENCIL8;
+    case eTextureFormat::R:
+        return GL_R;
+    case eTextureFormat::R16:
+        return GL_R16;
+    case eTextureFormat::R16F:
+        return GL_R16F;
+    case eTextureFormat::RG:
+        return GL_RG;
+    case eTextureFormat::RG16:
+        return GL_RG16;
+    case eTextureFormat::RG16F:
+        return GL_RG16F;
     case eTextureFormat::RGB:
         return GL_RGB;
     case eTextureFormat::RGBA:
         return GL_RGBA;
     case eTextureFormat::RGBA16F:
         return GL_RGBA16F;
+    case eTextureFormat::RGB10A2:
+        return GL_RGB10_A2;
     case eTextureFormat::RGBA32F:
         return GL_RGBA32F;
     case eTextureFormat::SRGB:
-        return GL_SRGB;
+        return GL_SRGB8;
+    case eTextureFormat::SRGB_A:
+        return GL_SRGB8_ALPHA8;
+    case eTextureFormat::R11F_G11F_B10F:
+        return GL_R11F_G11F_B10F;
     case eTextureFormat::COMPRESSED_RGBA:
         return GL_COMPRESSED_RGBA;
     case eTextureFormat::COMPRESSED_SRGB:
         return GL_COMPRESSED_SRGB;
+    case eTextureFormat::RGB565:
+        return GL_RGB565;
+    case eTextureFormat::RGB5_A1:
+        return GL_RGB5_A1;
     }
 }
 

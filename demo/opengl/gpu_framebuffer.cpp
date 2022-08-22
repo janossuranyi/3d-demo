@@ -30,7 +30,7 @@ GpuFrameBuffer& GpuFrameBuffer::create()
 	return *this;
 }
 
-GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, std::shared_ptr<GpuTexture2D> texture)
+GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, GpuTexture2D::Ptr texture)
 {
 	GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture->mTexture, 0));
 	m_textures.push_back(texture);
@@ -38,7 +38,7 @@ GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, std::shared_ptr<Gp
 	return *this;
 }
 
-GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, std::shared_ptr<GpuTextureCubeMap> texture)
+GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, GpuTextureCubeMap::Ptr texture)
 {
 	GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_CUBE_MAP, texture->mTexture, 0));
 	m_textures.push_back(texture);
@@ -46,10 +46,10 @@ GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, std::shared_ptr<Gp
 	return *this;
 }
 
-GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, int w, int h, ePixelFormat format)
+GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, int w, int h, eTextureFormat format)
 {
 	GLuint rbo;
-	GLenum rb_format = GL_castPixelFormat(format);
+	GLenum rb_format = GL_castTextureFormat(format);
 
 	GL_CHECK(glGenRenderbuffers(1, &rbo));
 	GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, rbo));
@@ -79,7 +79,7 @@ GpuFrameBuffer& GpuFrameBuffer::setDepthStencilAttachment(int w, int h)
 	return *this;
 }
 
-GpuFrameBuffer& GpuFrameBuffer::setDepthStencilAttachment(std::shared_ptr<GpuTexture2D> texture)
+GpuFrameBuffer& GpuFrameBuffer::setDepthStencilAttachment(GpuTexture2D::Ptr texture)
 {
 	assert(m_depthRenderBuffer == 0 && m_depthRenderTexture == nullptr);
 

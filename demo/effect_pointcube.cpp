@@ -71,11 +71,14 @@ bool PointCubeEffect::Init()
 
 	skyTex_.withDefaultLinearClampEdge().updateParameters();
 
-	depthTex = std::make_shared<GpuTexture2D>();
+
+	depthTex = GpuTexture2D::createShared();
 	depthTex->createDepthStencil(FB_X, FB_Y);
 
-	fbTex = std::make_shared<GpuTexture2D>();
-	fbTex->createRGB8(FB_X, FB_Y, 0);
+	fbTex = GpuTexture2D::createShared();
+	fbTex->createRGB(FB_X, FB_Y, 0);
+	//fbTex->create(FB_X, FB_Y, 0, eTextureFormat::RGB565, ePixelFormat::RGB, eDataType::UNSIGNED_SHORT, nullptr);
+
 	fbTex->withDefaultLinearClampEdge().updateParameters();
 
 	if (!m_fb.create()

@@ -194,43 +194,64 @@ bool GpuTexture2D::createFromImage(const std::string& fromFile, bool srgb, bool 
 
 }
 
+bool GpuTexture2D::createRGB(int w, int h, int level)
+{
+    return createRGB8(w, h, level);
+}
+
+bool GpuTexture2D::createRG8U(int w, int h, int level)
+{
+    return create(w, h, level, eTextureFormat::RG, ePixelFormat::RGB, eDataType::UNSIGNED_BYTE, nullptr);
+}
+
+bool GpuTexture2D::createRG8S(int w, int h, int level)
+{
+    return create(w, h, level, eTextureFormat::RG, ePixelFormat::RGB, eDataType::BYTE, nullptr);
+}
+
+bool GpuTexture2D::createRG16U(int w, int h, int level)
+{
+    return create(w, h, level, eTextureFormat::RG16, ePixelFormat::RGB, eDataType::UNSIGNED_SHORT, nullptr);
+}
+
+bool GpuTexture2D::createRG16S(int w, int h, int level)
+{
+    return create(w, h, level, eTextureFormat::RG16, ePixelFormat::RGB, eDataType::SHORT, nullptr);
+}
+
+bool GpuTexture2D::createRG16F(int w, int h, int level)
+{
+    return create(w, h, level, eTextureFormat::RG16F, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
+}
+
 bool GpuTexture2D::createRGB8(int w, int h, int level)
 {
-    if (mTexture == INVALID_TEXTURE)
-    {
-        GL_CHECK(glGenTextures(1, &mTexture));
-    }
+    return create(w, h, level, eTextureFormat::RGBA, ePixelFormat::RGB, eDataType::UNSIGNED_BYTE, nullptr);
+}
 
-    GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr));
-
-    return true;
+bool GpuTexture2D::createRGB8S(int w, int h, int level)
+{
+    return create(w, h, level, eTextureFormat::RGBA, ePixelFormat::RGB, eDataType::BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRGB32F(int w, int h, int level)
 {
-    if (mTexture == INVALID_TEXTURE)
-    {
-        GL_CHECK(glGenTextures(1, &mTexture));
-    }
-
-    GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA32F, w, h, 0, GL_RGB, GL_FLOAT, nullptr));
-
-    return true;
+    return create(w, h, level, eTextureFormat::RGBA32F, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createRGB16F(int w, int h, int level)
 {
-    if (mTexture == INVALID_TEXTURE)
-    {
-        GL_CHECK(glGenTextures(1, &mTexture));
-    }
+    return create(w, h, level, eTextureFormat::RGBA16F, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
+}
 
-    GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA16F, w, h, 0, GL_RGB, GL_FLOAT, nullptr));
+bool GpuTexture2D::createRGB10A2(int w, int h, int level)
+{
+    return create(w, h, level, eTextureFormat::RGB10A2, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
+}
 
-    return true;
+bool GpuTexture2D::createR11G11B10(int w, int h, int level)
+{
+    return create(w, h, level, eTextureFormat::R11F_G11F_B10F, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createDepthStencil(int w, int h)
@@ -251,9 +272,27 @@ bool GpuTexture2D::createDepthStencil(int w, int h)
     return true;
 }
 
+GpuTexture2D::Ptr GpuTexture2D::createShared()
+{
+    return std::make_shared<GpuTexture2D>();
+}
+
 void GpuTexture2D::bind() const
 {
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
+}
+
+void GpuTexture2D::bind(int unit) const
+{
+    if (GLEW_VERSION_4_5)
+    {
+        GL_CHECK(glBindTextureUnit(unit, mTexture));
+    }
+    else
+    {
+        GL_CHECK(glActiveTexture(GL_TEXTURE0 + unit));
+        GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
+    }
 }
 
 void GpuTexture2D::bindImage(int unit, int level, eImageAccess access, eImageFormat format)
@@ -270,89 +309,6 @@ GpuTextureCubeMap::~GpuTextureCubeMap()
         GL_CHECK(glDeleteTextures(1, &mTexture));
 }
 
-bool GpuTextureCubeMap::create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void** data)
-{
-    if (mTexture == INVALID_TEXTURE) GL_CHECK(glGenTextures(1, &mTexture));
-    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, mTexture));
-
-    const GLenum dataType = GL_castDataType(type);
-    const GLenum pixFormat = GL_castPixelFormat(format);
-    const GLint texFormat = GL_castTextureFormat(internalFormat);
-
-    if (!data)
-    {
-        for (int k = 0; k < 6; ++k)
-        {
-            GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + k, level, texFormat, w, h, 0, pixFormat, dataType, nullptr));
-        }
-    }
-    else
-    {
-        for (int k = 0; k < 6; ++k)
-        {
-            assert(data[k] != nullptr);
-            GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + k, level, texFormat, w, h, 0, pixFormat, dataType, data[k]));
-        }
-    }
-
-    m_width = w;
-    m_height = h;
-    return true;
-}
-
-bool GpuTextureCubeMap::create(unsigned int side, int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void* data)
-{
-    //assert(data != nullptr);
-
-    if (mTexture == INVALID_TEXTURE)
-    {
-        GL_CHECK(glGenTextures(1, &mTexture));
-        GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, mTexture));
-    }
-
-    const GLenum dataType = GL_castDataType(type);
-    const GLenum pixFormat = GL_castPixelFormat(format);
-    const GLint texFormat = GL_castTextureFormat(internalFormat);
-
-    GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side, level, texFormat, w, h, 0, pixFormat, dataType, data));
-
-    m_width = w;
-    m_height = h;
-
-    return false;
-}
-
-bool GpuTextureCubeMap::create(int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type,
-    std::function<void(int, int&, int&, int&, void**)> getImageCB,
-    std::function<void(int, void*)> freeImageCB)
-{
-    if (mTexture == INVALID_TEXTURE) GL_CHECK(glGenTextures(1, &mTexture));
-    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, mTexture));
-    const GLenum dataType = GL_castDataType(type);
-    const GLint texFormat = GL_castTextureFormat(internalFormat);
-    GLenum pixFormat = GL_castPixelFormat(format);
-
-    int w, h, n;
-    for (int k = 0; k < 6; ++k)
-    {
-        void* data = 0;
-        w = h = n = 0;
-
-        getImageCB(k, w, h, n, &data);
-
-        if (data && w > 0 && h > 0 && n >= 3)
-        {
-            pixFormat = n == 3 ? GL_RGB : GL_RGBA;
-            GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + k, level, texFormat, w, h, 0, pixFormat, dataType, data));
-            freeImageCB(k, data);
-        }
-    }
-
-    m_width = w;
-    m_height = h;
-
-    return true;
-}
 
 bool GpuTextureCubeMap::createFromImage(const std::vector<std::string>& fromFile, bool srgb, bool autoMipmap, bool compress)
 {
@@ -387,6 +343,19 @@ bool GpuTextureCubeMap::createFromImage(const std::vector<std::string>& fromFile
 void GpuTextureCubeMap::bind() const
 {
     GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, mTexture));
+}
+
+void GpuTextureCubeMap::bind(int unit) const
+{
+    if (GLEW_VERSION_4_5)
+    {
+        GL_CHECK(glBindTextureUnit(unit, mTexture));
+    }
+    else
+    {
+        GL_CHECK(glActiveTexture(GL_TEXTURE0 + unit));
+        GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, mTexture));
+    }
 }
 
 void GpuTextureCubeMap::bindImage(int unit, int level, bool layered, int layer, eImageAccess access, eImageFormat format)

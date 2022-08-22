@@ -11,7 +11,7 @@
 #include "gpu_state.h"
 #include "gpu_buffer.h"
 
-#define MAX_TEXTURE_UNITS 8
+#define MAX_TEXTURE_UNITS 15
 
 class Pipeline
 {

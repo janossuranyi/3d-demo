@@ -22,21 +22,9 @@ void V_Shutdown();
 const char* BASE_DIR = "d:/src/3d-demo-git/";
 
 
-template<typename Ty, int N>
-class xArray
-{
-public:
-    Ty v[N];
-};
-
-
 static bool V_Init(int w, int h, int multisample, bool fullscreen)
 {
     int err;
-
-    xArray<char, 16> cbuf;
-
-    cbuf.v[3] = 'x';
 
     if ((err = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) < 0)) {
         Error("ERROR: %s", SDL_GetError());
@@ -184,7 +172,7 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<ComputeTestEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<PointCubeEffect>();
 
     if (!activeEffect->Init())
         return;
