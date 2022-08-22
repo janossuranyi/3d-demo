@@ -18,6 +18,7 @@ public:
 	GpuProgram(GpuProgram&& moved);
 	~GpuProgram();
 
+	bool bindUniformBlock(const std::string& name, int index);
 	bool loadShader(const std::string& vertexShader, const std::string& fragmentShader);
 	bool loadComputeShader(const std::string& shader);
 

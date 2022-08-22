@@ -34,6 +34,16 @@ GpuProgram::~GpuProgram()
 {
 	destroy();
 }
+bool GpuProgram::bindUniformBlock(const std::string& name, int bindingIndex)
+{
+	unsigned int var_index;
+	GL_CHECK(var_index = glGetUniformBlockIndex(mProgId, name.c_str()));
+	if (var_index == GL_INVALID_INDEX) return false;
+
+	GL_CHECK(glUniformBlockBinding(mProgId, var_index, bindingIndex));
+
+	return true;
+}
 bool GpuProgram::loadShader(const std::string& vertexShader, const std::string& fragmentShader)
 {
 	std::string vs, fs;

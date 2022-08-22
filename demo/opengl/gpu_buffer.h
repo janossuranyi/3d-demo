@@ -16,6 +16,7 @@ public:
 	GpuBuffer& operator=(GpuBuffer&) = delete;
 	void bind() const;
 	uint8_t* map(eGpuBufferAccess access);
+	uint8_t* mapPersistent(eGpuBufferAccess access);
 	void unMap();
 	bool isMapped() const;
 	bool isCreated() const;
@@ -23,7 +24,8 @@ public:
 	void reference(uint32_t offset, uint32_t size, GpuBuffer& ref);
 	bool isOwnBuffer() const;
 	void unBind() const;
-	void bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stride);
+	void bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stride) const;
+	void bindIndexed(uint32_t index, uint32_t offset = 0, uint32_t size = 0);
 private:
 	GLuint mBuffer;
 	bool mIsMapped;

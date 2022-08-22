@@ -37,9 +37,22 @@ void GpuBuffer::unBind() const
 	GL_CHECK(glBindBuffer(target, 0));
 }
 
-void GpuBuffer::bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stride)
+void GpuBuffer::bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stride) const
 {
 	GL_CHECK(glBindVertexBuffer(stream, mBuffer, offset, stride));
+}
+
+void GpuBuffer::bindIndexed(uint32_t index, uint32_t offset, uint32_t size)
+{
+	const GLenum target = GL_CastBufferType(mTarget);
+	if (size == 0)
+	{
+		GL_CHECK(glBindBufferBase(target, index, mBuffer));
+	}
+	else
+	{
+		GL_CHECK(glBindBufferRange(target, index, mBuffer, offset, size));
+	}
 }
 
 void GpuBuffer::unMap()
@@ -102,6 +115,56 @@ uint8_t* GpuBuffer::map(eGpuBufferAccess pAccess)
 	return ptr;
 }
 
+uint8_t* GpuBuffer::mapPersistent(eGpuBufferAccess pAccess)
+{
+	assert(mIsMapped == false);
+	assert(mBuffer != INVALID_BUFFER);
+	assert(mIsReference == false);
+
+	if (mTarget != eGpuBufferTarget::UNIFORM) return nullptr;
+
+	const GLenum target = GL_CastBufferType(mTarget);
+
+	GLbitfield access;
+	switch (pAccess)
+	{
+	case eGpuBufferAccess::MAP_READONLY:
+		access = GL_MAP_READ_BIT;
+		break;
+	case eGpuBufferAccess::MAP_WRITEONLY:
+		access = GL_MAP_WRITE_BIT;
+		break;
+	case eGpuBufferAccess::MAP_READWRITE:
+		access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
+		break;
+	default:
+		access = GL_MAP_WRITE_BIT;
+	}
+
+
+	uint8_t* ptr = nullptr;
+
+	GL_CHECK(glBindBuffer(target, mBuffer));
+	GL_CHECK(ptr = static_cast<uint8_t*>(glMapBufferRange(target, 0, mSize, access | GL_MAP_COHERENT_BIT | GL_MAP_PERSISTENT_BIT)));
+	GL_CHECK(glBindBuffer(target, 0));
+
+	if (ptr)
+	{
+		mMapPtr = ptr;
+		mIsMapped = true;
+		Info("Buffer %d, type: %d mapped.", mBuffer, mTarget);
+	}
+	else
+	{
+		Info("Buffer %d, type: %d map failed!.", mBuffer, mTarget);
+	}
+
+	return ptr;
+
+
+
+}
+
 bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, const void* bytes)
 {
 	assert(mBuffer == INVALID_BUFFER);
@@ -132,10 +195,18 @@ bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, const void* bytes)
 	else size = (size + 15) & ~(15);
 
 	GL_CHECK(glBindBuffer(target, mBuffer));
-	GL_CHECK(glBufferData(target, size, bytes, bu));
+	if (mTarget == eGpuBufferTarget::UNIFORM)
+	{
+		GL_CHECK(glBufferStorage(target, size, bytes, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
+	}
+	else
+	{
+		GL_CHECK(glBufferData(target, size, bytes, bu));
+	}
 	mSize = size;
 
 	Info("Buffer %d, type: %d allocated, size: %d bytes.", mBuffer, mTarget, size);
+	
 
 	return glGetError() == GL_NO_ERROR;
 }

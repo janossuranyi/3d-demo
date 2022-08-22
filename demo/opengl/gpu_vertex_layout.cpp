@@ -28,17 +28,33 @@ VertexLayout& VertexLayout::with(unsigned int index, unsigned int size, eDataTyp
     return *this;
 }
 
+VertexLayout& VertexLayout::with(unsigned int index, unsigned int size, eDataType type, bool normalized, unsigned int offset, unsigned int stride, GpuBuffer* target)
+{
+    glEnableVertexAttribArray(index);
+    if (m_lastBuffer != target)
+    {
+        m_lastBuffer = target;
+        target->bind();
+    }
+    glVertexAttribPointer(index, size, GL_castDataType(type), normalized, stride, (const void*)offset);
+    ++m_numAttribs;
+
+    return *this;
+}
+
 void VertexLayout::end() const
 {
     GL_CHECK(glBindVertexArray(0));
     for (int i = 0; i < m_numAttribs; ++i)
     {
-        glDisableVertexAttribArray(i);
+        GL_CHECK(glDisableVertexAttribArray(i));
     }
 }
 
 void VertexLayout::bind() const
 {
     if (m_vao)
+    {
         GL_CHECK(glBindVertexArray(m_vao));
+    }
 }

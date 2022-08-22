@@ -49,28 +49,33 @@ public:
 
 	struct {
 		glm::vec4 v_position;
+		glm::vec4 v_target;
 		glm::vec4 v_direction;
 		glm::vec4 v_up;
-		float f_clipnear;
-		float f_clipfar;
-		float f_fov;
+		glm::vec4 v_near_far_fov;
 	} g_cam{};
 
 	struct {
 		glm::mat4 m_W;
 		glm::mat4 m_V;
 		glm::mat4 m_P;
+		glm::mat4 m_Normal;
+
 		glm::mat4 m_WV;
 		glm::mat4 m_VP;
 		glm::mat4 m_WVP;
-		glm::mat4 m_iW;
-		glm::mat4 m_iV;
+
 		glm::mat4 m_iP;
-		glm::mat4 m_iWV;
 		glm::mat4 m_iVP;
-		glm::mat4 m_iWVP;
-		glm::mat4 m_Normal;
 	} g_mtx{};
+
+	struct {
+		glm::vec4 v_highFreq[32];
+	} cb_highFreq;
+
+	struct {
+		glm::vec4 v_lowFreq[32];
+	} cb_lowFreq;
 
 private:
 

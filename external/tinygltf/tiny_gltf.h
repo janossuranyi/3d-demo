@@ -2487,12 +2487,15 @@ bool WriteImageData(const std::string *basepath, const std::string *filename,
     }
     header = "data:image/png;base64,";
   } else if (ext == "jpg") {
+      return false;
+    /*
     if (!stbi_write_jpg_to_func(WriteToMemory_stbi, &data, image->width,
                                 image->height, image->component,
                                 &image->image[0], 100)) {
       return false;
     }
     header = "data:image/jpeg;base64,";
+   */
   } else if (ext == "bmp") {
     if (!stbi_write_bmp_to_func(WriteToMemory_stbi, &data, image->width,
                                 image->height, image->component,

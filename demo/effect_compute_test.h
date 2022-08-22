@@ -18,6 +18,11 @@ struct ComputeTestEffect : public Effect
 	virtual bool HandleEvent(const SDL_Event* ev) override;
 	virtual void Render() override;
 
+	struct cbvars_t {
+		float angle;
+	} *cb_vars;
+
+	GpuBuffer cbo;
 	GpuBuffer vbo_rect;
 	GpuProgram prg_compute;
 	GpuProgram prg_view;
@@ -37,13 +42,15 @@ struct ComputeTestEffect : public Effect
 
 	ComputeTestEffect() :
 		vbo_rect(eGpuBufferTarget::VERTEX),
+		cbo(eGpuBufferTarget::UNIFORM),
 		prg_compute(),
 		prg_view(),
 		angle(0.0f),
 		u_angle(-1),
 		syncObj(),
 		tex0_(),
-		layout()
+		layout(),
+		cb_vars()
 	{}
 
 	~ComputeTestEffect() noexcept;

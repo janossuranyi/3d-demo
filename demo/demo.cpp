@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <GL/glew.h>
 #include <string>
+#include <map>
 #include <memory>
 #include "demo.h"
 #include "logger.h"
@@ -9,6 +10,7 @@
 #include "effect_compute_test.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
+#include "mesh.h"
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -20,7 +22,6 @@ bool V_Init(int w, int h, int multisample, bool fullscreen);
 void V_Shutdown();
 
 const char* BASE_DIR = "d:/src/3d-demo-git/";
-
 
 static bool V_Init(int w, int h, int multisample, bool fullscreen)
 {
@@ -172,7 +173,7 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<PointCubeEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<ComputeTestEffect>();
 
     if (!activeEffect->Init())
         return;
@@ -240,7 +241,12 @@ int main(int argc, char** argv)
 {
     g_fileSystem.set_working_dir(BASE_DIR);
 
+//    Mesh3D mesh;
+//    mesh.loadFromGLTF(g_fileSystem.resolve("assets/cube.gltf").c_str(), 0, 0);
+
+
     Info("V_Init Start");
+
     if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 0, FULLSCREEN))
     {
         Info("V_Init Done");

@@ -31,7 +31,12 @@ bool ComputeTestEffect::Init()
         return false;
     }
 
-    u_angle = prg_compute.getLocation("angle");
+    //u_angle = prg_compute.getLocation("angle");
+    prg_compute.bindUniformBlock("cb_vars", 0);
+    cbo.create(128, eGpuBufferUsage::DYNAMIC, nullptr);
+    cbo.bindIndexed(0);
+    cb_vars = reinterpret_cast<cbvars_t*>(cbo.mapPersistent(eGpuBufferAccess::MAP_WRITEONLY));
+    cb_vars->angle = 0.0f;
 
     if (!prg_view.loadShader(
         g_fileSystem.resolve("assets/shaders/test_compute.vs.glsl"),
@@ -45,7 +50,8 @@ bool ComputeTestEffect::Init()
 
 bool ComputeTestEffect::Update(float time)
 {
-    angle += 0.1f * time;
+    //angle += 0.1f * time;
+    cb_vars->angle += 0.1f * time;
 
     return true;
 }
@@ -60,7 +66,7 @@ void ComputeTestEffect::Render()
     if (syncObj) GL_CHECK( glDeleteSync(syncObj) );
 
     prg_compute.use();
-    GL_CHECK(glUniform1f(u_angle, angle ));
+    //GL_CHECK(glUniform1f(u_angle, angle ));
 
     GL_CHECK(glDispatchCompute(tex_w, tex_h, 1));
     GL_CHECK(glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT));
@@ -74,4 +80,5 @@ void ComputeTestEffect::Render()
 
 ComputeTestEffect::~ComputeTestEffect() noexcept
 {
+    cbo.unMap();
 }

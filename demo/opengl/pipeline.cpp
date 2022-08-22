@@ -21,9 +21,7 @@ Pipeline::Pipeline()
 	g_cam.v_direction = glm::normalize(glm::vec4(0,0,0,1) - g_cam.v_position);
 	g_cam.v_direction.w = 0.0f;
 	g_cam.v_up = glm::vec4(0, 1, 0, 0);
-	g_cam.f_fov = 45.0f;
-	g_cam.f_clipnear = 0.01f;
-	g_cam.f_clipfar = 100.0;
+	g_cam.v_near_far_fov = glm::vec4(0.01, 100.0, 45.0f, 0.0f);
 
 	m_activeArrayBuffer = 0;
 	m_activeElementBuffer = 0;
@@ -469,13 +467,13 @@ void Pipeline::update(float time)
 {
 	g_misc.f_time = time;
 
-	if (g_cam.f_fov == 0.0f)
+	if (g_cam.v_near_far_fov.z == 0.0f)
 	{
-		g_mtx.m_P = glm::ortho(-(g_misc.i_screen_x / 2.0f), (g_misc.i_screen_x / 2.0f), (g_misc.i_screen_y / 2.0f), -(g_misc.i_screen_y / 2.0f), g_cam.f_clipnear, g_cam.f_clipfar);
+		g_mtx.m_P = glm::ortho(-(g_misc.i_screen_x / 2.0f), (g_misc.i_screen_x / 2.0f), (g_misc.i_screen_y / 2.0f), -(g_misc.i_screen_y / 2.0f), g_cam.v_near_far_fov.x, g_cam.v_near_far_fov.y);
 	}
 	else
 	{
-		g_mtx.m_P = glm::perspective(g_cam.f_fov, float(g_misc.i_screen_x) / float(g_misc.i_screen_y), g_cam.f_clipnear, g_cam.f_clipfar);
+		g_mtx.m_P = glm::perspective(g_cam.v_near_far_fov.z, float(g_misc.i_screen_x) / float(g_misc.i_screen_y), g_cam.v_near_far_fov.x, g_cam.v_near_far_fov.y);
 	}
 
 	g_mtx.m_V = glm::lookAt(glm::vec3(g_cam.v_position), glm::vec3(g_cam.v_position + g_cam.v_direction), glm::vec3(g_cam.v_up));
@@ -492,14 +490,10 @@ void Pipeline::update(float time)
 	g_mtx.m_WVP = g_mtx.m_P * g_mtx.m_V * g_mtx.m_W;
 	g_mtx.m_WV = g_mtx.m_V * g_mtx.m_W;
 
-	g_mtx.m_iW = glm::inverse(g_mtx.m_W);
 	g_mtx.m_iP = glm::inverse(g_mtx.m_P);
-	g_mtx.m_iV = glm::inverse(g_mtx.m_V);
 	g_mtx.m_iVP = glm::inverse(g_mtx.m_VP);
-	g_mtx.m_iWV = glm::inverse(g_mtx.m_WV);
-	g_mtx.m_iWVP = glm::inverse(g_mtx.m_WVP);
 
 	//Normal = mat3(transpose(inverse(model))) * aNormal;
-	g_mtx.m_Normal = glm::mat4(glm::mat3(glm::transpose(g_mtx.m_iW)));
+	g_mtx.m_Normal = glm::mat4(glm::mat3(glm::transpose(glm::inverse(g_mtx.m_W))));
 
 }
