@@ -165,6 +165,34 @@ GLenum GL_castDrawMode(eDrawMode p)
     }
 }
 
+GLbitfield GL_castBufferAccessFlags(unsigned int pAccess)
+{
+    GLbitfield access{};
+
+    if (pAccess & BA_MAP_READ)
+    {
+        access |= GL_MAP_READ_BIT;
+    }
+    if (pAccess & BA_MAP_WRITE)
+    {
+        access |= GL_MAP_WRITE_BIT;
+    }
+    if (pAccess & BA_MAP_COHERENT)
+    {
+        access |= GL_MAP_COHERENT_BIT;
+    }
+    if (pAccess & BA_MAP_PERSISTENT)
+    {
+        access |= GL_MAP_PERSISTENT_BIT;
+    }
+    if (!(pAccess & BA_MAP_PERSISTENT))
+    {
+        access &= ~GL_MAP_UNSYNCHRONIZED_BIT;
+    }
+
+    return access;
+}
+
 const char* GetShaderStageTitle(eShaderStage type)
 {
     switch (type)

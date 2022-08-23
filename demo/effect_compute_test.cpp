@@ -16,7 +16,7 @@ bool ComputeTestEffect::Init()
     tex0_.withDefaultLinearClampEdge().updateParameters();
     tex0_.bindImage(0, 0, eImageAccess::WRITE_ONLY, eImageFormat::RGBA8);
 
-    vbo_rect.create(sizeof(UNIT_RECT_WITH_ST), eGpuBufferUsage::STATIC, UNIT_RECT_WITH_ST);
+    vbo_rect.create(sizeof(UNIT_RECT_WITH_ST), eGpuBufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
 
     layout.begin()
         .with(0, 2, eDataType::FLOAT, false, 0, 0)
@@ -33,9 +33,11 @@ bool ComputeTestEffect::Init()
 
     //u_angle = prg_compute.getLocation("angle");
     prg_compute.bindUniformBlock("cb_vars", 0);
-    cbo.create(128, eGpuBufferUsage::DYNAMIC, nullptr);
+    cbo.create(128, eGpuBufferUsage::DYNAMIC, BA_MAP_WRITE|BA_MAP_PERSISTENT|BA_MAP_COHERENT, nullptr);
     cbo.bindIndexed(0);
-    cb_vars = reinterpret_cast<cbvars_t*>(cbo.mapPersistent(eGpuBufferAccess::MAP_WRITEONLY));
+    cb_vars = reinterpret_cast<cbvars_t*>(cbo.map(BA_MAP_WRITE));
+
+    angle = 0.0f;
     cb_vars->angle = 0.0f;
 
     if (!prg_view.loadShader(
@@ -50,8 +52,8 @@ bool ComputeTestEffect::Init()
 
 bool ComputeTestEffect::Update(float time)
 {
-    //angle += 0.1f * time;
-    cb_vars->angle += 0.1f * time;
+    angle += 0.1f * time;
+    cb_vars->angle = angle;
 
     return true;
 }

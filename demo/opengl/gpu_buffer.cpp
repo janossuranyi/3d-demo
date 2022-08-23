@@ -78,27 +78,12 @@ uint8_t* GpuBuffer::map(eGpuBufferAccess pAccess)
 	
 	const GLenum target = GL_CastBufferType(mTarget);
 
-	GLbitfield access;
-	switch (pAccess)
-	{
-	case eGpuBufferAccess::MAP_READONLY:
-		access = GL_MAP_READ_BIT;
-		break;
-	case eGpuBufferAccess::MAP_WRITEONLY:
-		access = GL_MAP_WRITE_BIT;
-		break;
-	case eGpuBufferAccess::MAP_READWRITE:
-		access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
-		break;
-	default:
-		access = GL_MAP_WRITE_BIT;
-	}
-
-
+	const GLbitfield access = GL_castBufferAccessFlags(pAccess);
+		
 	uint8_t* ptr = nullptr;
 
 	GL_CHECK(glBindBuffer(target, mBuffer));
-	GL_CHECK(ptr = static_cast<uint8_t*>(glMapBufferRange(target, 0, mSize, access | GL_MAP_UNSYNCHRONIZED_BIT)));
+	GL_CHECK(ptr = static_cast<uint8_t*>(glMapBufferRange(target, 0, mSize, access)));
 	GL_CHECK(glBindBuffer(target, 0));
 
 	if (ptr)
@@ -115,57 +100,7 @@ uint8_t* GpuBuffer::map(eGpuBufferAccess pAccess)
 	return ptr;
 }
 
-uint8_t* GpuBuffer::mapPersistent(eGpuBufferAccess pAccess)
-{
-	assert(mIsMapped == false);
-	assert(mBuffer != INVALID_BUFFER);
-	assert(mIsReference == false);
-
-	if (mTarget != eGpuBufferTarget::UNIFORM) return nullptr;
-
-	const GLenum target = GL_CastBufferType(mTarget);
-
-	GLbitfield access;
-	switch (pAccess)
-	{
-	case eGpuBufferAccess::MAP_READONLY:
-		access = GL_MAP_READ_BIT;
-		break;
-	case eGpuBufferAccess::MAP_WRITEONLY:
-		access = GL_MAP_WRITE_BIT;
-		break;
-	case eGpuBufferAccess::MAP_READWRITE:
-		access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
-		break;
-	default:
-		access = GL_MAP_WRITE_BIT;
-	}
-
-
-	uint8_t* ptr = nullptr;
-
-	GL_CHECK(glBindBuffer(target, mBuffer));
-	GL_CHECK(ptr = static_cast<uint8_t*>(glMapBufferRange(target, 0, mSize, access | GL_MAP_COHERENT_BIT | GL_MAP_PERSISTENT_BIT)));
-	GL_CHECK(glBindBuffer(target, 0));
-
-	if (ptr)
-	{
-		mMapPtr = ptr;
-		mIsMapped = true;
-		Info("Buffer %d, type: %d mapped.", mBuffer, mTarget);
-	}
-	else
-	{
-		Info("Buffer %d, type: %d map failed!.", mBuffer, mTarget);
-	}
-
-	return ptr;
-
-
-
-}
-
-bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, const void* bytes)
+bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, unsigned int accessFlags, const void* bytes)
 {
 	assert(mBuffer == INVALID_BUFFER);
 	assert(mIsReference == false);
@@ -177,6 +112,7 @@ bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, const void* bytes)
 	}
 
 	const GLenum target = GL_CastBufferType(mTarget);
+	const GLbitfield access = GL_castBufferAccessFlags(accessFlags);
 
 	GL_CHECK(glGenBuffers(1, &mBuffer));
 
@@ -195,9 +131,9 @@ bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, const void* bytes)
 	else size = (size + 15) & ~(15);
 
 	GL_CHECK(glBindBuffer(target, mBuffer));
-	if (mTarget == eGpuBufferTarget::UNIFORM)
+	if (access)
 	{
-		GL_CHECK(glBufferStorage(target, size, bytes, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
+		GL_CHECK(glBufferStorage(target, size, bytes, access));
 	}
 	else
 	{

@@ -30,7 +30,7 @@ GPU Buffer related types
 
 enum class eGpuBufferTarget { VERTEX, INDEX, UNIFORM, ENUM_SIZE };
 enum class eGpuBufferUsage { STATIC, DYNAMIC, DEFAULT };
-enum class eGpuBufferAccess { MAP_READONLY, MAP_WRITEONLY, MAP_READWRITE, DEFAULT_ACCESS };
+enum eGpuBufferAccess { BA_DYNAMIC = 1, BA_MAP_READ = 2, BA_MAP_WRITE = 4, BA_MAP_PERSISTENT = 8, BA_MAP_COHERENT = 16 };
 
 /*
 Drawing related types

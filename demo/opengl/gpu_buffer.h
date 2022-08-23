@@ -16,11 +16,10 @@ public:
 	GpuBuffer& operator=(GpuBuffer&) = delete;
 	void bind() const;
 	uint8_t* map(eGpuBufferAccess access);
-	uint8_t* mapPersistent(eGpuBufferAccess access);
 	void unMap();
 	bool isMapped() const;
 	bool isCreated() const;
-	bool create(uint32_t size, eGpuBufferUsage usage, const void* bytes = NULL);
+	bool create(uint32_t size, eGpuBufferUsage usage, unsigned int accesFlags, const void* bytes = NULL);
 	void reference(uint32_t offset, uint32_t size, GpuBuffer& ref);
 	bool isOwnBuffer() const;
 	void unBind() const;
@@ -49,7 +48,7 @@ inline GpuBuffer::GpuBuffer(eGpuBufferTarget const type)
 	mIsReference = false;
 	mMapPtr = NULL;
 	mUsage = eGpuBufferUsage::STATIC;
-	mAccess = eGpuBufferAccess::DEFAULT_ACCESS;
+	mAccess = BA_MAP_WRITE;
 }
 
 inline bool GpuBuffer::isMapped() const

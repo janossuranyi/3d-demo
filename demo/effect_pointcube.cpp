@@ -97,9 +97,9 @@ bool PointCubeEffect::Init()
 	
 
 	const GLsizeiptr bufSize = sizeof(VertexLayout) * NUMPOINTS;
-	vbo_points.create(bufSize, eGpuBufferUsage::STATIC);
+	vbo_points.create(bufSize, eGpuBufferUsage::STATIC, 0);
 
-	uint8_t *ptr = vbo_points.map(eGpuBufferAccess::MAP_WRITEONLY);
+	uint8_t *ptr = vbo_points.map(BA_MAP_WRITE);
 	VertexLayout* buffer = reinterpret_cast<VertexLayout*>(ptr);
 
 	Info("VertexBuffer: allocated %d bytes, mapped at %p", (int)bufSize, buffer);
@@ -124,9 +124,9 @@ bool PointCubeEffect::Init()
 	vbo_points.unMap();
 
 
-	vbo_pp.create(6 * sizeof(PPLayout), eGpuBufferUsage::STATIC, UNIT_RECT_WITH_ST);
+	vbo_pp.create(6 * sizeof(PPLayout), eGpuBufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
 
-	vbo_skybox.create(sizeof(UNIT_BOX_POSITIONS), eGpuBufferUsage::STATIC, UNIT_BOX_POSITIONS);
+	vbo_skybox.create(sizeof(UNIT_BOX_POSITIONS), eGpuBufferUsage::STATIC, 0, UNIT_BOX_POSITIONS);
 
 	if (!prgPoints.loadShader(g_fileSystem.resolve("assets/shaders/draw_point.vs.glsl"), g_fileSystem.resolve("assets/shaders/draw_point.fs.glsl")))
 	{
