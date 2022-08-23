@@ -19,12 +19,11 @@ bool ComputeTestEffect::Init()
     vbo_rect.create(sizeof(UNIT_RECT_WITH_ST), eGpuBufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
 
     layout.begin()
-        .with(0, 2, eDataType::FLOAT, false, 0, 0)
-        .with(1, 2, eDataType::FLOAT, false, 8, 0)
+        .with(0, 2, eDataType::FLOAT, false, 0, sizeof(vertexLayout_t), &vbo_rect)
+        .with(1, 2, eDataType::FLOAT, false, 8, sizeof(vertexLayout_t), &vbo_rect)
         .end();
 
     layout.bind();
-    vbo_rect.bindVertexBuffer(0, 0, sizeof(vertexLayout_t));
 
     if (!prg_compute.loadComputeShader(g_fileSystem.resolve("assets/shaders/test_compute.cs.glsl")))
     {
