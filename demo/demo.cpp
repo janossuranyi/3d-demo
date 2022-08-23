@@ -185,7 +185,7 @@ void App_EventLoop()
     while (running)
     {
         float now = SDL_GetTicks();
-        float time = prev - now;
+        float time = now - prev;
         prev = now;
 
         running = activeEffect->Update(time);
