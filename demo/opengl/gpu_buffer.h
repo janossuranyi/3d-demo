@@ -15,7 +15,8 @@ public:
 	GpuBuffer(const GpuBuffer&) = delete;
 	GpuBuffer& operator=(GpuBuffer&) = delete;
 	void bind() const;
-	uint8_t* map(eGpuBufferAccess access);
+	uint8_t* map(unsigned int access);
+	uint8_t* mapPeristentWrite();
 	void unMap();
 	bool isMapped() const;
 	bool isCreated() const;

@@ -70,7 +70,7 @@ void GpuBuffer::unMap()
 
 }
 
-uint8_t* GpuBuffer::map(eGpuBufferAccess pAccess)
+uint8_t* GpuBuffer::map(unsigned int pAccess)
 {
 	assert(mIsMapped == false);
 	assert(mBuffer != INVALID_BUFFER);
@@ -98,6 +98,11 @@ uint8_t* GpuBuffer::map(eGpuBufferAccess pAccess)
 	}
 
 	return ptr;
+}
+
+uint8_t* GpuBuffer::mapPeristentWrite()
+{
+	return map(BA_MAP_WRITE | BA_MAP_PERSISTENT | BA_MAP_COHERENT);
 }
 
 bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, unsigned int accessFlags, const void* bytes)

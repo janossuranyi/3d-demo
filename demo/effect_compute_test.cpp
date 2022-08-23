@@ -32,9 +32,9 @@ bool ComputeTestEffect::Init()
 
     //u_angle = prg_compute.getLocation("angle");
     prg_compute.bindUniformBlock("cb_vars", 0);
-    cbo.create(128, eGpuBufferUsage::DYNAMIC, BA_MAP_WRITE|BA_MAP_PERSISTENT|BA_MAP_COHERENT, nullptr);
+    cbo.create(128, eGpuBufferUsage::DYNAMIC, BA_MAP_WRITE | BA_MAP_PERSISTENT | BA_MAP_COHERENT, nullptr);
     cbo.bindIndexed(0);
-    cb_vars = reinterpret_cast<cbvars_t*>(cbo.map(BA_MAP_WRITE));
+    cb_vars = reinterpret_cast<cbvars_t*>(cbo.mapPeristentWrite());
 
     angle = 0.0f;
     cb_vars->angle = 0.0f;
