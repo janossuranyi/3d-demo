@@ -4,6 +4,7 @@
 #include "filesystem.h"
 #include "unit_rect.h"
 #include "gpu_utils.h"
+#include "logger.h"
 
 bool ComputeTestEffect::Init()
 {
@@ -29,6 +30,10 @@ bool ComputeTestEffect::Init()
     {
         return false;
     }
+
+    GLint glint{};
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &glint);
+    Info("GL_MAX_UNIFORM_BLOCK_SIZE = %d", glint);
 
     //u_angle = prg_compute.getLocation("angle");
     prg_compute.bindUniformBlock("cb_vars", 0);
