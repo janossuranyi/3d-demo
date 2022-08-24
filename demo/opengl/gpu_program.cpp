@@ -169,6 +169,7 @@ bool GpuProgram::createComputeProgramFromShaderSource(const std::vector<const ch
 		}
 	}
 
+	m_bComputeShader = true;
 	return true;
 
 }
@@ -268,6 +269,12 @@ void GpuProgram::use() const
 {
 	assert(mProgId != 0xFFFF);
 	GL_CHECK(glUseProgram(mProgId));
+}
+void GpuProgram::dispatchCompute(unsigned int x, unsigned int y, unsigned int z) const
+{
+	assert(mProgId != 0xFFFF);
+	assert(m_bComputeShader == true);
+	GL_CHECK(glDispatchCompute(x, y, z));
 }
 void GpuProgram::destroy()
 {

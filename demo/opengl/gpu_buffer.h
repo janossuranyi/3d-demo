@@ -35,7 +35,7 @@ private:
 	uint32_t mOffset;
 	eGpuBufferTarget mTarget;
 	eGpuBufferUsage mUsage;
-	eGpuBufferAccess mAccess;
+	GLbitfield mAccess;
 
 };
 

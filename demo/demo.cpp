@@ -241,6 +241,13 @@ int main(int argc, char** argv)
 {
     g_fileSystem.set_working_dir(BASE_DIR);
 
+    uint64_t c;
+    const uint64_t a = 1ULL << 15;
+    const uint64_t b = 2ULL << 15;
+    c = a | b;
+    Info("c = %d", b);
+    exit(0);
+
 //    Mesh3D mesh;
 //    mesh.loadFromGLTF(g_fileSystem.resolve("assets/cube.gltf").c_str(), 0, 0);
 

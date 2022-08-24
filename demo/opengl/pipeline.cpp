@@ -8,8 +8,10 @@
 Pipeline::Pipeline()
 {
 	g_misc.f_time = SDL_static_cast(float, SDL_GetTicks64());
-	g_misc.i_screen_x = 1920;
-	g_misc.i_screen_y = 1080;
+	g_misc.i_screen_w = 1920;
+	g_misc.i_screen_h = 1080;
+	g_misc.i_screen_x = 0;
+	g_misc.i_screen_y = 0;
 
 	g_sun.v_position = glm::vec4(5, 5, -5, 1);
 	g_sun.v_direction = glm::normalize(glm::vec4(0,0,0,1) - g_sun.v_position);
@@ -56,9 +58,9 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 	//
 	// culling
 	//
-	if (diff & (GLS_CULL_BITS))//| GLS_MIRROR_VIEW ) )
+	if (diff & (GLS_CULL_MASK))//| GLS_MIRROR_VIEW ) )
 	{
-		switch (stateBits & GLS_CULL_BITS)
+		switch (stateBits & GLS_CULL_MASK)
 		{
 		case GLS_CULL_TWOSIDED:
 			glDisable(GL_CULL_FACE);
@@ -70,7 +72,6 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 			break;
 
 		case GLS_CULL_FRONTSIDED:
-		default:
 			glEnable(GL_CULL_FACE);
 			glCullFace(GL_FRONT);
 			break;
@@ -409,17 +410,30 @@ void Pipeline::setWorldQuaternionRotation(const glm::quat& v)
 	m_worldRotation = v;
 }
 
-void Pipeline::setScreenRect(unsigned width, unsigned height)
+void Pipeline::setScreenRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h)
 {
-	g_misc.i_screen_x = width;
-	g_misc.i_screen_y = height;
+	g_misc.i_screen_w = w;
+	g_misc.i_screen_h = h;
+	g_misc.i_screen_x = x;
+	g_misc.i_screen_y = y;
+	glViewport(GLint(x), GLint(y), GLsizei(w), GLsizei(h));
 }
 
-void Pipeline::bindVertexBuffer(GpuBuffer& b, int index)
+void Pipeline::bindVertexBuffer(GpuBuffer& b, int index, uint32_t offset, uint32_t stride)
 {
 	if (index > -1)
 	{
+		assert(index < MAX_VERTEX_ARRAY_BINDING);
 
+		if (m_activeVertexArrayBinding[index].buffer != b.mBuffer
+			|| m_activeVertexArrayBinding[index].stride != stride
+			|| m_activeVertexArrayBinding[index].offset != offset)
+		{
+			b.bindVertexBuffer(index, offset, stride);
+			m_activeVertexArrayBinding[index].buffer = b.mBuffer;
+			m_activeVertexArrayBinding[index].offset = offset;
+			m_activeVertexArrayBinding[index].stride = stride;
+		}
 	}
 	else
 	{
@@ -438,6 +452,10 @@ void Pipeline::bindIndexBuffer(GpuBuffer& b)
 		b.bind();
 		m_activeElementBuffer = b.mBuffer;
 	}
+}
+
+void Pipeline::bindUniformBuffer(GpuBuffer& b, int index, uint32_t offset, uint32_t size)
+{
 }
 
 void Pipeline::drawArrays(eDrawMode mode, int first, uint32_t count)
