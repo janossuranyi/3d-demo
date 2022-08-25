@@ -102,7 +102,7 @@ uint8_t* GpuBuffer::map(unsigned int pAccess)
 
 uint8_t* GpuBuffer::mapPeristentWrite()
 {
-	return map(BA_MAP_WRITE | BA_MAP_PERSISTENT | BA_MAP_COHERENT);
+	return map((BA_MAP_WRITE | BA_MAP_PERSISTENT | BA_MAP_COHERENT) & mAccess);
 }
 
 bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, unsigned int accessFlags, const void* bytes)
@@ -145,6 +145,7 @@ bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, unsigned int access
 		GL_CHECK(glBufferData(target, size, bytes, bu));
 	}
 	mSize = size;
+	mAccess = accessFlags;
 
 	Info("Buffer %d, type: %d allocated, size: %d bytes.", mBuffer, mTarget, size);
 	

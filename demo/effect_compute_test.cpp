@@ -36,8 +36,16 @@ bool ComputeTestEffect::Init()
     Info("GL_MAX_UNIFORM_BLOCK_SIZE = %d", glint);
 
     //u_angle = prg_compute.getLocation("angle");
+    if (!prg_compute.mapLocationToIndex("fa", 0))
+    {
+        return false;
+    }
+
+    fa = 0.7f;
+    prg_compute.use();
+    prg_compute.set(0, fa);
     prg_compute.bindUniformBlock("cb_vars", 0);
-    cbo.create(128, eGpuBufferUsage::DYNAMIC, BA_MAP_WRITE | BA_MAP_PERSISTENT | BA_MAP_COHERENT, nullptr);
+    cbo.create(128, eGpuBufferUsage::DYNAMIC, BA_WRITE_PERSISTENT, nullptr);
     cbo.bindIndexed(0);
     cb_vars = reinterpret_cast<cbvars_t*>(cbo.mapPeristentWrite());
 
@@ -59,6 +67,8 @@ bool ComputeTestEffect::Update(float time)
     angle += 0.1f * time;
     cb_vars->angle = angle;
 
+    GL_CHECK(glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT));
+
     return true;
 }
 
@@ -72,9 +82,8 @@ void ComputeTestEffect::Render()
     if (syncObj) GL_CHECK( glDeleteSync(syncObj) );
 
     prg_compute.use();
-    //GL_CHECK(glUniform1f(u_angle, angle ));
+    prg_compute.dispatchCompute(tex_w, tex_h, 1);
 
-    GL_CHECK(glDispatchCompute(tex_w, tex_h, 1));
     GL_CHECK(glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT));
     GL_CHECK(syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
     GL_CHECK(glWaitSync(syncObj, 0, GL_TIMEOUT_IGNORED));

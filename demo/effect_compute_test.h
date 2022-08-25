@@ -33,6 +33,7 @@ struct ComputeTestEffect : public Effect
 	float angle;
 	GLint u_angle;
 	GLsync syncObj;
+	float fa;
 
 	struct vertexLayout_t
 	{
@@ -41,6 +42,7 @@ struct ComputeTestEffect : public Effect
 	};
 
 	ComputeTestEffect() :
+		fa(),
 		vbo_rect(eGpuBufferTarget::VERTEX),
 		cbo(eGpuBufferTarget::UNIFORM),
 		prg_compute(),

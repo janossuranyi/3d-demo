@@ -185,6 +185,10 @@ GLbitfield GL_castBufferAccessFlags(unsigned int pAccess)
     {
         access |= GL_MAP_PERSISTENT_BIT;
     }
+    if (pAccess & BA_DYNAMIC)
+    {
+        access |= GL_DYNAMIC_STORAGE_BIT;
+    }
     if (!(pAccess & BA_MAP_PERSISTENT))
     {
         access &= ~GL_MAP_UNSYNCHRONIZED_BIT;

@@ -1,4 +1,6 @@
 #include <SDL.h>
+#include <cstring>
+#include <cassert>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -8,8 +10,10 @@
 Pipeline::Pipeline()
 {
 	g_misc.f_time = SDL_static_cast(float, SDL_GetTicks64());
-	g_misc.i_screen_x = 1920;
-	g_misc.i_screen_y = 1080;
+	g_misc.i_screen_w = 1920;
+	g_misc.i_screen_h = 1080;
+	g_misc.i_screen_x = 0;
+	g_misc.i_screen_y = 0;
 
 	g_sun.v_position = glm::vec4(5, 5, -5, 1);
 	g_sun.v_direction = glm::normalize(glm::vec4(0,0,0,1) - g_sun.v_position);
@@ -27,6 +31,7 @@ Pipeline::Pipeline()
 	m_activeElementBuffer = 0;
 	m_activeVertexArray = 0;
 	m_activeFrameBuffer = 0;
+	m_activeProgram = 0;
 	_polyOfsBias = 0.0f;
 	_polyOfsScale = 0.0f;
 
@@ -37,6 +42,25 @@ Pipeline::Pipeline()
 	}
 }
 
+
+void Pipeline::setConstantBuffer(int name, GpuBuffer* buffer)
+{
+	switch (name)
+	{
+	case CB_MATRIX:
+		m_mtxBuffer = buffer;
+		break;
+	case CB_CAMERA:
+		m_camBuffer = buffer;
+		break;
+	case CB_SUN:
+		m_sunBuffer = buffer;
+		break;
+	case CB_MISC:
+		m_miscBuffer = buffer;
+		break;
+	}
+}
 
 void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 {
@@ -56,9 +80,9 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 	//
 	// culling
 	//
-	if (diff & (GLS_CULL_BITS))//| GLS_MIRROR_VIEW ) )
+	if (diff & (GLS_CULL_MASK))//| GLS_MIRROR_VIEW ) )
 	{
-		switch (stateBits & GLS_CULL_BITS)
+		switch (stateBits & GLS_CULL_MASK)
 		{
 		case GLS_CULL_TWOSIDED:
 			glDisable(GL_CULL_FACE);
@@ -70,7 +94,6 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 			break;
 
 		case GLS_CULL_FRONTSIDED:
-		default:
 			glEnable(GL_CULL_FACE);
 			glCullFace(GL_FRONT);
 			break;
@@ -409,17 +432,39 @@ void Pipeline::setWorldQuaternionRotation(const glm::quat& v)
 	m_worldRotation = v;
 }
 
-void Pipeline::setScreenRect(unsigned width, unsigned height)
+void Pipeline::setScreenRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h)
 {
-	g_misc.i_screen_x = width;
-	g_misc.i_screen_y = height;
+	g_misc.i_screen_w = w;
+	g_misc.i_screen_h = h;
+	g_misc.i_screen_x = x;
+	g_misc.i_screen_y = y;
+	glViewport(GLint(x), GLint(y), GLsizei(w), GLsizei(h));
 }
 
-void Pipeline::bindVertexBuffer(GpuBuffer& b, int index)
+void Pipeline::useProgram(GpuProgram& prog)
+{
+	if (m_activeProgram != prog.mProgId)
+	{
+		prog.use();
+		m_activeProgram = prog.mProgId;
+	}
+}
+
+void Pipeline::bindVertexBuffer(GpuBuffer& b, int index, uint32_t offset, uint32_t stride)
 {
 	if (index > -1)
 	{
+		assert(index < MAX_BUFFER_BINDING);
 
+		if (m_activeVertexArrayBinding[index].buffer != b.mBuffer
+			|| m_activeVertexArrayBinding[index].stride != stride
+			|| m_activeVertexArrayBinding[index].offset != offset)
+		{
+			b.bindVertexBuffer(index, offset, stride);
+			m_activeVertexArrayBinding[index].buffer = b.mBuffer;
+			m_activeVertexArrayBinding[index].offset = offset;
+			m_activeVertexArrayBinding[index].stride = stride;
+		}
 	}
 	else
 	{
@@ -437,6 +482,19 @@ void Pipeline::bindIndexBuffer(GpuBuffer& b)
 	{
 		b.bind();
 		m_activeElementBuffer = b.mBuffer;
+	}
+}
+
+void Pipeline::bindUniformBuffer(GpuBuffer& b, int index, uint32_t offset, uint32_t size)
+{
+	if (m_activeUniformBinding[index].buffer != b.mBuffer
+		|| m_activeUniformBinding[index].size != size
+		|| m_activeUniformBinding[index].offset != offset)
+	{
+		b.bindIndexed(index, offset, size);
+		m_activeUniformBinding[index].buffer = b.mBuffer;
+		m_activeUniformBinding[index].offset = offset;
+		m_activeUniformBinding[index].size = size;
 	}
 }
 
@@ -461,6 +519,36 @@ void Pipeline::drawElements(eDrawMode mode, uint32_t count, eDataType type, uint
 	const GLenum type_ = GL_castDataType(type);
 
 	GL_CHECK(glDrawElementsBaseVertex(mode_, count, type_, reinterpret_cast<void*>(offset), baseVertex));
+}
+
+void Pipeline::bindTexture(GpuTexture& tex, int unit)
+{
+	if (m_tmus[unit].target != tex.getApiTarget() || m_tmus[unit].texId != tex.mTexture)
+	{
+		tex.bind(unit);
+		m_tmus[unit].target = tex.getApiTarget();
+		m_tmus[unit].texId = tex.mTexture;
+	}
+}
+
+#define INIT_CB(a,b) if (b)\
+{\
+	bindUniformBuffer(*b, a);\
+	if (!b->isMapped()) b->mapPeristentWrite();\
+}
+
+void Pipeline::init()
+{
+	INIT_CB(CB_MATRIX,	m_mtxBuffer)
+	INIT_CB(CB_MISC,	m_miscBuffer)
+	INIT_CB(CB_SUN,		m_sunBuffer)
+	INIT_CB(CB_CAMERA,	m_camBuffer)
+}
+
+#define UPDATE_CB(a,b) if (a) \
+{\
+	assert(a->isMapped());\
+	::memcpy(a->mappedAddress(), &b, sizeof(b));\
 }
 
 void Pipeline::update(float time)
@@ -495,5 +583,10 @@ void Pipeline::update(float time)
 
 	//Normal = mat3(transpose(inverse(model))) * aNormal;
 	g_mtx.m_Normal = glm::mat4(glm::mat3(glm::transpose(glm::inverse(g_mtx.m_W))));
+
+	UPDATE_CB(m_mtxBuffer, g_mtx)
+	UPDATE_CB(m_miscBuffer, g_misc)
+	UPDATE_CB(m_camBuffer, g_cam)
+	UPDATE_CB(m_sunBuffer, g_sun)
 
 }
