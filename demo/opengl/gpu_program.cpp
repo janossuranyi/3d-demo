@@ -15,20 +15,20 @@
 
 GpuProgram::GpuProgram()
 {
-	mProgId = 0xffff;
+	mProgId = 0;
 }
 
-GpuProgram& GpuProgram::operator=(GpuProgram&& moved)
+GpuProgram& GpuProgram::operator=(GpuProgram&& moved) noexcept
 {
 	mProgId = moved.mProgId;
-	moved.mProgId = 0xFFFF;
+	moved.mProgId = 0;
 
 	return *this;
 }
-GpuProgram::GpuProgram(GpuProgram&& moved)
+GpuProgram::GpuProgram(GpuProgram&& moved) noexcept
 {
 	mProgId = moved.mProgId;
-	moved.mProgId = 0xFFFF;
+	moved.mProgId = 0;
 }
 GpuProgram::~GpuProgram()
 {
@@ -133,7 +133,7 @@ bool GpuProgram::createProgramFromShaderSource(const std::vector<const char*>& v
 }
 bool GpuProgram::createComputeProgramFromShaderSource(const std::vector<const char*>& sources)
 {
-	if (mProgId != 0xFFFF)
+	if (mProgId != 0)
 	{
 		GL_CHECK(glDeleteProgram(mProgId));
 	}
@@ -272,16 +272,16 @@ void GpuProgram::use() const
 }
 void GpuProgram::dispatchCompute(unsigned int x, unsigned int y, unsigned int z) const
 {
-	assert(mProgId != 0xFFFF);
+	assert(mProgId != 0);
 	assert(m_bComputeShader == true);
 	GL_CHECK(glDispatchCompute(x, y, z));
 }
 void GpuProgram::destroy()
 {
-	if (mProgId != 0xFFFF)
+	if (mProgId != 0)
 	{
 		GL_CHECK(glDeleteProgram(mProgId));
-		mProgId = 0xFFFF;
+		mProgId = 0;
 	}
 }
 bool GpuProgram::compileSingleStage(GLuint shaderId, eShaderStage type)

@@ -9,13 +9,14 @@
 
 class GpuProgram
 {
+	friend class Pipeline;
 public:
 
 	GpuProgram();
 	GpuProgram(GpuProgram& copied) = delete;
 	GpuProgram& operator=(GpuProgram&) = delete;
-	GpuProgram& operator=(GpuProgram&&);
-	GpuProgram(GpuProgram&& moved);
+	GpuProgram& operator=(GpuProgram&&) noexcept;
+	GpuProgram(GpuProgram&& moved) noexcept;
 	~GpuProgram();
 
 	bool bindUniformBlock(const std::string& name, int index);

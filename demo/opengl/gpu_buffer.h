@@ -17,6 +17,7 @@ public:
 	void bind() const;
 	uint8_t* map(unsigned int access);
 	uint8_t* mapPeristentWrite();
+	uint8_t* mappedAddress() const { return mMapPtr; }
 	void unMap();
 	bool isMapped() const;
 	bool isCreated() const;

@@ -11,9 +11,16 @@
 #include "gpu_utils.h"
 #include "gpu_state.h"
 #include "gpu_buffer.h"
+#include "gpu_texture.h"
+#include "gpu_program.h"
 
 #define MAX_TEXTURE_UNITS 15
-#define MAX_VERTEX_ARRAY_BINDING 32
+#define MAX_BUFFER_BINDING 32
+
+const int CB_MATRIX = 1;
+const int CB_CAMERA = 2;
+const int CB_SUN = 3;
+const int CB_MISC = 4;
 
 class Pipeline
 {
@@ -21,6 +28,7 @@ public:
 	Pipeline();
 	~Pipeline() = default;
 
+	void setConstantBuffer(int name, GpuBuffer* buffer);
 	void setState(uint64_t stateBits, bool forceGlState);
 	void setWorldPosition(const glm::vec3& v);
 	void setWorldScale(const glm::vec3& v);
@@ -28,13 +36,16 @@ public:
 	void setWorldQuaternionRotation(const glm::quat& v);
 	void setScreenRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
+	void useProgram(GpuProgram& prog);
 	void bindVertexBuffer(GpuBuffer& b, int index = -1, uint32_t offset = 0, uint32_t stride = 0);
 	void bindIndexBuffer(GpuBuffer& b);
 	void bindUniformBuffer(GpuBuffer& b, int index, uint32_t offset = 0, uint32_t size = 0);
 	void drawArrays(eDrawMode mode, int first, uint32_t count);
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset);
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset, uint32_t baseVertex);
+	void bindTexture(GpuTexture& tex, int unit);
 
+	void init();
 	void update(float time);
 
 	struct {
@@ -43,14 +54,14 @@ public:
 		int i_screen_h;
 		int i_screen_x;
 		int i_screen_y;
-	} g_misc{};
+	} g_misc;
 
 	struct {
 		glm::vec4 v_position;
 		glm::vec4 v_direction;
 		glm::vec4 v_color;
 		float f_intensity;
-	} g_sun{};
+	} g_sun;
 
 	struct {
 		glm::vec4 v_position;
@@ -58,7 +69,7 @@ public:
 		glm::vec4 v_direction;
 		glm::vec4 v_up;
 		glm::vec4 v_near_far_fov;
-	} g_cam{};
+	} g_cam;
 
 	struct {
 		glm::mat4 m_W;
@@ -72,20 +83,23 @@ public:
 
 		glm::mat4 m_iP;
 		glm::mat4 m_iVP;
-	} g_mtx{};
+	} g_mtx;
 
 	struct {
-		glm::vec4 v_highFreq[32];
+		glm::vec4 v_highFreq[16];
 	} cb_highFreq;
 
 	struct {
-		glm::vec4 v_lowFreq[32];
+		glm::vec4 v_lowFreq[16];
 	} cb_lowFreq;
 
 	struct indexedBufferBinding_t {
 		GLuint buffer;
 		uint32_t offset;
-		uint32_t stride;
+		union {
+			uint32_t stride;
+			uint32_t size;
+		};
 	};
 private:
 
@@ -101,9 +115,15 @@ private:
 	GLuint m_activeElementBuffer;
 	GLuint m_activeVertexArray;
 	GLuint m_activeFrameBuffer;
+	GLuint m_activeProgram;
 
-	std::array<indexedBufferBinding_t, MAX_VERTEX_ARRAY_BINDING> m_activeVertexArrayBinding;
-	std::array<indexedBufferBinding_t, MAX_VERTEX_ARRAY_BINDING> m_activeUniformArrayBinding;
+	std::array<indexedBufferBinding_t, MAX_BUFFER_BINDING> m_activeVertexArrayBinding;
+	std::array<indexedBufferBinding_t, MAX_BUFFER_BINDING> m_activeUniformBinding;
+
+	GpuBuffer* m_mtxBuffer;
+	GpuBuffer* m_camBuffer;
+	GpuBuffer* m_sunBuffer;
+	GpuBuffer* m_miscBuffer;
 
 	glm::vec3 m_worldPosition;
 	glm::vec3 m_worldScale;
