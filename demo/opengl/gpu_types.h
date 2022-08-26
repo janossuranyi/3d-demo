@@ -1,7 +1,11 @@
 #pragma once
 
-#define INVALID_BUFFER 0xFFFF
-#define INVALID_TEXTURE 0xFFFF
+#define INVALID_BUFFER 0
+#define INVALID_TEXTURE 0
+
+#define UNIFORM_BUFFER_ALIGN 127
+#define INDEX_BUFFER_ALIGN 15
+#define VERTEX_BUFFER_ALIGN 31
 
 /*
 GPU related data types

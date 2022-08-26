@@ -47,6 +47,7 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
         m_IndexType = mesh.getIndexType();
     }
     m_Mode = mesh.getDrawMode();
+    mesh.getBounds(m_Min, m_Max);
 
     m_bCompiled = true;
 }

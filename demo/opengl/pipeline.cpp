@@ -40,6 +40,29 @@ Pipeline::Pipeline()
 		m_tmus[i].target = 0;
 		m_tmus[i].texId = 0;
 	}
+
+	m_camBuffer = new GpuBuffer(eGpuBufferTarget::UNIFORM);
+	m_sunBuffer = new GpuBuffer(eGpuBufferTarget::UNIFORM);
+	m_miscBuffer = new GpuBuffer(eGpuBufferTarget::UNIFORM);
+	m_mtxBuffer = new GpuBuffer(eGpuBufferTarget::UNIFORM);
+
+#define CREATE_CB_BUFFER(p,t) p->create(sizeof(t), eGpuBufferUsage::DYNAMIC, BA_WRITE_PERSISTENT_COHERENT, &t)
+
+	CREATE_CB_BUFFER(m_camBuffer, g_cam);
+	CREATE_CB_BUFFER(m_mtxBuffer, g_mtx);
+	CREATE_CB_BUFFER(m_miscBuffer, g_misc);
+	CREATE_CB_BUFFER(m_sunBuffer, g_sun);
+
+	init();
+
+}
+
+Pipeline::~Pipeline()
+{
+	delete m_camBuffer;
+	delete m_mtxBuffer;
+	delete m_miscBuffer;
+	delete m_sunBuffer;
 }
 
 
@@ -409,11 +432,13 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 void Pipeline::setWorldPosition(const glm::vec3& v)
 {
 	m_worldPosition = v;
+	m_bChangeWVP = true;
 }
 
 void Pipeline::setWorldScale(const glm::vec3& v)
 {
 	m_worldScale = v;
+	m_bChangeWVP = true;
 }
 
 void Pipeline::setWorldEulerRotation(const glm::vec3& v)
@@ -425,11 +450,13 @@ void Pipeline::setWorldEulerRotation(const glm::vec3& v)
 	const auto q_z = glm::angleAxis(v.z, glm::vec3(0, 0, 1));
 
 	m_worldRotation = q_z * q_y * q_x;
+	m_bChangeWVP = true;
 }
 
 void Pipeline::setWorldQuaternionRotation(const glm::quat& v)
 {
 	m_worldRotation = v;
+	m_bChangeWVP = true;
 }
 
 void Pipeline::setScreenRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h)
@@ -439,6 +466,7 @@ void Pipeline::setScreenRect(unsigned int x, unsigned int y, unsigned int w, uns
 	g_misc.i_screen_x = x;
 	g_misc.i_screen_y = y;
 	glViewport(GLint(x), GLint(y), GLsizei(w), GLsizei(h));
+	m_bChangeView = true;
 }
 
 void Pipeline::useProgram(GpuProgram& prog)
@@ -539,10 +567,10 @@ void Pipeline::bindTexture(GpuTexture& tex, int unit)
 
 void Pipeline::init()
 {
-	INIT_CB(CB_MATRIX,	m_mtxBuffer)
-	INIT_CB(CB_MISC,	m_miscBuffer)
-	INIT_CB(CB_SUN,		m_sunBuffer)
-	INIT_CB(CB_CAMERA,	m_camBuffer)
+	INIT_CB(CB_MATRIX, m_mtxBuffer);
+	INIT_CB(CB_MISC, m_miscBuffer);
+	INIT_CB(CB_SUN, m_sunBuffer);
+	INIT_CB(CB_CAMERA, m_camBuffer);
 }
 
 #define UPDATE_CB(a,b) if (a) \
@@ -553,40 +581,57 @@ void Pipeline::init()
 
 void Pipeline::update(float time)
 {
+	g_misc_t* misc = reinterpret_cast<g_misc_t*>(m_miscBuffer->mappedAddress());
+
 	g_misc.f_time = time;
+	misc->f_time = time;
 
-	if (g_cam.v_near_far_fov.z == 0.0f)
+	if (m_bChangeWVP)
 	{
-		g_mtx.m_P = glm::ortho(-(g_misc.i_screen_x / 2.0f), (g_misc.i_screen_x / 2.0f), (g_misc.i_screen_y / 2.0f), -(g_misc.i_screen_y / 2.0f), g_cam.v_near_far_fov.x, g_cam.v_near_far_fov.y);
+		if (g_cam.v_near_far_fov.z == 0.0f)
+		{
+			g_mtx.m_P = glm::ortho(-(g_misc.i_screen_x / 2.0f), (g_misc.i_screen_x / 2.0f), (g_misc.i_screen_y / 2.0f), -(g_misc.i_screen_y / 2.0f), g_cam.v_near_far_fov.x, g_cam.v_near_far_fov.y);
+		}
+		else
+		{
+			g_mtx.m_P = glm::perspective(g_cam.v_near_far_fov.z, float(g_misc.i_screen_x) / float(g_misc.i_screen_y), g_cam.v_near_far_fov.x, g_cam.v_near_far_fov.y);
+		}
+
+		g_mtx.m_V = glm::lookAt(glm::vec3(g_cam.v_position), glm::vec3(g_cam.v_position + g_cam.v_direction), glm::vec3(g_cam.v_up));
+
+		g_mtx.m_VP = g_mtx.m_P * g_mtx.m_V;
+
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, m_worldPosition);
+		trans = trans * glm::mat4(m_worldRotation);
+		trans = glm::scale(trans, m_worldScale);
+		g_mtx.m_W = trans;
+
+		g_mtx.m_VP = g_mtx.m_P * g_mtx.m_V;
+		g_mtx.m_WVP = g_mtx.m_P * g_mtx.m_V * g_mtx.m_W;
+		g_mtx.m_WV = g_mtx.m_V * g_mtx.m_W;
+
+		g_mtx.m_iP = glm::inverse(g_mtx.m_P);
+		g_mtx.m_iVP = glm::inverse(g_mtx.m_VP);
+
+		//Normal = mat3(transpose(inverse(model))) * aNormal;
+		g_mtx.m_Normal = glm::mat4(glm::mat3(glm::transpose(glm::inverse(g_mtx.m_W))));
+
+		UPDATE_CB(m_mtxBuffer, g_mtx);
+		UPDATE_CB(m_camBuffer, g_cam);
+
+		m_bChangeWVP = false;
 	}
-	else
+
+	if (m_bChangeView)
 	{
-		g_mtx.m_P = glm::perspective(g_cam.v_near_far_fov.z, float(g_misc.i_screen_x) / float(g_misc.i_screen_y), g_cam.v_near_far_fov.x, g_cam.v_near_far_fov.y);
+		UPDATE_CB(m_miscBuffer, g_misc);
+		m_bChangeView = false;
 	}
-
-	g_mtx.m_V = glm::lookAt(glm::vec3(g_cam.v_position), glm::vec3(g_cam.v_position + g_cam.v_direction), glm::vec3(g_cam.v_up));
-
-	g_mtx.m_VP = g_mtx.m_P * g_mtx.m_V;
-	
-	glm::mat4 trans = glm::mat4(1.0f);
-	trans = glm::translate(trans, m_worldPosition);
-	trans = trans * glm::mat4(m_worldRotation);
-	trans = glm::scale(trans, m_worldScale);
-	g_mtx.m_W = trans;
-	
-	g_mtx.m_VP = g_mtx.m_P * g_mtx.m_V;
-	g_mtx.m_WVP = g_mtx.m_P * g_mtx.m_V * g_mtx.m_W;
-	g_mtx.m_WV = g_mtx.m_V * g_mtx.m_W;
-
-	g_mtx.m_iP = glm::inverse(g_mtx.m_P);
-	g_mtx.m_iVP = glm::inverse(g_mtx.m_VP);
-
-	//Normal = mat3(transpose(inverse(model))) * aNormal;
-	g_mtx.m_Normal = glm::mat4(glm::mat3(glm::transpose(glm::inverse(g_mtx.m_W))));
-
-	UPDATE_CB(m_mtxBuffer, g_mtx)
-	UPDATE_CB(m_miscBuffer, g_misc)
-	UPDATE_CB(m_camBuffer, g_cam)
-	UPDATE_CB(m_sunBuffer, g_sun)
+	if (m_bChangeSun)
+	{
+		UPDATE_CB(m_sunBuffer, g_sun);
+		m_bChangeSun = false;
+	}
 
 }

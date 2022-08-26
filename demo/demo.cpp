@@ -8,6 +8,7 @@
 #include "filesystem.h"
 #include "effect_pointcube.h"
 #include "effect_compute_test.h"
+#include "effect_model_loading.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
 #include "mesh.h"
@@ -21,7 +22,7 @@ VideoConfig videoConf;
 bool V_Init(int w, int h, int multisample, bool fullscreen);
 void V_Shutdown();
 
-const char* BASE_DIR = "d:/src/3d-demo-git/";
+const char* BASE_DIR = "d:/src/3d-demo/";
 
 static bool V_Init(int w, int h, int multisample, bool fullscreen)
 {
@@ -173,7 +174,7 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<ComputeTestEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<LoadModelEffect>();
 
     if (!activeEffect->Init())
         return;

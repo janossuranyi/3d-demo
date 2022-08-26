@@ -132,18 +132,35 @@ bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, unsigned int access
 		break;
 	}
 
-	if (mTarget == eGpuBufferTarget::VERTEX) size = (size + 15) & ~(15);
-	else size = (size + 15) & ~(15);
+	uint32_t real_size = size;
+	if (mTarget == eGpuBufferTarget::VERTEX)
+	{
+		real_size = (size + VERTEX_BUFFER_ALIGN) & ~(VERTEX_BUFFER_ALIGN);
+	}
+	else if (mTarget == eGpuBufferTarget::UNIFORM)
+	{
+		real_size = (size + UNIFORM_BUFFER_ALIGN) & ~(UNIFORM_BUFFER_ALIGN);
+	}
+	else
+	{
+		real_size = (size + INDEX_BUFFER_ALIGN) & ~(INDEX_BUFFER_ALIGN);
+	}
 
 	GL_CHECK(glBindBuffer(target, mBuffer));
 	if (access)
 	{
-		GL_CHECK(glBufferStorage(target, size, bytes, access));
+		GL_CHECK(glBufferStorage(target, real_size, nullptr, access));
 	}
 	else
 	{
-		GL_CHECK(glBufferData(target, size, bytes, bu));
+		GL_CHECK(glBufferData(target, real_size, nullptr, bu));
 	}
+
+	if (bytes)
+	{
+		glBufferSubData(target, 0, size, bytes);
+	}
+
 	mSize = size;
 	mAccess = accessFlags;
 

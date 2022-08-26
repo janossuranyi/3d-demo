@@ -50,7 +50,7 @@ public:
 	const VertexAttribute& getNormalLayout() const { return m_Normal_layout; }
 	const VertexAttribute& getTangentLayout() const { return m_Tangent_layout; }
 	const VertexAttribute& getColorLayout() const { return m_Color_layout; }
-	void getBounds(glm::vec3& min, glm::vec3& max)
+	void getBounds(glm::vec3& min, glm::vec3& max) const
 	{
 		min.x = m_Bounds[0].x;
 		min.y = m_Bounds[0].y;

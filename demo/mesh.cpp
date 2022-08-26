@@ -54,7 +54,7 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
         if (p.first == "POSITION")
         {
             // allocate position memory
-            VertexAttribute attr{ "POSITION", eDataType::FLOAT, 3, access.count, false, 0, 0, 0 };
+            VertexAttribute attr{ "POSITION", eDataType::FLOAT, 3, access.count, false, 0, 0, 0, view.byteLength };
             m_Position_layout = attr;
             m_Positions = Mem_Alloc16(view.byteLength);
             ::memcpy(m_Positions, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);

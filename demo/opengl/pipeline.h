@@ -26,9 +26,8 @@ class Pipeline
 {
 public:
 	Pipeline();
-	~Pipeline() = default;
+	~Pipeline();
 
-	void setConstantBuffer(int name, GpuBuffer* buffer);
 	void setState(uint64_t stateBits, bool forceGlState);
 	void setWorldPosition(const glm::vec3& v);
 	void setWorldScale(const glm::vec3& v);
@@ -45,10 +44,9 @@ public:
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset, uint32_t baseVertex);
 	void bindTexture(GpuTexture& tex, int unit);
 
-	void init();
 	void update(float time);
 
-	struct {
+	 struct alignas(16) g_misc_t {
 		float f_time;
 		int i_screen_w;
 		int i_screen_h;
@@ -56,14 +54,14 @@ public:
 		int i_screen_y;
 	} g_misc;
 
-	struct {
+	struct alignas(16) g_sun_t {
 		glm::vec4 v_position;
 		glm::vec4 v_direction;
 		glm::vec4 v_color;
 		float f_intensity;
 	} g_sun;
 
-	struct {
+	struct alignas(16) g_cam_t {
 		glm::vec4 v_position;
 		glm::vec4 v_target;
 		glm::vec4 v_direction;
@@ -71,7 +69,7 @@ public:
 		glm::vec4 v_near_far_fov;
 	} g_cam;
 
-	struct {
+	struct alignas(16) g_mtx_t {
 		glm::mat4 m_W;
 		glm::mat4 m_V;
 		glm::mat4 m_P;
@@ -85,11 +83,11 @@ public:
 		glm::mat4 m_iVP;
 	} g_mtx;
 
-	struct {
+	struct alignas(16) {
 		glm::vec4 v_highFreq[16];
 	} cb_highFreq;
 
-	struct {
+	struct alignas(16) {
 		glm::vec4 v_lowFreq[16];
 	} cb_lowFreq;
 
@@ -104,29 +102,37 @@ public:
 private:
 
 	GLfloat _polyOfsScale, _polyOfsBias;
-	GLuint64 m_glStateBits;
+	GLuint64 m_glStateBits{};
 
 	struct tmu_t {
 		GLuint texId;
 		GLuint target;
 	} m_tmus[MAX_TEXTURE_UNITS];
 
-	GLuint m_activeArrayBuffer;
-	GLuint m_activeElementBuffer;
-	GLuint m_activeVertexArray;
-	GLuint m_activeFrameBuffer;
-	GLuint m_activeProgram;
+	GLuint m_activeArrayBuffer{};
+	GLuint m_activeElementBuffer{};
+	GLuint m_activeVertexArray{};
+	GLuint m_activeFrameBuffer{};
+	GLuint m_activeProgram{};
 
-	std::array<indexedBufferBinding_t, MAX_BUFFER_BINDING> m_activeVertexArrayBinding;
-	std::array<indexedBufferBinding_t, MAX_BUFFER_BINDING> m_activeUniformBinding;
+	std::array<indexedBufferBinding_t, MAX_BUFFER_BINDING> m_activeVertexArrayBinding{};
+	std::array<indexedBufferBinding_t, MAX_BUFFER_BINDING> m_activeUniformBinding{};
 
 	GpuBuffer* m_mtxBuffer;
 	GpuBuffer* m_camBuffer;
 	GpuBuffer* m_sunBuffer;
 	GpuBuffer* m_miscBuffer;
 
-	glm::vec3 m_worldPosition;
-	glm::vec3 m_worldScale;
-	glm::quat m_worldRotation;
-	glm::vec3 m_worldEulerAngles;
+	glm::vec3 m_worldPosition{};
+	glm::vec3 m_worldScale{};
+	glm::quat m_worldRotation{};
+	glm::vec3 m_worldEulerAngles{};
+
+	bool m_bChangeWVP{};
+	bool m_bChangeView{};
+	bool m_bChangeSun{};
+
+	void setConstantBuffer(int name, GpuBuffer* buffer);
+	void init();
+
 };
