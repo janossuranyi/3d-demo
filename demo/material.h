@@ -1,25 +1,9 @@
 #pragma once
+#include <string>
 
-struct Material {
-	enum class Type { PBR_METALLIC_ROUGHNESS, PBR_SPECULAR_GLOSSINESS };
-	enum class AlphaMode { OPAQUE, MASK, BLEND };
-
-	struct Texture {
-		int index;
-		int texCoord;
-	};
-
-	const char* name;
-	Type type;
-
-	union {
-		pbrMetallicRoughness_t pbrMetallicRoughness;
-		pbrSpecularGlossiness_t pbrSpecularGlossiness;
-	};
-
-	AlphaMode alphaMode;
-	float alphaCutoff;
-	bool doubleSided;
+struct Texture {
+	int index;
+	int texCoord;
 };
 
 /*
@@ -51,11 +35,11 @@ struct pbrMetallicRoughness_t {
 	float metallicFactor;
 	float roughnessFactor;
 	float emissiveFactor[3];
-	Material::Texture baseColorTexture;
-	Material::Texture metallicRoughnessTexture;
-	Material::Texture normalTexture;
-	Material::Texture emissiveTexture;
-	Material::Texture occlusionTexture;
+	Texture baseColorTexture;
+	Texture metallicRoughnessTexture;
+	Texture normalTexture;
+	Texture emissiveTexture;
+	Texture occlusionTexture;
 
 };
 
@@ -76,9 +60,37 @@ struct pbrSpecularGlossiness_t {
 	float specularFactor[3];
 	float emissiveFactor[3];
 	float glossinessFactor;
-	Material::Texture diffuseTexture;
-	Material::Texture specularGlossinessTexture;
-	Material::Texture normalTexture;
-	Material::Texture emissiveTexture;
-	Material::Texture occlusionTexture;
+	Texture diffuseTexture;
+	Texture specularGlossinessTexture;
+	Texture normalTexture;
+	Texture emissiveTexture;
+	Texture occlusionTexture;
 };
+
+struct Material {
+	enum Type { PBR_METALLIC_ROUGHNESS, PBR_SPECULAR_GLOSSINESS };
+	enum AlphaMode { ALPHA_MODE_OPAQUE, ALPHA_MODE_MASK, ALPHA_MODE_BLEND };
+
+	Material() :
+		id(-1),
+		name("noname"),
+		type(PBR_METALLIC_ROUGHNESS),
+		alphaMode(ALPHA_MODE_OPAQUE),
+		alphaCutoff(0.0f),
+		pbrMetallicRoughness(),
+		doubleSided(false) {}
+
+	std::string name;
+	Type type;
+	int id;
+
+	union {
+		pbrMetallicRoughness_t pbrMetallicRoughness;
+		pbrSpecularGlossiness_t pbrSpecularGlossiness;
+	};
+
+	AlphaMode alphaMode;
+	float alphaCutoff;
+	bool doubleSided;
+};
+

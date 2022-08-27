@@ -11,6 +11,7 @@
 #include "effect_model_loading.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
+#include "world.h"
 #include "mesh.h"
 
 #define SCREEN_WIDTH 1440
@@ -238,13 +239,19 @@ void App_EventLoop()
     }
 }
 
+#include "light.h"
+
 int main(int argc, char** argv)
 {
     g_fileSystem.set_working_dir(BASE_DIR);
 
-//    Mesh3D mesh;
-//    mesh.loadFromGLTF(g_fileSystem.resolve("assets/cube.gltf").c_str(), 0, 0);
+    World w;
+    if (w.loadWorld(g_fileSystem.resolve("assets/Steampunk_Dirigible_with_Ship.glb")))
+    {
+        Info("success");
+    }
 
+    exit(0);
 
     Info("V_Init Start");
 

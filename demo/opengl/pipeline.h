@@ -13,6 +13,8 @@
 #include "gpu_buffer.h"
 #include "gpu_texture.h"
 #include "gpu_program.h"
+#include "camera.h"
+#include "light.h"
 
 #define MAX_TEXTURE_UNITS 15
 #define MAX_BUFFER_BINDING 32
@@ -29,10 +31,10 @@ public:
 	~Pipeline();
 
 	void setState(uint64_t stateBits, bool forceGlState);
-	void setWorldPosition(const glm::vec3& v);
-	void setWorldScale(const glm::vec3& v);
-	void setWorldEulerRotation(const glm::vec3& v);
-	void setWorldQuaternionRotation(const glm::quat& v);
+	void setWorldPosition(const float3& v);
+	void setWorldScale(const float3& v);
+	void setWorldEulerRotation(const float3& v);
+	void setWorldQuaternionRotation(const quat& v);
 	void setScreenRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
 	void useProgram(GpuProgram& prog);
@@ -47,48 +49,50 @@ public:
 	void update(float time);
 
 	 struct alignas(16) g_misc_t {
-		float f_time;
-		int i_screen_w;
-		int i_screen_h;
-		int i_screen_x;
-		int i_screen_y;
+		float time;
+		int screen_w;
+		int screen_h;
+		int screen_x;
+		int screen_y;
 	} g_misc;
 
 	struct alignas(16) g_sun_t {
-		glm::vec4 v_position;
-		glm::vec4 v_direction;
-		glm::vec4 v_color;
-		float f_intensity;
+		float4 position;
+		float4 direction;
+		float4 color;
 	} g_sun;
 
 	struct alignas(16) g_cam_t {
-		glm::vec4 v_position;
-		glm::vec4 v_target;
-		glm::vec4 v_direction;
-		glm::vec4 v_up;
-		glm::vec4 v_near_far_fov;
+		float4 position;
+		float4 target;
+		float4 direction;
+		float4 up;
+		float znear;
+		float zfar;
+		float yfov;
+		float ascept;
 	} g_cam;
 
 	struct alignas(16) g_mtx_t {
-		glm::mat4 m_W;
-		glm::mat4 m_V;
-		glm::mat4 m_P;
-		glm::mat4 m_Normal;
+		mat4 m_W;
+		mat4 m_V;
+		mat4 m_P;
+		mat4 m_Normal;
 
-		glm::mat4 m_WV;
-		glm::mat4 m_VP;
-		glm::mat4 m_WVP;
+		mat4 m_WV;
+		mat4 m_VP;
+		mat4 m_WVP;
 
-		glm::mat4 m_iP;
-		glm::mat4 m_iVP;
+		mat4 m_iP;
+		mat4 m_iVP;
 	} g_mtx;
 
 	struct alignas(16) {
-		glm::vec4 v_highFreq[16];
+		float4 v_highFreq[16];
 	} cb_highFreq;
 
 	struct alignas(16) {
-		glm::vec4 v_lowFreq[16];
+		float4 v_lowFreq[16];
 	} cb_lowFreq;
 
 	struct indexedBufferBinding_t {
@@ -123,10 +127,10 @@ private:
 	GpuBuffer* m_sunBuffer;
 	GpuBuffer* m_miscBuffer;
 
-	glm::vec3 m_worldPosition{};
-	glm::vec3 m_worldScale{};
-	glm::quat m_worldRotation{};
-	glm::vec3 m_worldEulerAngles{};
+	float3 m_worldPosition{};
+	float3 m_worldScale{};
+	quat m_worldRotation{};
+	float3 m_worldEulerAngles{};
 
 	bool m_bChangeWVP{};
 	bool m_bChangeView{};

@@ -5,27 +5,30 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "pipeline.h"
 
 Pipeline::Pipeline()
 {
-	g_misc.f_time = SDL_static_cast(float, SDL_GetTicks64());
-	g_misc.i_screen_w = 1920;
-	g_misc.i_screen_h = 1080;
-	g_misc.i_screen_x = 0;
-	g_misc.i_screen_y = 0;
+	g_misc.time = SDL_static_cast(float, SDL_GetTicks64());
+	g_misc.screen_w = 1920;
+	g_misc.screen_h = 1080;
+	g_misc.screen_x = 0;
+	g_misc.screen_y = 0;
 
-	g_sun.v_position = glm::vec4(5, 5, -5, 1);
-	g_sun.v_direction = glm::normalize(glm::vec4(0,0,0,1) - g_sun.v_position);
-	g_sun.v_direction.w = 0.0f;
-	g_sun.v_color = glm::vec4(1, 1, 1, 1);
-	g_sun.f_intensity = 5.0f;
+	g_sun.position = { 5, 5, -5, 1 };
+	g_sun.direction = glm::normalize(float4(0,0,0,1) - g_sun.position);
+	g_sun.direction.w = 0.0f;
+	g_sun.color = float4(1, 1, 1, 1);
 
-	g_cam.v_position = glm::vec4(0, 0, -5, 1);
-	g_cam.v_direction = glm::normalize(glm::vec4(0,0,0,1) - g_cam.v_position);
-	g_cam.v_direction.w = 0.0f;
-	g_cam.v_up = glm::vec4(0, 1, 0, 0);
-	g_cam.v_near_far_fov = glm::vec4(0.01, 100.0, 45.0f, 0.0f);
+	g_cam.position = glm::vec4(0, 0, -5, 1);
+	g_cam.direction = glm::normalize(float4(0,0,0,1) - g_cam.position);
+	g_cam.direction.w = 0.0f;
+	g_cam.up = glm::vec4(0, 1, 0, 0);
+	g_cam.znear = 0.01f;
+	g_cam.zfar = 100.0f;
+	g_cam.yfov = 45.0f;
+	g_cam.ascept = float(g_misc.screen_w) / g_misc.screen_h;
 
 	m_activeArrayBuffer = 0;
 	m_activeElementBuffer = 0;
@@ -429,19 +432,19 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 	m_glStateBits = stateBits;
 }
 
-void Pipeline::setWorldPosition(const glm::vec3& v)
+void Pipeline::setWorldPosition(const float3& v)
 {
 	m_worldPosition = v;
 	m_bChangeWVP = true;
 }
 
-void Pipeline::setWorldScale(const glm::vec3& v)
+void Pipeline::setWorldScale(const float3& v)
 {
 	m_worldScale = v;
 	m_bChangeWVP = true;
 }
 
-void Pipeline::setWorldEulerRotation(const glm::vec3& v)
+void Pipeline::setWorldEulerRotation(const float3& v)
 {
 	m_worldEulerAngles = v;
 
@@ -453,7 +456,7 @@ void Pipeline::setWorldEulerRotation(const glm::vec3& v)
 	m_bChangeWVP = true;
 }
 
-void Pipeline::setWorldQuaternionRotation(const glm::quat& v)
+void Pipeline::setWorldQuaternionRotation(const quat& v)
 {
 	m_worldRotation = v;
 	m_bChangeWVP = true;
@@ -461,10 +464,10 @@ void Pipeline::setWorldQuaternionRotation(const glm::quat& v)
 
 void Pipeline::setScreenRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h)
 {
-	g_misc.i_screen_w = w;
-	g_misc.i_screen_h = h;
-	g_misc.i_screen_x = x;
-	g_misc.i_screen_y = y;
+	g_misc.screen_w = w;
+	g_misc.screen_h = h;
+	g_misc.screen_x = x;
+	g_misc.screen_y = y;
 	glViewport(GLint(x), GLint(y), GLsizei(w), GLsizei(h));
 	m_bChangeView = true;
 }
@@ -583,27 +586,27 @@ void Pipeline::update(float time)
 {
 	g_misc_t* misc = reinterpret_cast<g_misc_t*>(m_miscBuffer->mappedAddress());
 
-	g_misc.f_time = time;
-	misc->f_time = time;
+	g_misc.time = time;
+	misc->time = time;
 
 	if (m_bChangeWVP)
 	{
-		if (g_cam.v_near_far_fov.z == 0.0f)
+		if (g_cam.yfov == 0.0f)
 		{
-			g_mtx.m_P = glm::ortho(-(g_misc.i_screen_x / 2.0f), (g_misc.i_screen_x / 2.0f), (g_misc.i_screen_y / 2.0f), -(g_misc.i_screen_y / 2.0f), g_cam.v_near_far_fov.x, g_cam.v_near_far_fov.y);
+			g_mtx.m_P = glm::ortho(-(g_misc.screen_x / 2.0f), (g_misc.screen_x / 2.0f), (g_misc.screen_y / 2.0f), -(g_misc.screen_y / 2.0f), g_cam.znear, g_cam.zfar);
 		}
 		else
 		{
-			g_mtx.m_P = glm::perspective(g_cam.v_near_far_fov.z, float(g_misc.i_screen_x) / float(g_misc.i_screen_y), g_cam.v_near_far_fov.x, g_cam.v_near_far_fov.y);
+			g_mtx.m_P = glm::perspective(g_cam.yfov, float(g_misc.screen_x) / float(g_misc.screen_y), g_cam.znear, g_cam.zfar);
 		}
 
-		g_mtx.m_V = glm::lookAt(glm::vec3(g_cam.v_position), glm::vec3(g_cam.v_position + g_cam.v_direction), glm::vec3(g_cam.v_up));
+		g_mtx.m_V = glm::lookAt(float3(g_cam.position), float3(g_cam.position + g_cam.direction), float3(g_cam.up));
 
 		g_mtx.m_VP = g_mtx.m_P * g_mtx.m_V;
 
-		glm::mat4 trans = glm::mat4(1.0f);
+		mat4 trans = mat4(1.0f);
 		trans = glm::translate(trans, m_worldPosition);
-		trans = trans * glm::mat4(m_worldRotation);
+		trans = trans * mat4(m_worldRotation);
 		trans = glm::scale(trans, m_worldScale);
 		g_mtx.m_W = trans;
 
@@ -615,7 +618,7 @@ void Pipeline::update(float time)
 		g_mtx.m_iVP = glm::inverse(g_mtx.m_VP);
 
 		//Normal = mat3(transpose(inverse(model))) * aNormal;
-		g_mtx.m_Normal = glm::mat4(glm::mat3(glm::transpose(glm::inverse(g_mtx.m_W))));
+		g_mtx.m_Normal = mat4(mat3(glm::transpose(glm::inverse(g_mtx.m_W))));
 
 		UPDATE_CB(m_mtxBuffer, g_mtx);
 		UPDATE_CB(m_camBuffer, g_cam);

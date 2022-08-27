@@ -3,10 +3,10 @@
 #include <memory>
 #include <vector>
 #include <cinttypes>
-#include <glm/glm.hpp>
 #include <tiny_gltf.h>
 #include "filesystem.h"
 #include "logger.h"
+#include "types.h"
 #include "gpu_types.h"
 #include "gpu_vertex_layout.h"
 #include "gpu_buffer.h"
@@ -14,6 +14,8 @@
 class Mesh3D
 {
 public:
+	using Ptr = std::shared_ptr<Mesh3D>;
+
 	Mesh3D() :
 		m_Positions(),
 		m_TexCoords(),
@@ -29,10 +31,11 @@ public:
 		m_IndexType(eDataType::UNSIGNED_SHORT),
 		m_NumIndex(),
 		m_Mode(),
+		m_id(-1),
 		m_Bounds() {}
 
-	using Ptr = std::shared_ptr<Mesh3D>;
-
+	int id() const { return m_id; }
+	void setId(int id) { m_id = id; }
 	bool loadFromGLTF(const char* filename, int meshIdx, int primitiveIdx);
 	bool importFromGLTF(const tinygltf::Model& model, const tinygltf::Primitive& meshPrimitive);
 
@@ -50,7 +53,7 @@ public:
 	const VertexAttribute& getNormalLayout() const { return m_Normal_layout; }
 	const VertexAttribute& getTangentLayout() const { return m_Tangent_layout; }
 	const VertexAttribute& getColorLayout() const { return m_Color_layout; }
-	void getBounds(glm::vec3& min, glm::vec3& max) const
+	void getBounds(vec3& min, vec3& max) const
 	{
 		min.x = m_Bounds[0].x;
 		min.y = m_Bounds[0].y;
@@ -61,6 +64,7 @@ public:
 	}
 private:
 
+	int m_id;
 	void* m_Positions;
 	void* m_TexCoords;
 	void* m_Normals;
@@ -88,7 +92,10 @@ private:
 class RenderMesh3D
 {
 public:
+	using Ptr = std::shared_ptr<RenderMesh3D>;
+
 	RenderMesh3D() :
+		m_Mode(eDrawMode::TRIANGLES),
 		m_PositionBuf(eGpuBufferTarget::VERTEX),
 		m_TexCoordBuf(eGpuBufferTarget::VERTEX),
 		m_NormalBuf(eGpuBufferTarget::VERTEX),
@@ -98,14 +105,20 @@ public:
 		m_bCompiled(),
 		m_NumIndex(),
 		m_IndexType(),
+		m_id(-1),
 		m_Min(),
 		m_Max() {}
 
 	void compile(const Mesh3D& mesh);
 	void render(Pipeline&) const;
 
-	inline bool isCompiled() const { return m_bCompiled; }
+	bool isCompiled() const;
+	int id() const;
+	void setId(int id);
+
 private:
+	int m_id;
+
 	GpuBuffer m_PositionBuf;
 	GpuBuffer m_TexCoordBuf;
 	GpuBuffer m_NormalBuf;
@@ -114,7 +127,7 @@ private:
 	GpuBuffer m_IndexBuf;
 
 	VertexLayout m_Layout;
-	glm::vec3 m_Min, m_Max;
+	float3 m_Min, m_Max;
 
 	unsigned int m_NumIndex;
 	eDataType m_IndexType;
@@ -123,3 +136,16 @@ private:
 	bool m_bCompiled;
 
 };
+
+inline int RenderMesh3D::id() const
+{
+	return m_id;
+}
+inline void RenderMesh3D::setId(int id)
+{
+	m_id = id;
+}
+inline bool RenderMesh3D::isCompiled() const
+{
+	return m_bCompiled;
+}

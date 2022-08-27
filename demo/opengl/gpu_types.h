@@ -7,6 +7,8 @@
 #define INDEX_BUFFER_ALIGN 15
 #define VERTEX_BUFFER_ALIGN 31
 
+#include <glm/glm.hpp>
+
 /*
 GPU related data types
 */
