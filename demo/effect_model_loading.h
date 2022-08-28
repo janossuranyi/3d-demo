@@ -3,7 +3,9 @@
 #include "effect.h"
 #include "pipeline.h"
 #include "gpu_buffer.h"
+#include "gpu_program.h"
 #include "mesh.h"
+#include "world.h"
 
 struct LoadModelEffect : public Effect
 {
@@ -17,7 +19,10 @@ struct LoadModelEffect : public Effect
 	virtual bool HandleEvent(const SDL_Event* ev) override;
 	virtual void Render() override;
 
+	World world;
 	Pipeline pipeline;
 	RenderMesh3D m_mesh;
+	GpuProgram shader;
+	float angleY{0.0f};
 
 };

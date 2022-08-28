@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <tiny_gltf.h>
 #include "light.h"
 #include "camera.h"
 #include "mesh.h"
@@ -26,11 +27,24 @@ public:
 	Entity3D& getEntity(int id);
 	Camera& getCamera(int id);
 	RenderMesh3D::Ptr getRenderMesh(int id);
+	void renderWorld(Pipeline& pipeline);
+
+	const std::vector<int>& root() const;
+
 private:
+
+	void renderWorldRecurs(int node, Pipeline& pipeline);
+	void createMeshEntity(tinygltf::Model& model, int node);
+	void createTransformEntity(tinygltf::Model& model, int node);
+	void createLightEntity(tinygltf::Model& model, int node, int light);
+	void createCameraEntity(tinygltf::Model& model, int node);
+	void setEntityTransform(Entity3D& ent, const tinygltf::Node& node);
+
 	std::vector<Light> m_lights;
 	std::vector<Camera> m_cameras;
 	std::vector<Mesh3D> m_meshes;
 	std::vector<RenderMesh3D::Ptr> m_renderMeshes;
 	std::vector<Entity3D> m_entities;
 	std::vector<Material> m_materials;
+	std::vector<int> m_root;
 };

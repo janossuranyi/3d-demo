@@ -116,12 +116,12 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 
 		case GLS_CULL_BACKSIDED:
 			glEnable(GL_CULL_FACE);
-			glCullFace(GL_BACK);
+			glCullFace(GL_FRONT);
 			break;
 
 		case GLS_CULL_FRONTSIDED:
 			glEnable(GL_CULL_FACE);
-			glCullFace(GL_FRONT);
+			glCullFace(GL_BACK);
 			break;
 		}
 	}
@@ -452,13 +452,19 @@ void Pipeline::setWorldEulerRotation(const float3& v)
 	const auto q_y = glm::angleAxis(v.y, glm::vec3(0, 1, 0));
 	const auto q_z = glm::angleAxis(v.z, glm::vec3(0, 0, 1));
 
-	m_worldRotation = q_z * q_y * q_x;
+	m_worldRotation = q_x * q_y * q_z;
 	m_bChangeWVP = true;
 }
 
 void Pipeline::setWorldQuaternionRotation(const quat& v)
 {
 	m_worldRotation = v;
+	m_bChangeWVP = true;
+}
+
+void Pipeline::setWorldMatrix(const mat4& worldMtx)
+{
+	g_mtx.m_W = worldMtx;
 	m_bChangeWVP = true;
 }
 
@@ -562,6 +568,22 @@ void Pipeline::bindTexture(GpuTexture& tex, int unit)
 	}
 }
 
+void Pipeline::setView(const vec3& pos, const vec3& target)
+{
+	g_cam.position = vec4(pos, 1.0f);
+	g_cam.target = vec4(target, 1.0f);
+	g_cam.direction = vec4(glm::normalize(target - pos), 0.0f);
+}
+
+void Pipeline::setPerspectiveCamera(float yfov, float znear, float zfar, float aspect)
+{
+	g_cam.ascept = (aspect > 0.0f ? aspect : float(g_misc.screen_w) / float(g_misc.screen_h));
+	g_cam.yfov = yfov;
+	g_cam.znear = znear;
+	g_cam.zfar = zfar;
+	g_cam.up = vec4(0, 1, 0, 0);
+}
+
 #define INIT_CB(a,b) if (b)\
 {\
 	bindUniformBuffer(*b, a);\
@@ -574,6 +596,8 @@ void Pipeline::init()
 	INIT_CB(CB_MISC, m_miscBuffer);
 	INIT_CB(CB_SUN, m_sunBuffer);
 	INIT_CB(CB_CAMERA, m_camBuffer);
+
+	glEnable(GL_DEPTH_TEST);
 }
 
 #define UPDATE_CB(a,b) if (a) \
@@ -582,12 +606,11 @@ void Pipeline::init()
 	::memcpy(a->mappedAddress(), &b, sizeof(b));\
 }
 
-void Pipeline::update(float time)
+void Pipeline::update()
 {
 	g_misc_t* misc = reinterpret_cast<g_misc_t*>(m_miscBuffer->mappedAddress());
 
-	g_misc.time = time;
-	misc->time = time;
+	misc->time = g_misc.time;
 
 	if (m_bChangeWVP)
 	{
@@ -597,18 +620,20 @@ void Pipeline::update(float time)
 		}
 		else
 		{
-			g_mtx.m_P = glm::perspective(g_cam.yfov, float(g_misc.screen_x) / float(g_misc.screen_y), g_cam.znear, g_cam.zfar);
+			g_mtx.m_P = glm::perspective(g_cam.yfov, g_cam.ascept, g_cam.znear, g_cam.zfar);
 		}
 
-		g_mtx.m_V = glm::lookAt(float3(g_cam.position), float3(g_cam.position + g_cam.direction), float3(g_cam.up));
+		g_mtx.m_V = glm::lookAt(float3(g_cam.position), float3(g_cam.target), float3(g_cam.up));
 
 		g_mtx.m_VP = g_mtx.m_P * g_mtx.m_V;
 
-		mat4 trans = mat4(1.0f);
+		
+		mat4 trans = g_mtx.m_W;
 		trans = glm::translate(trans, m_worldPosition);
 		trans = trans * mat4(m_worldRotation);
 		trans = glm::scale(trans, m_worldScale);
 		g_mtx.m_W = trans;
+		g_mtx.m_Normal = mat4(mat3(glm::transpose(glm::inverse(trans))));
 
 		g_mtx.m_VP = g_mtx.m_P * g_mtx.m_V;
 		g_mtx.m_WVP = g_mtx.m_P * g_mtx.m_V * g_mtx.m_W;
@@ -618,7 +643,6 @@ void Pipeline::update(float time)
 		g_mtx.m_iVP = glm::inverse(g_mtx.m_VP);
 
 		//Normal = mat3(transpose(inverse(model))) * aNormal;
-		g_mtx.m_Normal = mat4(mat3(glm::transpose(glm::inverse(g_mtx.m_W))));
 
 		UPDATE_CB(m_mtxBuffer, g_mtx);
 		UPDATE_CB(m_camBuffer, g_cam);
@@ -637,4 +661,20 @@ void Pipeline::update(float time)
 		m_bChangeSun = false;
 	}
 
+}
+
+void Pipeline::clear(bool color, bool depth, bool stencil)
+{
+	GLbitfield bits = 0;
+	if (color)		bits |= GL_COLOR_BUFFER_BIT;
+	if (depth)		bits |= GL_DEPTH_BUFFER_BIT;
+	if (stencil)	bits |= GL_STENCIL_BITS;
+
+	glClear(bits);
+}
+
+void Pipeline::bindConstantBuffers()
+{
+	bindUniformBuffer(*m_mtxBuffer, CB_MATRIX);
+	bindUniformBuffer(*m_camBuffer, CB_CAMERA);
 }

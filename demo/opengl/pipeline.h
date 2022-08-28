@@ -30,11 +30,12 @@ public:
 	Pipeline();
 	~Pipeline();
 
-	void setState(uint64_t stateBits, bool forceGlState);
+	void setState(uint64_t stateBits, bool forceGlState = false);
 	void setWorldPosition(const float3& v);
 	void setWorldScale(const float3& v);
 	void setWorldEulerRotation(const float3& v);
 	void setWorldQuaternionRotation(const quat& v);
+	void setWorldMatrix(const mat4& worldMtx);
 	void setScreenRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
 	void useProgram(GpuProgram& prog);
@@ -46,7 +47,12 @@ public:
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset, uint32_t baseVertex);
 	void bindTexture(GpuTexture& tex, int unit);
 
-	void update(float time);
+	void setView(const vec3& pos, const vec3& target);
+	void setPerspectiveCamera(float yfov, float znear, float zfar, float aspect);
+
+	void update();
+	void clear(bool color, bool depth, bool stencil);
+	void bindConstantBuffers();
 
 	 struct alignas(16) g_misc_t {
 		float time;

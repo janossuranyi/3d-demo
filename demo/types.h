@@ -14,3 +14,7 @@ typedef glm::vec4 vec4;
 typedef glm::mat3 mat3;
 typedef glm::mat4 mat4;
 typedef glm::quat quat;
+
+struct Entity {
+	virtual void updateParentChild() = 0;
+};

@@ -245,19 +245,13 @@ int main(int argc, char** argv)
 {
     g_fileSystem.set_working_dir(BASE_DIR);
 
-    World w;
-    if (w.loadWorld(g_fileSystem.resolve("assets/Steampunk_Dirigible_with_Ship.glb")))
-    {
-        Info("success");
-    }
-
-    exit(0);
-
     Info("V_Init Start");
 
     if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 0, FULLSCREEN))
     {
         Info("V_Init Done");
+
+
         App_EventLoop();
     }
 

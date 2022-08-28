@@ -29,7 +29,10 @@ layout(std140) uniform cb_camera
     vec4 cam_target;
     vec4 cam_direction;
     vec4 cam_up;
-    vec4 cam_near_far_fov;
+	float znear;
+	float zfar;
+	float yfov;
+	float ascept;    
 }
 
 layout(std140) uniform cb_lowFreq
