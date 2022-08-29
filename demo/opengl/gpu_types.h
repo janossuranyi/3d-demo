@@ -13,7 +13,7 @@
 GPU related data types
 */
 enum class eDataType { BYTE, UNSIGNED_BYTE, SHORT, UNSIGNED_SHORT, INT32, UNSIGNED_INT32, FLOAT, HALF_FLOAT, UNSIGNED_INT_24_8};
-enum class ePixelFormat { RGB, RGBA, RGB8, RGBA8, RGBA16 };
+enum class ePixelFormat { RGB, RGBA, RGB8, RGBA8, RGBA16, RGB16 };
 
 /*
 Texture related types

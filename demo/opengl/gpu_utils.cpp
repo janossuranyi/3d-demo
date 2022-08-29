@@ -45,6 +45,8 @@ GLenum GL_castPixelFormat(ePixelFormat pf)
         return GL_RGBA8;
     case PF::RGBA16:
         return GL_RGBA16;
+    case PF::RGB16:
+        return GL_RGB16;
     }
 }
 

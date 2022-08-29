@@ -2,6 +2,7 @@
 #include <cassert>
 #include <SOIL2.h>
 #include "logger.h"
+#include "filesystem.h"
 #include "gpu_utils.h"
 #include "gpu_texture.h"
 
@@ -167,6 +168,10 @@ bool GpuTexture2D::create(int w, int h, int level, eTextureFormat internalFormat
 
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D, level, texFormat, w, h, 0, pixFormat, dataType, (data ? data : nullptr)));
 
+    m_width = w;
+    m_height = h;
+    m_depth = 0;
+
     return true;
 }
 
@@ -187,8 +192,22 @@ bool GpuTexture2D::createFromImage(const std::string& fromFile, bool srgb, bool 
         flags |= SOIL_FLAG_SRGB_COLOR_SPACE;
     }
 
+
+    //texID = SOIL_load_OGL_texture(fromFile.c_str(), 0, texID, flags);
+    
     texID = SOIL_load_OGL_texture(fromFile.c_str(), 0, texID, flags);
-    if (texID) mTexture = texID;
+
+    if (texID) {
+        int width, height;
+        int miplevel = 0;
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_WIDTH, &width);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_HEIGHT, &height);
+
+        mTexture = texID;
+        m_width = width;
+        m_height = height;
+        m_depth = 0;
+    }
 
     return texID != 0;
 
@@ -212,8 +231,19 @@ bool GpuTexture2D::createFromMemory(const void* data, uint32_t bufLen, bool srgb
     }
 
     texID = SOIL_load_OGL_texture_from_memory((unsigned char*)data, bufLen, 0, texID, flags);
-    if (texID) mTexture = texID;
-    
+
+    if (texID) {
+        int width, height;
+        int miplevel = 0;
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_WIDTH, &width);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_HEIGHT, &height);
+
+        mTexture = texID;
+        m_width = width;
+        m_height = height;
+        m_depth = 0;
+    }
+
     return texID != 0;
 }
 

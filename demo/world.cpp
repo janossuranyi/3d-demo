@@ -165,14 +165,123 @@ bool World::loadWorld(const std::string& filename)
 		int texId = createTexture();
 		GpuTexture2D::Ptr texObj = m_textures[texId];
 
-		_TG Texture tex = model.textures[i];
-		const _TG Accessor access = model.accessors[tex.source];
-		const _TG BufferView view = model.bufferViews[access.bufferView];
+		const _TG Texture tex = model.textures[i];
+		const _TG Image image = model.images[tex.source];
+		const _TG Sampler sampler = model.samplers[tex.sampler];
+
+		const _TG BufferView view = model.bufferViews[image.bufferView];
 		const _TG Buffer buffer = model.buffers[view.buffer];
 
-		texObj->createFromMemory(buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);	
+		Info("=============================================================");
+		Info("image name      : %s", image.name.c_str());
+		Info("image w         : %d", image.width);
+		Info("image h         : %d", image.height);
+		Info("image bits      : %d", image.bits);
+		Info("image component : %d", image.component);
+		Info("image pixel_type: %d", image.pixel_type);
+		Info("image mimeType  : %s", image.mimeType.c_str());
+
+		ePixelFormat srcFormat = ePixelFormat::RGB;
+
+		if (image.bits == 8)
+		{
+			switch (image.component)
+			{
+			case 3: srcFormat = ePixelFormat::RGB;
+				break;
+			case 4: srcFormat = ePixelFormat::RGBA;
+				break;
+			}
+		}
+		else if (image.bits == 16)
+		{
+			switch (image.component)
+			{
+			case 3: srcFormat = ePixelFormat::RGB16;
+				break;
+			case 4: srcFormat = ePixelFormat::RGBA16;
+				break;
+			}
+		}
+
+		eDataType dataType = eDataType::UNSIGNED_BYTE;
+		switch (image.pixel_type)
+		{
+		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+			dataType = eDataType::UNSIGNED_BYTE;
+			break;
+		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+			dataType = eDataType::UNSIGNED_SHORT;
+			break;
+		case TINYGLTF_COMPONENT_TYPE_FLOAT:
+			dataType = eDataType::FLOAT;
+			break;
+		}
+
+		texObj->create(image.width, image.height, 0, eTextureFormat::RGBA, srcFormat, dataType, image.image.data());
+	}
+
+	for (int i = 0; i < model.materials.size(); ++i)
+	{
+		_TG Material mat = model.materials[i];
+		Material& m = m_materials.emplace_back();
+
+		if (mat.extensions.size())
+		{
+			for (auto ext : mat.extensions)
+			{
+				if (ext.first == "KHR_materials_pbrSpecularGlossiness")
+				{
+					m.type = Material::Type::PBR_SPECULAR_GLOSSINESS;
+					for (const auto& key : ext.second.Keys())
+					{
+						auto& val = ext.second.Get(key);
+						if (key == "diffuseFactor")
+						{
+							m.pbrSpecularGlossiness.diffuseFactor[0] = static_cast<float>(val.Get(0).GetNumberAsDouble());
+							m.pbrSpecularGlossiness.diffuseFactor[1] = static_cast<float>(val.Get(1).GetNumberAsDouble());
+							m.pbrSpecularGlossiness.diffuseFactor[2] = static_cast<float>(val.Get(2).GetNumberAsDouble());
+							m.pbrSpecularGlossiness.diffuseFactor[3] = static_cast<float>(val.Get(3).GetNumberAsDouble());
+						}
+						else if (key == "specularFactor")
+						{
+							m.pbrSpecularGlossiness.specularFactor[0] = static_cast<float>(val.Get(0).GetNumberAsDouble());
+							m.pbrSpecularGlossiness.specularFactor[1] = static_cast<float>(val.Get(1).GetNumberAsDouble());
+							m.pbrSpecularGlossiness.specularFactor[2] = static_cast<float>(val.Get(2).GetNumberAsDouble());
+						}
+						else if (key == "glossinessFactor")
+						{
+							m.pbrSpecularGlossiness.glossinessFactor = static_cast<float>(val.GetNumberAsDouble());
+						}
+						else if (key == "diffuseTexture")
+						{
+							m.pbrSpecularGlossiness.diffuseTexture.index = val.Get("index").GetNumberAsInt();
+							m.pbrSpecularGlossiness.diffuseTexture.texCoord = val.Get("texCoord").GetNumberAsInt();
+						}
+						else if (key == "specularGlossinessTexture")
+						{
+							m.pbrSpecularGlossiness.specularGlossinessTexture.index = val.Get("index").GetNumberAsInt();
+							m.pbrSpecularGlossiness.specularGlossinessTexture.texCoord = val.Get("texCoord").GetNumberAsInt();
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			// pbrMetallicRoughness
+		}
+		m.alphaCutoff = mat.alphaCutoff;
+		m.doubleSided = mat.doubleSided;
+		m.name = mat.name;
+		
+		if (mat.alphaMode == "OPAQUE") m.alphaMode = Material::ALPHA_MODE_OPAQUE;
+		else if (mat.alphaMode == "MASK") m.alphaMode = Material::ALPHA_MODE_MASK;
+		else if (mat.alphaMode == "BLEND") m.alphaMode = Material::ALPHA_MODE_BLEND;
+
 
 	}
+
 	return true;
 
 }

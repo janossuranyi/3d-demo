@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-struct Texture {
+struct TextureInfo {
 	int index;
 	int texCoord;
 };
@@ -23,48 +23,31 @@ struct pbrMetallicRoughness_t {
 		baseColorFactor{ 1.0f,1.0f,1.0f,1.0f },
 		metallicFactor(0.0f),
 		roughnessFactor(1.0f),
-		emissiveFactor{ 0.0f,0.0f,0.0f },
 		baseColorTexture{ -1,-1 },
-		metallicRoughnessTexture{ -1,-1 },
-		normalTexture{ -1,-1 },
-		emissiveTexture{ -1,-1 },
-		occlusionTexture{ -1,-1 }
+		metallicRoughnessTexture{ -1,-1 }
 	{}
 		
 	float baseColorFactor[4];
 	float metallicFactor;
 	float roughnessFactor;
-	float emissiveFactor[3];
-	Texture baseColorTexture;
-	Texture metallicRoughnessTexture;
-	Texture normalTexture;
-	Texture emissiveTexture;
-	Texture occlusionTexture;
-
+	TextureInfo baseColorTexture;
+	TextureInfo metallicRoughnessTexture;
 };
 
 struct pbrSpecularGlossiness_t {
 	pbrSpecularGlossiness_t() :
 		diffuseFactor{ 1.0f,1.0f,1.0f,1.0f },
 		specularFactor{ 1.0f,1.0f,1.0f },
-		emissiveFactor{ 1.0f,1.0f,1.0f },
 		glossinessFactor(0.0f),
 		diffuseTexture{ -1,-1 },
-		specularGlossinessTexture{ -1,-1 },
-		normalTexture{ -1,-1 },
-		emissiveTexture{ -1,-1 },
-		occlusionTexture{ -1,-1 }
+		specularGlossinessTexture{ -1,-1 }
 	{}
 
 	float diffuseFactor[4];
 	float specularFactor[3];
-	float emissiveFactor[3];
 	float glossinessFactor;
-	Texture diffuseTexture;
-	Texture specularGlossinessTexture;
-	Texture normalTexture;
-	Texture emissiveTexture;
-	Texture occlusionTexture;
+	TextureInfo diffuseTexture;
+	TextureInfo specularGlossinessTexture;
 };
 
 struct Material {
@@ -76,6 +59,10 @@ struct Material {
 		name("noname"),
 		type(PBR_METALLIC_ROUGHNESS),
 		alphaMode(ALPHA_MODE_OPAQUE),
+		emissiveFactor{ 1.0f,1.0f,1.0f },
+		emissiveTexture{ -1,-1 },
+		normalTexture{ -1,-1 },
+		occlusionTexture{ -1,-1 },
 		alphaCutoff(0.0f),
 		pbrMetallicRoughness(),
 		doubleSided(false) {}
@@ -92,5 +79,10 @@ struct Material {
 	AlphaMode alphaMode;
 	float alphaCutoff;
 	bool doubleSided;
+	float emissiveFactor[3];
+	TextureInfo normalTexture;
+	TextureInfo emissiveTexture;
+	TextureInfo occlusionTexture;
+
 };
 
