@@ -8,6 +8,7 @@
 #include "mesh.h"
 #include "entity3d.h"
 #include "material.h"
+#include "gpu_texture.h"
 
 class World
 {
@@ -19,6 +20,7 @@ public:
 	Mesh3D& createMesh3D();
 	Entity3D& createEntity(Entity3D::Type type);
 	Material& createMaterial();
+	int createTexture();
 
 	bool loadWorld(const std::string& filename);
 
@@ -27,6 +29,7 @@ public:
 	Entity3D& getEntity(int id);
 	Camera& getCamera(int id);
 	RenderMesh3D::Ptr getRenderMesh(int id);
+	GpuTexture2D::Ptr getTexture(int id);
 	void renderWorld(Pipeline& pipeline);
 
 	const std::vector<int>& root() const;
@@ -46,5 +49,6 @@ private:
 	std::vector<RenderMesh3D::Ptr> m_renderMeshes;
 	std::vector<Entity3D> m_entities;
 	std::vector<Material> m_materials;
+	std::vector<GpuTexture2D::Ptr> m_textures;
 	std::vector<int> m_root;
 };

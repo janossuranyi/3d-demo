@@ -1,10 +1,13 @@
-#version 430 core
+#version 450 core
 
-out vec4 color;
+out vec4 FragColor;
 
 in VS_OUT {
-   vec4 Position;
-   vec3 Normal;
+   vec3 FragPos;
+   vec2 TexCoords;
+   vec3 TangentLightPos;
+   vec3 TangentViewPos;
+   vec3 TangentFragPos;
 } fs_in;
 
 layout(std140, binding = 2) uniform cb_camera
@@ -19,25 +22,31 @@ layout(std140, binding = 2) uniform cb_camera
 	float ascept;
 };
 
+uniform sampler2D samp_normal;
 
 void main()
 {
-	vec3 lightPos	= vec3(cam_position);
-	vec3 lightColor = vec3(1, 1, 1);
-	vec3 diffColor	= vec3(0.4,0.4,0.4);
+    vec3 normal = texture(samp_normal, fs_in.TexCoords).rgb;
+    // transform normal vector to range [-1,1]
+    normal = normalize(normal * 2.0 - 1.0);  // this normal is in tangent space
 
-	vec3 N = normalize(fs_in.Normal);
-	vec3 L = normalize( lightPos - vec3(fs_in.Position) );
-	vec3 V = vec3( normalize( cam_position - fs_in.Position) );
-	vec3 R = reflect(-L, N);
+	vec3 lightColor = vec3(1.0, 1.0, 1.0);
+	vec3 diffColor	= vec3(0.7, 0.7, 0.7);
 
-	float cosAlpha = max(0.0, dot(N, L));
-	float spec = pow(max(dot(V,R),0.0),32);
+    vec3 color = vec3(0.7); //texture(diffuseMap, fs_in.TexCoords).rgb;
+    // ambient
+    vec3 ambient = 0.1 * color;
+    // diffuse
+    vec3 lightDir = normalize(fs_in.TangentLightPos - fs_in.TangentFragPos);
+    float diff = max(dot(lightDir, normal), 0.0);
+    vec3 diffuse = diff * color;
+    // specular
+    vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
+    vec3 reflectDir = reflect(-lightDir, normal);
+    vec3 halfwayDir = normalize(lightDir + viewDir);  
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
 
-	vec3 specular = 0.8 * spec * lightColor;
-	vec3 ambient = vec3(0.05, 0.05, 0.2);
-	vec3 diffuse = lightColor * cosAlpha;
-
-	color = vec4((ambient + diffuse + specular) * diffColor, 1);
-
+    vec3 specular = vec3(0.2) * spec;
+    FragColor = vec4(ambient + diffuse + specular, 1.0);
 }
+

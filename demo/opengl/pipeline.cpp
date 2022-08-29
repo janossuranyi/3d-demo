@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "pipeline.h"
+#include "types.h"
 
 Pipeline::Pipeline()
 {
@@ -17,12 +18,12 @@ Pipeline::Pipeline()
 	g_misc.screen_y = 0;
 
 	g_sun.position = { 5, 5, -5, 1 };
-	g_sun.direction = glm::normalize(float4(0,0,0,1) - g_sun.position);
+	g_sun.direction = glm::normalize(vec4(0,0,0,1) - g_sun.position);
 	g_sun.direction.w = 0.0f;
-	g_sun.color = float4(1, 1, 1, 1);
+	g_sun.color = vec4(1, 1, 1, 1);
 
 	g_cam.position = glm::vec4(0, 0, -5, 1);
-	g_cam.direction = glm::normalize(float4(0,0,0,1) - g_cam.position);
+	g_cam.direction = glm::normalize(vec4(0,0,0,1) - g_cam.position);
 	g_cam.direction.w = 0.0f;
 	g_cam.up = glm::vec4(0, 1, 0, 0);
 	g_cam.znear = 0.01f;
@@ -35,6 +36,7 @@ Pipeline::Pipeline()
 	m_activeVertexArray = 0;
 	m_activeFrameBuffer = 0;
 	m_activeProgram = 0;
+	m_activeLayout = 0;
 	_polyOfsBias = 0.0f;
 	_polyOfsScale = 0.0f;
 
@@ -432,19 +434,19 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 	m_glStateBits = stateBits;
 }
 
-void Pipeline::setWorldPosition(const float3& v)
+void Pipeline::setWorldPosition(const vec3& v)
 {
 	m_worldPosition = v;
 	m_bChangeWVP = true;
 }
 
-void Pipeline::setWorldScale(const float3& v)
+void Pipeline::setWorldScale(const vec3& v)
 {
 	m_worldScale = v;
 	m_bChangeWVP = true;
 }
 
-void Pipeline::setWorldEulerRotation(const float3& v)
+void Pipeline::setWorldEulerRotation(const vec3& v)
 {
 	m_worldEulerAngles = v;
 
@@ -476,6 +478,15 @@ void Pipeline::setScreenRect(unsigned int x, unsigned int y, unsigned int w, uns
 	g_misc.screen_y = y;
 	glViewport(GLint(x), GLint(y), GLsizei(w), GLsizei(h));
 	m_bChangeView = true;
+}
+
+void Pipeline::setLayout(const VertexLayout& layout)
+{
+	if (layout.m_vao != m_activeLayout)
+	{
+		layout.bind();
+		m_activeLayout = layout.m_vao;
+	}
 }
 
 void Pipeline::useProgram(GpuProgram& prog)
@@ -573,6 +584,12 @@ void Pipeline::setView(const vec3& pos, const vec3& target)
 	g_cam.position = vec4(pos, 1.0f);
 	g_cam.target = vec4(target, 1.0f);
 	g_cam.direction = vec4(glm::normalize(target - pos), 0.0f);
+	m_bChangeCam = true;
+}
+
+void Pipeline::setClearColor(float r, float g, float b, float a)
+{
+	glClearColor(r, g, b, a);
 }
 
 void Pipeline::setPerspectiveCamera(float yfov, float znear, float zfar, float aspect)
@@ -612,7 +629,7 @@ void Pipeline::update()
 
 	misc->time = g_misc.time;
 
-	if (m_bChangeWVP)
+	if (m_bChangeCam)
 	{
 		if (g_cam.yfov == 0.0f)
 		{
@@ -623,10 +640,15 @@ void Pipeline::update()
 			g_mtx.m_P = glm::perspective(g_cam.yfov, g_cam.ascept, g_cam.znear, g_cam.zfar);
 		}
 
-		g_mtx.m_V = glm::lookAt(float3(g_cam.position), float3(g_cam.target), float3(g_cam.up));
+		g_mtx.m_V = glm::lookAt(vec3(g_cam.position), vec3(g_cam.target), vec3(g_cam.up));
+
+		m_bChangeWVP = true;
+	}
+
+	if (m_bChangeWVP)
+	{
 
 		g_mtx.m_VP = g_mtx.m_P * g_mtx.m_V;
-
 		
 		mat4 trans = g_mtx.m_W;
 		trans = glm::translate(trans, m_worldPosition);

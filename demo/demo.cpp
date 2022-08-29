@@ -228,7 +228,7 @@ void App_EventLoop()
         ticks += tick2 - tick1;
         if (++sampleCount > 200)
         {
-            //SDL_Log("ftime: %f", (ticks / 200.0f));
+            SDL_Log("ftime: %f", (ticks / 200.0f));
             sampleCount = 0;
             ticks = 0;
         }

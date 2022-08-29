@@ -194,6 +194,29 @@ bool GpuTexture2D::createFromImage(const std::string& fromFile, bool srgb, bool 
 
 }
 
+bool GpuTexture2D::createFromMemory(const void* data, uint32_t bufLen, bool srgb, bool autoMipmap, bool compress)
+{
+    GLuint texID = mTexture != INVALID_TEXTURE ? mTexture : SOIL_CREATE_NEW_ID;
+    unsigned int flags = 0;
+    if (autoMipmap)
+    {
+        flags |= SOIL_FLAG_MIPMAPS;
+    }
+    if (compress)
+    {
+        flags |= SOIL_FLAG_COMPRESS_TO_DXT;
+    }
+    if (srgb)
+    {
+        flags |= SOIL_FLAG_SRGB_COLOR_SPACE;
+    }
+
+    texID = SOIL_load_OGL_texture_from_memory((unsigned char*)data, bufLen, 0, texID, flags);
+    if (texID) mTexture = texID;
+    
+    return texID != 0;
+}
+
 bool GpuTexture2D::createRGB(int w, int h, int level)
 {
     return createRGB8(w, h, level);

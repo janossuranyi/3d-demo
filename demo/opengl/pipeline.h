@@ -13,6 +13,7 @@
 #include "gpu_buffer.h"
 #include "gpu_texture.h"
 #include "gpu_program.h"
+#include "gpu_vertex_layout.h"
 #include "camera.h"
 #include "light.h"
 
@@ -31,13 +32,13 @@ public:
 	~Pipeline();
 
 	void setState(uint64_t stateBits, bool forceGlState = false);
-	void setWorldPosition(const float3& v);
-	void setWorldScale(const float3& v);
-	void setWorldEulerRotation(const float3& v);
+	void setWorldPosition(const vec3& v);
+	void setWorldScale(const vec3& v);
+	void setWorldEulerRotation(const vec3& v);
 	void setWorldQuaternionRotation(const quat& v);
 	void setWorldMatrix(const mat4& worldMtx);
 	void setScreenRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
-
+	void setLayout(const VertexLayout& layout);
 	void useProgram(GpuProgram& prog);
 	void bindVertexBuffer(GpuBuffer& b, int index = -1, uint32_t offset = 0, uint32_t stride = 0);
 	void bindIndexBuffer(GpuBuffer& b);
@@ -48,6 +49,7 @@ public:
 	void bindTexture(GpuTexture& tex, int unit);
 
 	void setView(const vec3& pos, const vec3& target);
+	void setClearColor(float r, float b, float g, float a);
 	void setPerspectiveCamera(float yfov, float znear, float zfar, float aspect);
 
 	void update();
@@ -63,16 +65,16 @@ public:
 	} g_misc;
 
 	struct alignas(16) g_sun_t {
-		float4 position;
-		float4 direction;
-		float4 color;
+		vec4 position;
+		vec4 direction;
+		vec4 color;
 	} g_sun;
 
 	struct alignas(16) g_cam_t {
-		float4 position;
-		float4 target;
-		float4 direction;
-		float4 up;
+		vec4 position;
+		vec4 target;
+		vec4 direction;
+		vec4 up;
 		float znear;
 		float zfar;
 		float yfov;
@@ -94,11 +96,11 @@ public:
 	} g_mtx;
 
 	struct alignas(16) {
-		float4 v_highFreq[16];
+		vec4 v_highFreq[16];
 	} cb_highFreq;
 
 	struct alignas(16) {
-		float4 v_lowFreq[16];
+		vec4 v_lowFreq[16];
 	} cb_lowFreq;
 
 	struct indexedBufferBinding_t {
@@ -133,14 +135,17 @@ private:
 	GpuBuffer* m_sunBuffer;
 	GpuBuffer* m_miscBuffer;
 
-	float3 m_worldPosition{};
-	float3 m_worldScale{};
+	vec3 m_worldPosition{};
+	vec3 m_worldScale{};
 	quat m_worldRotation{};
-	float3 m_worldEulerAngles{};
+	vec3 m_worldEulerAngles{};
 
 	bool m_bChangeWVP{};
 	bool m_bChangeView{};
 	bool m_bChangeSun{};
+	bool m_bChangeCam{};
+
+	GLint m_activeLayout;
 
 	void setConstantBuffer(int name, GpuBuffer* buffer);
 	void init();

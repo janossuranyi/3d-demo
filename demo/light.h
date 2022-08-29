@@ -29,7 +29,7 @@ struct Light
 	std::string name;
 	Type type;
 	SpotLight spot;
-	float4 color;
+	vec4 color;
 	float range;		// attenuation = max( min( 1.0 - ( current_distance / range )4, 1 ), 0 ) / current_distance2
 	int m_id;
 

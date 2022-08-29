@@ -2,6 +2,7 @@
 #include <tiny_gltf.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <SOIL2.h>
 
 #include "logger.h"
 #include "world.h"
@@ -62,6 +63,14 @@ Material& World::createMaterial()
 	res.id = m_materials.size() - 1;
 
 	return res;
+}
+
+int World::createTexture()
+{
+	GpuTexture2D::Ptr tex = std::make_shared<GpuTexture2D>();
+	m_textures.push_back(tex);
+
+	return m_textures.size() - 1;
 }
 
 bool World::loadWorld(const std::string& filename)
@@ -151,6 +160,19 @@ bool World::loadWorld(const std::string& filename)
 		ent.updateWorldMatrix();
 	}
 
+	for (int i = 0; i < model.textures.size(); ++i)
+	{
+		int texId = createTexture();
+		GpuTexture2D::Ptr texObj = m_textures[texId];
+
+		_TG Texture tex = model.textures[i];
+		const _TG Accessor access = model.accessors[tex.source];
+		const _TG BufferView view = model.bufferViews[access.bufferView];
+		const _TG Buffer buffer = model.buffers[view.buffer];
+
+		texObj->createFromMemory(buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);	
+
+	}
 	return true;
 
 }
@@ -181,6 +203,13 @@ RenderMesh3D::Ptr World::getRenderMesh(int id)
 	assert(id < m_renderMeshes.size());
 
 	return m_renderMeshes[id];
+}
+
+GpuTexture2D::Ptr World::getTexture(int id)
+{
+	assert(id < m_textures.size());
+
+	return m_textures[id];
 }
 
 void World::renderWorld(Pipeline& pipeline)

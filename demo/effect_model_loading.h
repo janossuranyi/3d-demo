@@ -9,6 +9,8 @@
 
 struct LoadModelEffect : public Effect
 {
+	const std::string worldFile = "assets/Steampunk_Dirigible_with_Ship.glb";
+
 	LoadModelEffect() :
 		pipeline(),
 		m_mesh() {}
@@ -23,6 +25,7 @@ struct LoadModelEffect : public Effect
 	Pipeline pipeline;
 	RenderMesh3D m_mesh;
 	GpuProgram shader;
+	GpuTexture2D normalTex;
 	float angleY{0.0f};
 
 };

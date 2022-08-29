@@ -78,6 +78,7 @@ private:
 	VertexAttribute m_Tangent_layout;
 	VertexAttribute m_Color_layout;
 	unsigned int m_NumIndex;
+	
 	eDataType m_IndexType;
 	eDrawMode m_Mode;
 
@@ -127,9 +128,11 @@ private:
 	GpuBuffer m_IndexBuf;
 
 	VertexLayout m_Layout;
-	float3 m_Min, m_Max;
+	vec3 m_Min, m_Max;
 
 	unsigned int m_NumIndex;
+	unsigned int m_NumVertices;
+
 	eDataType m_IndexType;
 	eDrawMode m_Mode;
 

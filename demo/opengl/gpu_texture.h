@@ -73,6 +73,7 @@ public:
 
 	bool create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void* data);
 	bool createFromImage(const std::string& fromFile, bool srgb = false, bool autoMipmap = true, bool compress = true);
+	bool createFromMemory(const void* data, uint32_t bufLen, bool srgb = false, bool autoMipmap = true, bool compress = true);
 	bool createRGB(int w, int h, int level);
 	bool createRGB8(int w, int h, int level);
 	bool createRGB8S(int w, int h, int level);

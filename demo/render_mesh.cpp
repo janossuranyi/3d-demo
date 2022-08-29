@@ -7,6 +7,8 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
         return;
 
     int index = 0;
+    m_NumVertices = mesh.getPositionLayout().count;
+
     m_Layout.begin();
     if (mesh.getPositionLayout().count)
     {
@@ -54,11 +56,15 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
 
 void RenderMesh3D::render(Pipeline& p) const
 {
-    m_Layout.bind();
-
+    p.setLayout(m_Layout);
+    
     if (m_IndexBuf.isCreated())
     {
         m_IndexBuf.bind();
         p.drawElements(m_Mode, m_NumIndex, m_IndexType, 0U);
+    }
+    else
+    {
+        p.drawArrays(m_Mode, 0, m_Layout.m_numAttribs);
     }
 }

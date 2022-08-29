@@ -29,6 +29,8 @@ struct VertexAttribute
 
 struct VertexLayout
 {
+	friend class Pipeline;
+
 	~VertexLayout();
 	VertexLayout& begin();
 	VertexLayout& with(
