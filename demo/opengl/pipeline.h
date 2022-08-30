@@ -55,7 +55,7 @@ public:
 	void drawArrays(eDrawMode mode, int first, uint32_t count);
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset);
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset, uint32_t baseVertex);
-	void bindTexture(GpuTexture& tex, int unit);
+	void bindTexture(GpuTexture2D::Ptr tex, int unit);
 
 	void setMaterial(Material& material, World& world);
 	void setView(const vec3& pos, const vec3& target);

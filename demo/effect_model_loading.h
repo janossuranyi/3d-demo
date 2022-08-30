@@ -9,6 +9,8 @@
 
 struct LoadModelEffect : public Effect
 {
+	// Wind turbine.glb
+	// Steampunk_Dirigible_with_Ship.glb
 	const std::string worldFile = "assets/Steampunk_Dirigible_with_Ship.glb";
 
 	LoadModelEffect() :

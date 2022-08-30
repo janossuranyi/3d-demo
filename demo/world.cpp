@@ -225,8 +225,9 @@ bool World::loadWorld(const std::string& filename)
 	for (int i = 0; i < model.materials.size(); ++i)
 	{
 		_TG Material mat = model.materials[i];
-		Material& m = m_materials.emplace_back();
-
+		m_materials.emplace_back();
+		Material& m = m_materials[m_materials.size() - 1];
+		
 		if (mat.extensions.size())
 		{
 			for (auto ext : mat.extensions)
@@ -289,6 +290,11 @@ bool World::loadWorld(const std::string& filename)
 		m.normalTexture.texCoord	= mat.normalTexture.texCoord;
 		m.emissiveTexture.index		= mat.emissiveTexture.index;
 		m.emissiveTexture.texCoord	= mat.emissiveTexture.texCoord;
+		m.occlusionTexture.index	= mat.occlusionTexture.index;
+		m.occlusionTexture.texCoord = mat.occlusionTexture.texCoord;
+
+		Info("occlusionTexture.index: %d", m.occlusionTexture.index);
+
 
 		if (mat.alphaMode == "MASK")		m.alphaMode = Material::ALPHA_MODE_MASK;
 		else if (mat.alphaMode == "BLEND")	m.alphaMode = Material::ALPHA_MODE_BLEND;
@@ -335,6 +341,7 @@ GpuTexture2D::Ptr World::getTexture(int id)
 
 Material& World::getMaterial(int id)
 {
+	assert(id < m_materials.size());
 	return m_materials[id];
 }
 

@@ -571,13 +571,13 @@ void Pipeline::drawElements(eDrawMode mode, uint32_t count, eDataType type, uint
 	GL_CHECK(glDrawElementsBaseVertex(mode_, count, type_, reinterpret_cast<void*>(offset), baseVertex));
 }
 
-void Pipeline::bindTexture(GpuTexture& tex, int unit)
+void Pipeline::bindTexture(GpuTexture2D::Ptr tex, int unit)
 {
-	if (m_tmus[unit].target != tex.getApiTarget() || m_tmus[unit].texId != tex.mTexture)
+	if (m_tmus[unit].target != tex->getApiTarget() || m_tmus[unit].texId != tex->mTexture)
 	{
-		tex.bind(unit);
-		m_tmus[unit].target = tex.getApiTarget();
-		m_tmus[unit].texId = tex.mTexture;
+		tex->bind(unit);
+		m_tmus[unit].target = tex->getApiTarget();
+		m_tmus[unit].texId = tex->mTexture;
 	}
 }
 
@@ -587,11 +587,13 @@ void Pipeline::setMaterial(Material& material, World& world)
 	{
 		if (material.pbrSpecularGlossiness.diffuseTexture.index > -1)
 		{
-			bindTexture(*world.getTexture(material.pbrSpecularGlossiness.diffuseTexture.index), TEX_ALBEDO);
+			Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.pbrSpecularGlossiness.diffuseTexture.index, TEX_ALBEDO);
+			bindTexture(world.getTexture(material.pbrSpecularGlossiness.diffuseTexture.index), TEX_ALBEDO);
 		}
 		if (material.pbrSpecularGlossiness.specularGlossinessTexture.index > -1)
 		{
-			bindTexture(*world.getTexture(material.pbrSpecularGlossiness.specularGlossinessTexture.index), TEX_PBR);
+			Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.pbrSpecularGlossiness.specularGlossinessTexture.index, TEX_PBR);
+			bindTexture(world.getTexture(material.pbrSpecularGlossiness.specularGlossinessTexture.index), TEX_PBR);
 		}
 	}
 	else
@@ -599,25 +601,28 @@ void Pipeline::setMaterial(Material& material, World& world)
 		// Material::PBR_METALLIC_ROUGHNESS
 		if (material.pbrMetallicRoughness.baseColorTexture.index > -1)
 		{
-			bindTexture(*world.getTexture(material.pbrMetallicRoughness.baseColorTexture.index), TEX_ALBEDO);
+			bindTexture(world.getTexture(material.pbrMetallicRoughness.baseColorTexture.index), TEX_ALBEDO);
 		}
 		if (material.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
 		{
-			bindTexture(*world.getTexture(material.pbrMetallicRoughness.metallicRoughnessTexture.index), TEX_PBR);
+			bindTexture(world.getTexture(material.pbrMetallicRoughness.metallicRoughnessTexture.index), TEX_PBR);
 		}
 	}
 
 	if (material.emissiveTexture.index > -1)
 	{
-		bindTexture(*world.getTexture(material.emissiveTexture.index), TEX_EMISSIVE);
+		Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.emissiveTexture.index, TEX_EMISSIVE);
+		bindTexture(world.getTexture(material.emissiveTexture.index), TEX_EMISSIVE);
 	}
 	if (material.normalTexture.index > -1)
 	{
-		bindTexture(*world.getTexture(material.normalTexture.index), TEX_NORMAL);
+		Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.normalTexture.index, TEX_NORMAL);
+		bindTexture(world.getTexture(material.normalTexture.index), TEX_NORMAL);
 	}
 	if (material.occlusionTexture.index > -1)
 	{
-		bindTexture(*world.getTexture(material.occlusionTexture.index), TEX_AO);
+		Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.occlusionTexture.index, TEX_AO);
+		bindTexture(world.getTexture(material.occlusionTexture.index), TEX_AO);
 	}
 }
 

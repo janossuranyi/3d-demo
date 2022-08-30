@@ -63,7 +63,6 @@ bool LoadModelEffect::HandleEvent(const SDL_Event* ev)
 
 void LoadModelEffect::Render()
 {
-
     pipeline.clear(true, true, false);
 
     pipeline.setWorldEulerRotation(vec3(glm::radians(-15.0f), glm::radians(angleY), 0));
