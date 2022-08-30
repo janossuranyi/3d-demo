@@ -30,6 +30,7 @@ public:
 	Camera& getCamera(int id);
 	RenderMesh3D::Ptr getRenderMesh(int id);
 	GpuTexture2D::Ptr getTexture(int id);
+	Material& getMaterial(int id);
 	void renderWorld(Pipeline& pipeline);
 
 	const std::vector<int>& root() const;

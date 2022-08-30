@@ -219,6 +219,7 @@ bool World::loadWorld(const std::string& filename)
 		}
 
 		texObj->create(image.width, image.height, 0, eTextureFormat::RGBA, srcFormat, dataType, image.image.data());
+		texObj->withDefaultLinearClampEdge().updateParameters();
 	}
 
 	for (int i = 0; i < model.materials.size(); ++i)
@@ -270,16 +271,27 @@ bool World::loadWorld(const std::string& filename)
 		else
 		{
 			// pbrMetallicRoughness
+			m.pbrMetallicRoughness.baseColorFactor = glm::make_vec4(mat.pbrMetallicRoughness.baseColorFactor.data());
+			m.pbrMetallicRoughness.metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
+			m.pbrMetallicRoughness.roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
+			m.pbrMetallicRoughness.baseColorTexture.index = mat.pbrMetallicRoughness.baseColorTexture.index;
+			m.pbrMetallicRoughness.baseColorTexture.texCoord = mat.pbrMetallicRoughness.baseColorTexture.texCoord;
+			m.pbrMetallicRoughness.metallicRoughnessTexture.index = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+			m.pbrMetallicRoughness.metallicRoughnessTexture.texCoord = mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord;
 		}
-		m.alphaCutoff = mat.alphaCutoff;
-		m.doubleSided = mat.doubleSided;
-		m.name = mat.name;
-		
-		if (mat.alphaMode == "OPAQUE") m.alphaMode = Material::ALPHA_MODE_OPAQUE;
-		else if (mat.alphaMode == "MASK") m.alphaMode = Material::ALPHA_MODE_MASK;
-		else if (mat.alphaMode == "BLEND") m.alphaMode = Material::ALPHA_MODE_BLEND;
 
+		m.alphaCutoff				= mat.alphaCutoff;
+		m.doubleSided				= mat.doubleSided;
+		m.name						= mat.name;
+		m.alphaMode					= Material::ALPHA_MODE_OPAQUE;
+		m.emissiveFactor			= glm::make_vec3(mat.emissiveFactor.data());
+		m.normalTexture.index		= mat.normalTexture.index;
+		m.normalTexture.texCoord	= mat.normalTexture.texCoord;
+		m.emissiveTexture.index		= mat.emissiveTexture.index;
+		m.emissiveTexture.texCoord	= mat.emissiveTexture.texCoord;
 
+		if (mat.alphaMode == "MASK")		m.alphaMode = Material::ALPHA_MODE_MASK;
+		else if (mat.alphaMode == "BLEND")	m.alphaMode = Material::ALPHA_MODE_BLEND;
 	}
 
 	return true;
@@ -321,6 +333,11 @@ GpuTexture2D::Ptr World::getTexture(int id)
 	return m_textures[id];
 }
 
+Material& World::getMaterial(int id)
+{
+	return m_materials[id];
+}
+
 void World::renderWorld(Pipeline& pipeline)
 {
 	for (int n : m_root)
@@ -348,7 +365,7 @@ void World::renderWorldRecurs(int node_, Pipeline& pipeline)
 		RenderMesh3D::Ptr rm = getRenderMesh(node.value());
 		pipeline.setWorldMatrix(node.worldMatrix());
 		pipeline.update();
-		rm->render(pipeline);
+		rm->render(pipeline, *this);
 	}
 
 }
@@ -364,7 +381,7 @@ void World::createMeshEntity(tinygltf::Model& model, int n)
 
 		assert(mesh.importFromGLTF(model, prim) == true);
 		m_renderMeshes[mesh.id()]->compile(mesh);
-
+		m_renderMeshes[mesh.id()]->setMaterial(mesh.material());
 		ent.setValue(mesh.id());
 
 		setEntityTransform(ent, node);

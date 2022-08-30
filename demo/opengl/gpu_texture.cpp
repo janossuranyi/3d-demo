@@ -337,15 +337,8 @@ void GpuTexture2D::bind() const
 
 void GpuTexture2D::bind(int unit) const
 {
-    if (GLEW_VERSION_4_5)
-    {
-        GL_CHECK(glBindTextureUnit(unit, mTexture));
-    }
-    else
-    {
-        GL_CHECK(glActiveTexture(GL_TEXTURE0 + unit));
-        GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
-    }
+    GL_CHECK(glActiveTexture(GL_TEXTURE0 + unit));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
 }
 
 void GpuTexture2D::bindImage(int unit, int level, eImageAccess access, eImageFormat format)

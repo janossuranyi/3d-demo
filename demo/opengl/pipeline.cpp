@@ -8,6 +8,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "pipeline.h"
 #include "types.h"
+#include "material.h"
+#include "world.h"
 
 Pipeline::Pipeline()
 {
@@ -524,7 +526,7 @@ void Pipeline::bindVertexBuffer(GpuBuffer& b, int index, uint32_t offset, uint32
 	}
 }
 
-void Pipeline::bindIndexBuffer(GpuBuffer& b)
+void Pipeline::bindIndexBuffer(const GpuBuffer& b)
 {
 	if (m_activeElementBuffer != b.mBuffer)
 	{
@@ -576,6 +578,46 @@ void Pipeline::bindTexture(GpuTexture& tex, int unit)
 		tex.bind(unit);
 		m_tmus[unit].target = tex.getApiTarget();
 		m_tmus[unit].texId = tex.mTexture;
+	}
+}
+
+void Pipeline::setMaterial(Material& material, World& world)
+{
+	if (material.type == Material::PBR_SPECULAR_GLOSSINESS)
+	{
+		if (material.pbrSpecularGlossiness.diffuseTexture.index > -1)
+		{
+			bindTexture(*world.getTexture(material.pbrSpecularGlossiness.diffuseTexture.index), TEX_ALBEDO);
+		}
+		if (material.pbrSpecularGlossiness.specularGlossinessTexture.index > -1)
+		{
+			bindTexture(*world.getTexture(material.pbrSpecularGlossiness.specularGlossinessTexture.index), TEX_PBR);
+		}
+	}
+	else
+	{
+		// Material::PBR_METALLIC_ROUGHNESS
+		if (material.pbrMetallicRoughness.baseColorTexture.index > -1)
+		{
+			bindTexture(*world.getTexture(material.pbrMetallicRoughness.baseColorTexture.index), TEX_ALBEDO);
+		}
+		if (material.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
+		{
+			bindTexture(*world.getTexture(material.pbrMetallicRoughness.metallicRoughnessTexture.index), TEX_PBR);
+		}
+	}
+
+	if (material.emissiveTexture.index > -1)
+	{
+		bindTexture(*world.getTexture(material.emissiveTexture.index), TEX_EMISSIVE);
+	}
+	if (material.normalTexture.index > -1)
+	{
+		bindTexture(*world.getTexture(material.normalTexture.index), TEX_NORMAL);
+	}
+	if (material.occlusionTexture.index > -1)
+	{
+		bindTexture(*world.getTexture(material.occlusionTexture.index), TEX_AO);
 	}
 }
 

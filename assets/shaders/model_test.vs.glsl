@@ -44,8 +44,7 @@ void main()
 {
     mat3 mNormal3 = mat3(m_Normal);
 
-    vec3 aTangent = vec3(vTangent);
-	vec3 T = normalize( mNormal3 * vec3(aTangent) );
+	vec3 T = normalize( mNormal3 * vec3(vTangent) );
 	vec3 N = normalize( mNormal3 * vNormal );
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);

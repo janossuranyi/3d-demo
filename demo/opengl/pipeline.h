@@ -14,8 +14,11 @@
 #include "gpu_texture.h"
 #include "gpu_program.h"
 #include "gpu_vertex_layout.h"
+
 #include "camera.h"
 #include "light.h"
+#include "material.h"
+#include "world.h"
 
 #define MAX_TEXTURE_UNITS 15
 #define MAX_BUFFER_BINDING 32
@@ -24,6 +27,12 @@ const int CB_MATRIX = 1;
 const int CB_CAMERA = 2;
 const int CB_SUN = 3;
 const int CB_MISC = 4;
+
+const int TEX_ALBEDO = 0;
+const int TEX_NORMAL = 1;
+const int TEX_PBR = 2;
+const int TEX_EMISSIVE = 3;
+const int TEX_AO = 4;
 
 class Pipeline
 {
@@ -41,13 +50,14 @@ public:
 	void setLayout(const VertexLayout& layout);
 	void useProgram(GpuProgram& prog);
 	void bindVertexBuffer(GpuBuffer& b, int index = -1, uint32_t offset = 0, uint32_t stride = 0);
-	void bindIndexBuffer(GpuBuffer& b);
+	void bindIndexBuffer(const GpuBuffer& b);
 	void bindUniformBuffer(GpuBuffer& b, int index, uint32_t offset = 0, uint32_t size = 0);
 	void drawArrays(eDrawMode mode, int first, uint32_t count);
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset);
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset, uint32_t baseVertex);
 	void bindTexture(GpuTexture& tex, int unit);
 
+	void setMaterial(Material& material, World& world);
 	void setView(const vec3& pos, const vec3& target);
 	void setClearColor(float r, float b, float g, float a);
 	void setPerspectiveCamera(float yfov, float znear, float zfar, float aspect);
@@ -80,6 +90,10 @@ public:
 		float yfov;
 		float ascept;
 	} g_cam;
+
+	struct alignas(16) g_material_t {
+		vec4 baseColorFactor;
+	} g_material;
 
 	struct alignas(16) g_mtx_t {
 		mat4 m_W;

@@ -1,5 +1,6 @@
 #include <string>
 #include "gpu_buffer.h"
+#include "gpu_program.h"
 #include "pipeline.h"
 #include "filesystem.h"
 #include "demo.h"
@@ -31,7 +32,19 @@ bool LoadModelEffect::Init()
     }
 
     //shader.bindUniformBlock("cb_matrix", 1);
-    shader.use();
+
+    pipeline.useProgram(shader);
+
+    shader.set("samp0_albedo", 0);
+    shader.set("samp1_normal", 1);
+    shader.set("samp2_pbr", 2);
+    shader.set("samp3_emissive", 3);
+    shader.set("samp4_ao", 4);
+
+    pipeline.bindConstantBuffers();
+
+//    shader.set(4, TEX_EMISSIVE);
+//    shader.set(5, TEX_AO);
 
     return true;
 }

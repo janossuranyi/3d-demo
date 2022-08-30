@@ -6,13 +6,15 @@
 #include "heap.h"
 #include "gpu_buffer.h"
 #include "pipeline.h"
-using namespace tinygltf;
+
+//using namespace tinygltf;
+#define _TG tinygltf::
 
 bool Mesh3D::loadFromGLTF(const char* filename, int meshIdx, int primitiveIdx)
 {
 
-    Model model;
-    TinyGLTF loader;
+    _TG Model model;
+    _TG TinyGLTF loader;
 
     std::string warn, err;
 
@@ -33,7 +35,7 @@ bool Mesh3D::loadFromGLTF(const char* filename, int meshIdx, int primitiveIdx)
         return false;
     }
 
-    Mesh& m = model.meshes[meshIdx];
+    _TG Mesh& m = model.meshes[meshIdx];
     if (m.primitives.size() < primitiveIdx)
     {
         Error("%s, line %d: primitive index out of range", __FILE__, __LINE__);
@@ -47,9 +49,9 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
 {
     for (auto p : meshPrimitive.attributes)
     {
-        const Accessor& access = model.accessors[p.second];
-        const BufferView& view = model.bufferViews[access.bufferView];
-        const Buffer& buffer = model.buffers[view.buffer];
+        const _TG Accessor& access = model.accessors[p.second];
+        const _TG BufferView& view = model.bufferViews[access.bufferView];
+        const _TG Buffer& buffer = model.buffers[view.buffer];
 
         if (p.first == "POSITION")
         {
@@ -168,9 +170,9 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
         m_Mode = eDrawMode::TRIANGLE_STRIP;
         break;
     }
-    const Accessor& access = model.accessors[meshPrimitive.indices];
-    const BufferView& view = model.bufferViews[access.bufferView];
-    const Buffer& buffer = model.buffers[view.buffer];
+    const _TG Accessor& access = model.accessors[meshPrimitive.indices];
+    const _TG BufferView& view = model.bufferViews[access.bufferView];
+    const _TG Buffer& buffer = model.buffers[view.buffer];
 
     switch (access.componentType)
     {
@@ -187,6 +189,18 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
     m_Indices = Mem_Alloc16(view.byteLength);
     ::memcpy(m_Indices, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
 
+    m_material = meshPrimitive.material;
+
     return true;
+}
+
+int Mesh3D::material() const
+{
+    return m_material;
+}
+
+void Mesh3D::setMaterial(const int material)
+{
+    m_material = material;
 }
 

@@ -27,7 +27,7 @@ struct pbrMetallicRoughness_t {
 		metallicRoughnessTexture{ -1,-1 }
 	{}
 		
-	float baseColorFactor[4];
+	vec4 baseColorFactor;
 	float metallicFactor;
 	float roughnessFactor;
 	TextureInfo baseColorTexture;
@@ -43,8 +43,8 @@ struct pbrSpecularGlossiness_t {
 		specularGlossinessTexture{ -1,-1 }
 	{}
 
-	float diffuseFactor[4];
-	float specularFactor[3];
+	vec4 diffuseFactor;
+	vec3 specularFactor;
 	float glossinessFactor;
 	TextureInfo diffuseTexture;
 	TextureInfo specularGlossinessTexture;
@@ -79,7 +79,7 @@ struct Material {
 	AlphaMode alphaMode;
 	float alphaCutoff;
 	bool doubleSided;
-	float emissiveFactor[3];
+	vec3 emissiveFactor;
 	TextureInfo normalTexture;
 	TextureInfo emissiveTexture;
 	TextureInfo occlusionTexture;

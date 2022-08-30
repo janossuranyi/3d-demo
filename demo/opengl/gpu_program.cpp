@@ -265,6 +265,14 @@ void GpuProgram::set(int index, int n, const glm::vec4* v) const
 	assert(index < mMapVar.size());
 	GL_CHECK(glUniform4fv(mMapVar[index], n, reinterpret_cast<const GLfloat*>(v)));
 }
+void GpuProgram::set(const std::string& name, int i) const
+{
+	GLint loc = getLocation(name);
+	if (loc > -1)
+	{
+		glUniform1i(loc, i);
+	}
+}
 void GpuProgram::use() const
 {
 	assert(mProgId != 0xFFFF);
