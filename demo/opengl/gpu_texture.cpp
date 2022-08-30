@@ -200,8 +200,8 @@ bool GpuTexture2D::createFromImage(const std::string& fromFile, bool srgb, bool 
     if (texID) {
         int width, height;
         int miplevel = 0;
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_WIDTH, &width);
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_HEIGHT, &height);
+    //    glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_WIDTH, &width);
+    //    glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_HEIGHT, &height);
 
         mTexture = texID;
         m_width = width;
@@ -235,8 +235,8 @@ bool GpuTexture2D::createFromMemory(const void* data, uint32_t bufLen, bool srgb
     if (texID) {
         int width, height;
         int miplevel = 0;
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_WIDTH, &width);
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_HEIGHT, &height);
+     //   glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_WIDTH, &width);
+     //   glGetTexLevelParameteriv(GL_TEXTURE_2D, miplevel, GL_TEXTURE_HEIGHT, &height);
 
         mTexture = texID;
         m_width = width;
