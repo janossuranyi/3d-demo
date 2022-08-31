@@ -342,6 +342,7 @@ GpuTexture2D::Ptr World::getTexture(int id)
 Material& World::getMaterial(int id)
 {
 	assert(id < m_materials.size());
+
 	return m_materials[id];
 }
 
@@ -386,10 +387,15 @@ void World::createMeshEntity(tinygltf::Model& model, int n)
 		Entity3D& ent = createEntity(Entity3D::Type::MESH);
 		Mesh3D& mesh = createMesh3D();
 
-		assert(mesh.importFromGLTF(model, prim) == true);
-		m_renderMeshes[mesh.id()]->compile(mesh);
-		m_renderMeshes[mesh.id()]->setMaterial(mesh.material());
-		ent.setValue(mesh.id());
+		if (!mesh.importFromGLTF(model, prim)) {
+			Error("%s import GLTF primitive error !!!");
+		}
+
+		const int meshId = mesh.id();
+
+		m_renderMeshes[meshId]->compile(mesh);
+		m_renderMeshes[meshId]->setMaterial(mesh.material());
+		ent.setValue(meshId);
 
 		setEntityTransform(ent, node);
 

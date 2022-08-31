@@ -58,7 +58,8 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
 void RenderMesh3D::render(Pipeline& p, World& world) const
 {
     p.setLayout(m_Layout);
-    p.setMaterial(world.getMaterial(m_material), world);
+    auto& mat = world.getMaterial(m_material);
+    p.setMaterial(mat, world);
 
     if (m_IndexBuf.isCreated())
     {

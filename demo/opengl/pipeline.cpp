@@ -587,12 +587,10 @@ void Pipeline::setMaterial(Material& material, World& world)
 	{
 		if (material.pbrSpecularGlossiness.diffuseTexture.index > -1)
 		{
-			Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.pbrSpecularGlossiness.diffuseTexture.index, TEX_ALBEDO);
 			bindTexture(world.getTexture(material.pbrSpecularGlossiness.diffuseTexture.index), TEX_ALBEDO);
 		}
 		if (material.pbrSpecularGlossiness.specularGlossinessTexture.index > -1)
 		{
-			Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.pbrSpecularGlossiness.specularGlossinessTexture.index, TEX_PBR);
 			bindTexture(world.getTexture(material.pbrSpecularGlossiness.specularGlossinessTexture.index), TEX_PBR);
 		}
 	}
@@ -611,17 +609,14 @@ void Pipeline::setMaterial(Material& material, World& world)
 
 	if (material.emissiveTexture.index > -1)
 	{
-		Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.emissiveTexture.index, TEX_EMISSIVE);
 		bindTexture(world.getTexture(material.emissiveTexture.index), TEX_EMISSIVE);
 	}
 	if (material.normalTexture.index > -1)
 	{
-		Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.normalTexture.index, TEX_NORMAL);
 		bindTexture(world.getTexture(material.normalTexture.index), TEX_NORMAL);
 	}
 	if (material.occlusionTexture.index > -1)
 	{
-		Info("%s:%d -- %d:%d", __FILE__, __LINE__, material.occlusionTexture.index, TEX_AO);
 		bindTexture(world.getTexture(material.occlusionTexture.index), TEX_AO);
 	}
 }

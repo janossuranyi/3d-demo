@@ -191,6 +191,8 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
 
     m_material = meshPrimitive.material;
 
+    Info("***** Mesh %d, material: %d/%d", m_id, m_material, meshPrimitive.material);
+
     return true;
 }
 
