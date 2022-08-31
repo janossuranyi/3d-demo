@@ -1,4 +1,5 @@
 #include <cassert>
+#include <utility>
 #include <tiny_gltf.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -67,8 +68,7 @@ Material& World::createMaterial()
 
 int World::createTexture()
 {
-	GpuTexture2D::Ptr tex = std::make_shared<GpuTexture2D>();
-	m_textures.push_back(tex);
+	GpuTexture2D& tex = m_textures.emplace_back();
 
 	return m_textures.size() - 1;
 }
@@ -163,7 +163,7 @@ bool World::loadWorld(const std::string& filename)
 	for (int i = 0; i < model.textures.size(); ++i)
 	{
 		int texId = createTexture();
-		GpuTexture2D::Ptr texObj = m_textures[texId];
+		GpuTexture2D& texObj = m_textures[texId];
 
 		const _TG Texture tex = model.textures[i];
 		const _TG Image image = model.images[tex.source];
@@ -218,8 +218,8 @@ bool World::loadWorld(const std::string& filename)
 			break;
 		}
 
-		texObj->create(image.width, image.height, 0, eTextureFormat::RGBA, srcFormat, dataType, image.image.data());
-		texObj->withDefaultLinearClampEdge().updateParameters();
+		texObj.create(image.width, image.height, 0, eTextureFormat::RGBA, srcFormat, dataType, image.image.data());
+		texObj.withDefaultLinearClampEdge().updateParameters();
 	}
 
 	for (int i = 0; i < model.materials.size(); ++i)
@@ -332,7 +332,7 @@ RenderMesh3D::Ptr World::getRenderMesh(int id)
 	return m_renderMeshes[id];
 }
 
-GpuTexture2D::Ptr World::getTexture(int id)
+GpuTexture2D& World::getTexture(int id)
 {
 	assert(id < m_textures.size());
 

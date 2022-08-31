@@ -571,13 +571,13 @@ void Pipeline::drawElements(eDrawMode mode, uint32_t count, eDataType type, uint
 	GL_CHECK(glDrawElementsBaseVertex(mode_, count, type_, reinterpret_cast<void*>(offset), baseVertex));
 }
 
-void Pipeline::bindTexture(GpuTexture2D::Ptr tex, int unit)
+void Pipeline::bindTexture(GpuTexture2D& tex, int unit)
 {
-	if (m_tmus[unit].target != tex->getApiTarget() || m_tmus[unit].texId != tex->mTexture)
+	if (m_tmus[unit].target != tex.getApiTarget() || m_tmus[unit].texId != tex.mTexture)
 	{
-		tex->bind(unit);
-		m_tmus[unit].target = tex->getApiTarget();
-		m_tmus[unit].texId = tex->mTexture;
+		tex.bind(unit);
+		m_tmus[unit].target = tex.getApiTarget();
+		m_tmus[unit].texId = tex.mTexture;
 	}
 }
 

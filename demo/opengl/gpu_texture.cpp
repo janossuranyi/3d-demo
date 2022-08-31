@@ -6,6 +6,33 @@
 #include "gpu_utils.h"
 #include "gpu_texture.h"
 
+GpuTexture::~GpuTexture() noexcept
+{
+    if (mTexture > 0) glDeleteTextures(1, &mTexture);
+}
+
+GpuTexture::GpuTexture(GpuTexture&& moved) noexcept
+{
+    mTexture = moved.mTexture;
+    m_width = moved.m_width;
+    m_height = moved.m_height;
+    m_depth = moved.m_depth;
+
+    moved.mTexture = 0;
+}
+
+GpuTexture& GpuTexture::operator=(GpuTexture&& moved) noexcept
+{
+    mTexture = moved.mTexture;
+    m_width = moved.m_width;
+    m_height = moved.m_height;
+    m_depth = moved.m_depth;
+
+    moved.mTexture = 0;
+
+    return *this;
+}
+
 GpuTexture& GpuTexture::withMinFilter(eTexMinFilter p)
 {
     GLint value;
@@ -155,6 +182,28 @@ GpuTexture2D::~GpuTexture2D()
 {
     if (mTexture != INVALID_TEXTURE)
         GL_CHECK(glDeleteTextures(1, &mTexture));
+}
+
+GpuTexture2D::GpuTexture2D(GpuTexture2D&& moved) noexcept
+{
+    mTexture = moved.mTexture;
+    m_width = moved.m_width;
+    m_height = moved.m_height;
+    m_depth = moved.m_depth;
+
+    moved.mTexture = 0;
+}
+
+GpuTexture2D& GpuTexture2D::operator=(GpuTexture2D&& moved) noexcept
+{
+    mTexture = moved.mTexture;
+    m_width = moved.m_width;
+    m_height = moved.m_height;
+    m_depth = moved.m_depth;
+
+    moved.mTexture = 0;
+
+    return *this;
 }
 
 bool GpuTexture2D::create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void* data)

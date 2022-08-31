@@ -11,21 +11,23 @@
 
 #define STD_TEXTURE_METHODS(T) \
 	T (T&) = delete; \
-	T (T&&) = delete; \
 	T& operator=(T&) = delete; \
-	T& operator=(T&&) = delete;
 
 class GpuTexture
 {
 	friend class GpuFrameBuffer;
 	friend class Pipeline;
 public:
+	~GpuTexture() noexcept;
 	GpuTexture() :
 		mTexture(INVALID_TEXTURE),
 		m_width(),
 		m_height(),
 		m_depth() {}
 	STD_TEXTURE_METHODS(GpuTexture)
+
+	GpuTexture(GpuTexture&& moved) noexcept;
+	GpuTexture& operator=(GpuTexture&& moved) noexcept;
 
 	virtual void bind() const = 0;
 	virtual void bind(int unit) const = 0;
@@ -69,6 +71,10 @@ public:
 
 	GpuTexture2D() : GpuTexture() {}
 	~GpuTexture2D();
+
+	GpuTexture2D(GpuTexture2D&& moved) noexcept;
+	GpuTexture2D& operator=(GpuTexture2D&& moved) noexcept;
+
 	STD_TEXTURE_METHODS(GpuTexture2D)
 
 	bool create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void* data);
