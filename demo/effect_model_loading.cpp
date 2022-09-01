@@ -26,7 +26,7 @@ bool LoadModelEffect::Init()
 
     if (!shader.loadShader(
         g_fileSystem.resolve("assets/shaders/model_test.vs.glsl"),
-        g_fileSystem.resolve("assets/shaders/model_test.fs.glsl")))
+        g_fileSystem.resolve("assets/shaders/model_test_gloss.fs.glsl")))
     {
         return false;
     }
@@ -42,6 +42,7 @@ bool LoadModelEffect::Init()
     shader.set("samp4_ao", 4);
 
     pipeline.bindConstantBuffers();
+    //glEnable(GL_FRAMEBUFFER_SRGB);
 
 //    shader.set(4, TEX_EMISSIVE);
 //    shader.set(5, TEX_AO);

@@ -43,6 +43,7 @@ private:
 	void createLightEntity(tinygltf::Model& model, int node, int light);
 	void createCameraEntity(tinygltf::Model& model, int node);
 	void setEntityTransform(Entity3D& ent, const tinygltf::Node& node);
+	int createTexture(int texture, tinygltf::Model& model, eTextureFormat format);
 
 	std::vector<Light> m_lights;
 	std::vector<Camera> m_cameras;

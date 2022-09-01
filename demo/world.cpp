@@ -160,67 +160,6 @@ bool World::loadWorld(const std::string& filename)
 		ent.updateWorldMatrix();
 	}
 
-	for (int i = 0; i < model.textures.size(); ++i)
-	{
-		int texId = createTexture();
-		GpuTexture2D& texObj = m_textures[texId];
-
-		const _TG Texture tex = model.textures[i];
-		const _TG Image image = model.images[tex.source];
-		const _TG Sampler sampler = model.samplers[tex.sampler];
-
-		const _TG BufferView view = model.bufferViews[image.bufferView];
-		const _TG Buffer buffer = model.buffers[view.buffer];
-
-		Info("=============================================================");
-		Info("image name      : %s", image.name.c_str());
-		Info("image w         : %d", image.width);
-		Info("image h         : %d", image.height);
-		Info("image bits      : %d", image.bits);
-		Info("image component : %d", image.component);
-		Info("image pixel_type: %d", image.pixel_type);
-		Info("image mimeType  : %s", image.mimeType.c_str());
-
-		ePixelFormat srcFormat = ePixelFormat::RGB;
-
-		if (image.bits == 8)
-		{
-			switch (image.component)
-			{
-			case 3: srcFormat = ePixelFormat::RGB;
-				break;
-			case 4: srcFormat = ePixelFormat::RGBA;
-				break;
-			}
-		}
-		else if (image.bits == 16)
-		{
-			switch (image.component)
-			{
-			case 3: srcFormat = ePixelFormat::RGB16;
-				break;
-			case 4: srcFormat = ePixelFormat::RGBA16;
-				break;
-			}
-		}
-
-		eDataType dataType = eDataType::UNSIGNED_BYTE;
-		switch (image.pixel_type)
-		{
-		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-			dataType = eDataType::UNSIGNED_BYTE;
-			break;
-		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-			dataType = eDataType::UNSIGNED_SHORT;
-			break;
-		case TINYGLTF_COMPONENT_TYPE_FLOAT:
-			dataType = eDataType::FLOAT;
-			break;
-		}
-
-		texObj.create(image.width, image.height, 0, eTextureFormat::RGBA, srcFormat, dataType, image.image.data());
-		texObj.withDefaultLinearClampEdge().updateParameters();
-	}
 
 	for (int i = 0; i < model.materials.size(); ++i)
 	{
@@ -257,12 +196,14 @@ bool World::loadWorld(const std::string& filename)
 						}
 						else if (key == "diffuseTexture")
 						{
-							m.pbrSpecularGlossiness.diffuseTexture.index = val.Get("index").GetNumberAsInt();
+							int x = createTexture(val.Get("index").GetNumberAsInt(), model, eTextureFormat::SRGB_A);
+							m.pbrSpecularGlossiness.diffuseTexture.index = x;
 							m.pbrSpecularGlossiness.diffuseTexture.texCoord = val.Get("texCoord").GetNumberAsInt();
 						}
 						else if (key == "specularGlossinessTexture")
 						{
-							m.pbrSpecularGlossiness.specularGlossinessTexture.index = val.Get("index").GetNumberAsInt();
+							int x = createTexture(val.Get("index").GetNumberAsInt(), model, eTextureFormat::SRGB_A);
+							m.pbrSpecularGlossiness.specularGlossinessTexture.index = x;
 							m.pbrSpecularGlossiness.specularGlossinessTexture.texCoord = val.Get("texCoord").GetNumberAsInt();
 						}
 					}
@@ -275,9 +216,13 @@ bool World::loadWorld(const std::string& filename)
 			m.pbrMetallicRoughness.baseColorFactor = glm::make_vec4(mat.pbrMetallicRoughness.baseColorFactor.data());
 			m.pbrMetallicRoughness.metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 			m.pbrMetallicRoughness.roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
-			m.pbrMetallicRoughness.baseColorTexture.index = mat.pbrMetallicRoughness.baseColorTexture.index;
+
+			int x = createTexture(mat.pbrMetallicRoughness.baseColorTexture.index, model, eTextureFormat::SRGB_A);
+			m.pbrMetallicRoughness.baseColorTexture.index = x;
 			m.pbrMetallicRoughness.baseColorTexture.texCoord = mat.pbrMetallicRoughness.baseColorTexture.texCoord;
-			m.pbrMetallicRoughness.metallicRoughnessTexture.index = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+
+			x = createTexture(mat.pbrMetallicRoughness.metallicRoughnessTexture.index, model, eTextureFormat::RGBA);
+			m.pbrMetallicRoughness.metallicRoughnessTexture.index = x;
 			m.pbrMetallicRoughness.metallicRoughnessTexture.texCoord = mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord;
 		}
 
@@ -286,15 +231,15 @@ bool World::loadWorld(const std::string& filename)
 		m.name						= mat.name;
 		m.alphaMode					= Material::ALPHA_MODE_OPAQUE;
 		m.emissiveFactor			= glm::make_vec3(mat.emissiveFactor.data());
-		m.normalTexture.index		= mat.normalTexture.index;
+		int x = createTexture(mat.normalTexture.index, model, eTextureFormat::RGBA);
+		m.normalTexture.index		= x;
 		m.normalTexture.texCoord	= mat.normalTexture.texCoord;
-		m.emissiveTexture.index		= mat.emissiveTexture.index;
+		x = createTexture(mat.emissiveTexture.index, model, eTextureFormat::RGBA);
+		m.emissiveTexture.index		= x;
 		m.emissiveTexture.texCoord	= mat.emissiveTexture.texCoord;
-		m.occlusionTexture.index	= mat.occlusionTexture.index;
+		x = createTexture(mat.occlusionTexture.index, model, eTextureFormat::RGBA);
+		m.occlusionTexture.index	= x;
 		m.occlusionTexture.texCoord = mat.occlusionTexture.texCoord;
-
-		Info("occlusionTexture.index: %d", m.occlusionTexture.index);
-
 
 		if (mat.alphaMode == "MASK")		m.alphaMode = Material::ALPHA_MODE_MASK;
 		else if (mat.alphaMode == "BLEND")	m.alphaMode = Material::ALPHA_MODE_BLEND;
@@ -540,6 +485,72 @@ void World::setEntityTransform(Entity3D& ent, const tinygltf::Node& node)
 		}
 		ent.updatMatrix();
 	}
+}
+
+int World::createTexture(int texture, _TG Model& model, eTextureFormat format)
+{
+	if (texture == -1) return -1;
+
+	int texId = createTexture();
+	GpuTexture2D& texObj = m_textures[texId];
+
+	const _TG Texture tex = model.textures[texture];
+	const _TG Image image = model.images[tex.source];
+	const _TG Sampler sampler = model.samplers[tex.sampler];
+
+	const _TG BufferView view = model.bufferViews[image.bufferView];
+	const _TG Buffer buffer = model.buffers[view.buffer];
+
+	Info("=============================================================");
+	Info("image name      : %s", image.name.c_str());
+	Info("image w         : %d", image.width);
+	Info("image h         : %d", image.height);
+	Info("image bits      : %d", image.bits);
+	Info("image component : %d", image.component);
+	Info("image pixel_type: %d", image.pixel_type);
+	Info("image mimeType  : %s", image.mimeType.c_str());
+
+	ePixelFormat srcFormat = ePixelFormat::RGB;
+
+	if (image.bits == 8)
+	{
+		switch (image.component)
+		{
+		case 3: srcFormat = ePixelFormat::RGB;
+			break;
+		case 4: srcFormat = ePixelFormat::RGBA;
+			break;
+		}
+	}
+	else if (image.bits == 16)
+	{
+		switch (image.component)
+		{
+		case 3: srcFormat = ePixelFormat::RGB16;
+			break;
+		case 4: srcFormat = ePixelFormat::RGBA16;
+			break;
+		}
+	}
+
+	eDataType dataType = eDataType::UNSIGNED_BYTE;
+	switch (image.pixel_type)
+	{
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+		dataType = eDataType::UNSIGNED_BYTE;
+		break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+		dataType = eDataType::UNSIGNED_SHORT;
+		break;
+	case TINYGLTF_COMPONENT_TYPE_FLOAT:
+		dataType = eDataType::FLOAT;
+		break;
+	}
+
+	texObj.create(image.width, image.height, 0, format, srcFormat, dataType, image.image.data());
+	texObj.withDefaultLinearClampEdge().updateParameters();
+
+	return texId;
 }
 
 Light& World::getLight(int id)
