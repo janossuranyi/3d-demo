@@ -247,7 +247,7 @@ int main(int argc, char** argv)
 
     Info("V_Init Start");
 
-    if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 0, FULLSCREEN))
+    if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 8, FULLSCREEN))
     {
         Info("V_Init Done");
 
