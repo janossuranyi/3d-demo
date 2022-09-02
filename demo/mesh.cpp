@@ -56,7 +56,7 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
         if (p.first == "POSITION")
         {
             // allocate position memory
-            VertexAttribute attr{ "POSITION", eDataType::FLOAT, 3, access.count, false, 0, 0, 0, view.byteLength };
+            VertexAttribute attr{ "POSITION", eDataType::FLOAT, 3, access.count, access.normalized, 0, 0, 0, view.byteLength };
             m_Position_layout = attr;
             m_Positions = Mem_Alloc16(view.byteLength);
             ::memcpy(m_Positions, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
@@ -72,14 +72,14 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
         }
         else if (p.first == "NORMAL")
         {
-            VertexAttribute attr{ "NORMAL", eDataType::FLOAT, 3, access.count, false, 0, 0, 0, view.byteLength };
+            VertexAttribute attr{ "NORMAL", eDataType::FLOAT, 3, access.count, access.normalized, 0, 0, 0, view.byteLength };
             m_Normal_layout = attr;
             m_Normals = Mem_Alloc16(view.byteLength);
             ::memcpy(m_Normals, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
         }
         else if (p.first == "TANGENT")
         {
-            VertexAttribute attr{ "TANGENT", eDataType::FLOAT, 4, access.count, false, 0, 0, 0, view.byteLength };
+            VertexAttribute attr{ "TANGENT", eDataType::FLOAT, 4, access.count, access.normalized, 0, 0, 0, view.byteLength };
             m_Tangent_layout = attr;
             m_Tangents = Mem_Alloc16(view.byteLength);
             ::memcpy(m_Tangents, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
@@ -89,19 +89,18 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
             VertexAttribute attr;
             attr.name = "TEXCOORD_0";
             attr.byteSize = view.byteLength;
+            attr.normalized = access.normalized;
+
             switch (access.componentType)
             {
             case TINYGLTF_COMPONENT_TYPE_FLOAT:
                 attr.type = eDataType::FLOAT;
-                attr.normalized = false;
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
                 attr.type = eDataType::UNSIGNED_BYTE;
-                attr.normalized = true;
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                 attr.type = eDataType::UNSIGNED_SHORT;
-                attr.normalized = true;
                 break;
             }
             attr.size = 2;

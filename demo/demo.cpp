@@ -194,7 +194,7 @@ void App_EventLoop()
 
         while (SDL_PollEvent(&e) != SDL_FALSE && running)
         {
-            running = activeEffect->HandleEvent(&e);
+            running = activeEffect->HandleEvent(&e, time);
 
             if (e.type == SDL_QUIT)
             {
@@ -247,7 +247,7 @@ int main(int argc, char** argv)
 
     Info("V_Init Start");
 
-    if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 16, FULLSCREEN))
+    if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 0, FULLSCREEN))
     {
         Info("V_Init Done");
 

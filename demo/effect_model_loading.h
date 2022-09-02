@@ -11,7 +11,7 @@ struct LoadModelEffect : public Effect
 {
 	// Wind turbine.glb
 	// Steampunk_Dirigible_with_Ship.glb
-	const std::string worldFile = "assets/Steampunk_Dirigible_with_Ship.glb";
+	const std::string worldFile = "assets/Large_Steampunk_House.glb";
 
 	LoadModelEffect() :
 		pipeline(),
@@ -20,7 +20,7 @@ struct LoadModelEffect : public Effect
 	// Inherited via Effect
 	virtual bool Init() override;
 	virtual bool Update(float time) override;
-	virtual bool HandleEvent(const SDL_Event* ev) override;
+	virtual bool HandleEvent(const SDL_Event* ev, float time) override;
 	virtual void Render() override;
 
 	World world;
@@ -29,5 +29,7 @@ struct LoadModelEffect : public Effect
 	GpuProgram shader;
 	GpuTexture2D normalTex;
 	float angleY{0.0f};
+	float posY{ 1.0f };
+	float posZ{ 0.0f };
 
 };

@@ -15,7 +15,7 @@ struct ComputeTestEffect : public Effect
 	// Inherited via Effect
 	virtual bool Init() override;
 	virtual bool Update(float time) override;
-	virtual bool HandleEvent(const SDL_Event* ev) override;
+	virtual bool HandleEvent(const SDL_Event* ev, float time) override;
 	virtual void Render() override;
 
 	struct cbvars_t {

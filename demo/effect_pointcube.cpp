@@ -323,7 +323,7 @@ void PointCubeEffect::Render()
 
 }
 
-bool PointCubeEffect::HandleEvent(const SDL_Event* ev)
+bool PointCubeEffect::HandleEvent(const SDL_Event* ev, float time)
 {
 	bool mustUpdate = false;
 

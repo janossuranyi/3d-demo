@@ -21,8 +21,8 @@ bool LoadModelEffect::Init()
     pipeline.setWorldScale(vec3(1, 1, 1));
     pipeline.setWorldEulerRotation(vec3(0, 0, 0));
     pipeline.setPerspectiveCamera(glm::radians(45.0f), 0.01f, 100.0f, 0.0f);
-    pipeline.setView(vec3(0, 2, 3), vec3(0, 1, 0));
     pipeline.setClearColor(.6f, .6f, 1.0f, 1.0f);
+    posZ = 3.0f;
 
     if (!shader.loadShader(
         g_fileSystem.resolve("assets/shaders/model_test.vs.glsl"),
@@ -57,8 +57,27 @@ bool LoadModelEffect::Update(float time)
     return true;
 }
 
-bool LoadModelEffect::HandleEvent(const SDL_Event* ev)
+bool LoadModelEffect::HandleEvent(const SDL_Event* ev, float time)
 {
+    if (ev->type == SDL_KEYDOWN)
+    {
+        if (ev->key.keysym.sym == SDLK_UP)
+        {
+            posZ -= 0.001 * time;
+        }
+        else if (ev->key.keysym.sym == SDLK_DOWN)
+        {
+            posZ += 0.001 * time;
+        }
+        else if (ev->key.keysym.sym == SDLK_LEFT)
+        {
+            posY -= 0.001 * time;
+        }
+        else if (ev->key.keysym.sym == SDLK_RIGHT)
+        {
+            posY += 0.001 * time;
+        }
+    }
     return true;
 }
 
@@ -67,6 +86,8 @@ void LoadModelEffect::Render()
     pipeline.clear(true, true, false);
 
     pipeline.setWorldEulerRotation(vec3(glm::radians(-15.0f), glm::radians(angleY), 0));
+    pipeline.setView(vec3(0, posY, posZ), vec3(0, posY-1.0f, posZ-3.0f));
+
     //pipeline.update();
     world.renderWorld(pipeline);
 

@@ -38,6 +38,7 @@ out VS_OUT {
    vec3 TangentLightPos;
    vec3 TangentViewPos;
    vec3 TangentFragPos;
+   vec3 Normal;
 } vs_out;
 
 void main()
@@ -57,8 +58,9 @@ void main()
     
     vs_out.TexCoords = vTexCoord;
     vs_out.FragPos = vec3(m_W * vec4(vPosition, 1.0));
-    vs_out.TangentLightPos = TBN * vec3(cam_position + vec4(0,-1,0,1));
+    vs_out.TangentLightPos = TBN * vec3(cam_position + vec4(0,1,0,1));
     vs_out.TangentViewPos  = TBN * vec3(cam_position);
     vs_out.TangentFragPos  = TBN * vs_out.FragPos;
+    vs_out.Normal = vNormal;
 }
 

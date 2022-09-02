@@ -72,7 +72,7 @@ bool ComputeTestEffect::Update(float time)
     return true;
 }
 
-bool ComputeTestEffect::HandleEvent(const SDL_Event* ev)
+bool ComputeTestEffect::HandleEvent(const SDL_Event* ev, float time)
 {
     return true;
 }

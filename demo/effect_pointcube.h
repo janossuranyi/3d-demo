@@ -96,7 +96,7 @@ struct PointCubeEffect : public Effect
 	bool Init() override;
 	bool Update(float time) override;
 	void Render() override;
-	bool HandleEvent(const SDL_Event* ev) override;
+	bool HandleEvent(const SDL_Event* ev, float time) override;
 
 	//GLuint vbo, vbo_pp;
 	GpuBuffer vbo_points;

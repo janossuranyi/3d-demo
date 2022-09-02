@@ -487,7 +487,7 @@ void World::setEntityTransform(Entity3D& ent, const tinygltf::Node& node)
 	}
 }
 
-int World::createTexture(int texture, _TG Model& model, eTextureFormat format)
+int World::createTexture(int texture, tinygltf::Model& model, eTextureFormat format)
 {
 	if (texture == -1) return -1;
 
