@@ -106,7 +106,7 @@ vec3 linearToSRGB(vec3 RGB)
 
 float luminance(vec3 rgb)
 {
-    return (rgb.r + rgb.r + rgb.b + rgb.g + rgb.g + rgb.g) / 6;
+    return dot( rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
 }
 
 float solveMetallic(float diffuse, float specular, float oneMinusSpecularStrength) {
@@ -127,7 +127,9 @@ MetallicRoughness ConvertToMetallicRoughness(vec3 diffuse, vec3 specular, float 
     MetallicRoughness ret;
 
     float oneMinusSpecularStrength = 1 - max(max(specular.r, specular.g), specular.b);
+
     float metallic = solveMetallic(luminance(diffuse), luminance(specular), oneMinusSpecularStrength);
+
     vec3 baseColorFromDiffuse = diffuse * (oneMinusSpecularStrength / (1 - dielectricSpecular) / max(1 - metallic, epsilon));
     vec3 baseColorFromSpecular = specular - (dielectricSpecular*(1 - metallic)) * (1 / max(metallic, epsilon));
     vec3 baseColor = clamp(mix(baseColorFromDiffuse, baseColorFromSpecular, metallic * metallic), 0, 1);
@@ -143,9 +145,9 @@ MetallicRoughness ConvertToMetallicRoughness(vec3 diffuse, vec3 specular, float 
 void main()
 {
 
-    vec3 albedo = toLinearRGB(texture(samp0_albedo, fs_in.TexCoords).rgb);
+    vec3 albedo = texture(samp0_albedo, fs_in.TexCoords).rgb;
     vec4 specularGlossiness = texture(samp2_pbr, fs_in.TexCoords);
-    vec3 specularColor = toLinearRGB(specularGlossiness.rgb);
+    vec3 specularColor = specularGlossiness.rgb;
 
 
     vec3 N = texture(samp1_normal, fs_in.TexCoords).rgb;

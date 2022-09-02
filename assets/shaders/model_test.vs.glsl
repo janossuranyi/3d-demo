@@ -49,7 +49,7 @@ void main()
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 	// then retrieve perpendicular vector B with the cross product of T and N
-	vec3 B = cross(N, T) * vTangent.w;
+	vec3 B = normalize(cross(N, T) * vTangent.w);
 
 	mat3 TBN = transpose(mat3(T, B, N)); 
 
@@ -59,6 +59,6 @@ void main()
     vs_out.FragPos = vec3(m_W * vec4(vPosition, 1.0));
     vs_out.TangentLightPos = TBN * vec3(cam_position + vec4(0,-1,0,1));
     vs_out.TangentViewPos  = TBN * vec3(cam_position);
-    vs_out.TangentFragPos  = TBN * vec3(m_W * vec4(vPosition,1.0));
+    vs_out.TangentFragPos  = TBN * vs_out.FragPos;
 }
 

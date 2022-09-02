@@ -34,6 +34,40 @@ PbrUtilities.ConvertToMetallicRoughness = function (specularGlossiness) {
 */
 
 
+float SRGBlinear ( float value ) { if ( value <= 0.04045 ) {
+		return ( value / 12.92 );
+	} else {
+		return pow( ( value / 1.055 ) + 0.0521327, 2.4 );
+	}
+}
+vec3 SRGBlinear ( vec3 sRGB ) {
+	vec3 outLinear;
+	outLinear.r = SRGBlinear( sRGB.r );
+	outLinear.g = SRGBlinear( sRGB.g );
+	outLinear.b = SRGBlinear( sRGB.b );
+	return outLinear;
+}
+vec4 SRGBlinear ( vec4 sRGBA ) {
+	vec4 outLinear = vec4( SRGBlinear( sRGBA.rgb ), 1 );
+	outLinear.a = SRGBlinear( sRGBA.a );
+	return outLinear;
+}
+float DeGamma ( float value ) {
+	return SRGBlinear( value );
+}
+vec4 DeGamma ( vec4 color ) {
+	return SRGBlinear( color );
+}
+vec3 DeGamma ( vec3 color ) {
+	return SRGBlinear( color );
+}
+
+
+float GetLuma ( vec3 c ) {
+	return dot( c, vec3( 0.2126, 0.7152, 0.0722 ) );
+}
+
+
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
     float a      = roughness*roughness;
