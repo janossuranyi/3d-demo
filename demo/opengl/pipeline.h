@@ -60,8 +60,10 @@ public:
 	void setMaterial(Material& material, World& world);
 	void setView(const vec3& pos, const vec3& target);
 	void setClearColor(float r, float b, float g, float a);
+	void setClearDepth(float d);
 	void setPerspectiveCamera(float yfov, float znear, float zfar, float aspect);
 
+	void depthTestEnable(bool b) const;
 	void update();
 	void clear(bool color, bool depth, bool stencil);
 	void bindConstantBuffers();

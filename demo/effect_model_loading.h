@@ -3,6 +3,7 @@
 #include "effect.h"
 #include "pipeline.h"
 #include "gpu_buffer.h"
+#include "gpu_framebuffer.h"
 #include "gpu_program.h"
 #include "mesh.h"
 #include "world.h"
@@ -11,10 +12,15 @@ struct LoadModelEffect : public Effect
 {
 	// Wind turbine.glb
 	// Steampunk_Dirigible_with_Ship.glb
-	const std::string worldFile = "assets/Large_Steampunk_House.glb";
+	const std::string worldFile = "assets/Steampunk_Dirigible_with_Ship.glb";
 
 	LoadModelEffect() :
 		pipeline(),
+		fb(),
+		fb_color(),
+		fb_depth(),
+		vertFormat(),
+		rectBuffer(eGpuBufferTarget::VERTEX),
 		m_mesh() {}
 
 	// Inherited via Effect
@@ -27,7 +33,15 @@ struct LoadModelEffect : public Effect
 	Pipeline pipeline;
 	RenderMesh3D m_mesh;
 	GpuProgram shader;
-	GpuTexture2D normalTex;
+	GpuProgram fxaa;
+	GpuBuffer rectBuffer;
+
+	GpuTexture2D::Ptr fb_color;
+	GpuTexture2D::Ptr fb_depth;
+	GpuFrameBuffer fb;
+
+	VertexLayout vertFormat;
+
 	float angleY{0.0f};
 	float posY{ 1.0f };
 	float posZ{ 0.0f };

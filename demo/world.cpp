@@ -24,7 +24,7 @@ World::World()
 Light& World::createLight(Light::Type type)
 {
 	Light& res = m_lights.emplace_back(type);
-	res.setId(m_lights.size() - 1);
+	res.setId(int(m_lights.size()) - 1);
 
 	return res;
 }
@@ -32,7 +32,7 @@ Light& World::createLight(Light::Type type)
 Camera& World::createCamera(Camera::Type type)
 {
 	Camera& res = m_cameras.emplace_back(type);
-	res.setId(m_cameras.size() - 1);
+	res.setId(int(m_cameras.size() - 1));
 
 	return res;
 }
@@ -44,7 +44,7 @@ Mesh3D& World::createMesh3D()
 	RenderMesh3D::Ptr rm = std::make_shared<RenderMesh3D>();
 	m_renderMeshes.push_back(rm);
 
-	res.setId( m_meshes.size() - 1 );
+	res.setId( int(m_meshes.size() - 1) );
 	rm->setId(res.id());
 
 	return res;
@@ -53,7 +53,7 @@ Mesh3D& World::createMesh3D()
 Entity3D& World::createEntity(Entity3D::Type type)
 {
 	Entity3D& res = m_entities.emplace_back(type, *this);
-	res.setId(m_entities.size() - 1);
+	res.setId(int(m_entities.size() - 1));
 
 	return res;
 }
@@ -61,7 +61,7 @@ Entity3D& World::createEntity(Entity3D::Type type)
 Material& World::createMaterial()
 {
 	Material& res = m_materials.emplace_back();
-	res.id = m_materials.size() - 1;
+	res.id = int(m_materials.size() - 1);
 
 	return res;
 }
@@ -70,7 +70,7 @@ int World::createTexture()
 {
 	GpuTexture2D& tex = m_textures.emplace_back();
 
-	return m_textures.size() - 1;
+	return int(m_textures.size() - 1);
 }
 
 bool World::loadWorld(const std::string& filename)
@@ -214,8 +214,8 @@ bool World::loadWorld(const std::string& filename)
 		{
 			// pbrMetallicRoughness
 			m.pbrMetallicRoughness.baseColorFactor = glm::make_vec4(mat.pbrMetallicRoughness.baseColorFactor.data());
-			m.pbrMetallicRoughness.metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
-			m.pbrMetallicRoughness.roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
+			m.pbrMetallicRoughness.metallicFactor = float(mat.pbrMetallicRoughness.metallicFactor);
+			m.pbrMetallicRoughness.roughnessFactor = float(mat.pbrMetallicRoughness.roughnessFactor);
 
 			int x = createTexture(mat.pbrMetallicRoughness.baseColorTexture.index, model, eTextureFormat::SRGB_A);
 			m.pbrMetallicRoughness.baseColorTexture.index = x;
@@ -226,7 +226,7 @@ bool World::loadWorld(const std::string& filename)
 			m.pbrMetallicRoughness.metallicRoughnessTexture.texCoord = mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord;
 		}
 
-		m.alphaCutoff				= mat.alphaCutoff;
+		m.alphaCutoff				= float(mat.alphaCutoff);
 		m.doubleSided				= mat.doubleSided;
 		m.name						= mat.name;
 		m.alphaMode					= Material::ALPHA_MODE_OPAQUE;
@@ -477,7 +477,7 @@ void World::setEntityTransform(Entity3D& ent, const tinygltf::Node& node)
 		}
 		if (node.rotation.size())
 		{
-			ent.rotate(quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]));
+			ent.rotate(quat(float(node.rotation[3]), float(node.rotation[0]), float(node.rotation[1]), float(node.rotation[2])));
 		}
 		if (node.scale.size())
 		{

@@ -122,6 +122,11 @@ bool GpuFrameBuffer::checkCompletness()
 
 void GpuFrameBuffer::bind()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, m_fbo));
+}
+
+void GpuFrameBuffer::bindDefault()
+{
+	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 }
 

@@ -26,6 +26,7 @@ public:
 
 	bool checkCompletness();
 	void bind();
+	static void bindDefault();
 
 private:
 	GLuint m_fbo;

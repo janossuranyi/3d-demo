@@ -634,6 +634,11 @@ void Pipeline::setClearColor(float r, float g, float b, float a)
 	glClearColor(r, g, b, a);
 }
 
+void Pipeline::setClearDepth(float d)
+{
+	GL_CHECK(glClearDepth(d));
+}
+
 void Pipeline::setPerspectiveCamera(float yfov, float znear, float zfar, float aspect)
 {
 	g_cam.ascept = (aspect > 0.0f ? aspect : float(g_misc.screen_w) / float(g_misc.screen_h));
@@ -663,6 +668,12 @@ void Pipeline::init()
 {\
 	assert(a->isMapped());\
 	::memcpy(a->mappedAddress(), &b, sizeof(b));\
+}
+
+void Pipeline::depthTestEnable(bool b) const
+{
+	if (b) GL_CHECK(glEnable(GL_DEPTH_TEST));
+	else GL_CHECK(glDisable(GL_DEPTH_TEST));
 }
 
 void Pipeline::update()

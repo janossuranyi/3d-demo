@@ -4,6 +4,7 @@
 #include "pipeline.h"
 #include "filesystem.h"
 #include "demo.h"
+#include "unit_rect.h"
 
 #include "effect_model_loading.h"
 
@@ -13,6 +14,7 @@ bool LoadModelEffect::Init()
     if (!world.loadWorld(g_fileSystem.resolve(worldFile)))
     {
         Warning("World %s cannot load", worldFile.c_str());
+        return false;
     }
 
     pipeline.setScreenRect(0, 0, videoConf.width, videoConf.height);
@@ -31,6 +33,12 @@ bool LoadModelEffect::Init()
         return false;
     }
 
+    if (!fxaa.loadShader(
+        g_fileSystem.resolve("assets/shaders/fxaa.vs.glsl"),
+        g_fileSystem.resolve("assets/shaders/fxaa3.fs.glsl")))
+    {
+        return false;
+    }
     //shader.bindUniformBlock("cb_matrix", 1);
 
     pipeline.useProgram(shader);
@@ -40,12 +48,42 @@ bool LoadModelEffect::Init()
     shader.set("samp2_pbr", 2);
     shader.set("samp3_emissive", 3);
     shader.set("samp4_ao", 4);
+    
+    pipeline.useProgram(fxaa);
+    fxaa.set("screenTexture", 0);
 
     pipeline.bindConstantBuffers();
     //glEnable(GL_FRAMEBUFFER_SRGB);
 
 //    shader.set(4, TEX_EMISSIVE);
 //    shader.set(5, TEX_AO);
+
+
+    fb_color = GpuTexture2D::createShared();
+    fb_color->createRGB(videoConf.width, videoConf.height, 0);
+    fb_color->withDefaultLinearClampEdge().updateParameters();
+    fb_depth = GpuTexture2D::createShared();
+    fb_depth->createDepthStencil(videoConf.width, videoConf.height);
+    if (!fb.create()
+        .addColorAttachment(0, fb_color)
+        .setDepthStencilAttachment(fb_depth)
+        .checkCompletness())
+    {
+        return false;
+    }
+
+    pipeline.setClearDepth(1.f);
+
+    GpuFrameBuffer::bindDefault();
+
+    rectBuffer.create(sizeof(UNIT_RECT_WITH_ST), eGpuBufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
+    rectBuffer.bind();
+    vertFormat.begin();
+    vertFormat
+        .with(0, 2, eDataType::FLOAT, false, 0, 16, &rectBuffer)
+        .with(1, 2, eDataType::FLOAT, false, 8, 16, &rectBuffer)
+        .end();
+
 
     return true;
 }
@@ -83,12 +121,23 @@ bool LoadModelEffect::HandleEvent(const SDL_Event* ev, float time)
 
 void LoadModelEffect::Render()
 {
-    pipeline.clear(true, true, false);
+    fb.bind();
 
     pipeline.setWorldEulerRotation(vec3(glm::radians(-15.0f), glm::radians(angleY), 0));
     pipeline.setView(vec3(0, posY, posZ), vec3(0, posY-1.0f, posZ-3.0f));
+    pipeline.setState(GLS_DEPTHFUNC_LESS | GLS_CULL_FRONTSIDED /* | GLS_POLYMODE_LINE*/);
+    pipeline.useProgram(shader);
+    pipeline.clear(true, true, false);
 
-    //pipeline.update();
     world.renderWorld(pipeline);
 
+    GpuFrameBuffer::bindDefault();
+
+    pipeline.setLayout(vertFormat);
+    pipeline.bindTexture(*fb_color, 0);
+    pipeline.setState(GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_CULL_TWOSIDED);
+    pipeline.useProgram(fxaa);
+
+    pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
+    
 }

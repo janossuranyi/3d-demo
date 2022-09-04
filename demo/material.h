@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "types.h"
 
 struct TextureInfo {
 	int index;
@@ -84,5 +85,8 @@ struct Material {
 	TextureInfo emissiveTexture;
 	TextureInfo occlusionTexture;
 
+	bool hasNormal() const;
+	bool isMetallicRoughness() const;
+	bool isSpecularGlossiness() const;
 };
 
