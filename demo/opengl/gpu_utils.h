@@ -26,12 +26,12 @@ extern void GLAPIENTRY DebugMessageCallback(GLenum source,
     const void* userParam);
 
 #ifdef _DEBUG
-#define GL_FLUSH_ERRORS while(glGetError() != GL_NO_ERROR) {}
+#define GL_FLUSH_ERRORS() while(glGetError() != GL_NO_ERROR) {}
 #define GL_CHECK(stmt) do { \
             stmt; \
             CheckOpenGLError(#stmt, __FILE__, __LINE__); \
         } while (0)
 #else
 #define GL_CHECK(stmt) stmt
-#define GL_FLUSH_ERRORS
+#define GL_FLUSH_ERRORS()
 #endif

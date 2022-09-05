@@ -26,7 +26,7 @@ GLsizei FB_X, FB_Y;
 
 PointCubeEffect::~PointCubeEffect()
 {
-	GL_FLUSH_ERRORS
+	GL_FLUSH_ERRORS();
 	GL_CHECK(glUseProgram(0));
 	GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));

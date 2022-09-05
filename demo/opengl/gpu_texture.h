@@ -20,10 +20,8 @@ class GpuTexture
 public:
 	~GpuTexture() noexcept;
 	GpuTexture() :
-		mTexture(INVALID_TEXTURE),
-		m_width(),
-		m_height(),
-		m_depth() {}
+		mTexture(INVALID_TEXTURE){}
+
 	STD_TEXTURE_METHODS(GpuTexture)
 
 	GpuTexture(GpuTexture&& moved) noexcept;
@@ -47,7 +45,7 @@ public:
 	void generateMipMaps() const;
 
 	unsigned int textureID() const { return mTexture; }
-	void getDimensions(unsigned int& w, unsigned int& h, unsigned int& d);
+	void getDimensions(unsigned int& w, unsigned int& h);
 protected:
 	virtual GLenum getApiTarget() const = 0;
 
@@ -59,7 +57,7 @@ protected:
 	IntegerParamsVec mIntParams;
 	FloatParamsVec mFloatParams;
 
-	unsigned int m_width, m_height, m_depth;
+//	unsigned int m_width, m_height, m_depth;
 };
 
 class GpuTexture2D : public GpuTexture

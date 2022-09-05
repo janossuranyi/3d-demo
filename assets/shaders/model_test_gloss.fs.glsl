@@ -5,7 +5,7 @@
 const float PI = 3.14159265359;
 
 const float kLightRadius = 5;
-vec3 kLightColor = vec3(1.,1.,1.) * 10;
+vec3 kLightColor = vec3(0.8,0.7,0.3) * 10;
 
 out vec4 FragColor;
 

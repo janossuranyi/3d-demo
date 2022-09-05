@@ -4,7 +4,7 @@ in INTERFACE {
 	vec2 uv; ///< UV coordinates.
 } In ;
 
-uniform sampler2D screenTexture; ///< Image to filter.
+layout(binding = 0) uniform sampler2D screenTexture; ///< Image to filter.
 
 vec2 inverseScreenSize; ///< Size of one-pixel in UV space.
 

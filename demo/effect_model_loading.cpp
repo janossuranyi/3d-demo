@@ -1,4 +1,5 @@
 #include <string>
+#include <glm/glm.hpp>
 #include "gpu_buffer.h"
 #include "gpu_program.h"
 #include "pipeline.h"
@@ -17,13 +18,16 @@ bool LoadModelEffect::Init()
         return false;
     }
 
+    glm::vec3 clearColor = glm::pow(glm::vec3(.4f), glm::vec3(1.f / 2.2f));
+
     pipeline.setScreenRect(0, 0, videoConf.width, videoConf.height);
     pipeline.setState( GLS_DEPTHFUNC_LESS|GLS_CULL_FRONTSIDED/* | GLS_POLYMODE_LINE*/);
     pipeline.setWorldPosition(vec3(0, 0, 0));
     pipeline.setWorldScale(vec3(1, 1, 1));
     pipeline.setWorldEulerRotation(vec3(0, 0, 0));
     pipeline.setPerspectiveCamera(glm::radians(45.0f), 0.01f, 100.0f, 0.0f);
-    pipeline.setClearColor(.6f, .6f, 1.0f, 1.0f);
+    pipeline.setClearColor(clearColor.r,clearColor.g,clearColor.b, 1.0f);
+
     posZ = 3.0f;
 
     if (!shader.loadShader(
@@ -50,7 +54,7 @@ bool LoadModelEffect::Init()
     shader.set("samp4_ao", 4);
     
     pipeline.useProgram(fxaa);
-    fxaa.set("screenTexture", 0);
+    //fxaa.set("screenTexture", 0);
 
     pipeline.bindConstantBuffers();
     //glEnable(GL_FRAMEBUFFER_SRGB);

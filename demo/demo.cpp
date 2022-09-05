@@ -49,8 +49,7 @@ static bool V_Init(int w, int h, int multisample, bool fullscreen)
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_TRUE);
-
+    //SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_TRUE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     //SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, SDL_TRUE);
 
@@ -104,7 +103,7 @@ static bool V_Init(int w, int h, int multisample, bool fullscreen)
     std::string renderer = (char *)glGetString(GL_RENDERER);
     std::string version  = (char *)glGetString(GL_VERSION);
     const float gl_version = float(atof(version.c_str()));
-    videoConf.glVersion = gl_version * 100;
+    videoConf.glVersion = int(gl_version * 100);
 
     if (videoConf.glVersion < 450)
     {
@@ -127,6 +126,7 @@ static bool V_Init(int w, int h, int multisample, bool fullscreen)
     glScissor(0, 0, _w, _h);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glDisable(GL_FRAMEBUFFER_SRGB);
 
 #ifdef _DEBUG
     if (GLEW_ARB_debug_output)
@@ -186,7 +186,7 @@ void App_EventLoop()
 
     while (running)
     {
-        float now = SDL_GetTicks();
+        float now = float(SDL_GetTicks());
         float time = now - prev;
         prev = now;
 
@@ -212,7 +212,7 @@ void App_EventLoop()
 
         Uint32 tick1 = SDL_GetTicks();
 
-        GL_FLUSH_ERRORS
+        GL_FLUSH_ERRORS();
 
         if (sync) GL_CHECK(glDeleteSync(sync));
 
