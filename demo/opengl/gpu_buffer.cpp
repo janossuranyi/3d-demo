@@ -22,6 +22,36 @@ static inline GLenum GL_CastBufferType(eGpuBufferTarget type)
 	return GL_FALSE;
 }
 
+GpuBuffer::GpuBuffer(GpuBuffer&& moved) noexcept
+{
+	mBuffer = moved.mBuffer;
+	mIsMapped = moved.mIsMapped;
+	mIsReference = moved.mIsReference;
+	mMapPtr = moved.mMapPtr;
+	mSize = moved.mSize;
+	mOffset = moved.mOffset;
+	mTarget = moved.mTarget;
+	mUsage = moved.mUsage;
+	mAccess = moved.mAccess;
+	moved.mBuffer = INVALID_BUFFER;
+}
+
+GpuBuffer& GpuBuffer::operator=(GpuBuffer&& moved) noexcept
+{
+	mBuffer = moved.mBuffer;
+	mIsMapped = moved.mIsMapped;
+	mIsReference = moved.mIsReference;
+	mMapPtr = moved.mMapPtr;
+	mSize = moved.mSize;
+	mOffset = moved.mOffset;
+	mTarget = moved.mTarget;
+	mUsage = moved.mUsage;
+	mAccess = moved.mAccess;
+	moved.mBuffer = INVALID_BUFFER;
+
+	return *this;
+}
+
 void GpuBuffer::bind() const
 {
 	assert(mBuffer != INVALID_BUFFER);
@@ -189,7 +219,7 @@ void GpuBuffer::reference(uint32_t offset, uint32_t size, GpuBuffer& ref)
 
 GpuBuffer::~GpuBuffer()
 {
-	if (isOwnBuffer())
+	if (isOwnBuffer() && mBuffer != INVALID_BUFFER)
 	{
 		if (isMapped())
 		{

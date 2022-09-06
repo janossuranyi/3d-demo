@@ -1,6 +1,18 @@
 #pragma once
 #include <string>
+#include <cinttypes>
 #include "types.h"
+
+// Material Flags
+#define MF_METALLIC_ROUGNESS (1U)
+#define MF_SPECULAR_GLOSSINESS (1U<<1)
+#define MF_DIFFUSE_TEX (1U<<8)
+#define MF_NORMAL_TEX (1U<<9)
+#define MF_METALLIC_ROUGHNESS_TEX (1U<<10)
+#define MF_SPECULAR_GLOSSINESS_TEX (1U<<11)
+#define MF_EMISSIVE_TEX (1U<<12)
+#define Mf_OCCLUSION_TEX (1U<<13)
+
 
 struct TextureInfo {
 	int index;
@@ -52,14 +64,14 @@ struct pbrSpecularGlossiness_t {
 };
 
 struct Material {
-	enum Type { PBR_METALLIC_ROUGHNESS, PBR_SPECULAR_GLOSSINESS };
-	enum AlphaMode { ALPHA_MODE_OPAQUE, ALPHA_MODE_MASK, ALPHA_MODE_BLEND };
+	enum class Type : uint32_t { PBR_METALLIC_ROUGHNESS, PBR_SPECULAR_GLOSSINESS };
+	enum class AlphaMode : uint32_t { ALPHA_MODE_OPAQUE, ALPHA_MODE_MASK, ALPHA_MODE_BLEND };
 
 	Material() :
 		id(-1),
 		name("noname"),
-		type(PBR_METALLIC_ROUGHNESS),
-		alphaMode(ALPHA_MODE_OPAQUE),
+		type(Type::PBR_METALLIC_ROUGHNESS),
+		alphaMode(AlphaMode::ALPHA_MODE_OPAQUE),
 		emissiveFactor{ 1.0f,1.0f,1.0f },
 		emissiveTexture{ -1,-1 },
 		normalTexture{ -1,-1 },

@@ -229,7 +229,7 @@ bool World::loadWorld(const std::string& filename)
 		m.alphaCutoff				= float(mat.alphaCutoff);
 		m.doubleSided				= mat.doubleSided;
 		m.name						= mat.name;
-		m.alphaMode					= Material::ALPHA_MODE_OPAQUE;
+		m.alphaMode					= Material::AlphaMode::ALPHA_MODE_OPAQUE;
 		m.emissiveFactor			= glm::make_vec3(mat.emissiveFactor.data());
 		int x = createTexture(mat.normalTexture.index, model, eTextureFormat::RGBA);
 		m.normalTexture.index		= x;
@@ -241,8 +241,8 @@ bool World::loadWorld(const std::string& filename)
 		m.occlusionTexture.index	= x;
 		m.occlusionTexture.texCoord = mat.occlusionTexture.texCoord;
 
-		if (mat.alphaMode == "MASK")		m.alphaMode = Material::ALPHA_MODE_MASK;
-		else if (mat.alphaMode == "BLEND")	m.alphaMode = Material::ALPHA_MODE_BLEND;
+		if (mat.alphaMode == "MASK")		m.alphaMode = Material::AlphaMode::ALPHA_MODE_MASK;
+		else if (mat.alphaMode == "BLEND")	m.alphaMode = Material::AlphaMode::ALPHA_MODE_BLEND;
 	}
 
 	return true;

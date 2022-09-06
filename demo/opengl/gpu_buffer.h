@@ -14,6 +14,8 @@ public:
 	GpuBuffer(eGpuBufferTarget const type);
 	GpuBuffer(const GpuBuffer&) = delete;
 	GpuBuffer& operator=(GpuBuffer&) = delete;
+	GpuBuffer(GpuBuffer&& moved) noexcept;
+	GpuBuffer& operator=(GpuBuffer&& moved) noexcept;
 	void bind() const;
 	uint8_t* map(unsigned int access);
 	uint8_t* mapPeristentWrite();

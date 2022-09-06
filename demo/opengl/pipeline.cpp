@@ -1,6 +1,8 @@
 #include <SDL.h>
 #include <cstring>
 #include <cassert>
+#include <memory>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -48,10 +50,10 @@ Pipeline::Pipeline()
 		m_tmus[i].texId = 0;
 	}
 
-	m_camBuffer = new GpuBuffer(eGpuBufferTarget::UNIFORM);
-	m_sunBuffer = new GpuBuffer(eGpuBufferTarget::UNIFORM);
-	m_miscBuffer = new GpuBuffer(eGpuBufferTarget::UNIFORM);
-	m_mtxBuffer = new GpuBuffer(eGpuBufferTarget::UNIFORM);
+	m_camBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
+	m_mtxBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
+	m_miscBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
+	m_sunBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
 
 #define CREATE_CB_BUFFER(p,t) p->create(sizeof(t), eGpuBufferUsage::DYNAMIC, BA_WRITE_PERSISTENT_COHERENT, &t)
 
@@ -66,10 +68,6 @@ Pipeline::Pipeline()
 
 Pipeline::~Pipeline()
 {
-	delete m_camBuffer;
-	delete m_mtxBuffer;
-	delete m_miscBuffer;
-	delete m_sunBuffer;
 }
 
 
@@ -78,16 +76,16 @@ void Pipeline::setConstantBuffer(int name, GpuBuffer* buffer)
 	switch (name)
 	{
 	case CB_MATRIX:
-		m_mtxBuffer = buffer;
+		m_mtxBuffer.reset( buffer );
 		break;
 	case CB_CAMERA:
-		m_camBuffer = buffer;
+		m_camBuffer.reset ( buffer );
 		break;
 	case CB_SUN:
-		m_sunBuffer = buffer;
+		m_sunBuffer.reset( buffer );
 		break;
 	case CB_MISC:
-		m_miscBuffer = buffer;
+		m_miscBuffer.reset( buffer );
 		break;
 	}
 }
@@ -583,7 +581,7 @@ void Pipeline::bindTexture(GpuTexture2D& tex, int unit)
 
 void Pipeline::setMaterial(Material& material, World& world)
 {
-	if (material.type == Material::PBR_SPECULAR_GLOSSINESS)
+	if (material.type == Material::Type::PBR_SPECULAR_GLOSSINESS)
 	{
 		if (material.pbrSpecularGlossiness.diffuseTexture.index > -1)
 		{

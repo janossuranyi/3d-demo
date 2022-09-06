@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -68,7 +69,17 @@ public:
 	void clear(bool color, bool depth, bool stencil);
 	void bindConstantBuffers();
 
-	 struct alignas(16) g_misc_t {
+
+	struct alignas(16) g_material_t {
+		glm::vec4 baseColor;
+		glm::vec4 specularColor;
+		glm::vec4 emissiveColor;
+		float param1;   // metalness
+		float param2;   // roughness/shininess
+		glm::uint flags;
+	} g_material;
+
+	struct alignas(16) g_misc_t {
 		float time;
 		int screen_w;
 		int screen_h;
@@ -77,46 +88,42 @@ public:
 	} g_misc;
 
 	struct alignas(16) g_sun_t {
-		vec4 position;
-		vec4 direction;
-		vec4 color;
+		glm::vec4 position;
+		glm::vec4 direction;
+		glm::vec4 color;
 	} g_sun;
 
 	struct alignas(16) g_cam_t {
-		vec4 position;
-		vec4 target;
-		vec4 direction;
-		vec4 up;
+		glm::vec4 position;
+		glm::vec4 target;
+		glm::vec4 direction;
+		glm::vec4 up;
 		float znear;
 		float zfar;
 		float yfov;
 		float ascept;
 	} g_cam;
 
-	struct alignas(16) g_material_t {
-		vec4 baseColorFactor;
-	} g_material;
-
 	struct alignas(16) g_mtx_t {
-		mat4 m_W;
-		mat4 m_V;
-		mat4 m_P;
-		mat4 m_Normal;
+		glm::mat4 m_W;
+		glm::mat4 m_V;
+		glm::mat4 m_P;
+		glm::mat4 m_Normal;
 
-		mat4 m_WV;
-		mat4 m_VP;
-		mat4 m_WVP;
+		glm::mat4 m_WV;
+		glm::mat4 m_VP;
+		glm::mat4 m_WVP;
 
-		mat4 m_iP;
-		mat4 m_iVP;
+		glm::mat4 m_iP;
+		glm::mat4 m_iVP;
 	} g_mtx;
 
 	struct alignas(16) {
-		vec4 v_highFreq[16];
+		glm::vec4 v_highFreq[16];
 	} cb_highFreq;
 
 	struct alignas(16) {
-		vec4 v_lowFreq[16];
+		glm::vec4 v_lowFreq[16];
 	} cb_lowFreq;
 
 	struct indexedBufferBinding_t {
@@ -146,10 +153,10 @@ private:
 	std::array<indexedBufferBinding_t, MAX_BUFFER_BINDING> m_activeVertexArrayBinding{};
 	std::array<indexedBufferBinding_t, MAX_BUFFER_BINDING> m_activeUniformBinding{};
 
-	GpuBuffer* m_mtxBuffer;
-	GpuBuffer* m_camBuffer;
-	GpuBuffer* m_sunBuffer;
-	GpuBuffer* m_miscBuffer;
+	std::unique_ptr<GpuBuffer> m_mtxBuffer;
+	std::unique_ptr<GpuBuffer> m_camBuffer;
+	std::unique_ptr<GpuBuffer> m_sunBuffer;
+	std::unique_ptr<GpuBuffer> m_miscBuffer;
 
 	vec3 m_worldPosition{};
 	vec3 m_worldScale{};

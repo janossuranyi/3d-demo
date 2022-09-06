@@ -44,3 +44,24 @@ layout(std140) uniform cb_highFreq
 {
     vec4 g_highFreq[32];
 }
+
+// Material Flags
+#define MF_METALLIC_ROUGNESS (1)
+#define MF_SPECULAR_GLOSSINESS (1<<1)
+#define MF_DIFFUSE_TEX (1<<8)
+#define MF_NORMAL_TEX (1<<9)
+#define MF_METALLIC_ROUGHNESS_TEX (1<<10)
+#define MF_SPECULAR_GLOSSINESS_TEX (1<<11)
+#define MF_EMISSIVE_TEX (1<<12)
+#define Mf_OCCLUSION_TEX (1<<13)
+
+layout(std140) uniform cb_material
+{
+    vec4 baseColor;
+    vec4 specularColor;
+    vec4 emissiveColor;
+    float param1;   // metalness
+    float param2;   // roughness/shininess
+    uint flags;         
+
+} material;

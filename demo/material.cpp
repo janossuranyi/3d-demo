@@ -7,10 +7,10 @@ bool Material::hasNormal() const
 
 bool Material::isMetallicRoughness() const
 {
-    return type == PBR_METALLIC_ROUGHNESS;
+    return type == Type::PBR_METALLIC_ROUGHNESS;
 }
 
 bool Material::isSpecularGlossiness() const
 {
-    return type == PBR_SPECULAR_GLOSSINESS;
+    return type == Type::PBR_SPECULAR_GLOSSINESS;
 }
