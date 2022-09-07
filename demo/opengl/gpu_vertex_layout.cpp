@@ -2,6 +2,14 @@
 #include "gpu_utils.h"
 #include "gpu_vertex_layout.h"
 
+VertexLayout::VertexLayout(VertexLayout&& m) noexcept
+{
+    m_vao = m.m_vao;
+    m_numAttribs = m.m_numAttribs;
+
+    m.m_vao = 0;
+}
+
 VertexLayout::~VertexLayout()
 {
     if (m_vao)

@@ -39,13 +39,11 @@ Camera& World::createCamera(Camera::Type type)
 
 Mesh3D& World::createMesh3D()
 {
-	Mesh3D& res = m_meshes.emplace_back();
+	Mesh3D& res			= m_meshes.emplace_back();
+	RenderMesh3D& rm	= m_renderMeshes.emplace_back();
 
-	RenderMesh3D::Ptr rm = std::make_shared<RenderMesh3D>();
-	m_renderMeshes.push_back(rm);
-
-	res.setId( int(m_meshes.size() - 1) );
-	rm->setId(res.id());
+	res.setId(int(m_meshes.size() - 1));
+	rm.setId(res.id());
 
 	return res;
 }
@@ -270,7 +268,7 @@ Camera& World::getCamera(int id)
 	return m_cameras[id];
 }
 
-RenderMesh3D::Ptr World::getRenderMesh(int id)
+RenderMesh3D& World::getRenderMesh(int id)
 {
 	assert(id < m_renderMeshes.size());
 
@@ -315,10 +313,10 @@ void World::renderWorldRecurs(int node_, Pipeline& pipeline)
 
 	if (node.type() == Entity3D::Type::MESH)
 	{
-		RenderMesh3D::Ptr rm = getRenderMesh(node.value());
+		RenderMesh3D& rm = getRenderMesh(node.value());
 		pipeline.setWorldMatrix(node.worldMatrix());
 		pipeline.update();
-		rm->render(pipeline, *this);
+		rm.render(pipeline, *this);
 	}
 
 }
@@ -338,8 +336,8 @@ void World::createMeshEntity(tinygltf::Model& model, int n)
 
 		const int meshId = mesh.id();
 
-		m_renderMeshes[meshId]->compile(mesh);
-		m_renderMeshes[meshId]->setMaterial(mesh.material());
+		m_renderMeshes[meshId].compile(mesh);
+		m_renderMeshes[meshId].setMaterial(mesh.material());
 		ent.setValue(meshId);
 
 		setEntityTransform(ent, node);

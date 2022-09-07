@@ -24,31 +24,12 @@ static inline GLenum GL_CastBufferType(eGpuBufferTarget type)
 
 GpuBuffer::GpuBuffer(GpuBuffer&& moved) noexcept
 {
-	mBuffer = moved.mBuffer;
-	mIsMapped = moved.mIsMapped;
-	mIsReference = moved.mIsReference;
-	mMapPtr = moved.mMapPtr;
-	mSize = moved.mSize;
-	mOffset = moved.mOffset;
-	mTarget = moved.mTarget;
-	mUsage = moved.mUsage;
-	mAccess = moved.mAccess;
-	moved.mBuffer = INVALID_BUFFER;
+	move(moved);
 }
 
 GpuBuffer& GpuBuffer::operator=(GpuBuffer&& moved) noexcept
 {
-	mBuffer = moved.mBuffer;
-	mIsMapped = moved.mIsMapped;
-	mIsReference = moved.mIsReference;
-	mMapPtr = moved.mMapPtr;
-	mSize = moved.mSize;
-	mOffset = moved.mOffset;
-	mTarget = moved.mTarget;
-	mUsage = moved.mUsage;
-	mAccess = moved.mAccess;
-	moved.mBuffer = INVALID_BUFFER;
-
+	move(moved);
 	return *this;
 }
 
@@ -83,6 +64,21 @@ void GpuBuffer::bindIndexed(uint32_t index, uint32_t offset, uint32_t size)
 	{
 		GL_CHECK(glBindBufferRange(target, index, mBuffer, offset, size));
 	}
+}
+
+void GpuBuffer::move(GpuBuffer& moved)
+{
+	mBuffer = moved.mBuffer;
+	mIsMapped = moved.mIsMapped;
+	mIsReference = moved.mIsReference;
+	mMapPtr = moved.mMapPtr;
+	mSize = moved.mSize;
+	mOffset = moved.mOffset;
+	mTarget = moved.mTarget;
+	mUsage = moved.mUsage;
+	mAccess = moved.mAccess;
+
+	moved.mBuffer = INVALID_BUFFER;
 }
 
 void GpuBuffer::unMap()

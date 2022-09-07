@@ -28,7 +28,7 @@ public:
 	Light& getLight(int id);
 	Entity3D& getEntity(int id);
 	Camera& getCamera(int id);
-	RenderMesh3D::Ptr getRenderMesh(int id);
+	RenderMesh3D& getRenderMesh(int id);
 	GpuTexture2D& getTexture(int id);
 	Material& getMaterial(int id);
 	void renderWorld(Pipeline& pipeline);
@@ -48,7 +48,7 @@ private:
 	std::vector<Light> m_lights;
 	std::vector<Camera> m_cameras;
 	std::vector<Mesh3D> m_meshes;
-	std::vector<RenderMesh3D::Ptr> m_renderMeshes;
+	std::vector<RenderMesh3D> m_renderMeshes;
 	std::vector<Entity3D> m_entities;
 	std::vector<Material> m_materials;
 	std::vector<GpuTexture2D> m_textures;

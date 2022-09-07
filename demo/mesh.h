@@ -101,7 +101,12 @@ private:
 class RenderMesh3D
 {
 public:
-	using Ptr = std::shared_ptr<RenderMesh3D>;
+//	using Ptr = std::shared_ptr<RenderMesh3D>;
+
+	RenderMesh3D(RenderMesh3D&) = delete;
+	RenderMesh3D(RenderMesh3D&&) = default;
+	RenderMesh3D& operator=(RenderMesh3D&) = delete;
+	RenderMesh3D& operator=(RenderMesh3D&&) = default;
 
 	RenderMesh3D() :
 		m_Mode(eDrawMode::TRIANGLES),

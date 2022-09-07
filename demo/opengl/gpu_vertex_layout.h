@@ -31,6 +31,10 @@ struct VertexLayout
 {
 	friend class Pipeline;
 
+	VertexLayout() = default;
+	VertexLayout(VertexLayout&) = delete;
+	VertexLayout(VertexLayout&&) noexcept;
+
 	~VertexLayout();
 	VertexLayout& begin();
 	VertexLayout& with(

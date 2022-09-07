@@ -30,6 +30,7 @@ public:
 	void bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stride) const;
 	void bindIndexed(uint32_t index, uint32_t offset = 0, uint32_t size = 0);
 private:
+	void move(GpuBuffer&);
 	GLuint mBuffer;
 	bool mIsMapped;
 	bool mIsReference;
