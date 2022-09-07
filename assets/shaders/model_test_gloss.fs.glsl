@@ -4,8 +4,8 @@
 
 const float PI = 3.14159265359;
 
-const float kLightRadius = 5;
-vec3 kLightColor = vec3(0.8,0.7,0.3) * 10;
+const float kLightRadius = 10;
+vec3 kLightColor = vec3(1.0,1.0,1.0) * 10;
 
 out vec4 FragColor;
 
@@ -80,6 +80,10 @@ vec3 tonemap(vec3 c)
 float luminance(vec3 c)
 {
     return dot(c, vec3(0.299, 0.587, 0.114));
+}
+
+float rgb2luma(vec3 rgb){
+    return sqrt(dot(rgb, vec3(0.299, 0.587, 0.114)));
 }
 
 /* cook-torrance BRDF */
