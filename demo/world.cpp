@@ -162,8 +162,7 @@ bool World::loadWorld(const std::string& filename)
 	for (int i = 0; i < model.materials.size(); ++i)
 	{
 		_TG Material mat = model.materials[i];
-		m_materials.emplace_back();
-		Material& m = m_materials[m_materials.size() - 1];
+		Material& m = createMaterial();
 		
 		if (mat.extensions.size())
 		{
@@ -229,15 +228,22 @@ bool World::loadWorld(const std::string& filename)
 		m.name						= mat.name;
 		m.alphaMode					= Material::AlphaMode::ALPHA_MODE_OPAQUE;
 		m.emissiveFactor			= glm::make_vec3(mat.emissiveFactor.data());
-		int x = createTexture(mat.normalTexture.index, model, eTextureFormat::RGBA);
-		m.normalTexture.index		= x;
-		m.normalTexture.texCoord	= mat.normalTexture.texCoord;
-		x = createTexture(mat.emissiveTexture.index, model, eTextureFormat::RGBA);
-		m.emissiveTexture.index		= x;
-		m.emissiveTexture.texCoord	= mat.emissiveTexture.texCoord;
-		x = createTexture(mat.occlusionTexture.index, model, eTextureFormat::RGBA);
-		m.occlusionTexture.index	= x;
-		m.occlusionTexture.texCoord = mat.occlusionTexture.texCoord;
+
+		if (mat.normalTexture.index > -1) {
+			int x = createTexture(mat.normalTexture.index, model, eTextureFormat::RGBA);
+			m.normalTexture.index = x;
+			m.normalTexture.texCoord = mat.normalTexture.texCoord;
+		}
+		if (mat.emissiveTexture.index > -1) {
+			int x = createTexture(mat.emissiveTexture.index, model, eTextureFormat::RGBA);
+			m.emissiveTexture.index = x;
+			m.emissiveTexture.texCoord = mat.emissiveTexture.texCoord;
+		}
+		if (mat.occlusionTexture.index > -1) {
+			int x = createTexture(mat.occlusionTexture.index, model, eTextureFormat::RGBA);
+			m.occlusionTexture.index = x;
+			m.occlusionTexture.texCoord = mat.occlusionTexture.texCoord;
+		}
 
 		if (mat.alphaMode == "MASK")		m.alphaMode = Material::AlphaMode::ALPHA_MODE_MASK;
 		else if (mat.alphaMode == "BLEND")	m.alphaMode = Material::AlphaMode::ALPHA_MODE_BLEND;

@@ -46,13 +46,13 @@ bool LoadModelEffect::Init()
     //shader.bindUniformBlock("cb_matrix", 1);
 
     pipeline.useProgram(shader);
-
+/*
     shader.set("samp0_albedo", 0);
     shader.set("samp1_normal", 1);
     shader.set("samp2_pbr", 2);
     shader.set("samp3_emissive", 3);
     shader.set("samp4_ao", 4);
-    
+ */  
     pipeline.useProgram(fxaa);
     //fxaa.set("screenTexture", 0);
 

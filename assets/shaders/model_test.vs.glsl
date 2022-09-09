@@ -61,6 +61,6 @@ void main()
     vs_out.TangentLightPos = TBN * vec3(cam_position + vec4(0,1,0,1));
     vs_out.TangentViewPos  = TBN * vec3(cam_position);
     vs_out.TangentFragPos  = TBN * vs_out.FragPos;
-    vs_out.Normal = vNormal;
+    vs_out.Normal = TBN * N;
 }
 

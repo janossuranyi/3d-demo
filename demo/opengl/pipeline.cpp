@@ -583,6 +583,7 @@ void Pipeline::bindTexture(GpuTexture2D& tex, int unit)
 		tex.bind(unit);
 		m_tmus[unit].target = tex.getApiTarget();
 		m_tmus[unit].texId = tex.mTexture;
+		m_activeMaterial = -1;
 	}
 }
 
@@ -688,6 +689,7 @@ void Pipeline::init()
 	INIT_CB(CB_MISC, m_miscBuffer);
 	INIT_CB(CB_SUN, m_sunBuffer);
 	INIT_CB(CB_CAMERA, m_camBuffer);
+	INIT_CB(CB_MATERIAL, m_materialBuffer);
 
 	glEnable(GL_DEPTH_TEST);
 }

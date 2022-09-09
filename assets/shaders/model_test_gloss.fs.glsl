@@ -52,11 +52,11 @@ layout(std140, binding = 5) uniform cb_material
 
 } material;
 
-uniform sampler2D samp0_albedo;
-uniform sampler2D samp1_normal;
-uniform sampler2D samp2_pbr;
-uniform sampler2D samp3_emissive;
-uniform sampler2D samp4_ao;
+layout(binding = 0) uniform sampler2D samp0_albedo;
+layout(binding = 1) uniform sampler2D samp1_normal;
+layout(binding = 2) uniform sampler2D samp2_pbr;
+layout(binding = 3) uniform sampler2D samp3_emissive;
+layout(binding = 4) uniform sampler2D samp4_ao;
 
 struct specBRDF_t
 {
