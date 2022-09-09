@@ -54,6 +54,7 @@ Pipeline::Pipeline()
 	m_mtxBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
 	m_miscBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
 	m_sunBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
+	m_materialBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
 
 #define CREATE_CB_BUFFER(p,t) p->create(sizeof(t), eGpuBufferUsage::DYNAMIC, BA_WRITE_PERSISTENT_COHERENT, &t)
 
@@ -61,6 +62,7 @@ Pipeline::Pipeline()
 	CREATE_CB_BUFFER(m_mtxBuffer, g_mtx);
 	CREATE_CB_BUFFER(m_miscBuffer, g_misc);
 	CREATE_CB_BUFFER(m_sunBuffer, g_sun);
+	CREATE_CB_BUFFER(m_materialBuffer, g_material);
 
 	init();
 
@@ -434,6 +436,11 @@ void Pipeline::setState(uint64_t stateBits, bool forceGlState)
 	m_glStateBits = stateBits;
 }
 
+void Pipeline::setWorld(World* world)
+{
+	m_world = world;
+}
+
 void Pipeline::setWorldPosition(const vec3& v)
 {
 	m_worldPosition = v;
@@ -579,43 +586,66 @@ void Pipeline::bindTexture(GpuTexture2D& tex, int unit)
 	}
 }
 
-void Pipeline::setMaterial(Material& material, World& world)
+void Pipeline::setMaterial(int material)
 {
-	if (material.type == Material::Type::PBR_SPECULAR_GLOSSINESS)
-	{
-		if (material.pbrSpecularGlossiness.diffuseTexture.index > -1)
-		{
-			bindTexture(world.getTexture(material.pbrSpecularGlossiness.diffuseTexture.index), TEX_ALBEDO);
-		}
-		if (material.pbrSpecularGlossiness.specularGlossinessTexture.index > -1)
-		{
-			bindTexture(world.getTexture(material.pbrSpecularGlossiness.specularGlossinessTexture.index), TEX_PBR);
-		}
-	}
-	else
-	{
-		// Material::PBR_METALLIC_ROUGHNESS
-		if (material.pbrMetallicRoughness.baseColorTexture.index > -1)
-		{
-			bindTexture(world.getTexture(material.pbrMetallicRoughness.baseColorTexture.index), TEX_ALBEDO);
-		}
-		if (material.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
-		{
-			bindTexture(world.getTexture(material.pbrMetallicRoughness.metallicRoughnessTexture.index), TEX_PBR);
-		}
-	}
+	assert(m_world != nullptr);
+	Material& m = m_world->getMaterial(material);
+	setMaterial(m);
+}
 
-	if (material.emissiveTexture.index > -1)
+void Pipeline::setMaterial(Material& material)
+{
+	assert(m_world != nullptr);
+
+	if (material.id() != m_activeMaterial)
 	{
-		bindTexture(world.getTexture(material.emissiveTexture.index), TEX_EMISSIVE);
-	}
-	if (material.normalTexture.index > -1)
-	{
-		bindTexture(world.getTexture(material.normalTexture.index), TEX_NORMAL);
-	}
-	if (material.occlusionTexture.index > -1)
-	{
-		bindTexture(world.getTexture(material.occlusionTexture.index), TEX_AO);
+		m_activeMaterial = material.id();
+		m_bChangeMaterial = true;
+		g_material.flags = 0;
+
+		if (material.type == Material::Type::PBR_SPECULAR_GLOSSINESS)
+		{
+			if (material.pbrSpecularGlossiness.diffuseTexture.index > -1)
+			{
+				bindTexture(m_world->getTexture(material.pbrSpecularGlossiness.diffuseTexture.index), TEX_ALBEDO);
+				g_material.flags |= MF_DIFFUSE_TEX;
+			}
+			if (material.pbrSpecularGlossiness.specularGlossinessTexture.index > -1)
+			{
+				bindTexture(m_world->getTexture(material.pbrSpecularGlossiness.specularGlossinessTexture.index), TEX_PBR);
+				g_material.flags |= MF_SPECULAR_GLOSSINESS_TEX;
+			}
+		}
+		else
+		{
+			// Material::PBR_METALLIC_ROUGHNESS
+			if (material.pbrMetallicRoughness.baseColorTexture.index > -1)
+			{
+				bindTexture(m_world->getTexture(material.pbrMetallicRoughness.baseColorTexture.index), TEX_ALBEDO);
+				g_material.flags |= MF_DIFFUSE_TEX;
+			}
+			if (material.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
+			{
+				bindTexture(m_world->getTexture(material.pbrMetallicRoughness.metallicRoughnessTexture.index), TEX_PBR);
+				g_material.flags |= MF_METALLIC_ROUGHNESS_TEX;
+			}
+		}
+
+		if (material.emissiveTexture.index > -1)
+		{
+			bindTexture(m_world->getTexture(material.emissiveTexture.index), TEX_EMISSIVE);
+			g_material.flags |= MF_EMISSIVE_TEX;
+		}
+		if (material.normalTexture.index > -1)
+		{
+			bindTexture(m_world->getTexture(material.normalTexture.index), TEX_NORMAL);
+			g_material.flags |= MF_NORMAL_TEX;
+		}
+		if (material.occlusionTexture.index > -1)
+		{
+			bindTexture(m_world->getTexture(material.occlusionTexture.index), TEX_AO);
+			g_material.flags |= Mf_OCCLUSION_TEX;
+		}
 	}
 }
 
@@ -733,7 +763,11 @@ void Pipeline::update()
 		UPDATE_CB(m_sunBuffer, g_sun);
 		m_bChangeSun = false;
 	}
-
+	if (m_bChangeMaterial)
+	{
+		UPDATE_CB(m_materialBuffer, g_material);
+		m_bChangeMaterial = false;
+	}
 }
 
 void Pipeline::clear(bool color, bool depth, bool stencil)
@@ -750,4 +784,10 @@ void Pipeline::bindConstantBuffers()
 {
 	bindUniformBuffer(*m_mtxBuffer, CB_MATRIX);
 	bindUniformBuffer(*m_camBuffer, CB_CAMERA);
+	bindUniformBuffer(*m_materialBuffer, CB_MATERIAL);
+}
+
+void Pipeline::bindDefaultFramebuffer() const
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

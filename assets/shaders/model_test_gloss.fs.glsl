@@ -1,5 +1,16 @@
 #version 450 core
 
+// Material Flags
+#define MF_METALLIC_ROUGNESS 1
+#define MF_SPECULAR_GLOSSINESS (1<<1)
+#define MF_DIFFUSE_TEX (1<<8)
+#define MF_NORMAL_TEX (1<<9)
+#define MF_METALLIC_ROUGHNESS_TEX (1<<10)
+#define MF_SPECULAR_GLOSSINESS_TEX (1<<11)
+#define MF_EMISSIVE_TEX (1<<12)
+#define Mf_OCCLUSION_TEX (1<<13)
+
+
 // PBR Specular-Glossiness model
 
 const float PI = 3.14159265359;
@@ -29,6 +40,17 @@ layout(std140, binding = 2) uniform cb_camera
 	float yfov;
 	float ascept;
 };
+
+layout(std140, binding = 5) uniform cb_material
+{
+    vec4 baseColor;
+    vec4 specularColor;
+    vec4 emissiveColor;
+    float param1;   // metalness
+    float param2;   // roughness/shininess
+    uint flags;         
+
+} material;
 
 uniform sampler2D samp0_albedo;
 uniform sampler2D samp1_normal;
@@ -112,15 +134,30 @@ specBRDF_t specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness ) {
 
 void main()
 {
+    vec3 Cd, N;
+    vec4 Csg;
 
-    vec3 Cd = texture(samp0_albedo, fs_in.TexCoords).rgb;
-    vec4 Csg = texture(samp2_pbr, fs_in.TexCoords);
+    if ((material.flags & MF_DIFFUSE_TEX) != 0) {
+        Cd = texture(samp0_albedo, fs_in.TexCoords).rgb;
+    } else {
+        Cd = material.baseColor.rgb;
+    }
+    
+    if ((material.flags & MF_SPECULAR_GLOSSINESS_TEX) != 0) {
+        Csg = texture(samp2_pbr, fs_in.TexCoords);
+    } else {
+        Csg = material.specularColor;
+    }
+    
     vec3 Cs = Csg.rgb;
 
-    vec3 N = texture(samp1_normal, fs_in.TexCoords).rgb;
-    N = normalize(N * 2.0 - 1.0);  // this normal is in tangent space
+    if ((material.flags & MF_NORMAL_TEX) != 0) {
+        N = texture(samp1_normal, fs_in.TexCoords).rgb;
+        N = normalize(N * 2.0 - 1.0);  // this normal is in tangent space
+    } else {
+        N = normalize(fs_in.Normal);
+    }
 
-    //vec3 N = fs_in.Normal;
     vec3 V = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
 
     vec3 finalColor = vec3(0.0);

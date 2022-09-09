@@ -59,7 +59,7 @@ Entity3D& World::createEntity(Entity3D::Type type)
 Material& World::createMaterial()
 {
 	Material& res = m_materials.emplace_back();
-	res.id = int(m_materials.size() - 1);
+	res._id = int(m_materials.size() - 1);
 
 	return res;
 }
@@ -291,6 +291,8 @@ Material& World::getMaterial(int id)
 
 void World::renderWorld(Pipeline& pipeline)
 {
+	pipeline.setWorld(this);
+
 	for (int n : m_root)
 	{
 		renderWorldRecurs(n, pipeline);
@@ -315,8 +317,7 @@ void World::renderWorldRecurs(int node_, Pipeline& pipeline)
 	{
 		RenderMesh3D& rm = getRenderMesh(node.value());
 		pipeline.setWorldMatrix(node.worldMatrix());
-		pipeline.update();
-		rm.render(pipeline, *this);
+		rm.render(pipeline);
 	}
 
 }

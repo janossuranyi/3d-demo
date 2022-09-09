@@ -28,6 +28,7 @@ const int CB_MATRIX = 1;
 const int CB_CAMERA = 2;
 const int CB_SUN = 3;
 const int CB_MISC = 4;
+const int CB_MATERIAL = 5;
 
 const int TEX_ALBEDO = 0;
 const int TEX_NORMAL = 1;
@@ -42,6 +43,7 @@ public:
 	~Pipeline();
 
 	void setState(uint64_t stateBits, bool forceGlState = false);
+	void setWorld(World* world);
 	void setWorldPosition(const vec3& v);
 	void setWorldScale(const vec3& v);
 	void setWorldEulerRotation(const vec3& v);
@@ -58,7 +60,8 @@ public:
 	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset, uint32_t baseVertex);
 	void bindTexture(GpuTexture2D& tex, int unit);
 
-	void setMaterial(Material& material, World& world);
+	void setMaterial(int material);
+	void setMaterial(Material& material);
 	void setView(const vec3& pos, const vec3& target);
 	void setClearColor(float r, float b, float g, float a);
 	void setClearDepth(float d);
@@ -68,7 +71,7 @@ public:
 	void update();
 	void clear(bool color, bool depth, bool stencil);
 	void bindConstantBuffers();
-
+	void bindDefaultFramebuffer() const;
 
 	struct alignas(16) g_material_t {
 		glm::vec4 baseColor;
@@ -157,6 +160,7 @@ private:
 	std::unique_ptr<GpuBuffer> m_camBuffer;
 	std::unique_ptr<GpuBuffer> m_sunBuffer;
 	std::unique_ptr<GpuBuffer> m_miscBuffer;
+	std::unique_ptr<GpuBuffer> m_materialBuffer;
 
 	vec3 m_worldPosition{};
 	vec3 m_worldScale{};
@@ -167,8 +171,13 @@ private:
 	bool m_bChangeView{};
 	bool m_bChangeSun{};
 	bool m_bChangeCam{};
+	bool m_bChangeMaterial{};
 
 	GLint m_activeLayout;
+
+	World* m_world;
+
+	int m_activeMaterial{-1};
 
 	void setConstantBuffer(int name, GpuBuffer* buffer);
 	void init();

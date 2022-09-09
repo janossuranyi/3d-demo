@@ -14,38 +14,38 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
     if (mesh.positionLayout().count)
     {
         const VertexAttribute& va = mesh.positionLayout();
-        m_PositionBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.positions());
+        m_PositionBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.positions().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, 0, 0, &m_PositionBuf);
     }
     if (mesh.normalLayout().count)
     {
         const VertexAttribute& va = mesh.normalLayout();
-        m_NormalBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.normals());
+        m_NormalBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.normals().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, 0, 0, &m_NormalBuf);
     }
     if (mesh.tangentLayout().count)
     {
         const VertexAttribute& va = mesh.tangentLayout();
-        m_TangentBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.tangents());
+        m_TangentBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.tangents().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, 0, 0, &m_TangentBuf);
     }
     if (mesh.texCoordLayout().count)
     {
         const VertexAttribute& va = mesh.texCoordLayout();
-        m_TexCoordBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.texCoords());
+        m_TexCoordBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.texCoords().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, 0, 0, &m_TexCoordBuf);
     }
     if (mesh.colorLayout().count)
     {
         const VertexAttribute& va = mesh.colorLayout();
-        m_ColorBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.colors());
+        m_ColorBuf.create(va.byteSize, eGpuBufferUsage::STATIC, 0, mesh.colors().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, 0, 0, &m_ColorBuf);
     }
     m_Layout.end();
 
     if (mesh.numIndex())
     {
-        m_IndexBuf.create(mesh.numIndex() * (mesh.indexType() == eDataType::UNSIGNED_SHORT ? 2 : 4), eGpuBufferUsage::STATIC, 0, mesh.indices());
+        m_IndexBuf.create(mesh.numIndex() * (mesh.indexType() == eDataType::UNSIGNED_SHORT ? 2 : 4), eGpuBufferUsage::STATIC, 0, mesh.indices().data());
         m_NumIndex = mesh.numIndex();
         m_IndexType = mesh.indexType();
     }
@@ -55,11 +55,11 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
     m_bCompiled = true;
 }
 
-void RenderMesh3D::render(Pipeline& p, World& world) const
+void RenderMesh3D::render(Pipeline& p) const
 {
     p.setLayout(m_Layout);
-    auto& mat = world.getMaterial(m_material);
-    p.setMaterial(mat, world);
+    p.setMaterial(m_material);
+    p.update();
 
     if (m_IndexBuf.isCreated())
     {

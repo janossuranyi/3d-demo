@@ -68,7 +68,7 @@ struct Material {
 	enum class AlphaMode : uint32_t { ALPHA_MODE_OPAQUE, ALPHA_MODE_MASK, ALPHA_MODE_BLEND };
 
 	Material() :
-		id(-1),
+		_id(-1),
 		name("noname"),
 		type(Type::PBR_METALLIC_ROUGHNESS),
 		alphaMode(AlphaMode::ALPHA_MODE_OPAQUE),
@@ -82,7 +82,7 @@ struct Material {
 
 	std::string name;
 	Type type;
-	int id;
+	int _id;
 
 	union {
 		pbrMetallicRoughness_t pbrMetallicRoughness;
@@ -100,5 +100,6 @@ struct Material {
 	bool hasNormal() const;
 	bool isMetallicRoughness() const;
 	bool isSpecularGlossiness() const;
+	inline int id() const { return _id; }
 };
 

@@ -94,7 +94,7 @@ bool LoadModelEffect::Init()
 
 bool LoadModelEffect::Update(float time)
 {
-    angleY += 0.01 * time;
+    angleY += 0.01f * time;
     angleY = std::fmodf(angleY, 360.0f);
     return true;
 }
@@ -105,19 +105,19 @@ bool LoadModelEffect::HandleEvent(const SDL_Event* ev, float time)
     {
         if (ev->key.keysym.sym == SDLK_UP)
         {
-            posZ -= 0.001 * time;
+            posZ -= 0.001f * time;
         }
         else if (ev->key.keysym.sym == SDLK_DOWN)
         {
-            posZ += 0.001 * time;
+            posZ += 0.001f * time;
         }
         else if (ev->key.keysym.sym == SDLK_LEFT)
         {
-            posY -= 0.001 * time;
+            posY -= 0.001f * time;
         }
         else if (ev->key.keysym.sym == SDLK_RIGHT)
         {
-            posY += 0.001 * time;
+            posY += 0.001f * time;
         }
     }
     return true;
@@ -135,7 +135,7 @@ void LoadModelEffect::Render()
 
     world.renderWorld(pipeline);
 
-    GpuFrameBuffer::bindDefault();
+    pipeline.bindDefaultFramebuffer();
 
     pipeline.setLayout(vertFormat);
     pipeline.bindTexture(*fb_color, 0);

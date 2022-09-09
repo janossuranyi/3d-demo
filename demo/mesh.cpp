@@ -52,14 +52,15 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
         const _TG Accessor& access = model.accessors[p.second];
         const _TG BufferView& view = model.bufferViews[access.bufferView];
         const _TG Buffer& buffer = model.buffers[view.buffer];
+        const unsigned char* first = buffer.data.data() + view.byteOffset + access.byteOffset;
 
         if (p.first == "POSITION")
         {
             // allocate position memory
             VertexAttribute attr{ "POSITION", eDataType::FLOAT, 3, access.count, access.normalized, 0, 0, 0, view.byteLength };
             m_Position_layout = attr;
-            m_Positions = Mem_Alloc16(view.byteLength);
-            ::memcpy(m_Positions, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
+
+            m_Positions.assign(first, first + view.byteLength);
 
             // bounds
             m_Bounds[0].x = static_cast<float>(access.minValues[0]);
@@ -74,15 +75,14 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
         {
             VertexAttribute attr{ "NORMAL", eDataType::FLOAT, 3, access.count, access.normalized, 0, 0, 0, view.byteLength };
             m_Normal_layout = attr;
-            m_Normals = Mem_Alloc16(view.byteLength);
-            ::memcpy(m_Normals, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
+
+            m_Normals.assign(first, first + view.byteLength);
         }
         else if (p.first == "TANGENT")
         {
             VertexAttribute attr{ "TANGENT", eDataType::FLOAT, 4, access.count, access.normalized, 0, 0, 0, view.byteLength };
             m_Tangent_layout = attr;
-            m_Tangents = Mem_Alloc16(view.byteLength);
-            ::memcpy(m_Tangents, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
+            m_Tangents.assign(first, first + view.byteLength);
         }
         else if (p.first == "TEXCOORD_0")
         {
@@ -109,8 +109,7 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
             attr.offset = 0;
 
             m_TexCoord_layout = attr;
-            m_TexCoords = Mem_Alloc16(view.byteLength);
-            ::memcpy(m_TexCoords, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
+            m_TexCoords.assign(first, first + view.byteLength);
         }
         else if (p.first == "COLOR_0")
         {
@@ -138,8 +137,8 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
             attr.byteSize = view.byteLength;
 
             m_Color_layout = attr;
-            m_Colors = Mem_Alloc16(view.byteLength);
-            ::memcpy(m_Colors, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
+            m_Colors.assign(first, first + view.byteLength);
+
         }
     }
 
@@ -172,6 +171,7 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
     const _TG Accessor& access = model.accessors[meshPrimitive.indices];
     const _TG BufferView& view = model.bufferViews[access.bufferView];
     const _TG Buffer& buffer = model.buffers[view.buffer];
+    const unsigned char* first = buffer.data.data() + view.byteOffset + access.byteOffset;
 
     switch (access.componentType)
     {
@@ -185,9 +185,7 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
 
     m_NumIndex = access.count;
 
-    m_Indices = Mem_Alloc16(view.byteLength);
-    ::memcpy(m_Indices, buffer.data.data() + view.byteOffset + access.byteOffset, view.byteLength);
-
+    m_Indices.assign(first, first + view.byteLength);
     m_material = meshPrimitive.material;
 
     Info("***** Mesh %d, material: %d/%d", m_id, m_material, meshPrimitive.material);

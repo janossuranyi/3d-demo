@@ -15,7 +15,7 @@ struct SpotLight
 
 struct Light
 {
-	enum Type { DIRECTIONAL, POINT, SPOT };
+	enum class Type { DIRECTIONAL, POINT, SPOT };
 	using Ptr = std::shared_ptr<Light>;
 
 	Light(Type type_) :

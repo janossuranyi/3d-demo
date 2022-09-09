@@ -45,12 +45,12 @@ public:
 
 	int material() const;
 	void setMaterial(const int);
-	const void* positions() const { return m_Positions; }
-	const void* texCoords() const { return m_TexCoords; }
-	const void* normals() const { return m_Normals; }
-	const void* tangents() const { return m_Tangents; }
-	const void* colors() const { return m_Colors; }
-	const void* indices() const { return m_Indices; }
+	const std::vector<char>& positions() const { return m_Positions; }
+	const std::vector<char>& texCoords() const { return m_TexCoords; }
+	const std::vector<char>& normals() const { return m_Normals; }
+	const std::vector<char>& tangents() const { return m_Tangents; }
+	const std::vector<char>& colors() const { return m_Colors; }
+	const std::vector<char>& indices() const { return m_Indices; }
 	unsigned int numIndex() const { return m_NumIndex; }
 	eDataType indexType() const { return m_IndexType; }
 	eDrawMode drawMode() const { return m_Mode; }
@@ -71,12 +71,12 @@ public:
 private:
 
 	int m_id;
-	void* m_Positions;
-	void* m_TexCoords;
-	void* m_Normals;
-	void* m_Tangents;
-	void* m_Colors;
-	void* m_Indices;
+	std::vector<char> m_Positions;
+	std::vector<char> m_TexCoords;
+	std::vector<char> m_Normals;
+	std::vector<char> m_Tangents;
+	std::vector<char> m_Colors;
+	std::vector<char> m_Indices;
 
 	VertexAttribute m_Position_layout;
 	VertexAttribute m_TexCoord_layout;
@@ -126,7 +126,7 @@ public:
 		m_Max() {}
 
 	void compile(const Mesh3D& mesh);
-	void render(Pipeline& p, World& world) const;
+	void render(Pipeline& p) const;
 
 	int material() const;
 	void setMaterial(const int);
