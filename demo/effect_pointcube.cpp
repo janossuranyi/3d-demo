@@ -97,9 +97,10 @@ bool PointCubeEffect::Init()
 	
 
 	const GLsizeiptr bufSize = sizeof(VertexLayout) * NUMPOINTS;
-	vbo_points.create(bufSize, eGpuBufferUsage::STATIC, 0);
+	vbo_points.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
+	vbo_points->create(bufSize, GpuBuffer::Usage::STATIC, 0);
 
-	uint8_t *ptr = vbo_points.map(BA_MAP_WRITE);
+	uint8_t *ptr = vbo_points->map(BA_MAP_WRITE);
 	VertexLayout* buffer = reinterpret_cast<VertexLayout*>(ptr);
 
 	Info("VertexBuffer: allocated %d bytes, mapped at %p", (int)bufSize, buffer);
@@ -121,12 +122,13 @@ bool PointCubeEffect::Init()
 		buffer[i].b = static_cast<GLubyte>( 255 * ((z / n) + 0.5f) );
 		buffer[i].a = 255;
 	}
-	vbo_points.unMap();
+	vbo_points->unMap();
 
+	vbo_pp.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
+	vbo_pp->create(6 * sizeof(PPLayout), GpuBuffer::Usage::STATIC, 0, UNIT_RECT_WITH_ST);
 
-	vbo_pp.create(6 * sizeof(PPLayout), eGpuBufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
-
-	vbo_skybox.create(sizeof(UNIT_BOX_POSITIONS), eGpuBufferUsage::STATIC, 0, UNIT_BOX_POSITIONS);
+	vbo_skybox.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
+	vbo_skybox->create(sizeof(UNIT_BOX_POSITIONS), GpuBuffer::Usage::STATIC, 0, UNIT_BOX_POSITIONS);
 
 	if (!prgPoints.loadShader(g_fileSystem.resolve("assets/shaders/draw_point.vs.glsl"), g_fileSystem.resolve("assets/shaders/draw_point.fs.glsl")))
 	{
@@ -214,7 +216,7 @@ bool PointCubeEffect::Init()
 
 
 	GL_CHECK(glBindVertexArray(vao_points));
-	vbo_points.bind();
+	vbo_points->bind();
 	GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexLayout), (void *)0));
 	GL_CHECK(glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexLayout), (void*)12));
 	GL_CHECK(glEnableVertexAttribArray(0));
@@ -224,7 +226,7 @@ bool PointCubeEffect::Init()
 	GL_CHECK(glDisableVertexAttribArray(1));
 
 	GL_CHECK(glBindVertexArray(vao_pp));
-	vbo_pp.bind();
+	vbo_pp->bind();
 	GL_CHECK(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PPLayout), (void *)0));
 	GL_CHECK(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(PPLayout), (void *)8));
 	GL_CHECK(glEnableVertexAttribArray(0));
@@ -234,7 +236,7 @@ bool PointCubeEffect::Init()
 	GL_CHECK(glDisableVertexAttribArray(1));
 
 	GL_CHECK(glBindVertexArray(vao_skybox));
-	vbo_skybox.bind();
+	vbo_skybox->bind();
 	GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0));
 	GL_CHECK(glEnableVertexAttribArray(0));
 	GL_CHECK(glBindVertexArray(0));

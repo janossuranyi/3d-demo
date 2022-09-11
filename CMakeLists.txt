@@ -22,6 +22,8 @@ file(GLOB DEMO_GL_H demo/opengl/*.h)
 file(GLOB DEMO_GL_C demo/opengl/*.cpp)
 file(GLOB DEMO_H demo/*.h)
 file(GLOB DEMO_C demo/*.cpp)
+file(GLOB SCENE_H demo/scene/*.h)
+file(GLOB SCENE_C demo/scene/*.cpp)
 
 add_library(glew STATIC
   external/glew-2.1.0/src/glew.c
@@ -41,6 +43,7 @@ add_library(tinygltf STATIC
 include_directories(
   ./
   demo/opengl/
+  demo/scene/
   demo/
   external/glew-2.1.0/include/
   external/glm/
@@ -62,6 +65,8 @@ add_executable(demo
   ${DEMO_C}
   ${DEMO_GL_H}
   ${DEMO_GL_C}
+  ${SCENE_H}
+  ${SCENE_C}
   ${SHADERS}
 )
 
@@ -97,5 +102,13 @@ set(DEMO_GL
   ${DEMO_GL_H}
   ${DEMO_GL_C}
 )
+
+set(SCENE_FILES
+  ${SCENE_H}
+  ${SCENE_C}
+)
+
 source_group("Shaders" FILES ${SHADERS} )
 source_group("OpenGL" FILES ${DEMO_GL} )
+source_group("Scene" FILES ${SCENE_FILES} )
+

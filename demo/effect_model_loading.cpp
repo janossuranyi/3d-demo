@@ -11,6 +11,7 @@
 
 bool LoadModelEffect::Init()
 {
+    world.init();
 
     if (!world.loadWorld(g_fileSystem.resolve(worldFile)))
     {
@@ -46,22 +47,9 @@ bool LoadModelEffect::Init()
     //shader.bindUniformBlock("cb_matrix", 1);
 
     pipeline.useProgram(shader);
-/*
-    shader.set("samp0_albedo", 0);
-    shader.set("samp1_normal", 1);
-    shader.set("samp2_pbr", 2);
-    shader.set("samp3_emissive", 3);
-    shader.set("samp4_ao", 4);
- */  
     pipeline.useProgram(fxaa);
-    //fxaa.set("screenTexture", 0);
-
     pipeline.bindConstantBuffers();
     //glEnable(GL_FRAMEBUFFER_SRGB);
-
-//    shader.set(4, TEX_EMISSIVE);
-//    shader.set(5, TEX_AO);
-
 
     fb_color = GpuTexture2D::createShared();
     fb_color->createRGB(videoConf.width, videoConf.height, 0);
@@ -79,13 +67,14 @@ bool LoadModelEffect::Init()
     pipeline.setClearDepth(1.f);
 
     GpuFrameBuffer::bindDefault();
-
-    rectBuffer.create(sizeof(UNIT_RECT_WITH_ST), eGpuBufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
-    rectBuffer.bind();
+    
+    rectBuffer.reset(new GpuBuffer());
+    rectBuffer->create(sizeof(UNIT_RECT_WITH_ST), GpuBuffer::Usage::STATIC, 0, UNIT_RECT_WITH_ST);
+    rectBuffer->bind();
     vertFormat.begin();
     vertFormat
-        .with(0, 2, eDataType::FLOAT, false, 0, 16, &rectBuffer)
-        .with(1, 2, eDataType::FLOAT, false, 8, 16, &rectBuffer)
+        .with(0, 2, eDataType::FLOAT, false, 0, 16, rectBuffer.get())
+        .with(1, 2, eDataType::FLOAT, false, 8, 16, rectBuffer.get())
         .end();
 
 

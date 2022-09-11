@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <SDL.h>
 #include <glm/glm.hpp>
+#include <memory>
 #include "effect.h"
 #include "gpu_types.h"
 #include "gpu_buffer.h"
@@ -22,8 +23,7 @@ struct ComputeTestEffect : public Effect
 		float angle;
 	} *cb_vars;
 
-	GpuBuffer cbo;
-	GpuBuffer vbo_rect;
+	std::unique_ptr<GpuBuffer> cbo, vbo_rect;
 	GpuProgram prg_compute;
 	GpuProgram prg_view;
 	GLuint tex_w = 512, tex_h = 512;
@@ -43,8 +43,6 @@ struct ComputeTestEffect : public Effect
 
 	ComputeTestEffect() :
 		fa(),
-		vbo_rect(eGpuBufferTarget::VERTEX),
-		cbo(eGpuBufferTarget::UNIFORM),
 		prg_compute(),
 		prg_view(),
 		angle(0.0f),

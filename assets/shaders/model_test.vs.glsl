@@ -32,14 +32,14 @@ layout(std140, binding = 2) uniform cb_camera
 	float ascept;
 };
 
-out VS_OUT {
+out INTERFACE {
    vec3 FragPos;
    vec2 TexCoords;
    vec3 TangentLightPos;
    vec3 TangentViewPos;
    vec3 TangentFragPos;
    vec3 Normal;
-} vs_out;
+} Out;
 
 void main()
 {
@@ -56,11 +56,11 @@ void main()
 
     gl_Position = m_WVP * vec4(vPosition, 1.0);
     
-    vs_out.TexCoords = vTexCoord;
-    vs_out.FragPos = vec3(m_W * vec4(vPosition, 1.0));
-    vs_out.TangentLightPos = TBN * vec3(cam_position + vec4(0,1,0,1));
-    vs_out.TangentViewPos  = TBN * vec3(cam_position);
-    vs_out.TangentFragPos  = TBN * vs_out.FragPos;
-    vs_out.Normal = TBN * N;
+    Out.TexCoords = vTexCoord;
+    Out.FragPos = vec3(m_W * vec4(vPosition, 1.0));
+    Out.TangentLightPos = TBN * vec3(cam_position + vec4(0,1,0,1));
+    Out.TangentViewPos  = TBN * vec3(cam_position);
+    Out.TangentFragPos  = TBN * Out.FragPos;
+    Out.Normal = TBN * N;
 }
 

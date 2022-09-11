@@ -88,10 +88,7 @@ struct PointCubeEffect : public Effect
 		skyTex_(),
 		depthTex(),
 		rectWMtx(),
-		m_fb(),
-		vbo_points(eGpuBufferTarget::VERTEX),
-		vbo_pp(eGpuBufferTarget::VERTEX),
-		vbo_skybox(eGpuBufferTarget::VERTEX) {};
+		m_fb() {};
 
 	bool Init() override;
 	bool Update(float time) override;
@@ -99,9 +96,7 @@ struct PointCubeEffect : public Effect
 	bool HandleEvent(const SDL_Event* ev, float time) override;
 
 	//GLuint vbo, vbo_pp;
-	GpuBuffer vbo_points;
-	GpuBuffer vbo_pp;
-	GpuBuffer vbo_skybox;
+	std::unique_ptr<GpuBuffer> vbo_points, vbo_pp, vbo_skybox;
 
 	GLuint vao_points;
 	GLuint vao_pp;

@@ -32,6 +32,9 @@ public:
 	GpuTexture2D& getTexture(int id);
 	Material& getMaterial(int id);
 	void renderWorld(Pipeline& pipeline);
+	void init();
+
+	GpuTexture2D& texture1x1();
 
 	const std::vector<int>& root() const;
 
@@ -45,12 +48,17 @@ private:
 	void setEntityTransform(Entity3D& ent, const tinygltf::Node& node);
 	int createTexture(int texture, tinygltf::Model& model, eTextureFormat format);
 
+	GpuTexture2D m_tex1x1;
+
 	std::vector<Light> m_lights;
 	std::vector<Camera> m_cameras;
 	std::vector<Mesh3D> m_meshes;
-	std::vector<RenderMesh3D> m_renderMeshes;
 	std::vector<Entity3D> m_entities;
 	std::vector<Material> m_materials;
 	std::vector<GpuTexture2D> m_textures;
 	std::vector<int> m_root;
+
+	std::vector<std::unique_ptr<RenderMesh3D>> m_renderMeshes;
 };
+
+inline	GpuTexture2D& World::texture1x1() { return m_tex1x1; }

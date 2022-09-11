@@ -39,11 +39,12 @@ Camera& World::createCamera(Camera::Type type)
 
 Mesh3D& World::createMesh3D()
 {
-	Mesh3D& res			= m_meshes.emplace_back();
-	RenderMesh3D& rm	= m_renderMeshes.emplace_back();
-
+	Mesh3D& res = m_meshes.emplace_back();
 	res.setId(int(m_meshes.size() - 1));
-	rm.setId(res.id());
+
+	m_renderMeshes.emplace_back();
+	m_renderMeshes.back().reset(new RenderMesh3D());
+	m_renderMeshes.back()->setId(res.id());
 
 	return res;
 }
@@ -278,7 +279,7 @@ RenderMesh3D& World::getRenderMesh(int id)
 {
 	assert(id < m_renderMeshes.size());
 
-	return m_renderMeshes[id];
+	return *m_renderMeshes[id];
 }
 
 GpuTexture2D& World::getTexture(int id)
@@ -305,6 +306,12 @@ void World::renderWorld(Pipeline& pipeline)
 	}
 }
 
+void World::init()
+{
+	m_tex1x1.create(1, 1, 0, eTextureFormat::RGBA, ePixelFormat::RGB, eDataType::UNSIGNED_BYTE, nullptr);
+	m_tex1x1.withDefaultLinearClampEdge().updateParameters();
+}
+
 const std::vector<int>& World::root() const
 {
 	return m_root;
@@ -321,7 +328,7 @@ void World::renderWorldRecurs(int node_, Pipeline& pipeline)
 
 	if (node.type() == Entity3D::Type::MESH)
 	{
-		RenderMesh3D& rm = getRenderMesh(node.value());
+		RenderMesh3D& rm = *m_renderMeshes[node.value()];
 		pipeline.setWorldMatrix(node.worldMatrix());
 		rm.render(pipeline);
 	}
@@ -343,8 +350,8 @@ void World::createMeshEntity(tinygltf::Model& model, int n)
 
 		const int meshId = mesh.id();
 
-		m_renderMeshes[meshId].compile(mesh);
-		m_renderMeshes[meshId].setMaterial(mesh.material());
+		m_renderMeshes[meshId]->compile(mesh);
+		m_renderMeshes[meshId]->setMaterial(mesh.material());
 		ent.setValue(meshId);
 
 		setEntityTransform(ent, node);

@@ -103,19 +103,9 @@ class RenderMesh3D
 public:
 //	using Ptr = std::shared_ptr<RenderMesh3D>;
 
-	RenderMesh3D(RenderMesh3D&) = delete;
-	RenderMesh3D(RenderMesh3D&&) = default;
-	RenderMesh3D& operator=(RenderMesh3D&) = delete;
-	RenderMesh3D& operator=(RenderMesh3D&&) = default;
 
 	RenderMesh3D() :
 		m_Mode(eDrawMode::TRIANGLES),
-		m_PositionBuf(eGpuBufferTarget::VERTEX),
-		m_TexCoordBuf(eGpuBufferTarget::VERTEX),
-		m_NormalBuf(eGpuBufferTarget::VERTEX),
-		m_TangentBuf(eGpuBufferTarget::VERTEX),
-		m_ColorBuf(eGpuBufferTarget::VERTEX),
-		m_IndexBuf(eGpuBufferTarget::INDEX),
 		m_bCompiled(),
 		m_NumIndex(),
 		m_IndexType(),
@@ -134,15 +124,18 @@ public:
 	bool isCompiled() const;
 	int id() const;
 	void setId(int id);
+
+	RenderMesh3D(RenderMesh3D&) = delete;
+	RenderMesh3D(RenderMesh3D&&) = delete;
+	RenderMesh3D& operator=(RenderMesh3D&) = delete;
+	RenderMesh3D& operator=(RenderMesh3D&&) = delete;
+
 private:
 	int m_id;
 
-	GpuBuffer m_PositionBuf;
-	GpuBuffer m_TexCoordBuf;
-	GpuBuffer m_NormalBuf;
-	GpuBuffer m_TangentBuf;
-	GpuBuffer m_ColorBuf;
-	GpuBuffer m_IndexBuf;
+	//std::unique_ptr<GpuBuffer> m_PositionBuf, m_TexCoordBuf, m_NormalBuf, m_TangentBuf, m_ColorBuf, m_IndexBuf;
+	std::unique_ptr<GpuBuffer> m_VertexBuf, m_IndexBuf;
+
 	int m_material;
 
 	VertexLayout m_Layout;

@@ -25,17 +25,13 @@ enum class eTexMagFilter { NEAREST, LINEAR };
 enum class eTexWrap { CLAMP_TO_BORDER, MIRRORED_REPEAT, REPEAT, MIRROR_CLAMP_TO_EDGE, CLAMP_TO_EDGE };
 enum class eImageAccess { READ_ONLY, WRITE_ONLY, READ_WRITE };
 enum class eImageFormat { RGBA32F, RGBA16F, RGBA8 };
+
 /*
 GPU Shader related types
 */
 enum class eShaderStage { VERTEX, FRAGMENT, GEOMETRY, TESS_CONTROL, TESS_EVALUATION, COMPUTE };
 
-/*
-GPU Buffer related types
-*/
 
-enum class eGpuBufferTarget { VERTEX, INDEX, UNIFORM, ENUM_SIZE };
-enum class eGpuBufferUsage { STATIC, DYNAMIC, DEFAULT };
 // eGpuBufferAccess 
 
 const unsigned int BA_DYNAMIC = 1;

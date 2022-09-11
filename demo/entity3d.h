@@ -24,23 +24,23 @@ public:
 		m_id(-1),
 		m_value(-1) {}
 
-	inline Type type() { return m_type; }
+	Type type() const;
 	bool addChild(int id_);
 	Entity3D& translate(vec3& vec);
 	Entity3D& rotate(vec3& eulerAngles);
 	Entity3D& rotate(quat& quaternion);
 	Entity3D& scale(vec3& vec);
-	const mat4& worldMatrix() const { return m_mtxWorld; }
+	const mat4& worldMatrix() const;
 	void updatMatrix();
 	void updateWorldMatrix();
 	void setWorldMatrix(const mat4& mtx);
 	void saveWorldTransform();
 	void updateParentChild();
-	int id() const { return m_id; }
-	void setId(int id) { m_id = id; }
-	void setValue(int i) { m_value = i; }
-	int value() const { return m_value; }
-	const std::vector<int>& children() const { return m_children; }
+	int id() const;
+	void setId(int id);
+	void setValue(int i);
+	int value() const;
+	const std::vector<int>& children() const;
 private:
 	int m_id;
 
@@ -61,3 +61,11 @@ private:
 	vec3 m_savedScale{};
 	quat m_savedRotation{};
 };
+
+inline	int Entity3D::value() const { return m_value; }
+inline 	const std::vector<int>& Entity3D::children() const { return m_children; }
+inline 	const mat4& Entity3D::worldMatrix() const { return m_mtxWorld; }
+inline 	Entity3D::Type Entity3D::type() const { return m_type; }
+inline 	int Entity3D::id() const { return m_id; }
+inline 	void Entity3D::setId(int id) { m_id = id; }
+inline 	void Entity3D::setValue(int i) { m_value = i; }

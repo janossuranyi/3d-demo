@@ -20,14 +20,14 @@ vec3 kLightColor = vec3(1.0,1.0,1.0) * 10;
 
 out vec4 FragColor;
 
-in VS_OUT {
+in INTERFACE {
    vec3 FragPos;
    vec2 TexCoords;
    vec3 TangentLightPos;
    vec3 TangentViewPos;
    vec3 TangentFragPos;
    vec3 Normal;
-} fs_in;
+} In;
 
 layout(std140, binding = 2) uniform cb_camera
 {
@@ -138,13 +138,13 @@ void main()
     vec4 Csg;
 
     if ((material.flags & MF_DIFFUSE_TEX) != 0) {
-        Cd = texture(samp0_albedo, fs_in.TexCoords).rgb;
+        Cd = texture(samp0_albedo, In.TexCoords).rgb;
     } else {
         Cd = material.baseColor.rgb;
     }
     
     if ((material.flags & MF_SPECULAR_GLOSSINESS_TEX) != 0) {
-        Csg = texture(samp2_pbr, fs_in.TexCoords);
+        Csg = texture(samp2_pbr, In.TexCoords);
     } else {
         Csg = material.specularColor;
     }
@@ -152,18 +152,18 @@ void main()
     vec3 Cs = Csg.rgb;
 
     if ((material.flags & MF_NORMAL_TEX) != 0) {
-        N = texture(samp1_normal, fs_in.TexCoords).rgb;
+        N = texture(samp1_normal, In.TexCoords).rgb;
         N = normalize(N * 2.0 - 1.0);  // this normal is in tangent space
     } else {
-        N = normalize(fs_in.Normal);
+        N = normalize(In.Normal);
     }
 
-    vec3 V = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
+    vec3 V = normalize(In.TangentViewPos - In.TangentFragPos);
 
     vec3 finalColor = vec3(0.0);
-    vec3 lightPos = fs_in.TangentLightPos;
+    vec3 lightPos = In.TangentLightPos;
 
-    vec3 L = lightPos - fs_in.TangentFragPos;
+    vec3 L = lightPos - In.TangentFragPos;
     float distance = length(L);
     L /= distance;
 

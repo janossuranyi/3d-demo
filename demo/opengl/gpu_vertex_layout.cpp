@@ -38,13 +38,13 @@ VertexLayout& VertexLayout::with(unsigned int index, unsigned int size, eDataTyp
 
 VertexLayout& VertexLayout::with(unsigned int index, unsigned int size, eDataType type, bool normalized, unsigned int offset, unsigned int stride, GpuBuffer* target)
 {
-    glEnableVertexAttribArray(index);
+    GL_CHECK(glEnableVertexAttribArray(index));
     if (m_lastBuffer != target)
     {
         m_lastBuffer = target;
         target->bind();
     }
-    glVertexAttribPointer(index, size, GL_castDataType(type), normalized, stride, (const void*)offset);
+    GL_CHECK(glVertexAttribPointer(index, size, GL_castDataType(type), normalized, stride, (const void*)uintptr_t(offset)));
     ++m_numAttribs;
 
     return *this;

@@ -17,11 +17,12 @@ bool ComputeTestEffect::Init()
     tex0_.withDefaultLinearClampEdge().updateParameters();
     tex0_.bindImage(0, 0, eImageAccess::WRITE_ONLY, eImageFormat::RGBA8);
 
-    vbo_rect.create(sizeof(UNIT_RECT_WITH_ST), eGpuBufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
+    vbo_rect.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
+    vbo_rect->create(sizeof(UNIT_RECT_WITH_ST), GpuBuffer::Usage::STATIC, 0, UNIT_RECT_WITH_ST);
 
     layout.begin()
-        .with(0, 2, eDataType::FLOAT, false, 0, sizeof(vertexLayout_t), &vbo_rect)
-        .with(1, 2, eDataType::FLOAT, false, 8, sizeof(vertexLayout_t), &vbo_rect)
+        .with(0, 2, eDataType::FLOAT, false, 0, sizeof(vertexLayout_t), vbo_rect.get())
+        .with(1, 2, eDataType::FLOAT, false, 8, sizeof(vertexLayout_t), vbo_rect.get())
         .end();
 
     layout.bind();
@@ -45,9 +46,10 @@ bool ComputeTestEffect::Init()
     prg_compute.use();
     prg_compute.set(0, fa);
     prg_compute.bindUniformBlock("cb_vars", 0);
-    cbo.create(128, eGpuBufferUsage::DYNAMIC, BA_WRITE_PERSISTENT, nullptr);
-    cbo.bindIndexed(0);
-    cb_vars = reinterpret_cast<cbvars_t*>(cbo.mapPeristentWrite());
+    cbo.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
+    cbo->create(128, GpuBuffer::Usage::DYNAMIC, BA_WRITE_PERSISTENT, nullptr);
+    cbo->bindIndexed(0);
+    cb_vars = reinterpret_cast<cbvars_t*>(cbo->mapPeristentWrite());
 
     angle = 0.0f;
     cb_vars->angle = 0.0f;
@@ -95,5 +97,5 @@ void ComputeTestEffect::Render()
 
 ComputeTestEffect::~ComputeTestEffect() noexcept
 {
-    cbo.unMap();
+    //cbo->unMap();
 }

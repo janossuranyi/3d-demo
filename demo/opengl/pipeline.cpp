@@ -50,13 +50,13 @@ Pipeline::Pipeline()
 		m_tmus[i].texId = 0;
 	}
 
-	m_camBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
-	m_mtxBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
-	m_miscBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
-	m_sunBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
-	m_materialBuffer.reset(new GpuBuffer(eGpuBufferTarget::UNIFORM));
+	m_camBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
+	m_mtxBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
+	m_miscBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
+	m_sunBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
+	m_materialBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
 
-#define CREATE_CB_BUFFER(p,t) p->create(sizeof(t), eGpuBufferUsage::DYNAMIC, BA_WRITE_PERSISTENT_COHERENT, &t)
+#define CREATE_CB_BUFFER(p,t) p->create(sizeof(t), GpuBuffer::Usage::DYNAMIC, BA_WRITE_PERSISTENT_COHERENT, &t)
 
 	CREATE_CB_BUFFER(m_camBuffer, g_cam);
 	CREATE_CB_BUFFER(m_mtxBuffer, g_mtx);
@@ -611,10 +611,18 @@ void Pipeline::setMaterial(Material& material)
 				bindTexture(m_world->getTexture(material.pbrSpecularGlossiness.diffuseTexture.index), TEX_ALBEDO);
 				g_material.flags |= MF_DIFFUSE_TEX;
 			}
+			else
+			{
+				bindTexture(m_world->texture1x1(), TEX_ALBEDO);
+			}
 			if (material.pbrSpecularGlossiness.specularGlossinessTexture.index > -1)
 			{
 				bindTexture(m_world->getTexture(material.pbrSpecularGlossiness.specularGlossinessTexture.index), TEX_PBR);
 				g_material.flags |= MF_SPECULAR_GLOSSINESS_TEX;
+			}
+			else
+			{
+				bindTexture(m_world->texture1x1(), TEX_PBR);
 			}
 		}
 		else
@@ -625,10 +633,18 @@ void Pipeline::setMaterial(Material& material)
 				bindTexture(m_world->getTexture(material.pbrMetallicRoughness.baseColorTexture.index), TEX_ALBEDO);
 				g_material.flags |= MF_DIFFUSE_TEX;
 			}
+			else
+			{
+				bindTexture(m_world->texture1x1(), TEX_ALBEDO);
+			}
 			if (material.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
 			{
 				bindTexture(m_world->getTexture(material.pbrMetallicRoughness.metallicRoughnessTexture.index), TEX_PBR);
 				g_material.flags |= MF_METALLIC_ROUGHNESS_TEX;
+			}
+			else
+			{
+				bindTexture(m_world->texture1x1(), TEX_PBR);
 			}
 		}
 
@@ -637,15 +653,27 @@ void Pipeline::setMaterial(Material& material)
 			bindTexture(m_world->getTexture(material.emissiveTexture.index), TEX_EMISSIVE);
 			g_material.flags |= MF_EMISSIVE_TEX;
 		}
+		else
+		{
+			bindTexture(m_world->texture1x1(), TEX_EMISSIVE);
+		}
 		if (material.normalTexture.index > -1)
 		{
 			bindTexture(m_world->getTexture(material.normalTexture.index), TEX_NORMAL);
 			g_material.flags |= MF_NORMAL_TEX;
 		}
+		else
+		{
+			bindTexture(m_world->texture1x1(), TEX_NORMAL);
+		}
 		if (material.occlusionTexture.index > -1)
 		{
 			bindTexture(m_world->getTexture(material.occlusionTexture.index), TEX_AO);
 			g_material.flags |= Mf_OCCLUSION_TEX;
+		}
+		else
+		{
+			bindTexture(m_world->texture1x1(), TEX_AO);
 		}
 	}
 }

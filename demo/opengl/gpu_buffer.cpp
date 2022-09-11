@@ -7,21 +7,22 @@
 OpenGL buffer implementation
 */
 
-static inline GLenum GL_CastBufferType(eGpuBufferTarget type)
+static inline GLenum GL_CastBufferType(GpuBuffer::Target type)
 {
 	switch (type)
 	{
-	case eGpuBufferTarget::VERTEX:
+	case GpuBuffer::Target::VERTEX:
 		return GL_ARRAY_BUFFER;
-	case eGpuBufferTarget::INDEX:
+	case GpuBuffer::Target::INDEX:
 		return GL_ELEMENT_ARRAY_BUFFER;
-	case eGpuBufferTarget::UNIFORM:
+	case GpuBuffer::Target::UNIFORM:
 		return GL_UNIFORM_BUFFER;
 	}
 
 	return GL_FALSE;
 }
 
+/*
 GpuBuffer::GpuBuffer(GpuBuffer&& moved) noexcept
 {
 	move(moved);
@@ -32,6 +33,7 @@ GpuBuffer& GpuBuffer::operator=(GpuBuffer&& moved) noexcept
 	move(moved);
 	return *this;
 }
+*/
 
 void GpuBuffer::bind() const
 {
@@ -64,6 +66,11 @@ void GpuBuffer::bindIndexed(uint32_t index, uint32_t offset, uint32_t size)
 	{
 		GL_CHECK(glBindBufferRange(target, index, mBuffer, offset, size));
 	}
+}
+
+void GpuBuffer::updateSubData(uint32_t offset, uint32_t size, const void* data)
+{
+	GL_CHECK(glBufferSubData(GL_CastBufferType(mTarget), GLintptr(offset), GLsizeiptr(size), data));
 }
 
 void GpuBuffer::move(GpuBuffer& moved)
@@ -131,7 +138,7 @@ uint8_t* GpuBuffer::mapPeristentWrite()
 	return map((BA_MAP_WRITE | BA_MAP_PERSISTENT | BA_MAP_COHERENT) & mAccess);
 }
 
-bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, unsigned int accessFlags, const void* bytes)
+bool GpuBuffer::create(uint32_t size, Usage usage, unsigned int accessFlags, const void* bytes)
 {
 	assert(mBuffer == INVALID_BUFFER);
 	assert(mIsReference == false);
@@ -150,20 +157,20 @@ bool GpuBuffer::create(uint32_t size, eGpuBufferUsage usage, unsigned int access
 	GLenum bu = GL_STATIC_DRAW;
 	switch (usage)
 	{
-	case eGpuBufferUsage::STATIC:
+	case Usage::STATIC:
 		bu = GL_STATIC_DRAW;
 		break;
-	case eGpuBufferUsage::DYNAMIC:
+	case Usage::DYNAMIC:
 		bu = GL_DYNAMIC_DRAW;
 		break;
 	}
 
 	uint32_t real_size = size;
-	if (mTarget == eGpuBufferTarget::VERTEX)
+	if (mTarget == Target::VERTEX)
 	{
 		real_size = (size + VERTEX_BUFFER_ALIGN) & ~(VERTEX_BUFFER_ALIGN);
 	}
-	else if (mTarget == eGpuBufferTarget::UNIFORM)
+	else if (mTarget == Target::UNIFORM)
 	{
 		real_size = (size + UNIFORM_BUFFER_ALIGN) & ~(UNIFORM_BUFFER_ALIGN);
 	}

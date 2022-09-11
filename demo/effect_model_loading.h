@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL.h>
+#include <memory>
 #include "effect.h"
 #include "pipeline.h"
 #include "gpu_buffer.h"
@@ -21,7 +22,6 @@ struct LoadModelEffect : public Effect
 		fb_color(),
 		fb_depth(),
 		vertFormat(),
-		rectBuffer(eGpuBufferTarget::VERTEX),
 		m_mesh() {}
 
 	// Inherited via Effect
@@ -35,7 +35,7 @@ struct LoadModelEffect : public Effect
 	RenderMesh3D m_mesh;
 	GpuProgram shader;
 	GpuProgram fxaa;
-	GpuBuffer rectBuffer;
+	std::unique_ptr<GpuBuffer> rectBuffer;
 
 	GpuTexture2D::Ptr fb_color;
 	GpuTexture2D::Ptr fb_depth;
