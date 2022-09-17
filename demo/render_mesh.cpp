@@ -2,6 +2,9 @@
 #include "world.h"
 #include "pipeline.h"
 
+#undef ALIGN16
+#define ALIGN16(x) (((x) + 15ul) & ~15ul)
+
 void RenderMesh3D::compile(const Mesh3D& mesh)
 {
     if (isCompiled())
@@ -9,16 +12,16 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
 
     size_t required_buffer_size{ 0 };
 
-    required_buffer_size += mesh.positionLayout().byteSize;
-    required_buffer_size += mesh.normalLayout().byteSize;
-    required_buffer_size += mesh.tangentLayout().byteSize;
-    required_buffer_size += mesh.texCoordLayout().byteSize;
-    required_buffer_size += mesh.colorLayout().byteSize;
+    required_buffer_size += ALIGN16(mesh.positionLayout().byteSize);
+    required_buffer_size += ALIGN16(mesh.normalLayout().byteSize);
+    required_buffer_size += ALIGN16(mesh.tangentLayout().byteSize);
+    required_buffer_size += ALIGN16(mesh.texCoordLayout().byteSize);
+    required_buffer_size += ALIGN16(mesh.colorLayout().byteSize);
 
     m_VertexBuf.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
     m_VertexBuf->create(uint(required_buffer_size), GpuBuffer::Usage::STATIC, 0);
 
-    int index = 0;
+    uint index = 0;
     size_t offset = 0;
 
     m_NumVertices = mesh.positionLayout().count;
@@ -29,28 +32,28 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
         const VertexAttribute& va = mesh.positionLayout();
         m_VertexBuf->updateSubData(offset, va.byteSize, mesh.positions().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, uint(offset), 0, m_VertexBuf.get());
-        offset += va.byteSize;
+        offset += ALIGN16(va.byteSize);
     }
     if (mesh.normalLayout().count)
     {
         const VertexAttribute& va = mesh.normalLayout();
         m_VertexBuf->updateSubData(offset, va.byteSize, mesh.normals().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, uint(offset), 0, m_VertexBuf.get());
-        offset += va.byteSize;
+        offset += ALIGN16(va.byteSize);
     }
     if (mesh.tangentLayout().count)
     {
         const VertexAttribute& va = mesh.tangentLayout();
         m_VertexBuf->updateSubData(offset, va.byteSize, mesh.tangents().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, uint(offset), 0, m_VertexBuf.get());
-        offset += va.byteSize;
+        offset += ALIGN16(va.byteSize);
     }
     if (mesh.texCoordLayout().count)
     {
         const VertexAttribute& va = mesh.texCoordLayout();
         m_VertexBuf->updateSubData(offset, va.byteSize, mesh.texCoords().data());
         m_Layout.with(index++, va.size, va.type, va.normalized, uint(offset), 0, m_VertexBuf.get());
-        offset += va.byteSize;
+        offset += ALIGN16(va.byteSize);
     }
     if (mesh.colorLayout().count)
     {

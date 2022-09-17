@@ -240,14 +240,11 @@ void App_EventLoop()
 }
 
 #include "light.h"
-#include "scene/node.h"
+#include "bounds.h"
 
 int main(int argc, char** argv)
 {
     g_fileSystem.set_working_dir(BASE_DIR);
-
-    Node root("ROOT");
-    exit(0);
 
     Info("V_Init Start");
 

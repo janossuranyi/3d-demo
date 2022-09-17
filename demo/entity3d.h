@@ -9,7 +9,7 @@ class World;
 class Entity3D
 {
 public:
-	enum Type { MESH, LIGHT, CAMERA, TRANSFORM, ENT_NONE };
+	enum class Type { MESH, LIGHT, CAMERA, TRANSFORM, ENT_NONE };
 	using Ptr = std::shared_ptr<Entity3D>;
 
 	Entity3D(Type type, World& world) :

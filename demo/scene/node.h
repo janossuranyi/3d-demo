@@ -4,13 +4,12 @@
 
 struct Node
 {
-	int camera;
-	int mesh;
-	int light;
-	int skin;
+	enum class Type :uint { Mesh, Light, Camera };
+
+	int index;
 
 	std::string name;
-	std::vector<int> children;
+	std::vector<uint> children;
 
 	// gltf
 	glm::vec3 translation;
@@ -56,10 +55,7 @@ struct Node
 		hasMatrix(false),
 		matrix(),
 		transform(1.0f),
-		camera(-1),
-		mesh(-1),
-		light(-1),
-		skin(-1),
+		index(-1),
 		translation(0.f,0.f,0.f),
 		rotation(1.f,0.f,0.f,0.f),
 		scale(1.f,1.f,1.f),
