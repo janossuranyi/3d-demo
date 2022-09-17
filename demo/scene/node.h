@@ -64,7 +64,7 @@ struct Node
 		animationRotation(1.f,0.f,0.f,0.f),
 		animationTranslation(0.f,0.f,0.f),
 		animationScale(1.f,1.f,1.f),
-		name("<empty")
+		name("<empty>")
 	{	
 		inverseWorldTransform = glm::inverse(worldTransform);
 	}

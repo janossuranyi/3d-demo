@@ -82,20 +82,20 @@ public:
 	/* Extends the current box. The result is the union of the two box
 	 \param box Another bounding box
 	*/
-	void merge(const BoundingBox& box);
+	void			merge(const BoundingBox& box);
 
 	/* Extends the current box by a point
 	 \param p point to include
 	*/
-	void merge(const glm::vec3& p);
+	void			merge(const glm::vec3& p);
 
 	/* Convert the box to a bounding sphere
 	*/
-	BoundingSphere getSphere() const;
+	BoundingSphere	getSphere() const;
 
 	/* Query the size of the box	
 	*/
-	glm::vec3 getSize() const;
+	glm::vec3		getSize() const;
 
 	/** Query the positions of the eight corners of the box, in the following order (with \p m=mini, \p M=maxi):
 	 \p (m,m,m), \p (m,m,M), \p (m,M,m), \p (m,M,M), \p (M,m,m), \p (M,m,M), \p (M,M,m), \p (M,M,M)
@@ -111,24 +111,24 @@ public:
 
 	/* Get center of the box
 	*/
-	glm::vec3 getCenter() const;
+	glm::vec3		getCenter() const;
 
 	/* Compute the bounding box of the transformed current box
 	 \param trans the transformation matrix
 	 \return the bounding box of the transormed box
 	*/
-	BoundingBox transformed(const glm::mat4& trans) const;
+	BoundingBox		transformed(const glm::mat4& trans) const;
 
 	/* Indicates if a point is inside of the box
 	 \param point point to test
 	 \return true if the boundingf box contains the point
 	*/
-	bool contains(const glm::vec3& point) const;
+	bool			contains(const glm::vec3& point) const;
 
 	/* Indicates if the bounding box is emtpy
 	 \return true if current bounding box is empty
 	*/
-	bool empty() const;
+	bool			empty() const;
 
 	/* compute the near and far intersections of the cube (stored in the x and y components) using the slab method.
 	 No intersection means vec.x > vec.y (really tNear > tFar)
@@ -136,27 +136,27 @@ public:
 	 \param rayDir ray direction
 	 \return the near and far intersections, true if near <= far
 	*/
-	bool intersect(const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec2& result) const;
+	bool			intersect(const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec2& result) const;
 
 	/*
 	 AABB vs. AABB intersection test
 	 \param The another bounding box to test
 	 \return true if the two box is overlapping
 	*/
-	bool intersect(const BoundingBox& b) const;
+	bool			intersect(const BoundingBox& b) const;
 
 	/*
 	 AABB vs. Sphere intersection test
 	 \param The sphere to test
 	 \return true if the two is overlapping
 	*/
-	bool intersect(const BoundingSphere& x) const;
+	bool			intersect(const BoundingSphere& x) const;
 
-	glm::vec3 getPositiveVertex(const glm::vec3& normal) const;
-	glm::vec3 getNegativeVertex(const glm::vec3& normal) const;
+	glm::vec3		getPositiveVertex(const glm::vec3& normal) const;
+	glm::vec3		getNegativeVertex(const glm::vec3& normal) const;
 
-	glm::vec3 min() const;
-	glm::vec3 max() const;
+	glm::vec3		min() const;
+	glm::vec3		max() const;
 
 private:
 	glm::vec3 minis = glm::vec3(std::numeric_limits<float>::max());	///< Lower-back-left corner of the box.
@@ -176,16 +176,16 @@ public:
 	\param box the bounding box to test
 	\return true if the bounding box intersects the frustum.
 	*/
-	bool intersects_v1(const BoundingBox& box) const;
-	bool intersects_v2(const BoundingBox& box) const;
+	bool	intersects_v1(const BoundingBox& box) const;
+	bool	intersects_v2(const BoundingBox& box) const;
 
 	/** Indicate if a point intersect this frustum.
 	\param point the bounding box to test
 	\return true if point is inside the frustum.
 	*/
-	bool intersect(const glm::vec3& point) const;
+	bool	intersect(const glm::vec3& point) const;
 
-	bool intersect(const BoundingSphere& sphere) const;
+	bool	intersect(const BoundingSphere& sphere) const;
 private:
 
 	/** Helper enum for the frustum plane locations. */

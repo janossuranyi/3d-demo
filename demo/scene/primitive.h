@@ -1,21 +1,26 @@
 #pragma once
 
 #include "common.h"
-#include "gpu_vertex_layout.h"
+#include "material.h"
+#include "gpu_types.h"
+#include "bounds.h"
 
 struct Primitive
 {
-	uint vertexCount;
-	uint indexCount;
+	BoundingBox				aabb;
+	std::vector<glm::vec3>	positions;
+	std::vector<glm::vec3>	normals;
+	std::vector<glm::vec3>	faceNormals;
+	std::vector<glm::vec3>	colors0;
+	std::vector<glm::vec3>	colors1;
+	std::vector<glm::vec2>	texcoords0;
+	std::vector<glm::vec2>	texcoords1;
+	std::vector<glm::vec4>	tangents;
+	std::vector<glm::uvec4>	joints;
+	std::vector<glm::vec4>	weights;
+	std::vector<uint>		indices;
+
+	int						material{ -1 };
+	eDrawMode				mode{ eDrawMode::TRIANGLES };
 	
-	std::vector<glm::vec3> aPositions;
-	std::vector<glm::vec3> aNormals;
-	std::vector<glm::vec3> aColors0;
-	std::vector<glm::vec3> aColors1;
-	std::vector<glm::vec2> aTexcoords0;
-	std::vector<glm::vec2> aTexcoords1;
-	std::vector<glm::vec4> aTangents;
-
-
-
 };

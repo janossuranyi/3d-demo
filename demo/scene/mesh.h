@@ -1,11 +1,14 @@
 #pragma once
 
 #include "common.h"
-
-class Primitive;
+#include "primitive.h"
+#include "bounds.h"
 
 struct Mesh
 {
-	std::vector<Primitive> primitives;
+	BoundingBox				aabb;
+	std::vector<uint>		primitives;
+	std::vector<uint>		weights;
+	std::string				name;
 
 };
