@@ -4,42 +4,42 @@
 
 struct Node
 {
-	enum class Type :uint { Mesh, Light, Camera };
+	enum class eType :uint { Mesh, Light, Camera, Transform };
 
-	int index;
-
-	std::string name;
-	std::vector<uint> children;
+	eType				type;
+	int					value;
+	std::string			name;
+	std::vector<uint>	children;
 
 	// gltf
-	glm::vec3 translation;
-	glm::quat rotation;
-	glm::vec3 scale;
-	glm::mat4 matrix;
-	bool hasMatrix;
+	glm::vec3			translation;
+	glm::quat			rotation;
+	glm::vec3			scale;
+	glm::mat4			matrix;
+	bool				hasMatrix;
 
-	glm::mat4 worldTransform;
-	glm::mat4 inverseWorldTransform;
-	glm::mat4 normalMatrix;
-	glm::mat4 transform;
+	glm::mat4			worldTransform;
+	glm::mat4			inverseWorldTransform;
+	glm::mat4			normalMatrix;
+	glm::mat4			transform;
 
-	bool changed;
-	bool animated;
-	glm::quat animationRotation;
-	glm::vec3 animationTranslation;
-	glm::vec3 animationScale;
+	bool				changed;
+	bool				animated;
+	glm::quat			animationRotation;
+	glm::vec3			animationTranslation;
+	glm::vec3			animationScale;
 
-	void applyMatrix(const glm::mat4& matrixData);
+	void		applyMatrix(const glm::mat4& matrixData);
 
-	void applyRotationAnimation(const glm::quat& rotation);
+	void		applyRotationAnimation(const glm::quat& rotation);
 
-	void applyScaleAnimation(const glm::vec3& scale);
+	void		applyScaleAnimation(const glm::vec3& scale);
 
-	void applyTranslationAnimation(const glm::vec3& translation);
+	void		applyTranslationAnimation(const glm::vec3& translation);
 
-	void resetTransform();
+	void		resetTransform();
 
-	glm::mat4 getLocalTransform();
+	glm::mat4	getLocalTransform();
 
 	Node(Node&) = delete;
 
@@ -50,12 +50,13 @@ struct Node
 	Node& operator=(Node&&) = default;
 
 	Node() :
+		type(eType::Transform),
+		value(-1),
 		changed(true),
 		animated(false),
 		hasMatrix(false),
 		matrix(),
 		transform(1.0f),
-		index(-1),
 		translation(0.f,0.f,0.f),
 		rotation(1.f,0.f,0.f,0.f),
 		scale(1.f,1.f,1.f),

@@ -48,5 +48,14 @@ struct Material
 		emissiveFactor(0.0f),
 		alphaMode(eAlphaMode::OPAQUE),
 		alphaCutoff(0.5f),
-		doubleSided(false) {}
+		doubleSided(false),
+		specularGlossiness(false),
+		diffuseFactor(1.0f),
+		specularFactor(1.0f),
+		glossinessFactor(1.0f),
+		diffuseTexture(-1),
+		specularGlossinessTexture(-1),
+		friction(0.0f),
+		sound(-1)
+	{}
 };
