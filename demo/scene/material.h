@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-struct Material
+struct xMaterial
 {
 	enum class eAlphaMode : uint { OPAQUE, MASK, BLEND };
 
@@ -27,14 +27,13 @@ struct Material
 	glm::vec3		specularFactor;
 	float			glossinessFactor;
 	int				diffuseTexture;
-	glm::vec3		specularFactor;
 	int				specularGlossinessTexture;
 
 	float			friction;
 	int				sound;
 	std::string		name;
 
-	Material() :
+	xMaterial() :
 		baseColorFactor(1.0f),
 		metallicFactor(1.0f),
 		roughnessFactor(1.0f),

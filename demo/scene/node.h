@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-struct Node
+struct xNode
 {
 	enum class eType :uint { Mesh, Light, Camera, Transform };
 
@@ -41,21 +41,21 @@ struct Node
 
 	glm::mat4	getLocalTransform();
 
-	Node(Node&) = delete;
+	xNode(xNode&) = delete;
 
-	Node(Node&&) = default;
+	xNode(xNode&&) = default;
 
-	Node& operator=(Node&) = delete;
+	xNode& operator=(xNode&) = delete;
 
-	Node& operator=(Node&&) = default;
+	xNode& operator=(xNode&&) = default;
 
-	Node() :
+	xNode() :
 		type(eType::Transform),
 		value(-1),
 		changed(true),
 		animated(false),
 		hasMatrix(false),
-		matrix(),
+		matrix(1.0f),
 		transform(1.0f),
 		translation(0.f,0.f,0.f),
 		rotation(1.f,0.f,0.f,0.f),
@@ -70,7 +70,7 @@ struct Node
 		inverseWorldTransform = glm::inverse(worldTransform);
 	}
 
-	Node(const std::string& _name) : Node() {
+	xNode(const std::string& _name) : xNode() {
 		name = _name;
 	}
 

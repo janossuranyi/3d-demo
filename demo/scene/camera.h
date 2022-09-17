@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-struct Camera
+struct xCamera
 {
 	enum eType { PERSPECTIVE, ORTHOGRAPHIC };
 	
@@ -17,7 +17,7 @@ struct Camera
 
 	glm::mat4	projectionMatrix;
 
-	Camera() :
+	xCamera() :
 		type(eType::PERSPECTIVE),
 		name("camera"),
 		aspectRatio(16.0f / 9.0f),

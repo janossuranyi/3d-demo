@@ -3,7 +3,7 @@
 #include "common.h"
 #include <cmath>
 
-struct Light
+struct xLight
 {
 	enum class eType { DIRECTIONAL, POINT, SPOT };
 
@@ -16,7 +16,7 @@ struct Light
 	float			outerConeAngle;
 	float			cosOuterConeAngle;
 
-	Light() :
+	xLight() :
 		type(eType::POINT),
 		color(1.0f),
 		intensity(1.0f),

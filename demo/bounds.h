@@ -3,6 +3,7 @@
 #include "common.h"
 #include <array>
 
+class BoundingBox;
 class BoundingSphere
 {
 public:

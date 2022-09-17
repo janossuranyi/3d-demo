@@ -1,6 +1,6 @@
 #include "node.h"
 
-void Node::applyMatrix(const glm::mat4& matrixData)
+void xNode::applyMatrix(const glm::mat4& matrixData)
 {
 	glm::vec3 _scale, _translation, _skew;
 	glm::vec4 _persp;
@@ -15,25 +15,25 @@ void Node::applyMatrix(const glm::mat4& matrixData)
 	changed = true;
 }
 
-void Node::applyTranslationAnimation(const glm::vec3& translation)
+void xNode::applyTranslationAnimation(const glm::vec3& translation)
 {
 	animationTranslation = translation;
 	changed = true;
 }
 
-void Node::applyRotationAnimation(const glm::quat& rotation)
+void xNode::applyRotationAnimation(const glm::quat& rotation)
 {
 	animationRotation = rotation;
 	changed = true;
 }
 
-void Node::applyScaleAnimation(const glm::vec3& scale)
+void xNode::applyScaleAnimation(const glm::vec3& scale)
 {
 	animationScale = scale;
 	changed = true;
 }
 
-void Node::resetTransform()
+void xNode::resetTransform()
 {
 	rotation = glm::quat(1.f, 0.f, 0.f, 0.f);
 	scale = glm::vec3(1.f, 1.f, 1.f);
@@ -41,30 +41,36 @@ void Node::resetTransform()
 	changed = true;
 }
 
-glm::mat4 Node::getLocalTransform()
+glm::mat4 xNode::getLocalTransform()
 {
 	if (changed)
 	{
 		if (hasMatrix && !animated)
 		{
-			transform = matrix;
+			worldTransform = matrix;
 		}
 		else
 		{
-			transform = glm::mat4(1.0f);
+			worldTransform = glm::mat4(1.0f);
 			const glm::vec3 _translation = animated ? animationTranslation : translation;
 			const glm::vec3 _scale = animated ? animationScale : scale;
 			const glm::quat _rotation = animated ? animationRotation : rotation;
 			const glm::mat4 _rotm = glm::mat4(_rotation);
 
-			transform = glm::translate(transform, _translation);
-			transform = transform * _rotm;
-			transform = glm::scale(transform, _scale);
+			worldTransform = glm::translate(worldTransform, _translation);
+			worldTransform *= _rotm;
+			worldTransform = glm::scale(worldTransform, _scale);
+
+			worldTransform *= matrix;			
 		}
+
+		inverseWorldTransform = glm::inverse(worldTransform);
+		normalMatrix = glm::mat4(glm::mat3(glm::transpose(inverseWorldTransform)));
+
 		changed = false;
 	}
 
-	return transform;
+	return worldTransform;
 }
 
 

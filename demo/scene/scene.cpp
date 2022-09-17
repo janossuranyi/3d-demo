@@ -1,30 +1,30 @@
 #include "scene.h"
 
-uint Scene::addNode()
+uint xScene::addNode()
 {
     nodes.emplace_back();
-    nodes.back().reset(new Node());
+    nodes.back().reset(new xNode());
 
     return nodes.size() - 1;
 }
 
-uint Scene::addMaterial()
+uint xScene::addMaterial()
 {
     materials.emplace_back();
-    materials.back().reset(new Material());
+    materials.back().reset(new xMaterial());
 
     return materials.size() - 1;
 }
 
-uint Scene::addLight()
+uint xScene::addLight()
 {
     lights.emplace_back();
-    lights.back().reset(new Light());
+    lights.back().reset(new xLight());
 
     return lights.size() - 1;
 }
 
-uint Scene::addPrimitive()
+uint xScene::addPrimitive()
 {
     primitives.emplace_back();
     primitives.back().reset(new Primitive());
@@ -32,10 +32,18 @@ uint Scene::addPrimitive()
     return primitives.size() - 1;
 }
 
-uint Scene::addMesh()
+uint xScene::addMesh()
 {
     meshes.emplace_back();
     meshes.back().reset(new Mesh());
 
     return meshes.size() - 1;
+}
+
+uint xScene::addCamera()
+{
+    cameras.emplace_back();
+    cameras.back().reset(new xCamera());
+
+    return cameras.size() - 1;
 }

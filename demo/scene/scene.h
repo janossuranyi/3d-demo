@@ -7,17 +7,22 @@
 #include "camera.h"
 #include "primitive.h"
 #include "mesh.h"
+#include "texture.h"
 
-struct Scene
+struct xScene
 {
 	
-	std::vector<std::unique_ptr<Node>>		nodes;
-	std::vector<std::unique_ptr<Material>>	materials;
-	std::vector<std::unique_ptr<Light>>		lights;
+	std::vector<std::unique_ptr<xNode>>		nodes;
+	std::vector<std::unique_ptr<xMaterial>>	materials;
+	std::vector<std::unique_ptr<xLight>>	lights;
 	std::vector<std::unique_ptr<Primitive>>	primitives;
 	std::vector<std::unique_ptr<Mesh>>		meshes;
+	std::vector<std::unique_ptr<Image>>		images;
+	std::vector<Sampler>					samplers;
+	std::vector<Texture>					textures;
+	std::vector<int>						root;
 
-	std::unique_ptr<Camera>					camera;
+	std::vector<std::unique_ptr<xCamera>>	cameras;
 
 	uint		addNode();
 
@@ -29,8 +34,9 @@ struct Scene
 
 	uint		addMesh();
 
-	Scene()
+	uint		addCamera();
+
+	xScene()
 	{
-		camera.reset(new Camera());
 	}
 };
