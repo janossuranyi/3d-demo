@@ -4,15 +4,15 @@ BoundingSphere::BoundingSphere(const glm::vec3& centroid, float radius)
 {
 	_center = centroid;
 	_radius = radius;
+	_radius2 = radius * radius;
 }
 
 bool BoundingSphere::contains(const glm::vec3& p)
 {
 	const glm::vec3 c = p - _center;
 	const float distance2 = glm::dot(c, c);
-	const float r2 = _radius * _radius;
 
-	return distance2 <= r2;
+	return distance2 <= _radius2;
 }
 
 float BoundingSphere::pointDistance(const glm::vec3& p)
@@ -28,7 +28,7 @@ bool BoundingSphere::rayIntersect(const glm::vec3& p0, const glm::vec3& v, float
 	const glm::vec3 oc = p0 - _center;
 	const float aoc = glm::length(oc);
 	const float aoc2 = aoc * aoc;
-	const float r2 = _radius * _radius;
+	const float r2 = _radius2;
 	const float k = glm::dot(u, oc);
 	float K = k * k - (aoc2 - r2);
 
@@ -73,13 +73,23 @@ bool BoundingSphere::lineIntersect(const glm::vec3& p0, const glm::vec3& p1, flo
 	return false;
 }
 
-bool BoundingSphere::intersect(const BoundingSphere& x)
+bool BoundingSphere::intersect(const BoundingSphere& x) const
 {
 	const glm::vec3 c = x._center - _center;
 	const float distance2 = glm::dot(c, c);
 	const float sr = x._radius + _radius;
 
 	return distance2 <= (sr * sr);
+}
+
+bool BoundingSphere::intersect(const BoundingBox& x) const
+{
+	// get box closest point to sphere center by clamping
+	const glm::vec3 v = glm::max(x.min(), glm::min(_center, x.max()));
+	const float d = glm::dot(v, v);
+
+	return d < _radius2;
+
 }
 
 glm::vec3 BoundingSphere::center() const
@@ -196,6 +206,47 @@ glm::vec3 BoundingBox::getNegativeVertex(const glm::vec3& normal) const
 	if (normal.z >= 0.0f) negativeVertex.z = minis.z;
 
 	return negativeVertex;
+}
+
+glm::vec3 BoundingBox::min() const
+{
+	return minis;
+}
+
+glm::vec3 BoundingBox::max() const
+{
+	return maxis;
+}
+
+bool BoundingBox::intersect(const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec2& result) const
+{
+	const glm::vec3 tMin = (minis - rayOrigin) / rayDir;
+	const glm::vec3 tMax = (maxis - rayOrigin) / rayDir;
+	const glm::vec3 t1 = glm::min(tMin, tMax);
+	const glm::vec3 t2 = glm::max(tMin, tMax);
+
+	float tNear	= glm::max(glm::max(t1.x, t1.y), t1.z);
+	float tFar	= glm::min(glm::min(t2.x, t2.y), t2.z);
+
+	result = glm::vec2(tNear, tFar);
+
+	return (tNear <= tFar);
+};
+
+bool BoundingBox::intersect(const BoundingBox& b) const
+{
+	// SIMD optimized AABB-AABB test
+	// Optimized by removing conditional branches
+	const bool x = minis.x <= b.maxis.x && maxis.x >= minis.x;
+	const bool y = minis.y <= b.maxis.y && maxis.y >= minis.y;
+	const bool z = minis.z <= b.maxis.z && maxis.z >= minis.z;
+
+	return x && y && z;
+}
+
+bool BoundingBox::intersect(const BoundingSphere& x) const
+{
+	return x.intersect(*this);
 }
 
 Frustum::Frustum(const glm::mat4& vp)

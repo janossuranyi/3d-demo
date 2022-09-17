@@ -44,7 +44,13 @@ public:
 	 \param x sphere to test
 	 \return true if intersection occured
 	*/
-	bool		intersect(const BoundingSphere& x);
+	bool		intersect(const BoundingSphere& x) const;
+
+	/* Decide if this sphere intersect with an AABB
+	 \param x AABB to test
+	 \return true if intersection occured
+	*/
+	bool		intersect(const BoundingBox& x) const;
 
 	/* Returns the center of the sphere
 	*/
@@ -58,6 +64,7 @@ private:
 	const float	epsilon = 1e-5f;
 	glm::vec3	_center{ 0.0f,0.0f,0.0f };
 	float		_radius{ 0.0f };
+	float		_radius2{ 0.0f };
 };
 
 
@@ -123,8 +130,33 @@ public:
 	*/
 	bool empty() const;
 
+	/* compute the near and far intersections of the cube (stored in the x and y components) using the slab method.
+	 No intersection means vec.x > vec.y (really tNear > tFar)
+	 \param rayOrigin ray start position
+	 \param rayDir ray direction
+	 \return the near and far intersections, true if near <= far
+	*/
+	bool intersect(const glm::vec3& rayOrigin, const glm::vec3& rayDir, glm::vec2& result) const;
+
+	/*
+	 AABB vs. AABB intersection test
+	 \param The another bounding box to test
+	 \return true if the two box is overlapping
+	*/
+	bool intersect(const BoundingBox& b) const;
+
+	/*
+	 AABB vs. Sphere intersection test
+	 \param The sphere to test
+	 \return true if the two is overlapping
+	*/
+	bool intersect(const BoundingSphere& x) const;
+
 	glm::vec3 getPositiveVertex(const glm::vec3& normal) const;
 	glm::vec3 getNegativeVertex(const glm::vec3& normal) const;
+
+	glm::vec3 min() const;
+	glm::vec3 max() const;
 
 private:
 	glm::vec3 minis = glm::vec3(std::numeric_limits<float>::max());	///< Lower-back-left corner of the box.
