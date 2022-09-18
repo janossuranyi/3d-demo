@@ -17,10 +17,18 @@ public:
 	bool load() override;
 
 private:
-	tinygltf::Model _glmodel;
-	tinygltf::Scene* _glscene;
+	tinygltf::Model		_glmodel;
+	tinygltf::Scene*	_glscene;
 
+	void		setNodeTransform(xNode* node, const tinygltf::Node& glnode);
+	void		parseNodes();
+	void		parseLights();
+	void		parseCameras();
+	void		parseMaterials();
+	void		parseImages();
+	void		parseSamplers();
+	void		parseTextures();
+	void		parseAnimations();
 
-	void setEntityTransform(xNode* ent, const tinygltf::Node& node);
-
+	void		arrayToFloatArray(const tinygltf::Accessor& access, std::vector<float>& dst);
 };

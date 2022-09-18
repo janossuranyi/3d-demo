@@ -167,7 +167,7 @@ bool World::loadWorld(const std::string& filename)
 		
 		if (mat.extensions.size())
 		{
-			for (auto ext : mat.extensions)
+			for (auto& ext : mat.extensions)
 			{
 				if (ext.first == "KHR_materials_pbrSpecularGlossiness")
 				{

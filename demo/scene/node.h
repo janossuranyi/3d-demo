@@ -2,6 +2,8 @@
 
 #include "common.h"
 
+struct xScene;
+
 struct xNode
 {
 	enum class eType :uint { Mesh, Light, Camera, Transform };
@@ -15,9 +17,8 @@ struct xNode
 	glm::vec3			translation;
 	glm::quat			rotation;
 	glm::vec3			scale;
-	glm::mat4			matrix;
-	bool				hasMatrix;
 
+	glm::mat4			parentWorldTransform;
 	glm::mat4			worldTransform;
 	glm::mat4			inverseWorldTransform;
 	glm::mat4			normalMatrix;
@@ -28,6 +29,9 @@ struct xNode
 	glm::quat			animationRotation;
 	glm::vec3			animationTranslation;
 	glm::vec3			animationScale;
+
+	xNode*				parent;
+	xScene*				scene;
 
 	void		applyMatrix(const glm::mat4& matrixData);
 
@@ -54,8 +58,7 @@ struct xNode
 		value(-1),
 		changed(true),
 		animated(false),
-		hasMatrix(false),
-		matrix(1.0f),
+		parentWorldTransform(1.0f),
 		transform(1.0f),
 		translation(0.f,0.f,0.f),
 		rotation(1.f,0.f,0.f,0.f),
@@ -65,6 +68,8 @@ struct xNode
 		animationRotation(1.f,0.f,0.f,0.f),
 		animationTranslation(0.f,0.f,0.f),
 		animationScale(1.f,1.f,1.f),
+		scene(),
+		parent(),
 		name("<empty>")
 	{	
 		inverseWorldTransform = glm::inverse(worldTransform);

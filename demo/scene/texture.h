@@ -25,12 +25,14 @@ struct Image
 	int					component;
 	eDataType			pixelType;
 	std::vector<uchar>	image;
+	std::string			name;
 
 	Image() :
 		width(0),
 		height(0),
 		bits(0),
 		component(0),
+		name("<empty>"),
 		pixelType(eDataType::BYTE) {}
 
 	Image(Image&) = delete;

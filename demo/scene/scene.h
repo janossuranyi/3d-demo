@@ -8,6 +8,7 @@
 #include "primitive.h"
 #include "mesh.h"
 #include "texture.h"
+#include "animation.h"
 
 struct xScene
 {
@@ -23,6 +24,7 @@ struct xScene
 	std::vector<int>						root;
 
 	std::vector<std::unique_ptr<xCamera>>	cameras;
+	std::vector<std::unique_ptr<Animation>> animations;
 
 	uint		addNode();
 
@@ -35,6 +37,14 @@ struct xScene
 	uint		addMesh();
 
 	uint		addCamera();
+
+	uint		addImage();
+
+	uint		addSampler();
+
+	uint		addTexture();
+
+	uint		addAnimation();
 
 	xScene()
 	{

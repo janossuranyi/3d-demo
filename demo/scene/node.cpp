@@ -1,4 +1,5 @@
 #include "node.h"
+#include "scene.h"
 
 void xNode::applyMatrix(const glm::mat4& matrixData)
 {
@@ -45,28 +46,26 @@ glm::mat4 xNode::getLocalTransform()
 {
 	if (changed)
 	{
-		if (hasMatrix && !animated)
-		{
-			worldTransform = matrix;
-		}
-		else
-		{
-			worldTransform = glm::mat4(1.0f);
-			const glm::vec3 _translation = animated ? animationTranslation : translation;
-			const glm::vec3 _scale = animated ? animationScale : scale;
-			const glm::quat _rotation = animated ? animationRotation : rotation;
-			const glm::mat4 _rotm = glm::mat4(_rotation);
+		worldTransform = glm::mat4(1.0f);
+		const glm::vec3 _translation = animated ? animationTranslation : translation;
+		const glm::vec3 _scale = animated ? animationScale : scale;
+		const glm::quat _rotation = animated ? animationRotation : rotation;
+		const glm::mat4 _rotm = glm::mat4(_rotation);
 
-			worldTransform = glm::translate(worldTransform, _translation);
-			worldTransform *= _rotm;
-			worldTransform = glm::scale(worldTransform, _scale);
+		worldTransform = glm::translate(worldTransform, _translation);
+		worldTransform *= _rotm;
+		worldTransform = glm::scale(worldTransform, _scale);
 
-			worldTransform *= matrix;			
-		}
+		worldTransform *= parentWorldTransform;
 
 		inverseWorldTransform = glm::inverse(worldTransform);
 		normalMatrix = glm::mat4(glm::mat3(glm::transpose(inverseWorldTransform)));
 
+		for (auto i : children)
+		{
+			scene->nodes[i]->parentWorldTransform = worldTransform;
+			scene->nodes[i]->changed = true;
+		}
 		changed = false;
 	}
 

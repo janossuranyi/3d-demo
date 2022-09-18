@@ -16,6 +16,9 @@ struct xLight
 	float			outerConeAngle;
 	float			cosOuterConeAngle;
 
+	void			setInnerConeAngle(float x);
+	void			setOuterConeAngle(float x);
+
 	xLight() :
 		type(eType::POINT),
 		color(1.0f),

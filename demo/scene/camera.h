@@ -27,6 +27,34 @@ struct xCamera
 		xmag(0.0f),
 		ymag(0.0f) 
 	{
-		projectionMatrix = glm::perspective(yfov, aspectRatio, znear, zfar);
+		update();
+	}
+
+	inline void update()
+	{
+		if (type == eType::PERSPECTIVE)
+		{
+			if (zfar == 0.0f) zfar = 100.0f;
+
+			const float tanHalfYfov = glm::tan(0.5f * yfov);
+
+			glm::mat4 m(1.0f);
+			m[0][0] = 1.0f / (aspectRatio * tanHalfYfov);
+			m[1][1] = 1.0f / tanHalfYfov;
+			m[2][2] = (zfar + znear) / (znear - zfar);
+			m[3][2] = (2.0f * zfar * znear) / (znear - zfar);
+
+			projectionMatrix = m;
+		}
+		else
+		{
+			glm::mat4 m(1.0f);
+			m[0][0] = 1.0f / xmag;
+			m[1][1] = 1.0f / ymag;
+			m[2][2] = 2.0f / (znear - zfar);
+			m[3][2] = (zfar + znear) / (znear - zfar);
+
+			projectionMatrix = m;
+		}
 	}
 };
