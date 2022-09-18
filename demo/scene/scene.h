@@ -16,7 +16,6 @@ struct xScene
 	std::vector<std::unique_ptr<xNode>>		nodes;
 	std::vector<std::unique_ptr<xMaterial>>	materials;
 	std::vector<std::unique_ptr<xLight>>	lights;
-	std::vector<std::unique_ptr<Primitive>>	primitives;
 	std::vector<std::unique_ptr<Mesh>>		meshes;
 	std::vector<std::unique_ptr<Image>>		images;
 	std::vector<Sampler>					samplers;
@@ -31,8 +30,6 @@ struct xScene
 	uint		addMaterial();
 
 	uint		addLight();
-
-	uint		addPrimitive();
 
 	uint		addMesh();
 

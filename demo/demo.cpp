@@ -11,8 +11,6 @@
 #include "effect_model_loading.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
-#include "world.h"
-#include "mesh.h"
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -239,12 +237,23 @@ void App_EventLoop()
     }
 }
 
-#include "light.h"
-#include "bounds.h"
+
+#include "scene/gltf_loader.h"
+#include "scene/scene.h"
 
 int main(int argc, char** argv)
 {
     g_fileSystem.set_working_dir(BASE_DIR);
+
+    xScene scene;
+    GltfLoader loader(g_fileSystem.resolve("assets/Bee.glb"), scene);
+    if (loader.load())
+    {
+        xNode* root = scene.nodes[scene.root[0]].get();
+        glm::mat4 lmtx = root->getLocalTransform();
+    }
+
+    exit(1);
 
     Info("V_Init Start");
 

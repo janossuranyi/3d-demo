@@ -29,6 +29,7 @@ private:
 	void		parseSamplers();
 	void		parseTextures();
 	void		parseAnimations();
+	void		parseMeshes();
 
 	void		arrayToFloatArray(const tinygltf::Accessor& access, std::vector<float>& dst);
 };

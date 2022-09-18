@@ -39,14 +39,16 @@ void GltfLoader::parseNodes()
 		xNode* pnode = _scene.nodes[xnode].get();
 
 		const tinygltf::Node& node = _glmodel.nodes[i];
+		pnode->name = node.name;
+		pnode->children.assign(node.children.begin(), node.children.end());
 
 		Info("Processing node '%s'", node.name.c_str());
-		if (node.camera > 0)
+		if (node.camera > -1)
 		{
 			pnode->type = xNode::eType::Camera;
 			pnode->value = node.camera;
 		}
-		else if (node.mesh > 0)
+		else if (node.mesh > -1)
 		{
 			pnode->type = xNode::eType::Mesh;
 			pnode->value = node.mesh;
@@ -349,7 +351,116 @@ void GltfLoader::parseAnimations()
 
 			const tinygltf::Accessor& access = _glmodel.accessors[sinp.output];
 			arrayToFloatArray(access, samp->output);
+		}
+	}
+}
 
+void GltfLoader::parseMeshes()
+{
+	_scene.meshes.clear();
+
+	for (uint i = 0; i < _glmodel.meshes.size(); ++i)
+	{
+		const auto& inp = _glmodel.meshes[i];
+		Mesh* mesh = _scene.meshes[_scene.addMesh()].get();
+
+		mesh->name = inp.name;
+		std::vector<float> temp;
+
+		for (uint j = 0; j < inp.primitives.size(); ++j)
+		{
+			const auto& pinp = inp.primitives[j];
+			const uint pidx = mesh->addPrimitive();
+			Primitive* p = mesh->primitives[pidx].get();
+			switch (pinp.mode)
+			{
+			case TINYGLTF_MODE_LINE:
+				p->mode = eDrawMode::LINES;
+				break;
+			case TINYGLTF_MODE_LINE_LOOP:
+				p->mode = eDrawMode::LINE_LOOP;
+				break;
+			case TINYGLTF_MODE_LINE_STRIP:
+				p->mode = eDrawMode::LINE_STRIP;
+				break;
+			case TINYGLTF_MODE_POINTS:
+				p->mode = eDrawMode::POINTS;
+				break;
+			case TINYGLTF_MODE_TRIANGLES:
+				p->mode = eDrawMode::TRIANGLES;
+				break;
+			case TINYGLTF_MODE_TRIANGLE_FAN:
+				p->mode = eDrawMode::TRIANGLE_FAN;
+				break;
+			case TINYGLTF_MODE_TRIANGLE_STRIP:
+				p->mode = eDrawMode::TRIANGLE_STRIP;
+				break;
+			}
+
+			for (auto& attr : pinp.attributes)
+			{
+				const auto& access = _glmodel.accessors[attr.second];
+
+				temp.clear();
+				arrayToFloatArray(access, temp);
+				const size_t count = _glmodel.accessors[attr.second].count;
+
+				if (attr.first == "POSITION")
+				{
+					const glm::vec3* ptr = reinterpret_cast<const glm::vec3*>(temp.data());
+					p->positions.assign(ptr, ptr + count);
+					p->aabb.merge(glm::make_vec3(access.minValues.data()));
+					p->aabb.merge(glm::make_vec3(access.maxValues.data()));
+					mesh->aabb.merge(p->aabb);
+				}
+				else if (attr.first == "NORMAL")
+				{
+					const glm::vec3* ptr = reinterpret_cast<const glm::vec3*>(temp.data());
+					p->normals.assign(ptr, ptr + count);
+				}
+				else if (attr.first == "TANGENT")
+				{
+					const glm::vec4* ptr = reinterpret_cast<const glm::vec4*>(temp.data());
+					p->tangents.assign(ptr, ptr + count);
+				}
+				else if (attr.first == "TEXCOORD_0")
+				{
+					const glm::vec2* ptr = reinterpret_cast<const glm::vec2*>(temp.data());
+					p->texcoords0.assign(ptr, ptr + count);
+				}
+				else if (attr.first == "COLOR_0" && access.type == TINYGLTF_TYPE_VEC4)
+				{
+					const glm::vec4* ptr = reinterpret_cast<const glm::vec4*>(temp.data());
+					p->colors0.assign(ptr, ptr + count);
+				}
+				else if (attr.first == "COLOR_0" && access.type == TINYGLTF_TYPE_VEC3)
+				{
+					const glm::vec3* ptr = reinterpret_cast<const glm::vec3*>(temp.data());
+					for (size_t k = 0; k < count; ++k)
+					{
+						p->colors0.push_back(glm::vec4(ptr[k], 1.0f));
+					}
+				}
+			}
+			// indices
+			const auto& indices = _glmodel.accessors[pinp.indices];
+			const auto& iview = _glmodel.bufferViews[indices.bufferView];
+			const auto& ibuff = _glmodel.buffers[iview.buffer];
+
+			if (indices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+			{
+				const uint16_t* ptr = reinterpret_cast<const uint16_t*>(ibuff.data.data() + iview.byteOffset + indices.byteOffset);
+				p->indices.assign(ptr, ptr + indices.count);
+			}
+			else if (indices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
+			{
+				Warning("GLTF primitive index type is INT32 !");
+				const uint* ptr = reinterpret_cast<const uint*>(ibuff.data.data() + iview.byteOffset + indices.byteOffset);
+				for (uint k = 0; k < indices.count; ++k)
+				{
+					p->indices.push_back(uint16_t(ptr[k]));
+				}
+			}
 		}
 	}
 }
@@ -359,40 +470,41 @@ void GltfLoader::arrayToFloatArray(const tinygltf::Accessor& access, std::vector
 	const tinygltf::BufferView& view = _glmodel.bufferViews[access.bufferView];
 	const tinygltf::Buffer& buffer = _glmodel.buffers[view.buffer];
 
-	// converting outputs
-	uint mult = 1;
+	uint elemCount = 1;
 	switch (access.type)
 	{
 	case TINYGLTF_TYPE_SCALAR:
-		mult = 1;
+		elemCount = 1;
+		break;
+	case TINYGLTF_TYPE_VEC2:
+		elemCount = 2;
 		break;
 	case TINYGLTF_TYPE_VEC3:
-		mult = 3;
+		elemCount = 3;
 		break;
 	case TINYGLTF_TYPE_VEC4:
-		mult = 4;
+		elemCount = 4;
 		break;
 	}
 
 	if (access.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
 	{
 		const float* tmp = reinterpret_cast<const float*>(buffer.data.data() + view.byteOffset + access.byteOffset);
-		dst.assign(tmp, tmp + mult * sizeof(float));
+		dst.assign(tmp, tmp + access.count * elemCount);
 	}
 	else if (access.componentType == TINYGLTF_COMPONENT_TYPE_BYTE)
 	{
 		const char* tmp = reinterpret_cast<const char*>(buffer.data.data() + view.byteOffset + access.byteOffset);
-		for (int k = 0; k < mult * access.count; ++k)
+		for (int k = 0; k < elemCount * access.count; ++k)
 		{
 			float c = static_cast<float>(*tmp++);
 			dst.push_back(glm::max(c / 127.0f, -1.0f));
-
 		}
 	}
 	else if (access.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
 	{
 		const unsigned char* tmp = reinterpret_cast<const unsigned char*>(buffer.data.data() + view.byteOffset + access.byteOffset);
-		for (int k = 0; k < mult * access.count; ++k)
+		for (int k = 0; k < elemCount * access.count; ++k)
 		{
 			float c = static_cast<float>(*tmp++);
 			dst.push_back(c / 255.0f);
@@ -401,7 +513,7 @@ void GltfLoader::arrayToFloatArray(const tinygltf::Accessor& access, std::vector
 	else if (access.componentType == TINYGLTF_COMPONENT_TYPE_SHORT)
 	{
 		const short* tmp = reinterpret_cast<const short*>(buffer.data.data() + view.byteOffset + access.byteOffset);
-		for (int k = 0; k < mult * access.count; ++k)
+		for (int k = 0; k < elemCount * access.count; ++k)
 		{
 			float c = static_cast<float>(*tmp++);
 			dst.push_back(glm::max(c / 32767.0f, -1.0f));
@@ -411,7 +523,7 @@ void GltfLoader::arrayToFloatArray(const tinygltf::Accessor& access, std::vector
 	else if (access.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
 	{
 		const unsigned short* tmp = reinterpret_cast<const unsigned short*>(buffer.data.data() + view.byteOffset + access.byteOffset);
-		for (int k = 0; k < mult * access.count; ++k)
+		for (int k = 0; k < elemCount * access.count; ++k)
 		{
 			float c = static_cast<float>(*tmp++);
 			dst.push_back(c / 65535.0f);
@@ -449,6 +561,8 @@ bool GltfLoader::load()
 	Info("#image     %d", _glmodel.images.size());
 	Info("#camera    %d", _glmodel.cameras.size());
 	Info("#light     %d", _glmodel.lights.size());
+	Info("#skins     %d", _glmodel.skins.size());
+	Info("#animations %d", _glmodel.animations.size());
 	Info("*****************************************************************");
 
 	_glscene = &_glmodel.scenes[_glmodel.defaultScene];
@@ -463,6 +577,9 @@ bool GltfLoader::load()
 	parseCameras();
 	parseMaterials();
 	parseImages();
+	parseMeshes();
+	parseTextures();
+	parseSamplers();
 
-    return false;
+    return true;
 }

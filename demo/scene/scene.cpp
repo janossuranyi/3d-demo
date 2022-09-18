@@ -25,14 +25,6 @@ uint xScene::addLight()
     return lights.size() - 1;
 }
 
-uint xScene::addPrimitive()
-{
-    primitives.emplace_back();
-    primitives.back().reset(new Primitive());
-
-    return primitives.size() - 1;
-}
-
 uint xScene::addMesh()
 {
     meshes.emplace_back();
