@@ -580,6 +580,7 @@ bool GltfLoader::load()
 	parseMeshes();
 	parseTextures();
 	parseSamplers();
+	parseAnimations();
 
     return true;
 }

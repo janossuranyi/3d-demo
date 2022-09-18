@@ -245,12 +245,14 @@ int main(int argc, char** argv)
 {
     g_fileSystem.set_working_dir(BASE_DIR);
 
-    xScene scene;
-    GltfLoader loader(g_fileSystem.resolve("assets/Bee.glb"), scene);
-    if (loader.load())
     {
-        xNode* root = scene.nodes[scene.root[0]].get();
-        glm::mat4 lmtx = root->getLocalTransform();
+        xScene scene;
+        GltfLoader loader(g_fileSystem.resolve("assets/Bee.glb"), scene);
+        if (loader.load())
+        {
+            xNode* root = scene.nodes[scene.root[0]].get();
+            glm::mat4 lmtx = root->getLocalTransform();
+        }
     }
 
     exit(1);

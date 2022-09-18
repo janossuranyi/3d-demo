@@ -498,10 +498,10 @@ void Pipeline::setLayout(const VertexLayout& layout)
 
 void Pipeline::useProgram(GpuProgram& prog)
 {
-	if (m_activeProgram != prog.mProgId)
+	if (m_activeProgram != prog._program)
 	{
 		prog.use();
-		m_activeProgram = prog.mProgId;
+		m_activeProgram = prog._program;
 	}
 }
 

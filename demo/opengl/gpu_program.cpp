@@ -15,20 +15,20 @@
 
 GpuProgram::GpuProgram()
 {
-	mProgId = 0;
+	_program = 0;
 }
 
 GpuProgram& GpuProgram::operator=(GpuProgram&& moved) noexcept
 {
-	mProgId = moved.mProgId;
-	moved.mProgId = 0;
+	_program = moved._program;
+	moved._program = 0;
 
 	return *this;
 }
 GpuProgram::GpuProgram(GpuProgram&& moved) noexcept
 {
-	mProgId = moved.mProgId;
-	moved.mProgId = 0;
+	_program = moved._program;
+	moved._program = 0;
 }
 GpuProgram::~GpuProgram()
 {
@@ -37,10 +37,10 @@ GpuProgram::~GpuProgram()
 bool GpuProgram::bindUniformBlock(const std::string& name, int bindingIndex)
 {
 	unsigned int var_index;
-	GL_CHECK(var_index = glGetUniformBlockIndex(mProgId, name.c_str()));
+	GL_CHECK(var_index = glGetUniformBlockIndex(_program, name.c_str()));
 	if (var_index == GL_INVALID_INDEX) return false;
 
-	GL_CHECK(glUniformBlockBinding(mProgId, var_index, bindingIndex));
+	GL_CHECK(glUniformBlockBinding(_program, var_index, bindingIndex));
 
 	return true;
 }
@@ -80,12 +80,12 @@ GLuint GpuProgram::createShaderInternal(eShaderStage stage, const std::vector<co
 
 bool GpuProgram::createProgramFromShaderSource(const std::vector<const char*>& vert_sources, const std::vector<const char*>& frag_sources)
 {
-	if (mProgId != 0xFFFF)
+	if (_program != 0xFFFF)
 	{
-		GL_CHECK(glDeleteProgram(mProgId));
+		GL_CHECK(glDeleteProgram(_program));
 	}
 
-	GL_CHECK(mProgId = glCreateProgram());
+	GL_CHECK(_program = glCreateProgram());
 
 	GLuint vertShader = createShaderInternal(eShaderStage::VERTEX, vert_sources);
 
@@ -104,24 +104,24 @@ bool GpuProgram::createProgramFromShaderSource(const std::vector<const char*>& v
 		return false;
 	}
 
-	GL_CHECK(glAttachShader(mProgId, vertShader));
-	GL_CHECK(glAttachShader(mProgId, fragShader));
-	GL_CHECK(glLinkProgram(mProgId));
+	GL_CHECK(glAttachShader(_program, vertShader));
+	GL_CHECK(glAttachShader(_program, fragShader));
+	GL_CHECK(glLinkProgram(_program));
 
 	GL_CHECK(glDeleteShader(vertShader));
 	GL_CHECK(glDeleteShader(fragShader));
 
 	GLint result = GL_FALSE;
 
-	GL_CHECK(glGetProgramiv(mProgId, GL_LINK_STATUS, &result));
+	GL_CHECK(glGetProgramiv(_program, GL_LINK_STATUS, &result));
 
 	if (result == GL_FALSE)
 	{
 		GLint infologLen;
-		GL_CHECK(glGetProgramiv(mProgId, GL_INFO_LOG_LENGTH, &infologLen));
+		GL_CHECK(glGetProgramiv(_program, GL_INFO_LOG_LENGTH, &infologLen));
 		if (infologLen > 0) {
 			std::vector<char> logBuf(infologLen);
-			GL_CHECK(glGetProgramInfoLog(mProgId, infologLen, nullptr, logBuf.data()));
+			GL_CHECK(glGetProgramInfoLog(_program, infologLen, nullptr, logBuf.data()));
 			Error("Linking of shader program failed: %s", logBuf.data());
 
 			destroy();
@@ -133,12 +133,12 @@ bool GpuProgram::createProgramFromShaderSource(const std::vector<const char*>& v
 }
 bool GpuProgram::createComputeProgramFromShaderSource(const std::vector<const char*>& sources)
 {
-	if (mProgId != 0)
+	if (_program != 0)
 	{
-		GL_CHECK(glDeleteProgram(mProgId));
+		GL_CHECK(glDeleteProgram(_program));
 	}
 
-	GL_CHECK(mProgId = glCreateProgram());
+	GL_CHECK(_program = glCreateProgram());
 
 	GLuint shader = createShaderInternal(eShaderStage::COMPUTE, sources);
 
@@ -148,20 +148,20 @@ bool GpuProgram::createComputeProgramFromShaderSource(const std::vector<const ch
 		return false;
 	}
 
-	GL_CHECK(glAttachShader(mProgId, shader));
-	GL_CHECK(glLinkProgram(mProgId));
+	GL_CHECK(glAttachShader(_program, shader));
+	GL_CHECK(glLinkProgram(_program));
 	GL_CHECK(glDeleteShader(shader));
 	GLint result = GL_FALSE;
 
-	GL_CHECK(glGetProgramiv(mProgId, GL_LINK_STATUS, &result));
+	GL_CHECK(glGetProgramiv(_program, GL_LINK_STATUS, &result));
 
 	if (result == GL_FALSE)
 	{
 		GLint infologLen;
-		GL_CHECK(glGetProgramiv(mProgId, GL_INFO_LOG_LENGTH, &infologLen));
+		GL_CHECK(glGetProgramiv(_program, GL_INFO_LOG_LENGTH, &infologLen));
 		if (infologLen > 0) {
 			std::vector<char> logBuf(infologLen);
-			GL_CHECK(glGetProgramInfoLog(mProgId, infologLen, nullptr, logBuf.data()));
+			GL_CHECK(glGetProgramInfoLog(_program, infologLen, nullptr, logBuf.data()));
 			Error("Linking of shader program failed: %s", logBuf.data());
 
 			destroy();
@@ -169,7 +169,7 @@ bool GpuProgram::createComputeProgramFromShaderSource(const std::vector<const ch
 		}
 	}
 
-	m_bComputeShader = true;
+	_isComputeShader = true;
 	return true;
 
 }
@@ -177,7 +177,7 @@ bool GpuProgram::createComputeProgramFromShaderSource(const std::vector<const ch
 int GpuProgram::getLocation(const std::string& name) const
 {
 	int r;
-	GL_CHECK(r = glGetUniformLocation(mProgId, name.c_str()));
+	GL_CHECK(r = glGetUniformLocation(_program, name.c_str()));
 
 	return r;
 }
@@ -191,79 +191,79 @@ bool GpuProgram::mapLocationToIndex(const std::string& name, const int index)
 		return false;
 	}
 
-	if (mMapVar.size() <= index)
+	if (_locationBindings.size() <= index)
 	{
-		mMapVar.resize(index + 1);
+		_locationBindings.resize(index + 1);
 	}
 
-	mMapVar[index] = loc;
+	_locationBindings[index] = loc;
 
 }
 
 void GpuProgram::set(int index, float f) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform1f(mMapVar[index], f));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform1f(_locationBindings[index], f));
 }
 void GpuProgram::set(int index, int n, const float* f) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform1fv(mMapVar[index], n, f));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform1fv(_locationBindings[index], n, f));
 }
 void GpuProgram::set(int index, int i) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform1i(mMapVar[index], i));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform1i(_locationBindings[index], i));
 }
 void GpuProgram::set(int index, bool transpose, const glm::mat4& m) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniformMatrix4fv(mMapVar[index], 1, GLboolean(transpose), &m[0][0]));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniformMatrix4fv(_locationBindings[index], 1, GLboolean(transpose), &m[0][0]));
 }
 void GpuProgram::set(int index, bool transpose, const glm::mat3& m) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniformMatrix3fv(mMapVar[index], 1, GLboolean(transpose), &m[0][0]));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniformMatrix3fv(_locationBindings[index], 1, GLboolean(transpose), &m[0][0]));
 }
 void GpuProgram::set(int index, bool transpose, int n, const glm::mat4* m) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniformMatrix4fv(mMapVar[index], n, GLboolean(transpose), reinterpret_cast<const GLfloat*>(m)));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniformMatrix4fv(_locationBindings[index], n, GLboolean(transpose), reinterpret_cast<const GLfloat*>(m)));
 }
 void GpuProgram::set(int index, bool transpose, int n, const glm::mat3* m) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniformMatrix3fv(mMapVar[index], n, GLboolean(transpose), reinterpret_cast<const GLfloat*>(m)));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniformMatrix3fv(_locationBindings[index], n, GLboolean(transpose), reinterpret_cast<const GLfloat*>(m)));
 }
 void GpuProgram::set(int index, const glm::vec2& v) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform2fv(mMapVar[index], 1, &v[0]));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform2fv(_locationBindings[index], 1, &v[0]));
 }
 void GpuProgram::set(int index, const glm::vec3& v) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform3fv(mMapVar[index], 1, &v[0]));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform3fv(_locationBindings[index], 1, &v[0]));
 }
 void GpuProgram::set(int index, const glm::vec4& v) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform4fv(mMapVar[index], 1, &v[0]));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform4fv(_locationBindings[index], 1, &v[0]));
 }
 void GpuProgram::set(int index, int n, const glm::vec2* v) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform2fv(mMapVar[index], n, reinterpret_cast<const GLfloat*>(v)));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform2fv(_locationBindings[index], n, reinterpret_cast<const GLfloat*>(v)));
 }
 void GpuProgram::set(int index, int n, const glm::vec3* v) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform3fv(mMapVar[index], n, reinterpret_cast<const GLfloat*>(v)));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform3fv(_locationBindings[index], n, reinterpret_cast<const GLfloat*>(v)));
 }
 void GpuProgram::set(int index, int n, const glm::vec4* v) const
 {
-	assert(index < mMapVar.size());
-	GL_CHECK(glUniform4fv(mMapVar[index], n, reinterpret_cast<const GLfloat*>(v)));
+	assert(index < _locationBindings.size());
+	GL_CHECK(glUniform4fv(_locationBindings[index], n, reinterpret_cast<const GLfloat*>(v)));
 }
 void GpuProgram::set(const std::string& name, int i) const
 {
@@ -275,21 +275,21 @@ void GpuProgram::set(const std::string& name, int i) const
 }
 void GpuProgram::use() const
 {
-	assert(mProgId != 0xFFFF);
-	GL_CHECK(glUseProgram(mProgId));
+	assert(_program != 0xFFFF);
+	GL_CHECK(glUseProgram(_program));
 }
 void GpuProgram::dispatchCompute(unsigned int x, unsigned int y, unsigned int z) const
 {
-	assert(mProgId != 0);
-	assert(m_bComputeShader == true);
+	assert(_program != 0);
+	assert(_isComputeShader == true);
 	GL_CHECK(glDispatchCompute(x, y, z));
 }
 void GpuProgram::destroy()
 {
-	if (mProgId != 0)
+	if (_program != 0)
 	{
-		GL_CHECK(glDeleteProgram(mProgId));
-		mProgId = 0;
+		GL_CHECK(glDeleteProgram(_program));
+		_program = 0;
 	}
 }
 bool GpuProgram::compileSingleStage(GLuint shaderId, eShaderStage type)
