@@ -250,8 +250,12 @@ int main(int argc, char** argv)
         GltfLoader loader(g_fileSystem.resolve("assets/Large_Steampunk_House.glb"), scene);
         if (loader.load())
         {
-            xNode* root = scene.nodes[scene.root[0]].get();
+            std::unique_ptr<xNode>& root = scene.nodes[scene.root[0]];
             glm::mat4 lmtx = root->getLocalTransform();
+            for (uint row = 0; row < 4; ++row)
+            {
+                Info("%.4f %.4f %.4f %.4f", lmtx[row][0], lmtx[row][1], lmtx[row][2], lmtx[row][3]);
+            }
         }
     }
 
