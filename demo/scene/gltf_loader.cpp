@@ -492,6 +492,8 @@ void GltfLoader::arrayToFloatArray(const tinygltf::Accessor& access, std::vector
 		break;
 	}
 
+	dst.resize(access.count * elemCount);
+
 	if (access.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
 	{
 		const float* tmp = reinterpret_cast<const float*>(buffer.data.data() + view.byteOffset + access.byteOffset);
