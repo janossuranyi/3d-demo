@@ -18,9 +18,10 @@ struct Primitive
 	std::vector<glm::vec4>	tangents;
 	std::vector<glm::uvec4>	joints;
 	std::vector<glm::vec4>	weights;
-	std::vector<uint16_t>	indices;
+	std::vector<uchar>		indices;
 
 	int						material{ -1 };
+	int						indexSize{ 2 };
 	eDrawMode				mode{ eDrawMode::TRIANGLES };
 	
 };

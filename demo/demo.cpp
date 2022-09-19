@@ -247,7 +247,7 @@ int main(int argc, char** argv)
 
     {
         xScene scene;
-        GltfLoader loader(g_fileSystem.resolve("assets/Bee.glb"), scene);
+        GltfLoader loader(g_fileSystem.resolve("assets/Large_Steampunk_House.glb"), scene);
         if (loader.load())
         {
             xNode* root = scene.nodes[scene.root[0]].get();

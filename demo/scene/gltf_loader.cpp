@@ -372,6 +372,9 @@ void GltfLoader::parseMeshes()
 			const auto& pinp = inp.primitives[j];
 			const uint pidx = mesh->addPrimitive();
 			Primitive* p = mesh->primitives[pidx].get();
+
+			p->material = pinp.material;
+
 			switch (pinp.mode)
 			{
 			case TINYGLTF_MODE_LINE:
@@ -446,21 +449,23 @@ void GltfLoader::parseMeshes()
 			const auto& indices = _glmodel.accessors[pinp.indices];
 			const auto& iview = _glmodel.bufferViews[indices.bufferView];
 			const auto& ibuff = _glmodel.buffers[iview.buffer];
+			size_t idx_size = indices.count;
 
 			if (indices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
 			{
-				const uint16_t* ptr = reinterpret_cast<const uint16_t*>(ibuff.data.data() + iview.byteOffset + indices.byteOffset);
-				p->indices.assign(ptr, ptr + indices.count);
+				idx_size *= 2;
+				p->indexSize = 2;
 			}
 			else if (indices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
 			{
-				Warning("GLTF primitive index type is INT32 !");
-				const uint* ptr = reinterpret_cast<const uint*>(ibuff.data.data() + iview.byteOffset + indices.byteOffset);
-				for (uint k = 0; k < indices.count; ++k)
-				{
-					p->indices.push_back(uint16_t(ptr[k]));
-				}
+				idx_size *= 4;
+				p->indexSize = 4;
 			}
+
+			const uchar* ptr = reinterpret_cast<const uchar*>(ibuff.data.data() + iview.byteOffset + indices.byteOffset);
+
+			p->indices.resize(idx_size, 0);
+			std::memcpy(p->indices.data(), ptr, idx_size);
 		}
 	}
 }
