@@ -91,7 +91,7 @@ vec3 DeGamma(vec3 c)
 
 vec3 Gamma(vec3 c)
 {
-    return pow(c, vec3(1/2.2));
+    return pow(c, vec3(1.0/2.2));
 }
 
 vec3 tonemap(vec3 c)

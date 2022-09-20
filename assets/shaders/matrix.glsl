@@ -10,5 +10,5 @@ layout(std140) uniform cb_matrix
     mat4 m_WVP;
     
     mat4 m_iP;
-    mat4 m_iVP;    
+    mat4 m_iVP;
 }
