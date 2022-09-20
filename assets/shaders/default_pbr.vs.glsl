@@ -1,20 +1,30 @@
-#version 330 core
+#version 450 core
 
-layout(location = 0) in vec4 va_position;
-layout(location = 1) in vec4 va_qtangent;
-layout(location = 2) in vec2 va_st;
-layout(location = 3) in vec4 va_color;
+layout(location = 0) in vec4 aPosition;
+layout(location = 1) in vec4 aNormal;
+layout(location = 2) in vec4 aTangent;
+layout(location = 3) in vec4 aColor;
+layout(location = 4) in vec2 aTexcoord;
 
-out vec4 vo_position;
-out vec4 vo_qtangent;
-out vec2 vo_st;
-out vec4 vo_color;
+out INTERFACE {
+	vec3	worldPosition;
+	vec3	normal;
+	vec3 	tangent;
+	vec3	bitangent;
+	vec2	texcoord;
+	vec4	color;
+} Out;
 
-void main() {
-	gl_Position = va_position;
+#include <matrix>
 
-	vo_position = va_position;
-	vo_qtangent = va_qtangent;
-	vo_st = va_st;
-	vo_color = va_color;
+void main()
+{
+	Out.worldPosition	= m_WVP * aPosition;
+	Out.normal			= m_Normal * aNormal;
+	Out.tangent			= m_Normal * aTangent;
+	Out.color			= aColor;
+	Out.texcoord		= aTexcoord;
+
+	gl_Position = Out.worldPosition;
+
 } 
