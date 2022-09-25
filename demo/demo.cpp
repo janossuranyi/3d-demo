@@ -12,9 +12,9 @@
 #include "gpu_types.h"
 #include "gpu_utils.h"
 
-#define SCREEN_WIDTH 1440
-#define SCREEN_HEIGHT 900
-#define FULLSCREEN false
+#define SCREEN_WIDTH -1
+#define SCREEN_HEIGHT -1
+#define FULLSCREEN true
 
 VideoConfig videoConf;
 
@@ -244,22 +244,6 @@ void App_EventLoop()
 int main(int argc, char** argv)
 {
     g_fileSystem.set_working_dir(BASE_DIR);
-
-    {
-        xScene scene;
-        GltfLoader loader(g_fileSystem.resolve("assets/Large_Steampunk_House.glb"), scene);
-        if (loader.load())
-        {
-            std::unique_ptr<xNode>& root = scene.nodes[scene.root[0]];
-            glm::mat4 lmtx = root->getLocalTransform();
-            for (uint row = 0; row < 4; ++row)
-            {
-                Info("%.4f %.4f %.4f %.4f", lmtx[row][0], lmtx[row][1], lmtx[row][2], lmtx[row][3]);
-            }
-        }
-    }
-
-    exit(1);
 
     Info("V_Init Start");
 

@@ -15,8 +15,8 @@
 
 const float PI = 3.14159265359;
 
-const float kLightRadius = 10;
-vec3 kLightColor = vec3(1.0,1.0,1.0) * 10;
+const float kLightRadius = 5;
+vec3 kLightColor = vec3(1.0,1.0,1.0) * 20;
 
 out vec4 FragColor;
 
@@ -74,13 +74,15 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 }  
 
 
-vec3 light_radiance(float aDistance, float aRadius, vec3 aColor)
+vec3 light_radiance(float d, float r, vec3 c, float cutoff)
 {
-    float vD2 = aDistance * aDistance;
-    float vR2 = aRadius * aRadius;
-    float attenuation = 1.0 / (1.0 + 2 * aDistance / aRadius + vD2 / vR2);
+    float denom = d/r + 1;
+    float attenuation = 1.0 / (denom * denom);
 
-    return aColor * attenuation;
+    attenuation = (attenuation - cutoff) / (1 - cutoff);
+    attenuation = max(attenuation, 0);
+
+    return c * attenuation;
 }
 
 
@@ -91,7 +93,7 @@ vec3 DeGamma(vec3 c)
 
 vec3 Gamma(vec3 c)
 {
-    return pow(c, vec3(1/2.2));
+    return pow(c, vec3(1.0/2.2));
 }
 
 vec3 tonemap(vec3 c)
@@ -132,6 +134,20 @@ specBRDF_t specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness ) {
     return res;
 }
 
+struct light_t
+{
+    vec3 p;
+    vec3 c;
+};
+
+light_t lights[] = light_t[](
+    light_t(In.TangentLightPos, kLightColor),
+    light_t(In.TangentLightPos + vec3(-10,0,0), vec3(10,5,2)),
+    light_t(In.TangentLightPos + vec3(10,0,0), vec3(10,5,2)),
+    light_t(In.TangentLightPos + vec3(0,-10,0), vec3(10,5,2)),
+    light_t(In.TangentLightPos + vec3(0,10,0), vec3(10,5,2))
+);
+
 void main()
 {
     vec3 Cd, N;
@@ -161,22 +177,25 @@ void main()
     vec3 V = normalize(In.TangentViewPos - In.TangentFragPos);
 
     vec3 finalColor = vec3(0.0);
-    vec3 lightPos = In.TangentLightPos;
 
-    vec3 L = lightPos - In.TangentFragPos;
-    float distance = length(L);
-    L /= distance;
+    for (int i = 0; i < lights.length(); ++i)
+    {
+        vec3 lightPos = lights[i].p;
 
-    vec3 radiance = light_radiance(distance, kLightRadius, kLightColor);
+        vec3 L = lightPos - In.TangentFragPos;
+        float distance = length(L);
+        L /= distance;
 
-    specBRDF_t specular = specBRDF(N, V, L, Cs, Csg.a);
+        vec3 radiance = light_radiance(distance, kLightRadius, lights[i].c, 0.005);
 
-    // add to outgoing radiance Lo
+        specBRDF_t specular = specBRDF(N, V, L, Cs, Csg.a);
 
-    float NdotL = max(dot(N, L), 0.0);                
-    vec3 color = (specular.kD * Cd / PI + specular.color) * radiance * NdotL;
-    finalColor += color;
+        // add to outgoing radiance Lo
 
+        float NdotL = max(dot(N, L), 0.0);
+        vec3 color = (specular.kD * Cd / PI + specular.color) * radiance * NdotL;
+        finalColor += color;
+    }
 
     finalColor = Gamma(tonemap(finalColor));
 
