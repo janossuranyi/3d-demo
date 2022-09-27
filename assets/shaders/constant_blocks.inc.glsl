@@ -32,7 +32,7 @@ layout(std140) uniform cb_camera
 	float znear;
 	float zfar;
 	float yfov;
-	float ascept;    
+	float ascept;
 }
 
 layout(std140) uniform cb_lowFreq
