@@ -173,7 +173,7 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<LoadModelEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<PointCubeEffect>();
 
     if (!activeEffect->Init())
         return;
