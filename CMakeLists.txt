@@ -18,10 +18,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 file(GLOB ENGINE_H engine/*.h)
 file(GLOB ENGINE_C engine/*.cpp)
+file(GLOB ENGINE_GR_H engine/graphics/*.h)
+file(GLOB ENGINE_GR_C engine/graphics/*.cpp)
 
 set(ENGINE_FILES
   ${ENGINE_H}
   ${ENGINE_C}
+  ${ENGINE_GR_H}
+  ${ENGINE_GR_C}
 )
 
 file(GLOB APP_H app/*.h)
@@ -45,6 +49,7 @@ add_library(tinygltf STATIC
 add_library(engine STATIC
   ${ENGINE_FILES}
 )
+
 include_directories(
   ./
   engine/
@@ -92,10 +97,10 @@ if(WIN32)
 #     "${assimp_DIR}/../../../bin/assimp${ASSIMP_LIBRARY_SUFFIX}.dll"
 #     $<TARGET_FILE_DIR:demo>)
 
-  add_custom_command(TARGET demo POST_BUILD
+  add_custom_command(TARGET app POST_BUILD
      COMMAND ${CMAKE_COMMAND} -E copy
      "${SDL2_INCLUDE_DIR}/../lib/${ARCH}/SDL2.dll"
-     $<TARGET_FILE_DIR:demo>)
+     $<TARGET_FILE_DIR:app>)
 endif()
 
 source_group("Shaders" FILES ${SHADERS} )
