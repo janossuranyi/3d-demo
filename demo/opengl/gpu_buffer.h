@@ -65,16 +65,16 @@ public:
 
 	void updateSubData(uint32_t offset, uint32_t size, const void* data);
 private:
-	void move(GpuBuffer&);
-	GLuint mBuffer;
-	bool mIsMapped;
-	bool mIsReference;
-	uint8_t* mMapPtr;
-	uint32_t mSize;
-	uint32_t mOffset;
-	Target mTarget;
-	Usage mUsage;
-	GLbitfield mAccess;
+	void		move(GpuBuffer&);
+	GLuint		mBuffer;
+	bool		mIsMapped;
+	bool		mIsReference;
+	uint8_t*	mMapPtr;
+	uint32_t	mSize;
+	uint32_t	mOffset;
+	Target		mTarget;
+	Usage		mUsage;
+	GLbitfield	mAccess;
 
 };
 
