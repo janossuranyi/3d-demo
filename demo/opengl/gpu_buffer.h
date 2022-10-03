@@ -10,12 +10,10 @@ class GpuBuffer
 {
 	friend class Pipeline;
 public:
-	enum class Target :uint { VERTEX, INDEX, UNIFORM };
-	enum class Usage :uint { STATIC, DYNAMIC, DEFAULT };
 
 	/** Empty constructor initializes a VERTEX buffer
 	*/
-	GpuBuffer() :GpuBuffer(Target::VERTEX) {}
+	GpuBuffer() :mTarget(BufferTarget::VERTEX) {}
 
 	/** Destroys the underlying gpu buffer
 	*/
@@ -23,7 +21,7 @@ public:
 
 	/** Initialize a specific buffer target
 	*/
-	GpuBuffer(Target const type);
+	GpuBuffer(BufferTarget const type);
 
 	/** Copy constructor disabled
 	*/
@@ -51,7 +49,7 @@ public:
 
 	bool isCreated() const;
 
-	bool create(uint32_t size, Usage usage, unsigned int accesFlags, const void* bytes = NULL);
+	bool create(uint32_t size, BufferUsage usage, unsigned int accesFlags, const void* bytes = NULL);
 
 	void reference(uint32_t offset, uint32_t size, GpuBuffer& ref);
 
@@ -72,13 +70,13 @@ private:
 	uint8_t*	mMapPtr;
 	uint32_t	mSize;
 	uint32_t	mOffset;
-	Target		mTarget;
-	Usage		mUsage;
+	BufferTarget mTarget;
+	BufferUsage	mUsage;
 	GLbitfield	mAccess;
 
 };
 
-inline GpuBuffer::GpuBuffer(Target const type)
+inline GpuBuffer::GpuBuffer(BufferTarget const type)
 {
 	mBuffer = INVALID_BUFFER;
 	mTarget = type;   
@@ -87,7 +85,7 @@ inline GpuBuffer::GpuBuffer(Target const type)
 	mIsMapped = false;
 	mIsReference = false;
 	mMapPtr = NULL;
-	mUsage = Usage::STATIC;
+	mUsage = BufferUsage::STATIC;
 	mAccess = BA_MAP_WRITE;
 }
 

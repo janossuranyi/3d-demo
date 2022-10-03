@@ -14,24 +14,24 @@ void CheckOpenGLError(const char* stmt, const char* fname, int line)
     }
 }
 
-GLenum GL_castDataType(eDataType type)
+GLenum GL_castDataType(ComponentType type)
 {
     switch (type) {
-    case eDataType::BYTE:                return GL_BYTE;
-    case eDataType::UNSIGNED_BYTE:       return GL_UNSIGNED_BYTE;
-    case eDataType::SHORT:               return GL_SHORT;
-    case eDataType::UNSIGNED_SHORT:      return GL_UNSIGNED_SHORT;
-    case eDataType::INT32:               return GL_INT;
-    case eDataType::UNSIGNED_INT32:      return GL_UNSIGNED_INT;
-    case eDataType::FLOAT:               return GL_FLOAT;
-    case eDataType::HALF_FLOAT:          return GL_HALF_FLOAT;
-    case eDataType::UNSIGNED_INT_24_8:   return GL_UNSIGNED_INT_24_8;
+    case ComponentType::BYTE:                return GL_BYTE;
+    case ComponentType::UNSIGNED_BYTE:       return GL_UNSIGNED_BYTE;
+    case ComponentType::SHORT:               return GL_SHORT;
+    case ComponentType::UNSIGNED_SHORT:      return GL_UNSIGNED_SHORT;
+    case ComponentType::INT32:               return GL_INT;
+    case ComponentType::UNSIGNED_INT32:      return GL_UNSIGNED_INT;
+    case ComponentType::FLOAT:               return GL_FLOAT;
+    case ComponentType::HALF_FLOAT:          return GL_HALF_FLOAT;
+    case ComponentType::UNSIGNED_INT_24_8:   return GL_UNSIGNED_INT_24_8;
     }
 }
 
-GLenum GL_castPixelFormat(ePixelFormat pf)
+GLenum GL_castPixelFormat(InputlFormat pf)
 {
-    using PF = ePixelFormat;
+    using PF = InputlFormat;
 
     switch (pf)
     {
@@ -50,99 +50,99 @@ GLenum GL_castPixelFormat(ePixelFormat pf)
     }
 }
 
-GLint GL_castTextureFormat(eTextureFormat f)
+GLint GL_castTextureFormat(InternalFormat f)
 {
     switch (f)
     {
-    case eTextureFormat::DEPTH24_STENCIL_8:
+    case InternalFormat::DEPTH24_STENCIL_8:
         return GL_DEPTH24_STENCIL8;
-    case eTextureFormat::R:
+    case InternalFormat::R:
         return GL_R;
-    case eTextureFormat::R16:
+    case InternalFormat::R16:
         return GL_R16;
-    case eTextureFormat::R16F:
+    case InternalFormat::R16F:
         return GL_R16F;
-    case eTextureFormat::RG:
+    case InternalFormat::RG:
         return GL_RG;
-    case eTextureFormat::RG16:
+    case InternalFormat::RG16:
         return GL_RG16;
-    case eTextureFormat::RG16F:
+    case InternalFormat::RG16F:
         return GL_RG16F;
-    case eTextureFormat::RGB:
+    case InternalFormat::RGB:
         return GL_RGB;
-    case eTextureFormat::RGBA:
+    case InternalFormat::RGBA:
         return GL_RGBA;
-    case eTextureFormat::RGBA16F:
+    case InternalFormat::RGBA16F:
         return GL_RGBA16F;
-    case eTextureFormat::RGB10A2:
+    case InternalFormat::RGB10A2:
         return GL_RGB10_A2;
-    case eTextureFormat::RGBA32F:
+    case InternalFormat::RGBA32F:
         return GL_RGBA32F;
-    case eTextureFormat::SRGB:
+    case InternalFormat::SRGB:
         return GL_SRGB8;
-    case eTextureFormat::SRGB_A:
+    case InternalFormat::SRGB_A:
         return GL_SRGB8_ALPHA8;
-    case eTextureFormat::R11F_G11F_B10F:
+    case InternalFormat::R11F_G11F_B10F:
         return GL_R11F_G11F_B10F;
-    case eTextureFormat::COMPRESSED_RGBA:
+    case InternalFormat::COMPRESSED_RGBA:
         return GL_COMPRESSED_RGBA;
-    case eTextureFormat::COMPRESSED_SRGB:
+    case InternalFormat::COMPRESSED_SRGB:
         return GL_COMPRESSED_SRGB;
-    case eTextureFormat::RGB565:
+    case InternalFormat::RGB565:
         return GL_RGB565;
-    case eTextureFormat::RGB5_A1:
+    case InternalFormat::RGB5_A1:
         return GL_RGB5_A1;
     }
 }
 
-GLenum GL_castShaderStage(eShaderStage type)
+GLenum GL_castShaderStage(ShaderType type)
 {
     switch (type)
     {
-    case eShaderStage::COMPUTE:
+    case ShaderType::COMPUTE:
         return GL_COMPUTE_SHADER;
-    case eShaderStage::VERTEX:
+    case ShaderType::VERTEX:
         return GL_VERTEX_SHADER;
-    case eShaderStage::GEOMETRY:
+    case ShaderType::GEOMETRY:
         return GL_GEOMETRY_SHADER;
-    case eShaderStage::FRAGMENT:
+    case ShaderType::FRAGMENT:
         return GL_FRAGMENT_SHADER;
-    case eShaderStage::TESS_CONTROL:
+    case ShaderType::TESS_CONTROL:
         return GL_TESS_CONTROL_SHADER;
-    case eShaderStage::TESS_EVALUATION:
+    case ShaderType::TESS_EVALUATION:
         return GL_TESS_EVALUATION_SHADER;
     }
 }
 
-GLint GL_castTexWrap(eTexWrap p)
+GLint GL_castTexWrap(Wrap p)
 {
     switch (p)
     {
-        case eTexWrap::CLAMP_TO_BORDER:     return GL_CLAMP_TO_BORDER;
-        case eTexWrap::CLAMP_TO_EDGE:       return GL_CLAMP_TO_EDGE;
-        case eTexWrap::MIRRORED_REPEAT:     return GL_MIRRORED_REPEAT;
-        case eTexWrap::MIRROR_CLAMP_TO_EDGE:return GL_MIRROR_CLAMP_TO_EDGE;
-        case eTexWrap::REPEAT:              return GL_REPEAT;
+        case Wrap::CLAMP_TO_BORDER:     return GL_CLAMP_TO_BORDER;
+        case Wrap::CLAMP_TO_EDGE:       return GL_CLAMP_TO_EDGE;
+        case Wrap::MIRRORED_REPEAT:     return GL_MIRRORED_REPEAT;
+        case Wrap::MIRROR_CLAMP_TO_EDGE:return GL_MIRROR_CLAMP_TO_EDGE;
+        case Wrap::REPEAT:              return GL_REPEAT;
     }
 }
 
-GLenum GL_castImageAccess(eImageAccess p)
+GLenum GL_castImageAccess(Access p)
 {
     switch (p)
     {
-        case eImageAccess::READ_ONLY:   return GL_READ_ONLY;
-        case eImageAccess::WRITE_ONLY:  return GL_WRITE_ONLY;
-        case eImageAccess::READ_WRITE:  return GL_READ_WRITE;
+        case Access::READ_ONLY:   return GL_READ_ONLY;
+        case Access::WRITE_ONLY:  return GL_WRITE_ONLY;
+        case Access::READ_WRITE:  return GL_READ_WRITE;
     }
 }
 
-GLenum GL_castImageFormat(eImageFormat p)
+GLenum GL_castImageFormat(ImageFormat p)
 {
     switch (p)
     {
-        case eImageFormat::RGBA16F:     return GL_RGBA16F;
-        case eImageFormat::RGBA32F:     return GL_RGBA32F;
-        case eImageFormat::RGBA8:       return GL_RGBA8;
+        case ImageFormat::RGBA16F:     return GL_RGBA16F;
+        case ImageFormat::RGBA32F:     return GL_RGBA32F;
+        case ImageFormat::RGBA8:       return GL_RGBA8;
     }
 }
 
@@ -199,21 +199,21 @@ GLbitfield GL_castBufferAccessFlags(unsigned int pAccess)
     return access;
 }
 
-const char* GetShaderStageTitle(eShaderStage type)
+const char* GetShaderStageTitle(ShaderType type)
 {
     switch (type)
     {
-    case eShaderStage::COMPUTE:
+    case ShaderType::COMPUTE:
         return "Compute";
-    case eShaderStage::VERTEX:
+    case ShaderType::VERTEX:
         return "Vertex";
-    case eShaderStage::GEOMETRY:
+    case ShaderType::GEOMETRY:
         return "Geometry";
-    case eShaderStage::FRAGMENT:
+    case ShaderType::FRAGMENT:
         return "Fragment";;
-    case eShaderStage::TESS_CONTROL:
+    case ShaderType::TESS_CONTROL:
         return "Tesselation control";
-    case eShaderStage::TESS_EVALUATION:
+    case ShaderType::TESS_EVALUATION:
         return "Tesselation evaluation";
     }
 }

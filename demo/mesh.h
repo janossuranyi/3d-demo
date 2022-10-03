@@ -31,7 +31,7 @@ public:
 		m_Tangent_layout(),
 		m_Color_layout(),
 		m_Indices(),
-		m_IndexType(eDataType::UNSIGNED_SHORT),
+		m_IndexType(ComponentType::UNSIGNED_SHORT),
 		m_NumIndex(),
 		m_material(-1),
 		m_Mode(),
@@ -52,7 +52,7 @@ public:
 	const std::vector<char>& colors() const { return m_Colors; }
 	const std::vector<char>& indices() const { return m_Indices; }
 	unsigned int numIndex() const { return m_NumIndex; }
-	eDataType indexType() const { return m_IndexType; }
+	ComponentType indexType() const { return m_IndexType; }
 	eDrawMode drawMode() const { return m_Mode; }
 	const VertexAttribute& positionLayout() const { return m_Position_layout; }
 	const VertexAttribute& texCoordLayout() const { return m_TexCoord_layout; }
@@ -87,7 +87,7 @@ private:
 	
 	int m_material;
 
-	eDataType m_IndexType;
+	ComponentType m_IndexType;
 	eDrawMode m_Mode;
 
 	glm::vec3 m_Bounds[2];
@@ -144,7 +144,7 @@ private:
 	unsigned int m_NumIndex;
 	unsigned int m_NumVertices;
 
-	eDataType m_IndexType;
+	ComponentType m_IndexType;
 	eDrawMode m_Mode;
 
 	bool m_bCompiled;

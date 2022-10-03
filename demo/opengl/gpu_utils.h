@@ -5,17 +5,17 @@
 #include "gpu_types.h"
 
 extern void CheckOpenGLError(const char* stmt, const char* fname, int line);
-extern GLenum GL_castDataType(eDataType type);
-extern GLenum GL_castPixelFormat(ePixelFormat pf);
-extern GLint GL_castTextureFormat(eTextureFormat f);
-extern GLenum GL_castShaderStage(eShaderStage type);
-extern GLint GL_castTexWrap(eTexWrap p);
-extern GLenum GL_castImageAccess(eImageAccess p);
-extern GLenum GL_castImageFormat(eImageFormat p);
+extern GLenum GL_castDataType(ComponentType type);
+extern GLenum GL_castPixelFormat(InputlFormat pf);
+extern GLint GL_castTextureFormat(InternalFormat f);
+extern GLenum GL_castShaderStage(ShaderType type);
+extern GLint GL_castTexWrap(Wrap p);
+extern GLenum GL_castImageAccess(Access p);
+extern GLenum GL_castImageFormat(ImageFormat p);
 extern GLenum GL_castDrawMode(eDrawMode p);
 extern GLbitfield GL_castBufferAccessFlags(unsigned int p);
 
-extern const char* GetShaderStageTitle(eShaderStage type);
+extern const char* GetShaderStageTitle(ShaderType type);
 
 extern void GLAPIENTRY DebugMessageCallback(GLenum source,
     GLenum type,

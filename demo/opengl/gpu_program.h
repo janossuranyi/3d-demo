@@ -50,8 +50,8 @@ public:
 
 private:
 	GLuint programId() const { return _program; }
-	GLuint createShaderInternal(eShaderStage stage, const std::vector<const char*>& sources);
-	bool compileSingleStage(GLuint shaderId, eShaderStage type);
+	GLuint createShaderInternal(ShaderType stage, const std::vector<const char*>& sources);
+	bool compileSingleStage(GLuint shaderId, ShaderType type);
 	GLuint _program;
 	bool _isComputeShader{ false };
 	std::vector<GLint> _locationBindings;

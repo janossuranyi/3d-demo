@@ -16,6 +16,9 @@ add_definitions(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True) 
 
+file(GLOB APP_H app/*.h)
+file(GLOB APP_C app/*.cpp)
+
 file(GLOB ENGINE_H engine/*.h)
 file(GLOB ENGINE_C engine/*.cpp)
 file(GLOB ENGINE_GR_H engine/graphics/*.h)
@@ -28,8 +31,14 @@ set(ENGINE_FILES
   ${ENGINE_GR_C}
 )
 
-file(GLOB APP_H app/*.h)
-file(GLOB APP_C app/*.cpp)
+set(APP_FILES
+  ${APP_H}
+  ${APP_C}
+)
+
+add_library(engine STATIC
+  ${ENGINE_FILES}
+)
 
 add_library(glew STATIC
   external/glew-2.1.0/src/glew.c
@@ -46,18 +55,13 @@ add_library(tinygltf STATIC
   external/tinygltf/tiny_gltf.cpp
 )
 
-add_library(engine STATIC
-  ${ENGINE_FILES}
-)
-
 include_directories(
   ./
-  engine/
   app/
+  engine/
   external/glew-2.1.0/include/
   external/glm/
   external/stb/
-  external/SOIL2/src/SOIL2/
   external/tinygltf/
   ${SDL2_INCLUDE_DIR}
 )
@@ -70,8 +74,7 @@ file(GLOB SHADERS assets/shaders/*.glsl)
 file(GLOB SHADERS_INC assets/shaders/*.inc)
 
 add_executable(app
-  ${APP_C}
-  ${APP_H}
+  ${APP_FILES}
   ${SHADERS}
 )
 
@@ -103,6 +106,11 @@ if(WIN32)
      $<TARGET_FILE_DIR:app>)
 endif()
 
-source_group("Shaders" FILES ${SHADERS} )
-source_group("Engine" FILES ${ENGINE_FILES} )
+set(ENGINE_GR_FILES
+  ${ENGINE_GR_H}
+  ${ENGINE_GR_C}
+)
 
+
+source_group("Shaders" FILES ${SHADERS} )
+source_group("graphics" FILES ${ENGINE_GR_FILES} )

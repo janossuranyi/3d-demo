@@ -18,8 +18,8 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
     required_buffer_size += ALIGN16(mesh.texCoordLayout().byteSize);
     required_buffer_size += ALIGN16(mesh.colorLayout().byteSize);
 
-    m_VertexBuf.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
-    m_VertexBuf->create(uint(required_buffer_size), GpuBuffer::Usage::STATIC, 0);
+    m_VertexBuf.reset(new GpuBuffer(BufferTarget::VERTEX));
+    m_VertexBuf->create(uint(required_buffer_size), BufferUsage::STATIC, 0);
 
     uint index = 0;
     size_t offset = 0;
@@ -65,8 +65,8 @@ void RenderMesh3D::compile(const Mesh3D& mesh)
 
     if (mesh.numIndex())
     {
-        m_IndexBuf.reset(new GpuBuffer(GpuBuffer::Target::INDEX));
-        m_IndexBuf->create(mesh.numIndex() * (mesh.indexType() == eDataType::UNSIGNED_SHORT ? 2 : 4), GpuBuffer::Usage::STATIC, 0, mesh.indices().data());
+        m_IndexBuf.reset(new GpuBuffer(BufferTarget::INDEX));
+        m_IndexBuf->create(mesh.numIndex() * (mesh.indexType() == ComponentType::UNSIGNED_SHORT ? 2 : 4), BufferUsage::STATIC, 0, mesh.indices().data());
         m_NumIndex = mesh.numIndex();
         m_IndexType = mesh.indexType();
     }

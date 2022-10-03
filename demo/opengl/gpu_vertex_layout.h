@@ -17,7 +17,7 @@ offset: offset from the first attrib in bytes
 struct VertexAttribute
 {
 	char* name;
-	eDataType type;
+	ComponentType type;
 	int size;
 	int count;
 	bool normalized;
@@ -40,7 +40,7 @@ struct VertexLayout
 	VertexLayout& with(
 		unsigned int index,
 		unsigned int size,
-		eDataType type,
+		ComponentType type,
 		bool normalized,
 		unsigned int offset,
 		unsigned int stream);
@@ -48,7 +48,7 @@ struct VertexLayout
 	VertexLayout& with(
 		unsigned int index,
 		unsigned int size,
-		eDataType type,
+		ComponentType type,
 		bool normalized,
 		unsigned int offset,
 		unsigned int stride,

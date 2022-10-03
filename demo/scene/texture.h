@@ -5,16 +5,16 @@
 
 struct Sampler
 {
-	eTexMinFilter	minFilter;
-	eTexMagFilter	magFilter;
-	eTexWrap		wrapS;	
-	eTexWrap		wrapT;
+	FilterMin	minFilter;
+	FilterMag	magFilter;
+	Wrap		wrapS;	
+	Wrap		wrapT;
 
 	Sampler() :
-		minFilter(eTexMinFilter::LINEAR),
-		magFilter(eTexMagFilter::LINEAR),
-		wrapS(eTexWrap::REPEAT),
-		wrapT(eTexWrap::REPEAT) {}
+		minFilter(FilterMin::LINEAR),
+		magFilter(FilterMag::LINEAR),
+		wrapS(Wrap::REPEAT),
+		wrapT(Wrap::REPEAT) {}
 };
 
 struct Image

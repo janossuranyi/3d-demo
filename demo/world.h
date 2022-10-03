@@ -46,7 +46,7 @@ private:
 	void createLightEntity(tinygltf::Model& model, int node, int light);
 	void createCameraEntity(tinygltf::Model& model, int node);
 	void setEntityTransform(Entity3D& ent, const tinygltf::Node& node);
-	int createTexture(int texture, tinygltf::Model& model, eTextureFormat format);
+	int createTexture(int texture, tinygltf::Model& model, InternalFormat format);
 
 	GpuTexture2D m_tex1x1;
 

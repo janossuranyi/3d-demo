@@ -2,20 +2,21 @@
 #include <GL/glew.h>
 #include "gpu_buffer.h"
 #include "gpu_utils.h"
+#include "gpu_types.h"
 #include "logger.h"
 /*
 OpenGL buffer implementation
 */
 
-static inline GLenum GL_CastBufferType(GpuBuffer::Target type)
+static inline GLenum GL_CastBufferType(BufferTarget type)
 {
 	switch (type)
 	{
-	case GpuBuffer::Target::VERTEX:
+	case BufferTarget::VERTEX:
 		return GL_ARRAY_BUFFER;
-	case GpuBuffer::Target::INDEX:
+	case BufferTarget::INDEX:
 		return GL_ELEMENT_ARRAY_BUFFER;
-	case GpuBuffer::Target::UNIFORM:
+	case BufferTarget::UNIFORM:
 		return GL_UNIFORM_BUFFER;
 	}
 
@@ -138,7 +139,7 @@ uint8_t* GpuBuffer::mapPeristentWrite()
 	return map((BA_MAP_WRITE | BA_MAP_PERSISTENT | BA_MAP_COHERENT) & mAccess);
 }
 
-bool GpuBuffer::create(uint32_t size, Usage usage, unsigned int accessFlags, const void* bytes)
+bool GpuBuffer::create(uint32_t size, BufferUsage usage, unsigned int accessFlags, const void* bytes)
 {
 	assert(mBuffer == INVALID_BUFFER);
 	assert(mIsReference == false);
@@ -157,20 +158,20 @@ bool GpuBuffer::create(uint32_t size, Usage usage, unsigned int accessFlags, con
 	GLenum bu = GL_STATIC_DRAW;
 	switch (usage)
 	{
-	case Usage::STATIC:
+	case BufferUsage::STATIC:
 		bu = GL_STATIC_DRAW;
 		break;
-	case Usage::DYNAMIC:
+	case BufferUsage::DYNAMIC:
 		bu = GL_DYNAMIC_DRAW;
 		break;
 	}
 
 	uint32_t real_size = size;
-	if (mTarget == Target::VERTEX)
+	if (mTarget == BufferTarget::VERTEX)
 	{
 		real_size = (size + VERTEX_BUFFER_ALIGN) & ~(VERTEX_BUFFER_ALIGN);
 	}
-	else if (mTarget == Target::UNIFORM)
+	else if (mTarget == BufferTarget::UNIFORM)
 	{
 		real_size = (size + UNIFORM_BUFFER_ALIGN) & ~(UNIFORM_BUFFER_ALIGN);
 	}

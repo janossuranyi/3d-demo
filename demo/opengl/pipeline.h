@@ -56,8 +56,8 @@ public:
 	void bindIndexBuffer(const GpuBuffer& b);
 	void bindUniformBuffer(GpuBuffer& b, int index, uint32_t offset = 0, uint32_t size = 0);
 	void drawArrays(eDrawMode mode, int first, uint32_t count);
-	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset);
-	void drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset, uint32_t baseVertex);
+	void drawElements(eDrawMode mode, uint32_t count, ComponentType type, uint32_t offset);
+	void drawElements(eDrawMode mode, uint32_t count, ComponentType type, uint32_t offset, uint32_t baseVertex);
 	void bindTexture(GpuTexture2D& tex, int unit);
 
 	void setMaterial(int material);

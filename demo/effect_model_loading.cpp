@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include "gpu_buffer.h"
 #include "gpu_program.h"
+#include "gpu_types.h"
 #include "pipeline.h"
 #include "filesystem.h"
 #include "demo.h"
@@ -69,12 +70,12 @@ bool LoadModelEffect::Init()
     GpuFrameBuffer::bindDefault();
     
     rectBuffer.reset(new GpuBuffer());
-    rectBuffer->create(sizeof(UNIT_RECT_WITH_ST), GpuBuffer::Usage::STATIC, 0, UNIT_RECT_WITH_ST);
+    rectBuffer->create(sizeof(UNIT_RECT_WITH_ST), BufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
     rectBuffer->bind();
     vertFormat.begin();
     vertFormat
-        .with(0, 2, eDataType::FLOAT, false, 0, 16, rectBuffer.get())
-        .with(1, 2, eDataType::FLOAT, false, 8, 16, rectBuffer.get())
+        .with(0, 2, ComponentType::FLOAT, false, 0, 16, rectBuffer.get())
+        .with(1, 2, ComponentType::FLOAT, false, 8, 16, rectBuffer.get())
         .end();
 
 

@@ -3,7 +3,6 @@
 #include <tiny_gltf.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <SOIL2.h>
 
 #include "logger.h"
 #include "world.h"
@@ -194,13 +193,13 @@ bool World::loadWorld(const std::string& filename)
 						}
 						else if (key == "diffuseTexture")
 						{
-							int x = createTexture(val.Get("index").GetNumberAsInt(), model, eTextureFormat::SRGB_A);
+							int x = createTexture(val.Get("index").GetNumberAsInt(), model, InternalFormat::SRGB_A);
 							m.pbrSpecularGlossiness.diffuseTexture.index = x;
 							m.pbrSpecularGlossiness.diffuseTexture.texCoord = val.Get("texCoord").GetNumberAsInt();
 						}
 						else if (key == "specularGlossinessTexture")
 						{
-							int x = createTexture(val.Get("index").GetNumberAsInt(), model, eTextureFormat::SRGB_A);
+							int x = createTexture(val.Get("index").GetNumberAsInt(), model, InternalFormat::SRGB_A);
 							m.pbrSpecularGlossiness.specularGlossinessTexture.index = x;
 							m.pbrSpecularGlossiness.specularGlossinessTexture.texCoord = val.Get("texCoord").GetNumberAsInt();
 						}
@@ -215,11 +214,11 @@ bool World::loadWorld(const std::string& filename)
 			m.pbrMetallicRoughness.metallicFactor = float(mat.pbrMetallicRoughness.metallicFactor);
 			m.pbrMetallicRoughness.roughnessFactor = float(mat.pbrMetallicRoughness.roughnessFactor);
 
-			int x = createTexture(mat.pbrMetallicRoughness.baseColorTexture.index, model, eTextureFormat::SRGB_A);
+			int x = createTexture(mat.pbrMetallicRoughness.baseColorTexture.index, model, InternalFormat::SRGB_A);
 			m.pbrMetallicRoughness.baseColorTexture.index = x;
 			m.pbrMetallicRoughness.baseColorTexture.texCoord = mat.pbrMetallicRoughness.baseColorTexture.texCoord;
 
-			x = createTexture(mat.pbrMetallicRoughness.metallicRoughnessTexture.index, model, eTextureFormat::RGBA);
+			x = createTexture(mat.pbrMetallicRoughness.metallicRoughnessTexture.index, model, InternalFormat::RGBA);
 			m.pbrMetallicRoughness.metallicRoughnessTexture.index = x;
 			m.pbrMetallicRoughness.metallicRoughnessTexture.texCoord = mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord;
 		}
@@ -231,17 +230,17 @@ bool World::loadWorld(const std::string& filename)
 		m.emissiveFactor			= glm::make_vec3(mat.emissiveFactor.data());
 
 		if (mat.normalTexture.index > -1) {
-			int x = createTexture(mat.normalTexture.index, model, eTextureFormat::RGBA);
+			int x = createTexture(mat.normalTexture.index, model, InternalFormat::RGBA);
 			m.normalTexture.index = x;
 			m.normalTexture.texCoord = mat.normalTexture.texCoord;
 		}
 		if (mat.emissiveTexture.index > -1) {
-			int x = createTexture(mat.emissiveTexture.index, model, eTextureFormat::RGBA);
+			int x = createTexture(mat.emissiveTexture.index, model, InternalFormat::RGBA);
 			m.emissiveTexture.index = x;
 			m.emissiveTexture.texCoord = mat.emissiveTexture.texCoord;
 		}
 		if (mat.occlusionTexture.index > -1) {
-			int x = createTexture(mat.occlusionTexture.index, model, eTextureFormat::RGBA);
+			int x = createTexture(mat.occlusionTexture.index, model, InternalFormat::RGBA);
 			m.occlusionTexture.index = x;
 			m.occlusionTexture.texCoord = mat.occlusionTexture.texCoord;
 		}
@@ -308,7 +307,7 @@ void World::renderWorld(Pipeline& pipeline)
 
 void World::init()
 {
-	m_tex1x1.create(1, 1, 0, eTextureFormat::RGBA, ePixelFormat::RGB, eDataType::UNSIGNED_BYTE, nullptr);
+	m_tex1x1.create(1, 1, 0, InternalFormat::RGBA, InputlFormat::RGB, eDataType::UNSIGNED_BYTE, nullptr);
 	m_tex1x1.withDefaultLinearClampEdge().updateParameters();
 }
 
@@ -499,7 +498,7 @@ void World::setEntityTransform(Entity3D& ent, const tinygltf::Node& node)
 	}
 }
 
-int World::createTexture(int texture, tinygltf::Model& model, eTextureFormat format)
+int World::createTexture(int texture, tinygltf::Model& model, InternalFormat format)
 {
 	if (texture == -1) return -1;
 
@@ -522,15 +521,15 @@ int World::createTexture(int texture, tinygltf::Model& model, eTextureFormat for
 	Info("image pixel_type: %d", image.pixel_type);
 	Info("image mimeType  : %s", image.mimeType.c_str());
 
-	ePixelFormat srcFormat = ePixelFormat::RGB;
+	InputlFormat srcFormat = InputlFormat::RGB;
 
 	if (image.bits == 8)
 	{
 		switch (image.component)
 		{
-		case 3: srcFormat = ePixelFormat::RGB;
+		case 3: srcFormat = InputlFormat::RGB;
 			break;
-		case 4: srcFormat = ePixelFormat::RGBA;
+		case 4: srcFormat = InputlFormat::RGBA;
 			break;
 		}
 	}
@@ -538,9 +537,9 @@ int World::createTexture(int texture, tinygltf::Model& model, eTextureFormat for
 	{
 		switch (image.component)
 		{
-		case 3: srcFormat = ePixelFormat::RGB16;
+		case 3: srcFormat = InputlFormat::RGB16;
 			break;
-		case 4: srcFormat = ePixelFormat::RGBA16;
+		case 4: srcFormat = InputlFormat::RGBA16;
 			break;
 		}
 	}

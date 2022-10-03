@@ -97,8 +97,8 @@ bool PointCubeEffect::Init()
 	
 
 	const GLsizeiptr bufSize = sizeof(VertexLayout) * NUMPOINTS;
-	vbo_points.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
-	vbo_points->create(bufSize, GpuBuffer::Usage::STATIC, 0);
+	vbo_points.reset(new GpuBuffer(BufferTarget::VERTEX));
+	vbo_points->create(bufSize, BufferUsage::STATIC, 0);
 
 	uint8_t *ptr = vbo_points->map(BA_MAP_WRITE);
 	VertexLayout* buffer = reinterpret_cast<VertexLayout*>(ptr);
@@ -124,11 +124,11 @@ bool PointCubeEffect::Init()
 	}
 	vbo_points->unMap();
 
-	vbo_pp.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
-	vbo_pp->create(6 * sizeof(PPLayout), GpuBuffer::Usage::STATIC, 0, UNIT_RECT_WITH_ST);
+	vbo_pp.reset(new GpuBuffer(BufferTarget::VERTEX));
+	vbo_pp->create(6 * sizeof(PPLayout), BufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
 
-	vbo_skybox.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
-	vbo_skybox->create(sizeof(UNIT_BOX_POSITIONS), GpuBuffer::Usage::STATIC, 0, UNIT_BOX_POSITIONS);
+	vbo_skybox.reset(new GpuBuffer(BufferTarget::VERTEX));
+	vbo_skybox->create(sizeof(UNIT_BOX_POSITIONS), BufferUsage::STATIC, 0, UNIT_BOX_POSITIONS);
 
 	if (!prgPoints.loadShader(g_fileSystem.resolve("assets/shaders/draw_point.vs.glsl"), g_fileSystem.resolve("assets/shaders/draw_point.fs.glsl")))
 	{

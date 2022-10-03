@@ -1,9 +1,8 @@
-#include <SOIL2.h>
-
 #include "effect_compute_test.h"
 #include "filesystem.h"
 #include "unit_rect.h"
 #include "gpu_utils.h"
+#include "gpu_types.h"
 #include "logger.h"
 
 bool ComputeTestEffect::Init()
@@ -15,14 +14,14 @@ bool ComputeTestEffect::Init()
     //tex0_.create(tex_w, tex_h, 0, eTextureFormat::RGBA, ePixelFormat::RGBA, eDataType::UNSIGNED_BYTE, nullptr);
     tex0_.createRGB8(tex_w, tex_h, 0);
     tex0_.withDefaultLinearClampEdge().updateParameters();
-    tex0_.bindImage(0, 0, eImageAccess::WRITE_ONLY, eImageFormat::RGBA8);
+    tex0_.bindImage(0, 0, Access::WRITE_ONLY, ImageFormat::RGBA8);
 
-    vbo_rect.reset(new GpuBuffer(GpuBuffer::Target::VERTEX));
-    vbo_rect->create(sizeof(UNIT_RECT_WITH_ST), GpuBuffer::Usage::STATIC, 0, UNIT_RECT_WITH_ST);
+    vbo_rect.reset(new GpuBuffer(BufferTarget::VERTEX));
+    vbo_rect->create(sizeof(UNIT_RECT_WITH_ST), BufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
 
     layout.begin()
-        .with(0, 2, eDataType::FLOAT, false, 0, sizeof(vertexLayout_t), vbo_rect.get())
-        .with(1, 2, eDataType::FLOAT, false, 8, sizeof(vertexLayout_t), vbo_rect.get())
+        .with(0, 2, ComponentType::FLOAT, false, 0, sizeof(vertexLayout_t), vbo_rect.get())
+        .with(1, 2, ComponentType::FLOAT, false, 8, sizeof(vertexLayout_t), vbo_rect.get())
         .end();
 
     layout.bind();
@@ -46,8 +45,8 @@ bool ComputeTestEffect::Init()
     prg_compute.use();
     prg_compute.set(0, fa);
     prg_compute.bindUniformBlock("cb_vars", 0);
-    cbo.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
-    cbo->create(128, GpuBuffer::Usage::DYNAMIC, BA_WRITE_PERSISTENT, nullptr);
+    cbo.reset(new GpuBuffer(BufferTarget::UNIFORM));
+    cbo->create(128, BufferUsage::DYNAMIC, BA_WRITE_PERSISTENT, nullptr);
     cbo->bindIndexed(0);
     cb_vars = reinterpret_cast<cbvars_t*>(cbo->mapPeristentWrite());
 

@@ -1,6 +1,5 @@
 #include <utility>
 #include <cassert>
-#include <SOIL2.h>
 #include "logger.h"
 #include "filesystem.h"
 #include "gpu_utils.h"
@@ -26,18 +25,18 @@ GpuTexture& GpuTexture::operator=(GpuTexture&& moved) noexcept
     return *this;
 }
 
-GpuTexture& GpuTexture::withMinFilter(eTexMinFilter p)
+GpuTexture& GpuTexture::withMinFilter(FilterMin p)
 {
     GLint value;
 
     switch (p)
     {
-        case eTexMinFilter::LINEAR:                 value = GL_LINEAR; break;
-        case eTexMinFilter::NEAREST:                value = GL_NEAREST; break;
-        case eTexMinFilter::LINEAR_MIPMAP_LINEAR:   value = GL_LINEAR_MIPMAP_LINEAR; break;
-        case eTexMinFilter::LINEAR_MIPMAP_NEAREST:  value = GL_LINEAR_MIPMAP_NEAREST; break;
-        case eTexMinFilter::NEAREST_MIPMAP_NEAREST: value = GL_NEAREST_MIPMAP_NEAREST; break;
-        case eTexMinFilter::NEAREST_MIPMAP_LINEAR:  value = GL_NEAREST_MIPMAP_LINEAR; break;
+        case FilterMin::LINEAR:                 value = GL_LINEAR; break;
+        case FilterMin::NEAREST:                value = GL_NEAREST; break;
+        case FilterMin::LINEAR_MIPMAP_LINEAR:   value = GL_LINEAR_MIPMAP_LINEAR; break;
+        case FilterMin::LINEAR_MIPMAP_NEAREST:  value = GL_LINEAR_MIPMAP_NEAREST; break;
+        case FilterMin::NEAREST_MIPMAP_NEAREST: value = GL_NEAREST_MIPMAP_NEAREST; break;
+        case FilterMin::NEAREST_MIPMAP_LINEAR:  value = GL_NEAREST_MIPMAP_LINEAR; break;
         default: value = GL_LINEAR;
     }
 
@@ -46,14 +45,14 @@ GpuTexture& GpuTexture::withMinFilter(eTexMinFilter p)
     return *this;
 }
 
-GpuTexture& GpuTexture::withMagFilter(eTexMagFilter p)
+GpuTexture& GpuTexture::withMagFilter(FilterMag p)
 {
     GLint value;
 
     switch (p)
     {
-    case eTexMagFilter::LINEAR:                 value = GL_LINEAR; break;
-    case eTexMagFilter::NEAREST:                value = GL_NEAREST; break;
+    case FilterMag::LINEAR:                 value = GL_LINEAR; break;
+    case FilterMag::NEAREST:                value = GL_NEAREST; break;
     default: value = GL_LINEAR;
     }
 
@@ -62,7 +61,7 @@ GpuTexture& GpuTexture::withMagFilter(eTexMagFilter p)
     return *this;
 }
 
-GpuTexture& GpuTexture::withWrapS(eTexWrap p)
+GpuTexture& GpuTexture::withWrapS(Wrap p)
 {
     GLint value = GL_castTexWrap(p);
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, value));
@@ -70,7 +69,7 @@ GpuTexture& GpuTexture::withWrapS(eTexWrap p)
     return *this;
 }
 
-GpuTexture& GpuTexture::withWrapT(eTexWrap p)
+GpuTexture& GpuTexture::withWrapT(Wrap p)
 {
     GLint value = GL_castTexWrap(p);
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, value));
@@ -78,7 +77,7 @@ GpuTexture& GpuTexture::withWrapT(eTexWrap p)
     return *this;
 }
 
-GpuTexture& GpuTexture::withWrapR(eTexWrap p)
+GpuTexture& GpuTexture::withWrapR(Wrap p)
 {
     GLint value = GL_castTexWrap(p);
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, value));
@@ -92,7 +91,7 @@ GpuTexture& GpuTexture::withDefaultLinearRepeat()
     mIntParams.push_back(std::make_pair(GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, GL_REPEAT));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, GL_REPEAT));
-    if (getTarget() == eTextureTarget::TEX_CUBE_MAP) {
+    if (getTarget() == TextureShape::TEX_CUBE_MAP) {
         mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, GL_REPEAT));
     }
 
@@ -105,7 +104,7 @@ GpuTexture& GpuTexture::withDefaultLinearClampEdge()
     mIntParams.push_back(std::make_pair(GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    if (getTarget() == eTextureTarget::TEX_CUBE_MAP) {
+    if (getTarget() == TextureShape::TEX_CUBE_MAP) {
         mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
     }
 
@@ -118,7 +117,7 @@ GpuTexture& GpuTexture::withDefaultMipmapRepeat()
     mIntParams.push_back(std::make_pair(GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, GL_REPEAT));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, GL_REPEAT));
-    if (getTarget() == eTextureTarget::TEX_CUBE_MAP) {
+    if (getTarget() == TextureShape::TEX_CUBE_MAP) {
         mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, GL_REPEAT));
     }
 
@@ -131,7 +130,7 @@ GpuTexture& GpuTexture::withDefaultMipmapClampEdge()
     mIntParams.push_back(std::make_pair(GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    if (getTarget() == eTextureTarget::TEX_CUBE_MAP) {
+    if (getTarget() == TextureShape::TEX_CUBE_MAP) {
         mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
     }
 
@@ -196,7 +195,7 @@ GpuTexture2D& GpuTexture2D::operator=(GpuTexture2D&& moved) noexcept
     return *this;
 }
 
-bool GpuTexture2D::create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void* data)
+bool GpuTexture2D::create(int w, int h, int level, InternalFormat internalFormat, InputlFormat format, ComponentType type, const void* data)
 {
     if (mTexture == INVALID_TEXTURE) GL_CHECK(glGenTextures(1, &mTexture));
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
@@ -274,57 +273,57 @@ bool GpuTexture2D::createRGB(int w, int h, int level)
 
 bool GpuTexture2D::createRG8U(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RG, ePixelFormat::RGB, eDataType::UNSIGNED_BYTE, nullptr);
+    return create(w, h, level, InternalFormat::RG, InputlFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRG8S(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RG, ePixelFormat::RGB, eDataType::BYTE, nullptr);
+    return create(w, h, level, InternalFormat::RG, InputlFormat::RGB, ComponentType::BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRG16U(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RG16, ePixelFormat::RGB, eDataType::UNSIGNED_SHORT, nullptr);
+    return create(w, h, level, InternalFormat::RG16, InputlFormat::RGB, ComponentType::UNSIGNED_SHORT, nullptr);
 }
 
 bool GpuTexture2D::createRG16S(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RG16, ePixelFormat::RGB, eDataType::SHORT, nullptr);
+    return create(w, h, level, InternalFormat::RG16, InputlFormat::RGB, ComponentType::SHORT, nullptr);
 }
 
 bool GpuTexture2D::createRG16F(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RG16F, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::RG16F, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createRGB8(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RGBA, ePixelFormat::RGB, eDataType::UNSIGNED_BYTE, nullptr);
+    return create(w, h, level, InternalFormat::RGBA, InputlFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRGB8S(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RGBA, ePixelFormat::RGB, eDataType::BYTE, nullptr);
+    return create(w, h, level, InternalFormat::RGBA, InputlFormat::RGB, ComponentType::BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRGB32F(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RGBA32F, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::RGBA32F, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createRGB16F(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RGBA16F, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::RGBA16F, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createRGB10A2(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::RGB10A2, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::RGB10A2, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createR11G11B10(int w, int h, int level)
 {
-    return create(w, h, level, eTextureFormat::R11F_G11F_B10F, ePixelFormat::RGB, eDataType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::R11F_G11F_B10F, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createDepthStencil(int w, int h)
@@ -361,7 +360,7 @@ void GpuTexture2D::bind(int unit) const
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
 }
 
-void GpuTexture2D::bindImage(int unit, int level, eImageAccess access, eImageFormat format)
+void GpuTexture2D::bindImage(int unit, int level, Access access, ImageFormat format)
 {
     GLenum access_ = GL_castImageAccess(access);
     GLenum format_ = GL_castImageFormat(format);
@@ -424,7 +423,7 @@ void GpuTextureCubeMap::bind(int unit) const
     }
 }
 
-void GpuTextureCubeMap::bindImage(int unit, int level, bool layered, int layer, eImageAccess access, eImageFormat format)
+void GpuTextureCubeMap::bindImage(int unit, int level, bool layered, int layer, Access access, ImageFormat format)
 {
     GLenum access_ = GL_castImageAccess(access);
     GLenum format_ = GL_castImageFormat(format);

@@ -46,7 +46,7 @@ GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, GpuTextureCubeMap:
 	return *this;
 }
 
-GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, int w, int h, eTextureFormat format)
+GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, int w, int h, InternalFormat format)
 {
 	GLuint rbo;
 	GLenum rb_format = GL_castTextureFormat(format);

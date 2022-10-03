@@ -30,12 +30,12 @@ public:
 	virtual void bind() const = 0;
 	virtual void bind(int unit) const = 0;
 	//	virtual void bindImage(int unit, int level, bool layered, int layer, eImageAccess access, eImageFormat format) = 0;
-	virtual eTextureTarget getTarget() const = 0;
-	GpuTexture& withMinFilter(eTexMinFilter p);
-	GpuTexture& withMagFilter(eTexMagFilter p);
-	GpuTexture& withWrapS(eTexWrap p);
-	GpuTexture& withWrapT(eTexWrap p);
-	GpuTexture& withWrapR(eTexWrap p);
+	virtual TextureShape getTarget() const = 0;
+	GpuTexture& withMinFilter(FilterMin p);
+	GpuTexture& withMagFilter(FilterMag p);
+	GpuTexture& withWrapS(Wrap p);
+	GpuTexture& withWrapT(Wrap p);
+	GpuTexture& withWrapR(Wrap p);
 	GpuTexture& withDefaultLinearRepeat();
 	GpuTexture& withDefaultLinearClampEdge();
 	GpuTexture& withDefaultMipmapRepeat();
@@ -75,7 +75,7 @@ public:
 
 	STD_TEXTURE_METHODS(GpuTexture2D)
 
-	bool create(int w, int h, int level, eTextureFormat internalFormat, ePixelFormat format, eDataType type, const void* data);
+	bool create(int w, int h, int level, InternalFormat internalFormat, InputlFormat format, ComponentType type, const void* data);
 	bool createFromImage(const std::string& fromFile, bool srgb = false, bool autoMipmap = true, bool compress = true);
 	bool createFromMemory(const void* data, uint32_t bufLen, bool srgb = false, bool autoMipmap = true, bool compress = true);
 	bool createRGB(int w, int h, int level);
@@ -91,10 +91,10 @@ public:
 	bool createRGB10A2(int w, int h, int level);
 	bool createR11G11B10(int w, int h, int level);
 	bool createDepthStencil(int w, int h);
-	eTextureTarget getTarget() const override { return eTextureTarget::TEX_2D; }
+	TextureShape getTarget() const override { return TextureShape::TEX_2D; }
 	void bind() const override;
 	void bind(int unit) const override;
-	void bindImage(int unit, int level, eImageAccess access, eImageFormat format);
+	void bindImage(int unit, int level, Access access, ImageFormat format);
 
 	static GpuTexture2D::Ptr createShared();
 
@@ -116,10 +116,10 @@ public:
 
 	bool createFromImage(const std::vector<std::string>& fromFile, bool srgb = false, bool autoMipmap = false, bool compress = true);
 
-	eTextureTarget getTarget() const override { return eTextureTarget::TEX_CUBE_MAP; }
+	TextureShape getTarget() const override { return TextureShape::TEX_CUBE_MAP; }
 	void bind() const override;
 	void bind(int unit) const override;
-	void bindImage(int unit, int level, bool layered, int layer, eImageAccess access, eImageFormat format);
+	void bindImage(int unit, int level, bool layered, int layer, Access access, ImageFormat format);
 protected:
 	inline GLenum getApiTarget() const override { return GL_TEXTURE_CUBE_MAP; };
 

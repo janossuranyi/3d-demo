@@ -59,7 +59,7 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
         if (p.first == "POSITION")
         {
             // allocate position memory
-            VertexAttribute attr{ "POSITION", eDataType::FLOAT, 3, access.count, access.normalized, 0, byteStride, 0, view.byteLength };
+            VertexAttribute attr{ "POSITION", ComponentType::FLOAT, 3, access.count, access.normalized, 0, byteStride, 0, view.byteLength };
             m_Position_layout = attr;
 
             m_Positions.assign(first, first + view.byteLength);
@@ -75,14 +75,14 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
         }
         else if (p.first == "NORMAL")
         {
-            VertexAttribute attr{ "NORMAL", eDataType::FLOAT, 3, access.count, access.normalized, 0, byteStride, 0, view.byteLength };
+            VertexAttribute attr{ "NORMAL", ComponentType::FLOAT, 3, access.count, access.normalized, 0, byteStride, 0, view.byteLength };
             m_Normal_layout = attr;
 
             m_Normals.assign(first, first + view.byteLength);
         }
         else if (p.first == "TANGENT")
         {
-            VertexAttribute attr{ "TANGENT", eDataType::FLOAT, 4, access.count, access.normalized, 0, byteStride, 0, view.byteLength };
+            VertexAttribute attr{ "TANGENT", ComponentType::FLOAT, 4, access.count, access.normalized, 0, byteStride, 0, view.byteLength };
             m_Tangent_layout = attr;
             m_Tangents.assign(first, first + view.byteLength);
         }
@@ -96,13 +96,13 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
             switch (access.componentType)
             {
             case TINYGLTF_COMPONENT_TYPE_FLOAT:
-                attr.type = eDataType::FLOAT;
+                attr.type = ComponentType::FLOAT;
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                attr.type = eDataType::UNSIGNED_BYTE;
+                attr.type = ComponentType::UNSIGNED_BYTE;
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                attr.type = eDataType::UNSIGNED_SHORT;
+                attr.type = ComponentType::UNSIGNED_SHORT;
                 break;
             }
             attr.size = 2;
@@ -120,15 +120,15 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
             switch (access.componentType)
             {
             case TINYGLTF_COMPONENT_TYPE_FLOAT:
-                attr.type = eDataType::FLOAT;
+                attr.type = ComponentType::FLOAT;
                 attr.normalized = false;
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                attr.type = eDataType::UNSIGNED_BYTE;
+                attr.type = ComponentType::UNSIGNED_BYTE;
                 attr.normalized = true;
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                attr.type = eDataType::UNSIGNED_SHORT;
+                attr.type = ComponentType::UNSIGNED_SHORT;
                 attr.normalized = true;
                 break;
             }
@@ -177,10 +177,10 @@ bool Mesh3D::importFromGLTF(const tinygltf::Model& model, const tinygltf::Primit
     switch (access.componentType)
     {
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-        m_IndexType = eDataType::UNSIGNED_SHORT;
+        m_IndexType = ComponentType::UNSIGNED_SHORT;
         break;
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-        m_IndexType = eDataType::UNSIGNED_INT32;
+        m_IndexType = ComponentType::UNSIGNED_INT32;
         break;
     }
 

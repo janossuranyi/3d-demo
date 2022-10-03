@@ -50,13 +50,13 @@ Pipeline::Pipeline()
 		m_tmus[i].texId = 0;
 	}
 
-	m_camBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
-	m_mtxBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
-	m_miscBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
-	m_sunBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
-	m_materialBuffer.reset(new GpuBuffer(GpuBuffer::Target::UNIFORM));
+	m_camBuffer.reset(new GpuBuffer(BufferTarget::UNIFORM));
+	m_mtxBuffer.reset(new GpuBuffer(BufferTarget::UNIFORM));
+	m_miscBuffer.reset(new GpuBuffer(BufferTarget::UNIFORM));
+	m_sunBuffer.reset(new GpuBuffer(BufferTarget::UNIFORM));
+	m_materialBuffer.reset(new GpuBuffer(BufferTarget::UNIFORM));
 
-#define CREATE_CB_BUFFER(p,t) p->create(sizeof(t), GpuBuffer::Usage::DYNAMIC, BA_WRITE_PERSISTENT_COHERENT, &t)
+#define CREATE_CB_BUFFER(p,t) p->create(sizeof(t), BufferUsage::DYNAMIC, BA_WRITE_PERSISTENT_COHERENT, &t)
 
 	CREATE_CB_BUFFER(m_camBuffer, g_cam);
 	CREATE_CB_BUFFER(m_mtxBuffer, g_mtx);
@@ -560,7 +560,7 @@ void Pipeline::drawArrays(eDrawMode mode, int first, uint32_t count)
 	GL_CHECK(glDrawArrays(mode_, first, count));
 }
 
-void Pipeline::drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset)
+void Pipeline::drawElements(eDrawMode mode, uint32_t count, ComponentType type, uint32_t offset)
 {
 	const GLenum mode_ = GL_castDrawMode(mode);
 	const GLenum type_ = GL_castDataType(type);
@@ -568,7 +568,7 @@ void Pipeline::drawElements(eDrawMode mode, uint32_t count, eDataType type, uint
 	GL_CHECK(glDrawElements(mode_, count, type_, reinterpret_cast<void*>(offset)));
 }
 
-void Pipeline::drawElements(eDrawMode mode, uint32_t count, eDataType type, uint32_t offset, uint32_t baseVertex)
+void Pipeline::drawElements(eDrawMode mode, uint32_t count, ComponentType type, uint32_t offset, uint32_t baseVertex)
 {
 	const GLenum mode_ = GL_castDrawMode(mode);
 	const GLenum type_ = GL_castDataType(type);

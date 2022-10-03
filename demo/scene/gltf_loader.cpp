@@ -220,16 +220,16 @@ void GltfLoader::parseImages()
 		switch (inp.pixel_type)
 		{
 		case TINYGLTF_COMPONENT_TYPE_BYTE:
-			img->pixelType = eDataType::BYTE;
+			img->pixelType = ComponentType::BYTE;
 			break;
 		case TINYGLTF_COMPONENT_TYPE_SHORT:
-			img->pixelType = eDataType::UNSIGNED_SHORT;
+			img->pixelType = ComponentType::UNSIGNED_SHORT;
 			break;
 		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-			img->pixelType = eDataType::UNSIGNED_INT32;
+			img->pixelType = ComponentType::UNSIGNED_INT32;
 			break;
 		case TINYGLTF_COMPONENT_TYPE_FLOAT:
-			img->pixelType = eDataType::FLOAT;
+			img->pixelType = ComponentType::FLOAT;
 			break;
 		}
 
@@ -246,38 +246,38 @@ void GltfLoader::parseSamplers()
 		const tinygltf::Sampler& inp = _glmodel.samplers[i];
 		Sampler& sam = _scene.samplers[_scene.addSampler()];
 
-		if (inp.magFilter == -1 || inp.magFilter == 9729) sam.magFilter = eTexMagFilter::LINEAR;
-		else if (inp.magFilter == 9728) sam.magFilter = eTexMagFilter::NEAREST;
+		if (inp.magFilter == -1 || inp.magFilter == 9729) sam.magFilter = FilterMag::LINEAR;
+		else if (inp.magFilter == 9728) sam.magFilter = FilterMag::NEAREST;
 
-		if (inp.minFilter == -1 || inp.minFilter == 9729) sam.minFilter = eTexMinFilter::LINEAR;
-		else if (inp.minFilter == 9728) sam.minFilter = eTexMinFilter::NEAREST;
-		else if (inp.minFilter == 9984) sam.minFilter = eTexMinFilter::NEAREST_MIPMAP_NEAREST;
-		else if (inp.minFilter == 9985) sam.minFilter = eTexMinFilter::LINEAR_MIPMAP_NEAREST;
-		else if (inp.minFilter == 9986) sam.minFilter = eTexMinFilter::NEAREST_MIPMAP_LINEAR;
-		else sam.minFilter = eTexMinFilter::LINEAR_MIPMAP_LINEAR;
+		if (inp.minFilter == -1 || inp.minFilter == 9729) sam.minFilter = FilterMin::LINEAR;
+		else if (inp.minFilter == 9728) sam.minFilter = FilterMin::NEAREST;
+		else if (inp.minFilter == 9984) sam.minFilter = FilterMin::NEAREST_MIPMAP_NEAREST;
+		else if (inp.minFilter == 9985) sam.minFilter = FilterMin::LINEAR_MIPMAP_NEAREST;
+		else if (inp.minFilter == 9986) sam.minFilter = FilterMin::NEAREST_MIPMAP_LINEAR;
+		else sam.minFilter = FilterMin::LINEAR_MIPMAP_LINEAR;
 
 		switch (inp.wrapS)
 		{
 		case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-			sam.wrapS = eTexWrap::CLAMP_TO_EDGE;
+			sam.wrapS = Wrap::CLAMP_TO_EDGE;
 			break;
 		case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
-			sam.wrapS = eTexWrap::MIRRORED_REPEAT;
+			sam.wrapS = Wrap::MIRRORED_REPEAT;
 			break;
 		case TINYGLTF_TEXTURE_WRAP_REPEAT:
-			sam.wrapS = eTexWrap::REPEAT;
+			sam.wrapS = Wrap::REPEAT;
 			break;
 		}
 		switch (inp.wrapT)
 		{
 		case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-			sam.wrapT = eTexWrap::CLAMP_TO_EDGE;
+			sam.wrapT = Wrap::CLAMP_TO_EDGE;
 			break;
 		case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
-			sam.wrapT = eTexWrap::MIRRORED_REPEAT;
+			sam.wrapT = Wrap::MIRRORED_REPEAT;
 			break;
 		case TINYGLTF_TEXTURE_WRAP_REPEAT:
-			sam.wrapT = eTexWrap::REPEAT;
+			sam.wrapT = Wrap::REPEAT;
 			break;
 		}
 	}
