@@ -146,6 +146,48 @@ namespace GpuUtils
 
     GLenum getGpuPixelLayout(Layout in)
     {
+        switch (in)
+        {
+        case Layout::DEPTH24_STENCIL_8:
+            return GL_DEPTH24_STENCIL8;
+        case Layout::R:
+            return GL_R;
+        case Layout::R16:
+            return GL_R16;
+        case Layout::R16F:
+            return GL_R16F;
+        case Layout::RG:
+            return GL_RG;
+        case Layout::RG16:
+            return GL_RG16;
+        case Layout::RG16F:
+            return GL_RG16F;
+        case Layout::RGB:
+            return GL_RGB;
+        case Layout::RGBA:
+            return GL_RGBA;
+        case Layout::RGBA16F:
+            return GL_RGBA16F;
+        case Layout::RGB10A2:
+            return GL_RGB10_A2;
+        case Layout::RGBA32F:
+            return GL_RGBA32F;
+        case Layout::SRGB:
+            return GL_SRGB8;
+        case Layout::SRGB_A:
+            return GL_SRGB8_ALPHA8;
+        case Layout::R11F_G11F_B10F:
+            return GL_R11F_G11F_B10F;
+        case Layout::COMPRESSED_RGBA:
+            return GL_COMPRESSED_RGBA;
+        case Layout::COMPRESSED_SRGB:
+            return GL_COMPRESSED_SRGB;
+        case Layout::RGB565:
+            return GL_RGB565;
+        case Layout::RGB5_A1:
+            return GL_RGB5_A1;
+        }
+        assert(false);
     }
 
     GLenum getGpuUniformFrequency(UniformFrequency in)
