@@ -23,7 +23,7 @@ struct Image
 	int					height;
 	int					bits;
 	int					component;
-	eDataType			pixelType;
+	ComponentType		pixelType;
 	std::vector<uchar>	image;
 	std::string			name;
 
@@ -33,7 +33,7 @@ struct Image
 		bits(0),
 		component(0),
 		name("<empty>"),
-		pixelType(eDataType::BYTE) {}
+		pixelType(ComponentType::BYTE) {}
 
 	Image(Image&) = delete;
 	Image(Image&&) = delete;

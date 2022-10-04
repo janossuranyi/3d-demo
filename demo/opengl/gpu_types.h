@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common.h"
+
 #define INVALID_BUFFER 0
 #define INVALID_TEXTURE 0
 

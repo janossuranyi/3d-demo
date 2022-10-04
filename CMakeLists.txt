@@ -16,28 +16,16 @@ add_definitions(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True) 
 
-file(GLOB APP_H app/*.h)
-file(GLOB APP_C app/*.cpp)
+file(GLOB DEMO_H demo/*.h)
+file(GLOB DEMO_C demo/*.cpp)
+file(GLOB DEMO_GR_H demo/opengl/*.h)
+file(GLOB DEMO_GR_C demo/opengl/*.cpp)
 
-file(GLOB ENGINE_H engine/*.h)
-file(GLOB ENGINE_C engine/*.cpp)
-file(GLOB ENGINE_GR_H engine/graphics/*.h)
-file(GLOB ENGINE_GR_C engine/graphics/*.cpp)
-
-set(ENGINE_FILES
-  ${ENGINE_H}
-  ${ENGINE_C}
-  ${ENGINE_GR_H}
-  ${ENGINE_GR_C}
-)
-
-set(APP_FILES
-  ${APP_H}
-  ${APP_C}
-)
-
-add_library(engine STATIC
-  ${ENGINE_FILES}
+set(DEMO_FILES
+  ${DEMO_H}
+  ${DEMO_C}
+  ${DEMO_GR_H}
+  ${DEMO_GR_C}
 )
 
 add_library(glew STATIC
@@ -57,8 +45,8 @@ add_library(tinygltf STATIC
 
 include_directories(
   ./
-  app/
-  engine/
+  demo/
+  demo/opengl/
   external/glew-2.1.0/include/
   external/glm/
   external/stb/
@@ -73,16 +61,15 @@ link_directories(
 file(GLOB SHADERS assets/shaders/*.glsl)
 file(GLOB SHADERS_INC assets/shaders/*.inc)
 
-add_executable(app
-  ${APP_FILES}
+add_executable(demo
+  ${DEMO_FILES}
   ${SHADERS}
 )
 
-target_link_libraries(app
+target_link_libraries(demo
   glew
   stb_image
   tinygltf
-  engine
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}
 )
@@ -100,17 +87,16 @@ if(WIN32)
 #     "${assimp_DIR}/../../../bin/assimp${ASSIMP_LIBRARY_SUFFIX}.dll"
 #     $<TARGET_FILE_DIR:demo>)
 
-  add_custom_command(TARGET app POST_BUILD
+  add_custom_command(TARGET demo POST_BUILD
      COMMAND ${CMAKE_COMMAND} -E copy
      "${SDL2_INCLUDE_DIR}/../lib/${ARCH}/SDL2.dll"
-     $<TARGET_FILE_DIR:app>)
+     $<TARGET_FILE_DIR:demo>)
 endif()
 
-set(ENGINE_GR_FILES
-  ${ENGINE_GR_H}
-  ${ENGINE_GR_C}
+set(DEMO_GR_FILES
+  ${DEMO_GR_H}
+  ${DEMO_GR_C}
 )
 
-
 source_group("Shaders" FILES ${SHADERS} )
-source_group("graphics" FILES ${ENGINE_GR_FILES} )
+source_group("OpenGL" FILES ${DEMO_GR_FILES} )

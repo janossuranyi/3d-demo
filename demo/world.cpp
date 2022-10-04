@@ -307,7 +307,7 @@ void World::renderWorld(Pipeline& pipeline)
 
 void World::init()
 {
-	m_tex1x1.create(1, 1, 0, InternalFormat::RGBA, InputlFormat::RGB, eDataType::UNSIGNED_BYTE, nullptr);
+	m_tex1x1.create(1, 1, 0, InternalFormat::RGBA, InputlFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
 	m_tex1x1.withDefaultLinearClampEdge().updateParameters();
 }
 
@@ -544,17 +544,17 @@ int World::createTexture(int texture, tinygltf::Model& model, InternalFormat for
 		}
 	}
 
-	eDataType dataType = eDataType::UNSIGNED_BYTE;
+	ComponentType dataType = ComponentType::UNSIGNED_BYTE;
 	switch (image.pixel_type)
 	{
 	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-		dataType = eDataType::UNSIGNED_BYTE;
+		dataType = ComponentType::UNSIGNED_BYTE;
 		break;
 	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-		dataType = eDataType::UNSIGNED_SHORT;
+		dataType = ComponentType::UNSIGNED_SHORT;
 		break;
 	case TINYGLTF_COMPONENT_TYPE_FLOAT:
-		dataType = eDataType::FLOAT;
+		dataType = ComponentType::FLOAT;
 		break;
 	}
 
