@@ -7,6 +7,11 @@ uniform sampler2D samp0;
 uniform float g_kernel[9];
 uniform float g_offset;
 
+vec3 Gamma(vec3 c)
+{
+    return pow(c, vec3(1.0/2.2));
+}
+
 void main() {
 
 	vec2 offsets[9] = vec2[](
@@ -33,5 +38,5 @@ void main() {
 		col += sampleTex[i] * g_kernel[i];
 	}
 
-	fso_Color = vec4(col, 1.0);
+	fso_Color = vec4(Gamma(col), 1.0);
 }

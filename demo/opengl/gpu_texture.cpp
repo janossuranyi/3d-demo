@@ -1,5 +1,7 @@
 #include <utility>
 #include <cassert>
+#include "stb_image.h"
+
 #include "logger.h"
 #include "filesystem.h"
 #include "gpu_utils.h"
@@ -195,7 +197,7 @@ GpuTexture2D& GpuTexture2D::operator=(GpuTexture2D&& moved) noexcept
     return *this;
 }
 
-bool GpuTexture2D::create(int w, int h, int level, InternalFormat internalFormat, InputlFormat format, ComponentType type, const void* data)
+bool GpuTexture2D::create(int w, int h, int level, InternalFormat internalFormat, InputFormat format, ComponentType type, const void* data)
 {
     if (mTexture == INVALID_TEXTURE) GL_CHECK(glGenTextures(1, &mTexture));
     GL_CHECK(glBindTexture(GL_TEXTURE_2D, mTexture));
@@ -211,59 +213,76 @@ bool GpuTexture2D::create(int w, int h, int level, InternalFormat internalFormat
 
 bool GpuTexture2D::createFromImage(const std::string& fromFile, bool srgb, bool autoMipmap, bool compress)
 {
-    GLuint texID = mTexture != INVALID_TEXTURE ? mTexture : SOIL_CREATE_NEW_ID;
-    unsigned int flags = 0;
-    if (autoMipmap)
-    {
-        flags |= SOIL_FLAG_MIPMAPS;
-    }
-    if (compress)
-    {
-        flags |= SOIL_FLAG_COMPRESS_TO_DXT;
-    }
-    if (srgb)
-    {
-        flags |= SOIL_FLAG_SRGB_COLOR_SPACE;
-    }
+    auto buffer = g_fileSystem.read_binary_file(fromFile);
 
-
-    //texID = SOIL_load_OGL_texture(fromFile.c_str(), 0, texID, flags);
-    
-    texID = SOIL_load_OGL_texture(fromFile.c_str(), 0, texID, flags);
-
-    if (texID) {
-        mTexture = texID;
-    }
-
-    return texID != 0;
-
+    return createFromMemory(buffer.data(), buffer.size(), srgb, autoMipmap, compress);
 }
 
-bool GpuTexture2D::createFromMemory(const void* data, uint32_t bufLen, bool srgb, bool autoMipmap, bool compress)
+bool GpuTexture2D::createFromMemory(const void* data, size_t bufLen, bool srgb, bool autoMipmap, bool compress)
 {
-    GLuint texID = mTexture != INVALID_TEXTURE ? mTexture : SOIL_CREATE_NEW_ID;
-    unsigned int flags = 0;
-    if (autoMipmap)
+    int x = 0, y = 0, n = 0;
+
+    bool ok = stbi_info_from_memory((const uchar*)data, bufLen, &x, &y, &n);
+
+    if (!ok) return false;
+
+    if (!mTexture)
     {
-        flags |= SOIL_FLAG_MIPMAPS;
+        glGenTextures(1, &mTexture);
     }
-    if (compress)
+
+    glBindTexture(GL_TEXTURE_2D, mTexture);
+
+    GLenum format = GL_RGB;
+    GLint internalFormat = GL_RGBA;
+    if (srgb && compress) {
+        internalFormat = GL_COMPRESSED_SRGB_ALPHA;
+    }
+    else if (srgb) {
+        internalFormat = GL_SRGB8_ALPHA8;
+    }
+    else if (compress) {
+        internalFormat = GL_COMPRESSED_RGBA;
+    }
+
+    switch (n)
     {
-        flags |= SOIL_FLAG_COMPRESS_TO_DXT;
+    case 1:
+        format = GL_RED;
+        break;
+    case 2:
+        format = GL_RG;
+        break;
+    case 3:
+        format = GL_RGB;
+        break;
+    case 4:
+        format = GL_RGBA;
+        break;
     }
-    if (srgb)
-    {
-        flags |= SOIL_FLAG_SRGB_COLOR_SPACE;
+
+    stbi_set_flip_vertically_on_load(true);
+    const uchar* img = stbi_load_from_memory((const uchar*)data, bufLen, &x, &y, &n, 0);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D,
+        0,
+        internalFormat,
+        x,
+        y,
+        0,
+        format,
+        GL_UNSIGNED_BYTE,
+        img));
+
+    if (autoMipmap) {
+        glGenerateMipmap(GL_TEXTURE_2D);
     }
 
-    texID = SOIL_load_OGL_texture_from_memory((unsigned char*)data, bufLen, 0, texID, flags);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-    if (texID) {
+    return true;
 
-        mTexture = texID;
-    }
-
-    return texID != 0;
 }
 
 bool GpuTexture2D::createRGB(int w, int h, int level)
@@ -273,57 +292,57 @@ bool GpuTexture2D::createRGB(int w, int h, int level)
 
 bool GpuTexture2D::createRG8U(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RG, InputlFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
+    return create(w, h, level, InternalFormat::RG, InputFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRG8S(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RG, InputlFormat::RGB, ComponentType::BYTE, nullptr);
+    return create(w, h, level, InternalFormat::RG, InputFormat::RGB, ComponentType::BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRG16U(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RG16, InputlFormat::RGB, ComponentType::UNSIGNED_SHORT, nullptr);
+    return create(w, h, level, InternalFormat::RG16, InputFormat::RGB, ComponentType::UNSIGNED_SHORT, nullptr);
 }
 
 bool GpuTexture2D::createRG16S(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RG16, InputlFormat::RGB, ComponentType::SHORT, nullptr);
+    return create(w, h, level, InternalFormat::RG16, InputFormat::RGB, ComponentType::SHORT, nullptr);
 }
 
 bool GpuTexture2D::createRG16F(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RG16F, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::RG16F, InputFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createRGB8(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RGBA, InputlFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
+    return create(w, h, level, InternalFormat::RGBA, InputFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRGB8S(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RGBA, InputlFormat::RGB, ComponentType::BYTE, nullptr);
+    return create(w, h, level, InternalFormat::RGBA, InputFormat::RGB, ComponentType::BYTE, nullptr);
 }
 
 bool GpuTexture2D::createRGB32F(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RGBA32F, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::RGBA32F, InputFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createRGB16F(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RGBA16F, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::RGBA16F, InputFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createRGB10A2(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::RGB10A2, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::RGB10A2, InputFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createR11G11B10(int w, int h, int level)
 {
-    return create(w, h, level, InternalFormat::R11F_G11F_B10F, InputlFormat::RGB, ComponentType::FLOAT, nullptr);
+    return create(w, h, level, InternalFormat::R11F_G11F_B10F, InputFormat::RGB, ComponentType::FLOAT, nullptr);
 }
 
 bool GpuTexture2D::createDepthStencil(int w, int h)
@@ -377,32 +396,27 @@ GpuTextureCubeMap::~GpuTextureCubeMap()
 
 bool GpuTextureCubeMap::createFromImage(const std::vector<std::string>& fromFile, bool srgb, bool autoMipmap, bool compress)
 {
-    GLuint texID = mTexture != INVALID_TEXTURE ? mTexture : SOIL_CREATE_NEW_ID;
-    unsigned int flags = 0;
-    if (autoMipmap)
+    if (!mTexture)
     {
-        flags |= SOIL_FLAG_MIPMAPS;
-    }
-    if (compress)
-    {
-        flags |= SOIL_FLAG_COMPRESS_TO_DXT;
-    }
-    if (srgb)
-    {
-        flags |= SOIL_FLAG_SRGB_COLOR_SPACE;
+        GL_CHECK(glGenTextures(1, &mTexture));
     }
 
-    texID = SOIL_load_OGL_cubemap(
-        fromFile[0].c_str(),
-        fromFile[1].c_str(),
-        fromFile[2].c_str(),
-        fromFile[3].c_str(),
-        fromFile[4].c_str(),
-        fromFile[5].c_str(), 0, texID, flags);
+    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, mTexture));
 
-    if (texID) mTexture = texID;
+    for (uint i = 0; i < fromFile.size(); ++i)
+    {
+        if (!cubemapHelper(fromFile[i], i, srgb, autoMipmap, compress)) {
+            GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+            GL_CHECK(glDeleteTextures(1, &mTexture));
+            mTexture = INVALID_TEXTURE;
 
-    return texID != 0;
+            return false;
+        }
+    }
+
+//    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+
+    return true;
 }
 
 void GpuTextureCubeMap::bind() const
@@ -429,4 +443,65 @@ void GpuTextureCubeMap::bindImage(int unit, int level, bool layered, int layer, 
     GLenum format_ = GL_castImageFormat(format);
 
     GL_CHECK(glBindImageTexture(GLuint(unit), mTexture, GLint(level), GLboolean(layered), GLint(layer), access_, format_));
+}
+
+bool GpuTextureCubeMap::cubemapHelper(const std::string& fileName, uint index, bool srgb, bool autoMipmap, bool compress)
+{
+    int x = 0, y = 0, n = 0;
+
+    bool ok = stbi_info(fileName.c_str(), &x, &y, &n);
+
+    if (!ok) return false;
+
+    GLenum format = GL_RGB;
+    GLint internalFormat = GL_RGB;
+    if (srgb && compress) {
+        internalFormat = GL_COMPRESSED_SRGB;
+    }
+    else if (srgb) {
+        internalFormat = GL_SRGB;
+    }
+    else if (compress) {
+        internalFormat = GL_COMPRESSED_RGB;
+    }
+
+    switch (n)
+    {
+    case 1:
+        format = GL_RED;
+        break;
+    case 2:
+        format = GL_RG;
+        break;
+    case 3:
+        format = GL_RGB;
+        break;
+    case 4:
+        format = GL_RGBA;
+        break;
+    }
+
+    stbi_set_flip_vertically_on_load(false);
+    const uchar* img = stbi_load(fileName.c_str(), &x, &y, &n, 0);
+
+    if (img == nullptr) return false;
+
+    GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + index,
+        0,
+        internalFormat,
+        x,
+        y,
+        0,
+        format,
+        GL_UNSIGNED_BYTE,
+        img));
+
+    stbi_image_free((void*)img);
+
+    if (autoMipmap) {
+        GL_CHECK(glGenerateMipmap(GL_TEXTURE_CUBE_MAP_POSITIVE_X + index));
+    }
+
+    return true;
 }

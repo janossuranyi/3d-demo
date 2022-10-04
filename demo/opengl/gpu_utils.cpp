@@ -29,9 +29,9 @@ GLenum GL_castDataType(ComponentType type)
     }
 }
 
-GLenum GL_castPixelFormat(InputlFormat pf)
+GLenum GL_castPixelFormat(InputFormat pf)
 {
-    using PF = InputlFormat;
+    using PF = InputFormat;
 
     switch (pf)
     {

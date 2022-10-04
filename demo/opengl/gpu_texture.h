@@ -75,9 +75,9 @@ public:
 
 	STD_TEXTURE_METHODS(GpuTexture2D)
 
-	bool create(int w, int h, int level, InternalFormat internalFormat, InputlFormat format, ComponentType type, const void* data);
+	bool create(int w, int h, int level, InternalFormat internalFormat, InputFormat format, ComponentType type, const void* data);
 	bool createFromImage(const std::string& fromFile, bool srgb = false, bool autoMipmap = true, bool compress = true);
-	bool createFromMemory(const void* data, uint32_t bufLen, bool srgb = false, bool autoMipmap = true, bool compress = true);
+	bool createFromMemory(const void* data, size_t bufLen, bool srgb = false, bool autoMipmap = true, bool compress = true);
 	bool createRGB(int w, int h, int level);
 	bool createRGB8(int w, int h, int level);
 	bool createRGB8S(int w, int h, int level);
@@ -100,7 +100,6 @@ public:
 
 protected:
 	inline GLenum getApiTarget() const override { return GL_TEXTURE_2D; };
-
 };
 
 class GpuTextureCubeMap : public GpuTexture
@@ -122,5 +121,6 @@ public:
 	void bindImage(int unit, int level, bool layered, int layer, Access access, ImageFormat format);
 protected:
 	inline GLenum getApiTarget() const override { return GL_TEXTURE_CUBE_MAP; };
+	bool cubemapHelper(const std::string& fileName, uint index, bool srgb, bool autoMipmap, bool compress);
 
 };

@@ -12,9 +12,9 @@
 #include "gpu_types.h"
 #include "gpu_utils.h"
 
-#define SCREEN_WIDTH -1
-#define SCREEN_HEIGHT -1
-#define FULLSCREEN true
+#define SCREEN_WIDTH 1440
+#define SCREEN_HEIGHT 900
+#define FULLSCREEN false
 
 VideoConfig videoConf;
 

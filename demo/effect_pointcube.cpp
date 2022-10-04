@@ -309,11 +309,11 @@ void PointCubeEffect::Render()
 
 	fbTex->bind();
 	GL_CHECK(glDisable(GL_DEPTH_TEST));
-	GL_CHECK(glEnable(GL_FRAMEBUFFER_SRGB));
+	//GL_CHECK(glEnable(GL_FRAMEBUFFER_SRGB));
 
 	GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
 
-	GL_CHECK(glDisable(GL_FRAMEBUFFER_SRGB));
+	//GL_CHECK(glDisable(GL_FRAMEBUFFER_SRGB));
 
 	//glEnable(GL_BLEND);
 

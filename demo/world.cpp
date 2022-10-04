@@ -307,7 +307,7 @@ void World::renderWorld(Pipeline& pipeline)
 
 void World::init()
 {
-	m_tex1x1.create(1, 1, 0, InternalFormat::RGBA, InputlFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
+	m_tex1x1.create(1, 1, 0, InternalFormat::RGBA, InputFormat::RGB, ComponentType::UNSIGNED_BYTE, nullptr);
 	m_tex1x1.withDefaultLinearClampEdge().updateParameters();
 }
 
@@ -521,15 +521,15 @@ int World::createTexture(int texture, tinygltf::Model& model, InternalFormat for
 	Info("image pixel_type: %d", image.pixel_type);
 	Info("image mimeType  : %s", image.mimeType.c_str());
 
-	InputlFormat srcFormat = InputlFormat::RGB;
+	InputFormat srcFormat = InputFormat::RGB;
 
 	if (image.bits == 8)
 	{
 		switch (image.component)
 		{
-		case 3: srcFormat = InputlFormat::RGB;
+		case 3: srcFormat = InputFormat::RGB;
 			break;
-		case 4: srcFormat = InputlFormat::RGBA;
+		case 4: srcFormat = InputFormat::RGBA;
 			break;
 		}
 	}
@@ -537,9 +537,9 @@ int World::createTexture(int texture, tinygltf::Model& model, InternalFormat for
 	{
 		switch (image.component)
 		{
-		case 3: srcFormat = InputlFormat::RGB16;
+		case 3: srcFormat = InputFormat::RGB16;
 			break;
-		case 4: srcFormat = InputlFormat::RGBA16;
+		case 4: srcFormat = InputFormat::RGBA16;
 			break;
 		}
 	}

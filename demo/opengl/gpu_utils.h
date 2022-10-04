@@ -6,7 +6,7 @@
 
 extern void CheckOpenGLError(const char* stmt, const char* fname, int line);
 extern GLenum GL_castDataType(ComponentType type);
-extern GLenum GL_castPixelFormat(InputlFormat pf);
+extern GLenum GL_castPixelFormat(InputFormat pf);
 extern GLint GL_castTextureFormat(InternalFormat f);
 extern GLenum GL_castShaderStage(ShaderType type);
 extern GLint GL_castTexWrap(Wrap p);
