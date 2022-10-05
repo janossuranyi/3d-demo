@@ -12,6 +12,7 @@ GpuTexture::~GpuTexture() noexcept
     if (mTexture > 0) glDeleteTextures(1, &mTexture);
 }
 
+/*
 GpuTexture::GpuTexture(GpuTexture&& moved) noexcept
 {
     mTexture = moved.mTexture;
@@ -26,6 +27,7 @@ GpuTexture& GpuTexture::operator=(GpuTexture&& moved) noexcept
 
     return *this;
 }
+*/
 
 GpuTexture& GpuTexture::withMinFilter(FilterMin p)
 {
@@ -93,7 +95,7 @@ GpuTexture& GpuTexture::withDefaultLinearRepeat()
     mIntParams.push_back(std::make_pair(GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, GL_REPEAT));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, GL_REPEAT));
-    if (getTarget() == TextureShape::TEX_CUBE_MAP) {
+    if (getTarget() == TextureShape::CUBE_MAP) {
         mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, GL_REPEAT));
     }
 
@@ -106,7 +108,7 @@ GpuTexture& GpuTexture::withDefaultLinearClampEdge()
     mIntParams.push_back(std::make_pair(GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    if (getTarget() == TextureShape::TEX_CUBE_MAP) {
+    if (getTarget() == TextureShape::CUBE_MAP) {
         mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
     }
 
@@ -119,7 +121,7 @@ GpuTexture& GpuTexture::withDefaultMipmapRepeat()
     mIntParams.push_back(std::make_pair(GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, GL_REPEAT));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, GL_REPEAT));
-    if (getTarget() == TextureShape::TEX_CUBE_MAP) {
+    if (getTarget() == TextureShape::CUBE_MAP) {
         mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, GL_REPEAT));
     }
 
@@ -132,7 +134,7 @@ GpuTexture& GpuTexture::withDefaultMipmapClampEdge()
     mIntParams.push_back(std::make_pair(GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    if (getTarget() == TextureShape::TEX_CUBE_MAP) {
+    if (getTarget() == TextureShape::CUBE_MAP) {
         mIntParams.push_back(std::make_pair(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
     }
 
@@ -222,7 +224,7 @@ bool GpuTexture2D::createFromMemory(const void* data, size_t bufLen, bool srgb, 
 {
     int x = 0, y = 0, n = 0;
 
-    bool ok = stbi_info_from_memory((const uchar*)data, bufLen, &x, &y, &n);
+    bool ok = stbi_info_from_memory((const uchar*)data, int(bufLen), &x, &y, &n);
 
     if (!ok) return false;
 
@@ -235,34 +237,11 @@ bool GpuTexture2D::createFromMemory(const void* data, size_t bufLen, bool srgb, 
 
     GLenum format = GL_RGB;
     GLint internalFormat = GL_RGBA;
-    if (srgb && compress) {
-        internalFormat = GL_COMPRESSED_SRGB_ALPHA;
-    }
-    else if (srgb) {
-        internalFormat = GL_SRGB8_ALPHA8;
-    }
-    else if (compress) {
-        internalFormat = GL_COMPRESSED_RGBA;
-    }
 
-    switch (n)
-    {
-    case 1:
-        format = GL_RED;
-        break;
-    case 2:
-        format = GL_RG;
-        break;
-    case 3:
-        format = GL_RGB;
-        break;
-    case 4:
-        format = GL_RGBA;
-        break;
-    }
+    getTextureFormats(n, srgb, compress, internalFormat, format);
 
     stbi_set_flip_vertically_on_load(true);
-    const uchar* img = stbi_load_from_memory((const uchar*)data, bufLen, &x, &y, &n, 0);
+    const uchar* img = stbi_load_from_memory((const uchar*)data, int(bufLen), &x, &y, &n, 0);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     GL_CHECK(glTexImage2D(GL_TEXTURE_2D,
@@ -409,12 +388,12 @@ bool GpuTextureCubeMap::createFromImage(const std::vector<std::string>& fromFile
             GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
             GL_CHECK(glDeleteTextures(1, &mTexture));
             mTexture = INVALID_TEXTURE;
+            GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
 
             return false;
         }
     }
 
-//    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
 
     return true;
 }
@@ -455,31 +434,8 @@ bool GpuTextureCubeMap::cubemapHelper(const std::string& fileName, uint index, b
 
     GLenum format = GL_RGB;
     GLint internalFormat = GL_RGB;
-    if (srgb && compress) {
-        internalFormat = GL_COMPRESSED_SRGB;
-    }
-    else if (srgb) {
-        internalFormat = GL_SRGB;
-    }
-    else if (compress) {
-        internalFormat = GL_COMPRESSED_RGB;
-    }
 
-    switch (n)
-    {
-    case 1:
-        format = GL_RED;
-        break;
-    case 2:
-        format = GL_RG;
-        break;
-    case 3:
-        format = GL_RGB;
-        break;
-    case 4:
-        format = GL_RGBA;
-        break;
-    }
+    getTextureFormats(n, srgb, compress, internalFormat, format);
 
     stbi_set_flip_vertically_on_load(false);
     const uchar* img = stbi_load(fileName.c_str(), &x, &y, &n, 0);
@@ -504,4 +460,35 @@ bool GpuTextureCubeMap::cubemapHelper(const std::string& fileName, uint index, b
     }
 
     return true;
+}
+
+void GpuTexture::getTextureFormats(int channels, bool srgb, bool compress, GLint& internalFormat, GLenum& format)
+{
+    format = GL_RGB;
+    internalFormat = GL_RGB;
+    if (srgb && compress) {
+        internalFormat = GL_COMPRESSED_SRGB_ALPHA;
+    }
+    else if (srgb) {
+        internalFormat = GL_SRGB_ALPHA;
+    }
+    else if (compress) {
+        internalFormat = GL_COMPRESSED_RGBA;
+    }
+
+    switch (channels)
+    {
+    case 1:
+        format = GL_RED;
+        break;
+    case 2:
+        format = GL_RG;
+        break;
+    case 3:
+        format = GL_RGB;
+        break;
+    case 4:
+        format = GL_RGBA;
+        break;
+    }
 }

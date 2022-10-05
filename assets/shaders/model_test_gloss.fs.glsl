@@ -91,6 +91,19 @@ vec3 DeGamma(vec3 c)
     return pow(c, vec3(2.2));
 }
 
+float GammaIEC(float c)
+{
+    return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055;
+}
+
+vec3 GammaIEC(vec3 c)
+{
+    return vec3(
+        GammaIEC(c.r),
+        GammaIEC(c.g),
+        GammaIEC(c.b));
+}
+
 vec3 Gamma(vec3 c)
 {
     return pow(c, vec3(1.0/2.2));
@@ -197,7 +210,7 @@ void main()
         finalColor += color;
     }
 
-    finalColor = Gamma(tonemap(finalColor));
+    finalColor = GammaIEC(tonemap(finalColor));
 
     FragColor = vec4(finalColor,1);
 

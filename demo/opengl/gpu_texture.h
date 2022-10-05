@@ -19,13 +19,12 @@ class GpuTexture
 	friend class Pipeline;
 public:
 	~GpuTexture() noexcept;
-	GpuTexture() :
-		mTexture(INVALID_TEXTURE){}
+	GpuTexture() : mTexture(INVALID_TEXTURE){}
 
 	STD_TEXTURE_METHODS(GpuTexture)
 
-	GpuTexture(GpuTexture&& moved) noexcept;
-	GpuTexture& operator=(GpuTexture&& moved) noexcept;
+	GpuTexture(GpuTexture&& moved) = delete;
+	GpuTexture& operator=(GpuTexture&& moved) = delete;
 
 	virtual void bind() const = 0;
 	virtual void bind(int unit) const = 0;
@@ -56,6 +55,8 @@ protected:
 
 	IntegerParamsVec mIntParams;
 	FloatParamsVec mFloatParams;
+
+	static void getTextureFormats(int channels, bool srgb, bool compress, GLint& internalFormat, GLenum& format);
 
 //	unsigned int m_width, m_height, m_depth;
 };
@@ -91,7 +92,7 @@ public:
 	bool createRGB10A2(int w, int h, int level);
 	bool createR11G11B10(int w, int h, int level);
 	bool createDepthStencil(int w, int h);
-	TextureShape getTarget() const override { return TextureShape::TEX_2D; }
+	TextureShape getTarget() const override { return TextureShape::D2; }
 	void bind() const override;
 	void bind(int unit) const override;
 	void bindImage(int unit, int level, Access access, ImageFormat format);
@@ -115,7 +116,7 @@ public:
 
 	bool createFromImage(const std::vector<std::string>& fromFile, bool srgb = false, bool autoMipmap = false, bool compress = true);
 
-	TextureShape getTarget() const override { return TextureShape::TEX_CUBE_MAP; }
+	TextureShape getTarget() const override { return TextureShape::CUBE_MAP; }
 	void bind() const override;
 	void bind(int unit) const override;
 	void bindImage(int unit, int level, bool layered, int layer, Access access, ImageFormat format);

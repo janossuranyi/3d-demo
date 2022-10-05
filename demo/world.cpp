@@ -193,13 +193,13 @@ bool World::loadWorld(const std::string& filename)
 						}
 						else if (key == "diffuseTexture")
 						{
-							int x = createTexture(val.Get("index").GetNumberAsInt(), model, InternalFormat::SRGB_A);
+							const auto x = createTexture(val.Get("index").GetNumberAsInt(), model, InternalFormat::SRGB_A);
 							m.pbrSpecularGlossiness.diffuseTexture.index = x;
 							m.pbrSpecularGlossiness.diffuseTexture.texCoord = val.Get("texCoord").GetNumberAsInt();
 						}
 						else if (key == "specularGlossinessTexture")
 						{
-							int x = createTexture(val.Get("index").GetNumberAsInt(), model, InternalFormat::SRGB_A);
+							const auto x = createTexture(val.Get("index").GetNumberAsInt(), model, InternalFormat::SRGB_A);
 							m.pbrSpecularGlossiness.specularGlossinessTexture.index = x;
 							m.pbrSpecularGlossiness.specularGlossinessTexture.texCoord = val.Get("texCoord").GetNumberAsInt();
 						}
@@ -230,17 +230,17 @@ bool World::loadWorld(const std::string& filename)
 		m.emissiveFactor			= glm::make_vec3(mat.emissiveFactor.data());
 
 		if (mat.normalTexture.index > -1) {
-			int x = createTexture(mat.normalTexture.index, model, InternalFormat::RGBA);
+			const int x = createTexture(mat.normalTexture.index, model, InternalFormat::RGBA);
 			m.normalTexture.index = x;
 			m.normalTexture.texCoord = mat.normalTexture.texCoord;
 		}
 		if (mat.emissiveTexture.index > -1) {
-			int x = createTexture(mat.emissiveTexture.index, model, InternalFormat::RGBA);
+			const int x = createTexture(mat.emissiveTexture.index, model, InternalFormat::RGBA);
 			m.emissiveTexture.index = x;
 			m.emissiveTexture.texCoord = mat.emissiveTexture.texCoord;
 		}
 		if (mat.occlusionTexture.index > -1) {
-			int x = createTexture(mat.occlusionTexture.index, model, InternalFormat::RGBA);
+			const int x = createTexture(mat.occlusionTexture.index, model, InternalFormat::RGBA);
 			m.occlusionTexture.index = x;
 			m.occlusionTexture.texCoord = mat.occlusionTexture.texCoord;
 		}

@@ -63,7 +63,7 @@ bool PointCubeEffect::Init()
 
 	assert(textures_faces.size() == 6);
 
-	if (!skyTex_.createFromImage(textures_faces, true, false, true))
+	if (!skyTex_.createFromImage(textures_faces, true, false, false))
 	{
 		Error("load cubemap error");
 		return false;

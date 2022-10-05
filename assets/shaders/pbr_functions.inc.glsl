@@ -34,7 +34,27 @@ PbrUtilities.ConvertToMetallicRoughness = function (specularGlossiness) {
 */
 
 
-float SRGBlinear ( float value ) { if ( value <= 0.04045 ) {
+float GammaIEC(float c)
+{
+    return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055;
+}
+
+vec3 GammaIEC(vec3 c)
+{
+    return vec3(
+        GammaIEC(c.r),
+        GammaIEC(c.g),
+        GammaIEC(c.b));
+}
+
+vec3 Gamma(vec3 c)
+{
+    return pow(c, vec3(1.0/2.2));
+}
+
+float SRGBlinear ( float value ) { 
+
+if ( value <= 0.04045 ) {
 		return ( value / 12.92 );
 	} else {
 		return pow( ( value / 1.055 ) + 0.0521327, 2.4 );

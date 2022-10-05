@@ -7,9 +7,17 @@ uniform sampler2D samp0;
 uniform float g_kernel[9];
 uniform float g_offset;
 
-vec3 Gamma(vec3 c)
+float GammaIEC(float c)
 {
-    return pow(c, vec3(1.0/2.2));
+    return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055;
+}
+
+vec3 GammaIEC(vec3 c)
+{
+    return vec3(
+        GammaIEC(c.r),
+        GammaIEC(c.g),
+        GammaIEC(c.b));
 }
 
 void main() {
@@ -38,5 +46,5 @@ void main() {
 		col += sampleTex[i] * g_kernel[i];
 	}
 
-	fso_Color = vec4(Gamma(col), 1.0);
+	fso_Color = vec4(GammaIEC(col), 1.0);
 }
