@@ -1,20 +1,20 @@
 #include "effect_compute_test.h"
 #include "filesystem.h"
 #include "unit_rect.h"
+#include "gpu.h"
 #include "gpu_utils.h"
 #include "gpu_types.h"
 #include "logger.h"
 
 bool ComputeTestEffect::Init()
 {
-
     while (glGetError() != GL_NO_ERROR) {}
 
     tex0_.selectUnit(0);
     //tex0_.create(tex_w, tex_h, 0, eTextureFormat::RGBA, ePixelFormat::RGBA, eDataType::UNSIGNED_BYTE, nullptr);
     tex0_.createRGB8(tex_w, tex_h, 0);
     tex0_.withDefaultLinearClampEdge().updateParameters();
-    tex0_.bindImage(0, 0, Access::WRITE_ONLY, ImageFormat::RGBA8);
+    GPU::bindImageUnit(tex0_, 0, 0, Access::WRITE_ONLY, ImageFormat::RGBA8);
 
     vbo_rect.reset(new GpuBuffer(BufferTarget::VERTEX));
     vbo_rect->create(sizeof(UNIT_RECT_WITH_ST), BufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);

@@ -13,6 +13,7 @@
 #include "filesystem.h"
 #include "gpu_buffer.h"
 #include "stb_image.h"
+#include "gpu.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
 #include "gpu_texture.h"
@@ -43,8 +44,8 @@ bool PointCubeEffect::Init()
 	*/
 
 	// 2xSSAA
-	FB_X = videoConf.width;
-	FB_Y = videoConf.height;
+	FB_X = GPU::window().width;
+	FB_Y = GPU::window().height;
 	//FB_X = 1024*2;
 	//FB_Y = 1024*2;
 
@@ -76,8 +77,8 @@ bool PointCubeEffect::Init()
 	depthTex->createDepthStencil(FB_X, FB_Y);
 
 	fbTex = GpuTexture2D::createShared();
-	fbTex->createRGB(FB_X, FB_Y, 0);
-	//fbTex->create(FB_X, FB_Y, 0, eTextureFormat::RGB565, ePixelFormat::RGB, eDataType::UNSIGNED_SHORT, nullptr);
+	fbTex->createRGB (FB_X, FB_Y, 0);
+	//fbTex->create(FB_X, FB_Y, 0, InternalFormat::RGB565, InputFormat::RGB, ComponentType::UNSIGNED_SHORT, nullptr);
 
 	fbTex->withDefaultLinearClampEdge().updateParameters();
 
@@ -170,7 +171,7 @@ bool PointCubeEffect::Init()
 	glm::vec3 viewPos{ 0, 0, eyeZ };
 
 	glm::mat4 V = glm::lookAt(viewPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-	P = glm::perspective(45.0f, (float)videoConf.width / videoConf.height, 1.0f, 1700.0f);
+	P = glm::perspective(45.0f, (float)GPU::window().width / GPU::window().height, 1.0f, 1700.0f);
 
 	VP = P * V;
 
@@ -216,7 +217,7 @@ bool PointCubeEffect::Init()
 
 
 	GL_CHECK(glBindVertexArray(vao_points));
-	vbo_points->bind();
+	GPU::bind(*vbo_points);
 	GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexLayout), (void *)0));
 	GL_CHECK(glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexLayout), (void*)12));
 	GL_CHECK(glEnableVertexAttribArray(0));
@@ -226,7 +227,7 @@ bool PointCubeEffect::Init()
 	GL_CHECK(glDisableVertexAttribArray(1));
 
 	GL_CHECK(glBindVertexArray(vao_pp));
-	vbo_pp->bind();
+	GPU::bind(*vbo_pp);
 	GL_CHECK(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PPLayout), (void *)0));
 	GL_CHECK(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(PPLayout), (void *)8));
 	GL_CHECK(glEnableVertexAttribArray(0));
@@ -236,7 +237,7 @@ bool PointCubeEffect::Init()
 	GL_CHECK(glDisableVertexAttribArray(1));
 
 	GL_CHECK(glBindVertexArray(vao_skybox));
-	vbo_skybox->bind();
+	GPU::bind(*vbo_skybox);
 	GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0));
 	GL_CHECK(glEnableVertexAttribArray(0));
 	GL_CHECK(glBindVertexArray(0));
@@ -287,7 +288,7 @@ void PointCubeEffect::Render()
 	GL_CHECK(glDrawArrays(GL_POINTS, 0, NUMPOINTS));
 
 	GL_CHECK(glDepthMask(GL_FALSE));
-	skyTex_.bind();
+	GPU::bind(skyTex_);
 
 	GL_CHECK(glBindVertexArray(vao_skybox));
 	prgSkybox.use();
@@ -298,7 +299,7 @@ void PointCubeEffect::Render()
 	GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 36));
 
 	GL_CHECK(glDepthMask(GL_TRUE));
-	GL_CHECK(glViewport(0, 0, videoConf.width, videoConf.height));
+	GL_CHECK(glViewport(0, 0, GPU::window().width, GPU::window().height));
 
 	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
@@ -307,7 +308,8 @@ void PointCubeEffect::Render()
 	prgPP.use();
 	prgPP.set(2, pp_offset);
 
-	fbTex->bind();
+	GPU::bind(*fbTex);
+
 	GL_CHECK(glDisable(GL_DEPTH_TEST));
 	//GL_CHECK(glEnable(GL_FRAMEBUFFER_SRGB));
 
@@ -320,7 +322,7 @@ void PointCubeEffect::Render()
 	//glViewport(0, 0, 400, 250);
 
 	prgTextureRect.use();
-	depthTex->bind();
+	GPU::bind(*depthTex);
 	GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, 6));
 
 }

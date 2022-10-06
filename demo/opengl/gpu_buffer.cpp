@@ -1,5 +1,6 @@
 #include <cassert>
 #include <GL/glew.h>
+#include "gpu.h"
 #include "gpu_buffer.h"
 #include "gpu_utils.h"
 #include "gpu_types.h"
@@ -7,21 +8,6 @@
 /*
 OpenGL buffer implementation
 */
-
-static inline GLenum GL_CastBufferType(BufferTarget type)
-{
-	switch (type)
-	{
-	case BufferTarget::VERTEX:
-		return GL_ARRAY_BUFFER;
-	case BufferTarget::INDEX:
-		return GL_ELEMENT_ARRAY_BUFFER;
-	case BufferTarget::UNIFORM:
-		return GL_UNIFORM_BUFFER;
-	}
-
-	return GL_FALSE;
-}
 
 /*
 GpuBuffer::GpuBuffer(GpuBuffer&& moved) noexcept
@@ -35,15 +21,6 @@ GpuBuffer& GpuBuffer::operator=(GpuBuffer&& moved) noexcept
 	return *this;
 }
 */
-
-void GpuBuffer::bind() const
-{
-	assert(mBuffer != INVALID_BUFFER);
-
-	const GLenum target = GL_CastBufferType(mTarget);
-	GL_CHECK(glBindBuffer(target, mBuffer));	
-	
-}
 
 void GpuBuffer::unBind() const
 {

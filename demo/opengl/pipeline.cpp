@@ -12,6 +12,7 @@
 #include "types.h"
 #include "material.h"
 #include "world.h"
+#include "gpu.h"
 
 Pipeline::Pipeline()
 {
@@ -525,7 +526,7 @@ void Pipeline::bindVertexBuffer(GpuBuffer& b, int index, uint32_t offset, uint32
 	{
 		if (m_activeArrayBuffer != b.mBuffer)
 		{
-			b.bind();
+			GPU::bind(b);
 			m_activeArrayBuffer = b.mBuffer;
 		}
 	}
@@ -535,7 +536,7 @@ void Pipeline::bindIndexBuffer(const GpuBuffer& b)
 {
 	if (m_activeElementBuffer != b.mBuffer)
 	{
-		b.bind();
+		GPU::bind(b);
 		m_activeElementBuffer = b.mBuffer;
 	}
 }
@@ -580,7 +581,7 @@ void Pipeline::bindTexture(GpuTexture2D& tex, int unit)
 {
 	if (m_tmus[unit].target != tex.getApiTarget() || m_tmus[unit].texId != tex.mTexture)
 	{
-		tex.bind(unit);
+		GPU::bind(tex, unit);
 		m_tmus[unit].target = tex.getApiTarget();
 		m_tmus[unit].texId = tex.mTexture;
 		m_activeMaterial = -1;

@@ -25,7 +25,7 @@ format
 	Specifies the format of the pixel data. The following symbolic values are accepted: 
 	GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL.
 */
-enum class InputFormat { RGB, RGBA, RGB8, RGBA8, RGBA16, RGB16 };
+enum class InputFormat {R, RG, RGB, RGBA, RGB8, RGBA8, RGBA16, RGB16 };
 
 /*
 Texture related types

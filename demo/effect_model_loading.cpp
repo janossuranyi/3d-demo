@@ -1,5 +1,6 @@
 #include <string>
 #include <glm/glm.hpp>
+#include "gpu.h"
 #include "gpu_buffer.h"
 #include "gpu_program.h"
 #include "gpu_types.h"
@@ -22,7 +23,7 @@ bool LoadModelEffect::Init()
 
     glm::vec3 clearColor = glm::pow(glm::vec3(.4f), glm::vec3(1.f / 2.2f));
 
-    pipeline.setScreenRect(0, 0, videoConf.width, videoConf.height);
+    pipeline.setScreenRect(0, 0, GPU::window().width, GPU::window().height);
     pipeline.setState( GLS_DEPTHFUNC_LESS|GLS_CULL_FRONTSIDED/* | GLS_POLYMODE_LINE*/);
     pipeline.setWorldPosition(vec3(0, 0, 0));
     pipeline.setWorldScale(vec3(1, 1, 1));
@@ -53,10 +54,10 @@ bool LoadModelEffect::Init()
     //glEnable(GL_FRAMEBUFFER_SRGB);
 
     fb_color = GpuTexture2D::createShared();
-    fb_color->createRGB(videoConf.width, videoConf.height, 0);
+    fb_color->createRGB(GPU::window().width, GPU::window().height, 0);
     fb_color->withDefaultLinearClampEdge().updateParameters();
     fb_depth = GpuTexture2D::createShared();
-    fb_depth->createDepthStencil(videoConf.width, videoConf.height);
+    fb_depth->createDepthStencil(GPU::window().width, GPU::window().height);
     if (!fb.create()
         .addColorAttachment(0, fb_color)
         .setDepthStencilAttachment(fb_depth)
@@ -71,7 +72,8 @@ bool LoadModelEffect::Init()
     
     rectBuffer.reset(new GpuBuffer());
     rectBuffer->create(sizeof(UNIT_RECT_WITH_ST), BufferUsage::STATIC, 0, UNIT_RECT_WITH_ST);
-    rectBuffer->bind();
+    GPU::bind(*rectBuffer);
+
     vertFormat.begin();
     vertFormat
         .with(0, 2, ComponentType::FLOAT, false, 0, 16, rectBuffer.get())

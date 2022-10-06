@@ -4,6 +4,7 @@
 #include "gpu_types.h"
 #include "gpu_utils.h"
 
+
 void CheckOpenGLError(const char* stmt, const char* fname, int line)
 {
     GLenum err = glGetError();
@@ -12,6 +13,21 @@ void CheckOpenGLError(const char* stmt, const char* fname, int line)
         Error("OpenGL error %08x, at %s:%i - for %s\n", err, fname, line, stmt);
         abort();
     }
+}
+
+GLenum GL_CastBufferType(BufferTarget type)
+{
+    switch (type)
+    {
+    case BufferTarget::VERTEX:
+        return GL_ARRAY_BUFFER;
+    case BufferTarget::INDEX:
+        return GL_ELEMENT_ARRAY_BUFFER;
+    case BufferTarget::UNIFORM:
+        return GL_UNIFORM_BUFFER;
+    }
+
+    return GL_FALSE;
 }
 
 GLenum GL_castDataType(ComponentType type)

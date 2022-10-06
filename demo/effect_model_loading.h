@@ -37,8 +37,8 @@ struct LoadModelEffect : public Effect
 	GpuProgram fxaa;
 	std::unique_ptr<GpuBuffer> rectBuffer;
 
-	GpuTexture2D::Ptr fb_color;
-	GpuTexture2D::Ptr fb_depth;
+	std::shared_ptr<GpuTexture2D> fb_color;
+	std::shared_ptr<GpuTexture2D> fb_depth;
 	GpuFrameBuffer fb;
 
 	VertexLayout vertFormat;

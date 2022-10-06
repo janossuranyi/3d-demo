@@ -103,8 +103,8 @@ struct PointCubeEffect : public Effect
 	GLuint vao_skybox;
 
 	GpuFrameBuffer m_fb;
-	GpuTexture2D::Ptr fbTex;
-	GpuTexture2D::Ptr depthTex;
+	std::shared_ptr<GpuTexture2D> fbTex;
+	std::shared_ptr<GpuTexture2D> depthTex;
 	GpuTextureCubeMap skyTex_;
 
 	GLint rectWMtx;

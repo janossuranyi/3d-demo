@@ -1,4 +1,5 @@
 
+#include "gpu.h"
 #include "gpu_utils.h"
 #include "gpu_vertex_layout.h"
 
@@ -42,7 +43,7 @@ VertexLayout& VertexLayout::with(unsigned int index, unsigned int size, Componen
     if (m_lastBuffer != target)
     {
         m_lastBuffer = target;
-        target->bind();
+        GPU::bind(*target);
     }
     GL_CHECK(glVertexAttribPointer(index, size, GL_castDataType(type), normalized, stride, (const void*)uintptr_t(offset)));
     ++m_numAttribs;

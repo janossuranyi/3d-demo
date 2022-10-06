@@ -18,11 +18,11 @@ public:
 		m_completed(false) {}
 
 	GpuFrameBuffer& create();
-	GpuFrameBuffer& addColorAttachment(int index, GpuTexture2D::Ptr texture);
-	GpuFrameBuffer& addColorAttachment(int index, GpuTextureCubeMap::Ptr texture);
+	GpuFrameBuffer& addColorAttachment(int index, std::shared_ptr<GpuTexture2D> texture);
+	GpuFrameBuffer& addColorAttachment(int index, std::shared_ptr<GpuTextureCubeMap> texture);
 	GpuFrameBuffer& addColorAttachment(int index, int w, int h, InternalFormat format);
 	GpuFrameBuffer& setDepthStencilAttachment(int w, int h);
-	GpuFrameBuffer& setDepthStencilAttachment(GpuTexture2D::Ptr texture);
+	GpuFrameBuffer& setDepthStencilAttachment(std::shared_ptr<GpuTexture2D> texture);
 
 	bool checkCompletness();
 	void bind();

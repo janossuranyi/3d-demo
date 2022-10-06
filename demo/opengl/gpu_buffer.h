@@ -9,6 +9,7 @@
 class GpuBuffer
 {
 	friend class Pipeline;
+	friend class GPU;
 public:
 
 	/** Empty constructor initializes a VERTEX buffer
@@ -34,8 +35,6 @@ public:
 	GpuBuffer(GpuBuffer&& moved) = delete;
 
 	GpuBuffer& operator=(GpuBuffer&& moved) = delete;
-
-	void bind() const;
 
 	uint8_t* map(unsigned int access);
 

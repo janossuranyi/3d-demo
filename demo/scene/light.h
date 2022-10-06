@@ -25,9 +25,9 @@ struct xLight
 		intensity(1.0f),
 		range(0.0f),
 		innerConeAngle(0.0f),
-		outerConeAngle(M_PI / 4.0f),
-		cosInnerConeAngle(std::cos(innerConeAngle)),
-		cosOuterConeAngle(std::cos(cosOuterConeAngle)) {}
+		outerConeAngle(float(M_PI / 4.0f)),
+		cosInnerConeAngle(std::cosf(innerConeAngle)),
+		cosOuterConeAngle(std::cosf(cosOuterConeAngle)) {}
 };
 
 /*

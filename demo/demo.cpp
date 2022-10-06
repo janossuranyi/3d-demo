@@ -9,14 +9,14 @@
 #include "effect_pointcube.h"
 #include "effect_compute_test.h"
 #include "effect_model_loading.h"
+#include "gpu.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
+#include "window.h"
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
 #define FULLSCREEN false
-
-VideoConfig videoConf;
 
 bool V_Init(int w, int h, int multisample, bool fullscreen);
 void V_Shutdown();
@@ -25,146 +25,14 @@ const char* BASE_DIR = "d:/src/3d-demo/";
 
 static bool V_Init(int w, int h, int multisample, bool fullscreen)
 {
-    int err;
+    Window window{ w,h,24,32,8,multisample,8,8,8,8,fullscreen};
 
-    if ((err = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) < 0)) {
-        Error("ERROR: %s", SDL_GetError());
-        return false;
-    }
-
-    Info("SD_Init done");
-
-    /*
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    */
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    //SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_TRUE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-    //SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, SDL_TRUE);
-
-    if (multisample > 0)
-    {
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, multisample);
-    }
-
-    Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
-
-    if (fullscreen && w == -1 && h == -1)
-    {
-        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    }
-    else if (fullscreen)
-    {
-        flags |= SDL_WINDOW_FULLSCREEN;
-    }
-
-    Info("SD_CreateWindow start");
-    videoConf.hWindow = SDL_CreateWindow("3d-demo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, flags);
-    if (!videoConf.hWindow)
-    {
-        Error("Cannot create window - %s", SDL_GetError());
-        return false;
-    }
-
-    Info("SD_CreateWindow done");
-
-    videoConf.hGl = SDL_GL_CreateContext(videoConf.hWindow);
-    if (!videoConf.hGl)
-    {
-        Error("Cannot create GL context - %s", SDL_GetError());
-        return false;
-    }
-
-    Info("SDL_GL_CreateContext done");
-
-    // Initialize GLEW
-    glewExperimental = true; // Needed for core profile
-    if (glewInit() != GLEW_OK) {
-        Error("Cannot initialize GLEW");
-        return false;
-    }
-
-    Info("glewInit done");
-
-    SDL_GL_SetSwapInterval(1);
-
-    std::string renderer = (char *)glGetString(GL_RENDERER);
-    std::string version  = (char *)glGetString(GL_VERSION);
-    const float gl_version = float(atof(version.c_str()));
-    videoConf.glVersion = int(gl_version * 100);
-
-    if (videoConf.glVersion < 450)
-    {
-        Error("Sorry, I need at least OpenGL 4.5");
-        return false;
-    }
-
-    SDL_version ver;
-
-    SDL_GetVersion(&ver);
-
-    Info("GL Renderer: %s", renderer.c_str());
-    Info("GL Version: %s (%.2f)", version.c_str(), gl_version);
-    Info("SDL version: %d.%d patch %d", (int)ver.major, (int)ver.minor, (int)ver.patch);
-
-    int _w, _h;
-
-    SDL_GetWindowSize(videoConf.hWindow, &_w, &_h);
-    glViewport(0, 0, _w, _h);
-    glScissor(0, 0, _w, _h);
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glDisable(GL_FRAMEBUFFER_SRGB);
-
-#ifdef _DEBUG
-    if (GLEW_ARB_debug_output)
-    {
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-
-        glDebugMessageCallbackARB(&DebugMessageCallback, NULL);
-        //glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
-        //glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
-
-    }
-#endif
-    if (GLEW_ARB_explicit_uniform_location)
-    {
-        videoConf.explicitUnifromLocationEXT = true;
-    }
-
-    SDL_GL_GetAttribute(SDL_GL_RED_SIZE,    &videoConf.redBits);
-    SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE,  &videoConf.greenBits);
-    SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE,   &videoConf.blueBits);
-    SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE,  &videoConf.depthBits);
-    SDL_GL_GetAttribute(SDL_GL_STENCIL_SIZE, &videoConf.stencilBits);
-
-
-    videoConf.width = _w;
-    videoConf.height = _h;
-
-	return true;
+    return GPU::setup(window, "3d-demo");
 }
 
 static void V_Shutdown()
 {
-    if (videoConf.hGl)
-    {
-        SDL_GL_DeleteContext(videoConf.hGl);
-    }
-    if (videoConf.hWindow)
-    {
-        SDL_DestroyWindow(videoConf.hWindow);
-    }
+    GPU::close();
 }
 
 void App_EventLoop()
@@ -231,9 +99,7 @@ void App_EventLoop()
             ticks = 0;
         }
 
-
-        SDL_GL_SwapWindow(videoConf.hWindow);
-
+        GPU::flipSwapChain();
     }
 }
 

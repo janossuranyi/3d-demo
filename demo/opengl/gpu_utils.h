@@ -14,6 +14,7 @@ extern GLenum GL_castImageAccess(Access p);
 extern GLenum GL_castImageFormat(ImageFormat p);
 extern GLenum GL_castDrawMode(eDrawMode p);
 extern GLbitfield GL_castBufferAccessFlags(unsigned int p);
+extern GLenum GL_CastBufferType(BufferTarget type);
 
 extern const char* GetShaderStageTitle(ShaderType type);
 
