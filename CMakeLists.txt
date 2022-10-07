@@ -20,12 +20,16 @@ file(GLOB DEMO_H demo/*.h)
 file(GLOB DEMO_C demo/*.cpp)
 file(GLOB DEMO_GR_H demo/opengl/*.h)
 file(GLOB DEMO_GR_C demo/opengl/*.cpp)
+file(GLOB DEMO_RES_H demo/resources/*.h)
+file(GLOB DEMO_RES_C demo/resources/*.cpp)
 
 set(DEMO_FILES
   ${DEMO_H}
   ${DEMO_C}
   ${DEMO_GR_H}
   ${DEMO_GR_C}
+  ${DEMO_RES_H}
+  ${DEMO_RES_C}
 )
 
 add_library(glew STATIC
@@ -98,5 +102,11 @@ set(DEMO_GR_FILES
   ${DEMO_GR_C}
 )
 
+set(DEMO_RES_FILES
+  ${DEMO_RES_H}
+  ${DEMO_RES_C}
+)
+
 source_group("Shaders" FILES ${SHADERS} )
 source_group("OpenGL" FILES ${DEMO_GR_FILES} )
+source_group("resources" FILES ${DEMO_RES_FILES} )

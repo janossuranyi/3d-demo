@@ -3,7 +3,8 @@
 #include "stb_image.h"
 
 #include "logger.h"
-#include "filesystem.h"
+#include "resources/filesystem.h"
+#include "resources/resource_manager.h"
 #include "gpu.h"
 #include "gpu_utils.h"
 #include "gpu_texture.h"
@@ -190,7 +191,7 @@ bool GpuTexture2D::create(int w, int h, int level, InternalFormat internalFormat
 
 bool GpuTexture2D::createFromImage(const std::string& fromFile, bool srgb, bool autoMipmap, bool compress)
 {
-    auto buffer = g_fileSystem.read_binary_file(fromFile);
+    auto buffer = FileSystem::read_binary_file(fromFile);
 
     return createFromMemory(buffer.data(), buffer.size(), srgb, autoMipmap, compress);
 }
@@ -322,7 +323,7 @@ bool GpuTextureCubeMap::createFromImage(const std::vector<std::string>& fromFile
 
     for (uint i = 0; i < fromFile.size(); ++i)
     {
-        if (!cubemapHelper(fromFile[i], i, srgb, autoMipmap, compress)) {
+        if (!cubemapHelper(fromFile[i], i, srgb, compress)) {
             GPU::resetTextureCube();
             GPU::deleteTexture(*this);
             mTexture = INVALID_TEXTURE;
@@ -331,15 +332,18 @@ bool GpuTextureCubeMap::createFromImage(const std::vector<std::string>& fromFile
         }
     }
 
+    if (autoMipmap) GPU::generateMipmap(*this);
 
     return true;
 }
 
-bool GpuTextureCubeMap::cubemapHelper(const std::string& fileName, uint index, bool srgb, bool autoMipmap, bool compress)
+bool GpuTextureCubeMap::cubemapHelper(const std::string& fileName, uint index, bool srgb, bool compress)
 {
     int x = 0, y = 0, n = 0;
 
-    bool ok = stbi_info(fileName.c_str(), &x, &y, &n);
+    const std::string fn = ResourceManager::get_resource(fileName);
+
+    bool ok = stbi_info(fn.c_str(), &x, &y, &n);
 
     if (!ok) return false;
 
@@ -349,16 +353,12 @@ bool GpuTextureCubeMap::cubemapHelper(const std::string& fileName, uint index, b
     getTextureFormats(n, srgb, compress, internalFormat, format);
 
     stbi_set_flip_vertically_on_load(false);
-    const uchar* img = stbi_load(fileName.c_str(), &x, &y, &n, 0);
+    const uchar* img = stbi_load(fn.c_str(), &x, &y, &n, 0);
 
     if (img == nullptr) return false;
 
     GPU::createTextureCubeface(*this, x, y, 0, index, internalFormat, format, ComponentType::UNSIGNED_BYTE, img);
     stbi_image_free((void*)img);
-
-    if (autoMipmap) {
-        GPU::generateMipmapCubeface(*this, index);
-    }
 
     return true;
 }

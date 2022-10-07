@@ -7,26 +7,23 @@
 #include "logger.h"
 
 
-FileSystem g_fileSystem;
+//FileSystem g_fileSystem;
 
 namespace fs = std::filesystem;
 
-FileSystem::FileSystem()
-{
-	m_working_dir = fs::current_path();
-}
+std::filesystem::path FileSystem::m_working_dir{ fs::current_path() };
 
 void FileSystem::set_working_dir(const std::string& p0)
 {
 	m_working_dir = fs::path{ p0 }.make_preferred();
 }
 
-std::string FileSystem::working_dir() const
+std::string FileSystem::working_dir()
 {
 	return m_working_dir.generic_string();
 }
 
-std::string FileSystem::resolve(const std::string& aPath) const
+std::string FileSystem::resolve(const std::string& aPath)
 {
 	const fs::path p = m_working_dir / aPath;
 	return p.string();
@@ -75,7 +72,7 @@ std::vector<uint8_t> FileSystem::read_binary_file(const std::string& filename)
 	return result;
 }
 
-std::vector<std::string> FileSystem::get_directory_entries(const std::string& dirname, const char* filter)
+std::vector<std::string> FileSystem::get_directory_entries(const std::string& dirname, bool recursive, const char* filter)
 {
 	std::vector<std::string> result;
 	const fs::path path{ dirname };
@@ -85,6 +82,11 @@ std::vector<std::string> FileSystem::get_directory_entries(const std::string& di
 		{
 			if (e.is_regular_file()) {
 				result.push_back(e.path().generic_string());
+			}
+			else if (e.is_directory() && recursive)
+			{
+				auto a = get_directory_entries(e.path().generic_string(), recursive);
+				if (!a.empty()) result.insert(result.end(), a.begin(), a.end());
 			}
 		}
 	}
@@ -97,6 +99,11 @@ std::vector<std::string> FileSystem::get_directory_entries(const std::string& di
 			{
 				if (e.is_regular_file() && std::regex_match(e.path().generic_string(), fr)) {
 					result.push_back(e.path().generic_string());
+				}
+				else if (e.is_directory() && recursive)
+				{
+					auto a = get_directory_entries(e.path().generic_string(), recursive, filter);
+					if (!a.empty()) result.insert(result.end(), a.begin(), a.end());
 				}
 			}
 		}

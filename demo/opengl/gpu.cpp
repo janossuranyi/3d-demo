@@ -245,10 +245,10 @@ void GPU::generateMipmap(const GpuTexture& atex)
     GL_CHECK(glGenerateMipmap(atex.getApiTarget()));
 }
 
-void GPU::generateMipmapCubeface(const GpuTexture& atex, int face)
+/*void GPU::generateMipmapCubeface(const GpuTexture& atex, int face)
 {
     GL_CHECK(glGenerateMipmap(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face));
-}
+}*/
 
 void GPU::resetTexture1D()
 {

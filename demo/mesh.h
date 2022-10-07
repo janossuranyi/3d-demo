@@ -4,7 +4,7 @@
 #include <vector>
 #include <cinttypes>
 #include <tiny_gltf.h>
-#include "filesystem.h"
+#include "resources/filesystem.h"
 #include "logger.h"
 #include "types.h"
 #include "material.h"

@@ -113,6 +113,6 @@ public:
 	TextureShape getTarget() const override { return TextureShape::CUBE_MAP; }
 protected:
 	inline GLenum getApiTarget() const override { return GL_TEXTURE_CUBE_MAP; };
-	bool cubemapHelper(const std::string& fileName, uint index, bool srgb, bool autoMipmap, bool compress);
+	bool cubemapHelper(const std::string& fileName, uint index, bool srgb, bool compress);
 
 };

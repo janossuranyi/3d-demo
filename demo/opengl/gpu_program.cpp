@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <string>
 #include "demo.h"
-#include "filesystem.h"
+#include "resources/filesystem.h"
 #include "logger.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
@@ -47,8 +47,8 @@ bool GpuProgram::bindUniformBlock(const std::string& name, int bindingIndex)
 bool GpuProgram::loadShader(const std::string& vertexShader, const std::string& fragmentShader)
 {
 	std::string vs, fs;
-	if (!g_fileSystem.read_text_file(vertexShader, vs))		return false;
-	if (!g_fileSystem.read_text_file(fragmentShader, fs))	return false;
+	if (!FileSystem::read_text_file(vertexShader, vs))		return false;
+	if (!FileSystem::read_text_file(fragmentShader, fs))	return false;
 
 	std::vector<const char*> vs_c = { vs.c_str() };
 	std::vector<const char*> fs_c = { fs.c_str() };
@@ -59,7 +59,7 @@ bool GpuProgram::loadShader(const std::string& vertexShader, const std::string& 
 bool GpuProgram::loadComputeShader(const std::string& shader)
 {
 	std::string cs;
-	if (!g_fileSystem.read_text_file(shader, cs))		return false;
+	if (!FileSystem::read_text_file(shader, cs))		return false;
 
 	std::vector<const char*> cs_c = { cs.c_str() };
 	return createComputeProgramFromShaderSource(cs_c);

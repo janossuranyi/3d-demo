@@ -15,6 +15,7 @@ public:
 	static bool valid();
 	static void flipSwapChain();
 	static void bind(const GpuBuffer& abuf);
+	/* Texture specific methods */
 	static void bind(const GpuTexture& atex);
 	static void bind(const GpuTexture& atex, unsigned int aunit);
 	static void activeTexture(unsigned int aunit);
@@ -22,7 +23,7 @@ public:
 	static void createTexture2D(GpuTexture2D& atex, int w, int h, int level, InternalFormat internalFormat, InputFormat format, ComponentType type, const void* data);
 	static void createTextureCubeface(GpuTexture& atex, int w, int h, int level, int face, InternalFormat internalFormat, InputFormat format, ComponentType type, const void* data);
 	static void generateMipmap(const GpuTexture& atex);
-	static void generateMipmapCubeface(const GpuTexture& atex, int face);
+	//static void generateMipmapCubeface(const GpuTexture& atex, int face);
 	static void resetTexture1D();
 	static void resetTexture2D();
 	static void resetTextureCube();

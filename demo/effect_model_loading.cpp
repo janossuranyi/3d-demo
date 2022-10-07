@@ -5,7 +5,7 @@
 #include "gpu_program.h"
 #include "gpu_types.h"
 #include "pipeline.h"
-#include "filesystem.h"
+#include "resources/filesystem.h"
 #include "demo.h"
 #include "unit_rect.h"
 
@@ -15,7 +15,7 @@ bool LoadModelEffect::Init()
 {
     world.init();
 
-    if (!world.loadWorld(g_fileSystem.resolve(worldFile)))
+    if (!world.loadWorld(FileSystem::resolve(worldFile)))
     {
         Warning("World %s cannot load", worldFile.c_str());
         return false;
@@ -34,15 +34,15 @@ bool LoadModelEffect::Init()
     posZ = 3.0f;
 
     if (!shader.loadShader(
-        g_fileSystem.resolve("assets/shaders/model_test.vs.glsl"),
-        g_fileSystem.resolve("assets/shaders/model_test_gloss.fs.glsl")))
+        FileSystem::resolve("assets/shaders/model_test.vs.glsl"),
+        FileSystem::resolve("assets/shaders/model_test_gloss.fs.glsl")))
     {
         return false;
     }
 
     if (!fxaa.loadShader(
-        g_fileSystem.resolve("assets/shaders/fxaa.vs.glsl"),
-        g_fileSystem.resolve("assets/shaders/fxaa3.fs.glsl")))
+        FileSystem::resolve("assets/shaders/fxaa.vs.glsl"),
+        FileSystem::resolve("assets/shaders/fxaa3.fs.glsl")))
     {
         return false;
     }

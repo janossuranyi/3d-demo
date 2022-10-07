@@ -1,5 +1,5 @@
 #include "effect_compute_test.h"
-#include "filesystem.h"
+#include "resources/filesystem.h"
 #include "unit_rect.h"
 #include "gpu.h"
 #include "gpu_utils.h"
@@ -26,7 +26,7 @@ bool ComputeTestEffect::Init()
 
     layout.bind();
 
-    if (!prg_compute.loadComputeShader(g_fileSystem.resolve("assets/shaders/test_compute.cs.glsl")))
+    if (!prg_compute.loadComputeShader(FileSystem::resolve("assets/shaders/test_compute.cs.glsl")))
     {
         return false;
     }
@@ -54,8 +54,8 @@ bool ComputeTestEffect::Init()
     cb_vars->angle = 0.0f;
 
     if (!prg_view.loadShader(
-        g_fileSystem.resolve("assets/shaders/test_compute.vs.glsl"),
-        g_fileSystem.resolve("assets/shaders/test_compute.fs.glsl")))
+        FileSystem::resolve("assets/shaders/test_compute.vs.glsl"),
+        FileSystem::resolve("assets/shaders/test_compute.fs.glsl")))
     {
         return false;
     }

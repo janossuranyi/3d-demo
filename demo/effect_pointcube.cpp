@@ -10,7 +10,8 @@
 #include "effect_pointcube.h"
 #include "demo.h"
 #include "logger.h"
-#include "filesystem.h"
+#include "resources/filesystem.h"
+#include "resources/resource_manager.h"
 #include "gpu_buffer.h"
 #include "stb_image.h"
 #include "gpu.h"
@@ -54,17 +55,17 @@ bool PointCubeEffect::Init()
 	// skybox cube map
 
 	const std::vector<std::string> textures_faces = {
-		g_fileSystem.resolve("assets/textures/skybox/right.jpg"),
-		g_fileSystem.resolve("assets/textures/skybox/left.jpg"),
-		g_fileSystem.resolve("assets/textures/skybox/top.jpg"),
-		g_fileSystem.resolve("assets/textures/skybox/bottom.jpg"),
-		g_fileSystem.resolve("assets/textures/skybox/front.jpg"),
-		g_fileSystem.resolve("assets/textures/skybox/back.jpg"),
+		"right.jpg",
+		"left.jpg",
+		"top.jpg",
+		"bottom.jpg",
+		"front.jpg",
+		"back.jpg"
 	};
 
 	assert(textures_faces.size() == 6);
 
-	if (!skyTex_.createFromImage(textures_faces, true, false, false))
+	if (!skyTex_.createFromImage(textures_faces, true, true, false))
 	{
 		Error("load cubemap error");
 		return false;
@@ -131,7 +132,7 @@ bool PointCubeEffect::Init()
 	vbo_skybox.reset(new GpuBuffer(BufferTarget::VERTEX));
 	vbo_skybox->create(sizeof(UNIT_BOX_POSITIONS), BufferUsage::STATIC, 0, UNIT_BOX_POSITIONS);
 
-	if (!prgPoints.loadShader(g_fileSystem.resolve("assets/shaders/draw_point.vs.glsl"), g_fileSystem.resolve("assets/shaders/draw_point.fs.glsl")))
+	if (!prgPoints.loadShader(FileSystem::resolve("assets/shaders/draw_point.vs.glsl"), FileSystem::resolve("assets/shaders/draw_point.fs.glsl")))
 	{
 		Error("Cannot load shader 'draw_point'");
 		return false;
@@ -139,7 +140,7 @@ bool PointCubeEffect::Init()
 
 	prgPoints.mapLocationToIndex("m_WVP", 0);
 
-	if (!prgPP.loadShader(g_fileSystem.resolve("assets/shaders/kernel.vs.glsl"), g_fileSystem.resolve("assets/shaders/kernel.fs.glsl")))
+	if (!prgPP.loadShader(FileSystem::resolve("assets/shaders/kernel.vs.glsl"), FileSystem::resolve("assets/shaders/kernel.fs.glsl")))
 	{
 		Error("Cannot load shader 'kernel'");
 		return false;
@@ -155,7 +156,7 @@ bool PointCubeEffect::Init()
 	prgPP.set(1, 9, kernels[KERNEL_BLUR]);
 	GL_CHECK(glUseProgram(0));
 
-	if (!prgSkybox.loadShader(g_fileSystem.resolve("assets/shaders/skybox.vs.glsl"), g_fileSystem.resolve("assets/shaders/skybox.fs.glsl")))
+	if (!prgSkybox.loadShader(FileSystem::resolve("assets/shaders/skybox.vs.glsl"), FileSystem::resolve("assets/shaders/skybox.fs.glsl")))
 	{
 		Error("Cannot load shader 'skybox'");
 		return false;
@@ -181,7 +182,7 @@ bool PointCubeEffect::Init()
 
 	GL_CHECK(glUseProgram(0));
 
-	if (!prgTextureRect.loadShader(g_fileSystem.resolve("assets/shaders/view_depthbuf.vs.glsl"), g_fileSystem.resolve("assets/shaders/view_depthbuf.fs.glsl")))
+	if (!prgTextureRect.loadShader(FileSystem::resolve("assets/shaders/view_depthbuf.vs.glsl"), FileSystem::resolve("assets/shaders/view_depthbuf.fs.glsl")))
 	{
 		Error("Cannot load shader 'texture_rect'");
 		return false;
@@ -249,9 +250,9 @@ bool PointCubeEffect::Init()
 
 bool PointCubeEffect::Update(float time)
 {
-	rotX += time * 0.015f;
+	//rotX += time * 0.015f;
 	rotY += time * 0.01f;
-	//rotX = 15.0f;
+	rotX = 15.0f;
 	rotX = std::fmodf(rotX, 360.0f);
 	rotY = std::fmodf(rotY, 360.0f);
 

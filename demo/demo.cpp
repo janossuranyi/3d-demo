@@ -5,7 +5,8 @@
 #include <memory>
 #include "demo.h"
 #include "logger.h"
-#include "filesystem.h"
+#include "resources/filesystem.h"
+#include "resources/resource_manager.h"
 #include "effect_pointcube.h"
 #include "effect_compute_test.h"
 #include "effect_model_loading.h"
@@ -92,9 +93,9 @@ void App_EventLoop()
 
         Uint32 tick2 = SDL_GetTicks();
         ticks += tick2 - tick1;
-        if (++sampleCount > 200)
+        if (++sampleCount > 2000)
         {
-            SDL_Log("ftime: %f", (ticks / 200.0f));
+            SDL_Log("ftime: %f", (ticks / 2000.0f));
             sampleCount = 0;
             ticks = 0;
         }
@@ -109,7 +110,9 @@ void App_EventLoop()
 
 int main(int argc, char** argv)
 {
-    g_fileSystem.set_working_dir(BASE_DIR);
+    FileSystem::set_working_dir(BASE_DIR);
+    ResourceManager::add_resource_path("d:/src/3d-demo/assets");
+
 
     Info("V_Init Start");
 
