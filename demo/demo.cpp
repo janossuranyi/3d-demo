@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <GL/glew.h>
 #include <string>
+#include <filesystem>
 #include <map>
 #include <memory>
 #include "demo.h"
@@ -22,7 +23,6 @@
 bool V_Init(int w, int h, int multisample, bool fullscreen);
 void V_Shutdown();
 
-const char* BASE_DIR = "d:/src/3d-demo/";
 
 static bool V_Init(int w, int h, int multisample, bool fullscreen)
 {
@@ -108,10 +108,14 @@ void App_EventLoop()
 #include "scene/gltf_loader.h"
 #include "scene/scene.h"
 
+namespace fs = std::filesystem;
+
 int main(int argc, char** argv)
 {
-    FileSystem::set_working_dir(BASE_DIR);
-    ResourceManager::add_resource_path("d:/src/3d-demo/assets");
+
+    FileSystem::set_working_dir(fs::absolute(fs::path("../../")).string().c_str());
+
+    ResourceManager::add_resource_path("../../assets");
 
 
     Info("V_Init Start");

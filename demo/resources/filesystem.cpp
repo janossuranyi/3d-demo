@@ -75,10 +75,21 @@ std::vector<uint8_t> FileSystem::read_binary_file(const std::string& filename)
 std::vector<std::string> FileSystem::get_directory_entries(const std::string& dirname, bool recursive, const char* filter)
 {
 	std::vector<std::string> result;
-	const fs::path path{ dirname };
-	if (!filter)
+	const fs::path path = fs::absolute(fs::path(dirname));
+
+	std::filesystem::directory_iterator start;
+	try {
+		start = fs::directory_iterator{ path };
+	} 
+	catch (std::exception e)
 	{
-		for (auto const& e : fs::directory_iterator{ path })
+		Error("%s", e.what());
+		return result;
+	}
+
+	if (!filter)
+	{		
+		for (auto const& e : start)
 		{
 			if (e.is_regular_file()) {
 				result.push_back(e.path().generic_string());
