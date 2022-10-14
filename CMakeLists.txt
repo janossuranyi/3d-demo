@@ -18,18 +18,53 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 file(GLOB DEMO_H demo/*.h)
 file(GLOB DEMO_C demo/*.cpp)
-file(GLOB DEMO_GR_H demo/opengl/*.h)
-file(GLOB DEMO_GR_C demo/opengl/*.cpp)
-file(GLOB DEMO_RES_H demo/resources/*.h)
-file(GLOB DEMO_RES_C demo/resources/*.cpp)
 
+file(GLOB ENGINE_GFX_H engine/gfx/*.h)
+file(GLOB ENGINE_GFX_C engine/gfx/*.cpp)
+file(GLOB ENGINE_INPUT_H engine/input/*.h)
+file(GLOB ENGINE_INPUT_C engine/input/*.cpp)
+file(GLOB ENGINE_RSRC_H engine/resource/*.h)
+file(GLOB ENGINE_RSRC_C engine/resource/*.cpp)
+file(GLOB ENGINE_SCENE_H engine/scene/*.h)
+file(GLOB ENGINE_SCENE_C engine/scene/*.cpp)
+
+set(ENGINE_GFX
+  ${ENGINE_GFX_H}
+  ${ENGINE_GFX_C}
+)
+
+set(ENGINE_INPUT
+  ${ENGINE_INPUT_H}
+  ${ENGINE_INPUT_C}
+)
+
+set(ENGINE_RSRC
+  ${ENGINE_RSRC_H}
+  ${ENGINE_RSRC_C}
+)
+
+set(ENGINE_SCENE
+  ${ENGINE_SCENE_H}
+  ${ENGINE_SCENE_C}
+)
+
+set(ENGINE_FILES
+  ${ENGINE_GFX_H}
+  ${ENGINE_GFX_C}
+  ${ENGINE_INPUT_H}
+  ${ENGINE_INPUT_C}
+  ${ENGINE_RSRC_H}
+  ${ENGINE_RSRC_C}
+  ${ENGINE_SCENE_H}
+  ${ENGINE_SCENE_C}
+)
 set(DEMO_FILES
   ${DEMO_H}
   ${DEMO_C}
-  ${DEMO_GR_H}
-  ${DEMO_GR_C}
-  ${DEMO_RES_H}
-  ${DEMO_RES_C}
+)
+
+add_library(engine STATIC
+  ${DEMO_FILES}
 )
 
 add_library(glew STATIC
@@ -47,10 +82,12 @@ add_library(tinygltf STATIC
   external/tinygltf/tiny_gltf.cpp
 )
 
+
 include_directories(
   ./
   demo/
   demo/opengl/
+  engine/
   external/glew-2.1.0/include/
   external/glm/
   external/stb/
@@ -74,6 +111,7 @@ target_link_libraries(demo
   glew
   stb_image
   tinygltf
+  engine
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}
 )
@@ -97,16 +135,8 @@ if(WIN32)
      $<TARGET_FILE_DIR:demo>)
 endif()
 
-set(DEMO_GR_FILES
-  ${DEMO_GR_H}
-  ${DEMO_GR_C}
-)
-
-set(DEMO_RES_FILES
-  ${DEMO_RES_H}
-  ${DEMO_RES_C}
-)
-
 source_group("Shaders" FILES ${SHADERS} )
-source_group("OpenGL" FILES ${DEMO_GR_FILES} )
-source_group("resources" FILES ${DEMO_RES_FILES} )
+source_group("engine\\gfx" FILES ${ENGINE_GFX} )
+source_group("engine\\input" FILES ${ENGINE_INPUT} )
+source_group("engine\\scene" FILES ${ENGINE_SCENE} )
+source_group("engine\\resources" FILES ${ENGINE_RSRC} )
