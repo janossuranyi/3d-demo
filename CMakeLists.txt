@@ -13,7 +13,7 @@ add_definitions(
 )
 
 # specify the C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True) 
 
 file(GLOB DEMO_H demo/*.h)
@@ -27,6 +27,8 @@ file(GLOB ENGINE_RSRC_H engine/resource/*.h)
 file(GLOB ENGINE_RSRC_C engine/resource/*.cpp)
 file(GLOB ENGINE_SCENE_H engine/scene/*.h)
 file(GLOB ENGINE_SCENE_C engine/scene/*.cpp)
+file(GLOB ENGINE_MATH_H engine/math/*.h)
+file(GLOB ENGINE_MATH_C engine/math/*.cpp)
 
 set(ENGINE_GFX
   ${ENGINE_GFX_H}
@@ -48,6 +50,11 @@ set(ENGINE_SCENE
   ${ENGINE_SCENE_C}
 )
 
+set(ENGINE_MATH
+  ${ENGINE_MATH_H}
+  ${ENGINE_MATH_C}
+)
+
 set(ENGINE_FILES
   ${ENGINE_GFX_H}
   ${ENGINE_GFX_C}
@@ -57,14 +64,17 @@ set(ENGINE_FILES
   ${ENGINE_RSRC_C}
   ${ENGINE_SCENE_H}
   ${ENGINE_SCENE_C}
+  ${ENGINE_MATH_H}
+  ${ENGINE_MATH_C}
 )
+
 set(DEMO_FILES
   ${DEMO_H}
   ${DEMO_C}
 )
 
 add_library(engine STATIC
-  ${DEMO_FILES}
+  ${ENGINE_FILES}
 )
 
 add_library(glew STATIC
@@ -140,3 +150,4 @@ source_group("engine\\gfx" FILES ${ENGINE_GFX} )
 source_group("engine\\input" FILES ${ENGINE_INPUT} )
 source_group("engine\\scene" FILES ${ENGINE_SCENE} )
 source_group("engine\\resources" FILES ${ENGINE_RSRC} )
+source_group("engine\\math" FILES ${ENGINE_MATH} )

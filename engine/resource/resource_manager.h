@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-#include "resources/filesystem.h"
+#include "filesystem.h"
 
 class ResourceManager
 {
@@ -17,6 +17,6 @@ public:
 	static std::string get_resource(const std::string& name);
 
 private:
-	static std::unordered_map<std::string, std::string> _resource_map;
-	static std::set<std::string> _sources;
+	static std::unordered_map<std::string, std::string> resource_map_;
+	static std::set<std::string> sources_;
 };

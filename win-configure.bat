@@ -1,4 +1,4 @@
-set SDL2DIR=../../lib/SDL2-2.0.22
+set SDL2DIR=lib/SDL2-2.0.22
 
 md build
 cd build
