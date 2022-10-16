@@ -277,6 +277,20 @@ namespace gfx {
 
     using UniformData = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4>;
 
+    /*
+    encoded_state
+    666655555555554444444444333333333322222222221111111111
+    3210987654321098765432109876543210987654321098765432109876543210
+                                                            | |||||||___ scissor (1)
+                                                            | |||||_____ depth test (1)
+                                                            | ||||______ cull face (1)
+                                                            | |||_______ 0=CCW,1:CW (1)
+                                                            | ||________ 0=Fill,1=Wireframe (1)
+                                                            \ /
+                                                             |__________ BlendEq Color (3)
+    
+    
+    */  
     struct RenderItem {
         struct TextureBinding {
             TextureHandle handle;

@@ -8,4 +8,8 @@ namespace gfx {
 		frame_buffer = FrameBufferHandle::invalid;
 	}
 
+	void RenderItem::encode() {
+		
+	}
+
 }
