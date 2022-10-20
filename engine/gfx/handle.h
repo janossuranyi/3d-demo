@@ -72,10 +72,22 @@ namespace gfx {
         ~HandleGenerator() = default;
 
         Handle next() {
-            return next_++;
+
+            if (free_.empty())
+                return next_++;
+
+            Handle r = free_.back();
+            free_.pop_back();
+
+            return r;
+        }
+
+        void release(Handle h) {
+            free_.push_back(h);
         }
     private:
         Handle next_;
+        std::vector<Handle> free_;
     };
 
 }
