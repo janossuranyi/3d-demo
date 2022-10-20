@@ -16,7 +16,7 @@ offset: offset from the first attrib in bytes
 
 struct VertexAttribute
 {
-	char* name;
+	const char* name;
 	ComponentType type;
 	int size;
 	int count;
@@ -58,7 +58,7 @@ struct VertexLayout
 	void bind() const;
 
 	GLuint m_vao{0};	// vertex array object
-	int m_numAttribs;
+	int m_numAttribs{ 0 };
 
 	GpuBuffer* m_lastBuffer{};
 };

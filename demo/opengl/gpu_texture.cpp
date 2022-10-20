@@ -3,8 +3,8 @@
 #include "stb_image.h"
 
 #include "logger.h"
-#include "resources/filesystem.h"
-#include "resources/resource_manager.h"
+#include "resource/filesystem.h"
+#include "resource/resource_manager.h"
 #include "gpu.h"
 #include "gpu_utils.h"
 #include "gpu_texture.h"

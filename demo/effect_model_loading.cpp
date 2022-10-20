@@ -5,7 +5,7 @@
 #include "gpu_program.h"
 #include "gpu_types.h"
 #include "pipeline.h"
-#include "resources/filesystem.h"
+#include "resource/filesystem.h"
 #include "demo.h"
 #include "unit_rect.h"
 

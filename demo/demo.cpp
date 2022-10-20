@@ -6,8 +6,9 @@
 #include <memory>
 #include "demo.h"
 #include "logger.h"
-#include "resources/filesystem.h"
-#include "resources/resource_manager.h"
+#include "resource/resource_manager.h"
+#include "gfx/gfx.h"
+
 #include "effect_pointcube.h"
 #include "effect_compute_test.h"
 #include "effect_model_loading.h"
@@ -104,19 +105,14 @@ void App_EventLoop()
     }
 }
 
-
-#include "scene/gltf_loader.h"
-#include "scene/scene.h"
-
 namespace fs = std::filesystem;
 
 int main(int argc, char** argv)
 {
 
-    FileSystem::set_working_dir(fs::absolute(fs::path("../../")).string().c_str());
+    FileSystem::set_working_dir(fs::absolute(fs::path("../")).string().c_str());
 
-    ResourceManager::add_resource_path("../../assets");
-
+    ResourceManager::add_resource_path("../assets");
 
     Info("V_Init Start");
 

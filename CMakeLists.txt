@@ -13,11 +13,13 @@ add_definitions(
 )
 
 # specify the C++ standard
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True) 
 
 file(GLOB DEMO_H demo/*.h)
 file(GLOB DEMO_C demo/*.cpp)
+file(GLOB DEMO_OGL_H demo/opengl/*.h)
+file(GLOB DEMO_OGL_C demo/opengl/*.cpp)
 
 file(GLOB ENGINE_GFX_H engine/gfx/*.h)
 file(GLOB ENGINE_GFX_C engine/gfx/*.cpp)
@@ -71,6 +73,8 @@ set(ENGINE_FILES
 set(DEMO_FILES
   ${DEMO_H}
   ${DEMO_C}
+  ${DEMO_OGL_H}
+  ${DEMO_OGL_C}
 )
 
 add_library(engine STATIC
@@ -149,5 +153,5 @@ source_group("Shaders" FILES ${SHADERS} )
 source_group("engine\\gfx" FILES ${ENGINE_GFX} )
 source_group("engine\\input" FILES ${ENGINE_INPUT} )
 source_group("engine\\scene" FILES ${ENGINE_SCENE} )
-source_group("engine\\resources" FILES ${ENGINE_RSRC} )
+source_group("engine\\resource" FILES ${ENGINE_RSRC} )
 source_group("engine\\math" FILES ${ENGINE_MATH} )

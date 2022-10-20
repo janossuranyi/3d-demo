@@ -16,40 +16,40 @@
 
 namespace gfx {
 
-	struct VertexBufferTag {};
-	struct IndexBufferTag {};
-	struct DynVertexBufferTag {};
-	struct DynIndexBufferTag {};
-	struct ShaderTag {};
-	struct ProgramTag {};
-	struct TextureTag {};
-	struct FrameBufferTag {};
+    struct VertexBufferTag {};
+    struct IndexBufferTag {};
+    struct DynVertexBufferTag {};
+    struct DynIndexBufferTag {};
+    struct ShaderTag {};
+    struct ProgramTag {};
+    struct TextureTag {};
+    struct FrameBufferTag {};
 
-	using VertexBufferHandle		= Handle<VertexBufferTag, -1>;
-	using IndexBufferHandle			= Handle<IndexBufferTag, -1>;
-	using DynVertexBufferHandle		= Handle<DynVertexBufferTag, -1>;
-	using DynIndexBufferHandle		= Handle<DynIndexBufferTag, -1>;
-	using ShaderHandle				= Handle<ShaderTag, -1>;
-	using ProgramHandle				= Handle<ProgramTag, -1>;
-	using TextureHandle				= Handle<TextureTag, -1>;
-	using FrameBufferHandle			= Handle<FrameBufferTag, -1>;
+    using VertexBufferHandle = Handle<VertexBufferTag, -1>;
+    using IndexBufferHandle = Handle<IndexBufferTag, -1>;
+    using DynVertexBufferHandle = Handle<DynVertexBufferTag, -1>;
+    using DynIndexBufferHandle = Handle<DynIndexBufferTag, -1>;
+    using ShaderHandle = Handle<ShaderTag, -1>;
+    using ProgramHandle = Handle<ProgramTag, -1>;
+    using TextureHandle = Handle<TextureTag, -1>;
+    using FrameBufferHandle = Handle<FrameBufferTag, -1>;
 
-	// Renderer type
-	enum class RendererType { Null, OpenGL };
+    // Renderer type
+    enum class RendererType { Null, OpenGL };
 
-	// Shader stage
-	enum class ShaderStage { Vertex, Geometry, Fragment, Compute };
+    // Shader stage
+    enum class ShaderStage { Vertex, Geometry, Fragment, Compute };
 
-	// Buffer usage
-	enum class BufferUsage {
-		Static,		// never modified
-		Dynamic,	// modified per frame
-		Stream		// modified multiple times per frame
-	};
+    // Buffer usage
+    enum class BufferUsage {
+        Static,		// never modified
+        Dynamic,	// modified per frame
+        Stream		// modified multiple times per frame
+    };
 
-	// Index buffer type
-	enum class IndexBufferType { U16, U32 };
-	// Texture format.
+    // Index buffer type
+    enum class IndexBufferType { U16, U32 };
+    // Texture format.
 /*
  * RGBA16S
  * ^   ^ ^
@@ -164,6 +164,7 @@ namespace gfx {
             VertexBufferHandle handle;
             Memory data;
             uint32_t offset;
+            uint32_t size;
         };
 
         struct DeleteVertexBuffer {
@@ -257,8 +258,8 @@ namespace gfx {
         };
     }
 
-    using RenderCommand =
-        std::variant<cmd::CreateVertexBuffer,
+    using RenderCommand = std::variant<
+        cmd::CreateVertexBuffer,
         cmd::CreateIndexBuffer,
         cmd::CreateProgram,
         cmd::CreateFramebuffer,
@@ -278,19 +279,33 @@ namespace gfx {
     using UniformData = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4>;
 
 #define SCISSOR_SHIFT       0
-#define SCISSOR_MASK        (1ULL<<0)
+#define SCISSOR_MASK        (1ULL<<SCISSOR_SHIFT)
 #define CULLFACE_SHIFT      1
-#define CULLFACE_MASK       (1ULL<<1)
+#define CULLFACE_MASK       (1ULL<<CULLFACE_SHIFT)
 #define DEPTHTEST_SHIFT     2
-#define DEPTHTEST_MASK      (1ULL<<2)
+#define DEPTHTEST_MASK      (1ULL<<DEPTHTEST_SHIFT)
 #define FRONT_FACE_SHIFT    3
-#define FRONT_FACE_MASK     (1ULL<<3)
+#define FRONT_FACE_MASK     (1ULL<<FRONT_FACE_SHIFT)
 #define POLYGON_MODE_SHIFT  4
-#define POLYGON_MODE_MASK   (1ULL<<4)
+#define POLYGON_MODE_MASK   (1ULL<<POLYGON_MODE_SHIFT)
 #define BLEND_SHIFT         5
-#define BLEND_MASK          (1ULL<<5)
+#define BLEND_MASK          (1ULL<<BLEND_SHIFT)
 #define BLEND_EQ_SHIFT      6
-#define BLEND_EQ_MASK       (7ULL<<6)
+#define BLEND_EQ_MASK       (7ULL<<BLEND_EQ_SHIFT)
+#define BLEND_EQ_A_SHIFT    9
+#define BLEND_EQ_A_MASK     (7ULL<<BLEND_EQ_A_SHIFT)
+#define BLEND_FUNC_SRC_SHIFT    12
+#define BLEND_FUNC_SRC_MASK     (15ULL<<BLEND_FUNC_SRC_SHIFT)
+#define BLEND_FUNC_SRC_A_SHIFT  16
+#define BLEND_FUNC_SRC_A_MASK   (15ULL<<BLEND_FUNC_SRC_A_SHIFT)
+#define BLEND_FUNC_DST_SHIFT    20
+#define BLEND_FUNC_DST_MASK     (15ULL<<BLEND_FUNC_DST_SHIFT)
+#define BLEND_FUNC_DST_A_SHIFT  24
+#define BLEND_FUNC_DST_A_MASK   (15ULL<<BLEND_FUNC_DST_A_SHIFT)
+#define COLOR_MASK_SHIFT        28
+#define COLOR_MASK_MASK         (1ULL<<COLOR_MASK_SHIFT)
+#define DEPTH_MASK_SHIFT        29
+#define DEPTH_MASK_MASK         (1ULL<<DEPTH_MASK_SHIFT)
 
 
     struct RenderItem {
@@ -327,19 +342,28 @@ namespace gfx {
         bool color_mask = true;
         bool depth_mask = true;
 
-        uint64_t encoded_state;
-        void encode() {}
+        uint64_t encoded_state{ 0 };
+
+        bool operator==(RenderItem& other) {
+            return encoded_state == other.encoded_state;
+        }
+        bool operator!=(RenderItem& other) {
+            return encoded_state != other.encoded_state;
+        }
+
+        void encode_state();
     };
 
     struct View {
         void clear();
         glm::vec4 clear_color{ 0.0f,0.0f,0.0f,1.0f };
-        FrameBufferHandle frame_buffer{FrameBufferHandle::invalid};
+        FrameBufferHandle frame_buffer{ FrameBufferHandle::invalid };
         std::vector<RenderItem> render_items;
     };
 
     class Renderer;
     class Frame {
+    public:
         Frame();
         ~Frame() = default;
 
@@ -406,4 +430,169 @@ namespace gfx {
         bool renderFrame(Frame* frame);
 
     };
+
+#define uint64 uint64_t
+    using StateBits = uint64_t;
+
+    // one/zero is flipped on src/dest so a gl state of 0 is SRC_ONE,DST_ZERO
+    static const uint64 GLS_SRCBLEND_ONE = 0 << 0;
+    static const uint64 GLS_SRCBLEND_ZERO = 1 << 0;
+    static const uint64 GLS_SRCBLEND_DST_COLOR = 2 << 0;
+    static const uint64 GLS_SRCBLEND_ONE_MINUS_DST_COLOR = 3 << 0;
+    static const uint64 GLS_SRCBLEND_SRC_ALPHA = 4 << 0;
+    static const uint64 GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA = 5 << 0;
+    static const uint64 GLS_SRCBLEND_DST_ALPHA = 6 << 0;
+    static const uint64 GLS_SRCBLEND_ONE_MINUS_DST_ALPHA = 7 << 0;
+    static const uint64 GLS_SRCBLEND_BITS = 7 << 0;
+
+    static const uint64 GLS_DSTBLEND_ZERO = 0 << 3;
+    static const uint64 GLS_DSTBLEND_ONE = 1 << 3;
+    static const uint64 GLS_DSTBLEND_SRC_COLOR = 2 << 3;
+    static const uint64 GLS_DSTBLEND_ONE_MINUS_SRC_COLOR = 3 << 3;
+    static const uint64 GLS_DSTBLEND_SRC_ALPHA = 4 << 3;
+    static const uint64 GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA = 5 << 3;
+    static const uint64 GLS_DSTBLEND_DST_ALPHA = 6 << 3;
+    static const uint64 GLS_DSTBLEND_ONE_MINUS_DST_ALPHA = 7 << 3;
+    static const uint64 GLS_DSTBLEND_BITS = 7 << 3;
+
+    //------------------------
+    // these masks are the inverse, meaning when set the glColorMask value will be 0,
+    // preventing that channel from being written
+    //------------------------
+    static const uint64 GLS_DEPTHMASK = 1 << 6;
+    static const uint64 GLS_REDMASK = 1 << 7;
+    static const uint64 GLS_GREENMASK = 1 << 8;
+    static const uint64 GLS_BLUEMASK = 1 << 9;
+    static const uint64 GLS_ALPHAMASK = 1 << 10;
+    static const uint64 GLS_COLORMASK = (GLS_REDMASK | GLS_GREENMASK | GLS_BLUEMASK);
+
+    static const uint64 GLS_POLYMODE_LINE = 1 << 11;
+    static const uint64 GLS_POLYGON_OFFSET = 1 << 12;
+
+    static const uint64 GLS_DEPTHFUNC_LESS = 0 << 13;
+    static const uint64 GLS_DEPTHFUNC_ALWAYS = 1 << 13;
+    static const uint64 GLS_DEPTHFUNC_GREATER = 2 << 13;
+    static const uint64 GLS_DEPTHFUNC_EQUAL = 3 << 13;
+    static const uint64 GLS_DEPTHFUNC_BITS = 3 << 13;
+
+    static const uint64 GLS_CULL_FRONTSIDED = 0 << 15;
+    static const uint64 GLS_CULL_BACKSIDED = 1 << 15;
+    static const uint64 GLS_CULL_TWOSIDED = 2 << 15;
+    static const uint64 GLS_CULL_BITS = 2 << 15;
+    static const uint64 GLS_CULL_MASK = GLS_CULL_FRONTSIDED | GLS_CULL_BACKSIDED | GLS_CULL_TWOSIDED;
+
+    static const uint64 GLS_BLENDOP_ADD = 0 << 18;
+    static const uint64 GLS_BLENDOP_SUB = 1 << 18;
+    static const uint64 GLS_BLENDOP_MIN = 2 << 18;
+    static const uint64 GLS_BLENDOP_MAX = 3 << 18;
+    static const uint64 GLS_BLENDOP_BITS = 3 << 18;
+
+    // stencil bits
+    static const uint64 GLS_STENCIL_FUNC_REF_SHIFT = 20;
+    static const uint64 GLS_STENCIL_FUNC_REF_BITS = 0xFFll << GLS_STENCIL_FUNC_REF_SHIFT;
+
+    static const uint64 GLS_STENCIL_FUNC_MASK_SHIFT = 28;
+    static const uint64 GLS_STENCIL_FUNC_MASK_BITS = 0xFFll << GLS_STENCIL_FUNC_MASK_SHIFT;
+
+#define GLS_STENCIL_MAKE_REF( x ) ( ( (uint64)(x) << GLS_STENCIL_FUNC_REF_SHIFT ) & GLS_STENCIL_FUNC_REF_BITS )
+#define GLS_STENCIL_MAKE_MASK( x ) ( ( (uint64)(x) << GLS_STENCIL_FUNC_MASK_SHIFT ) & GLS_STENCIL_FUNC_MASK_BITS )
+
+    // Next 12 bits act as front+back unless GLS_SEPARATE_STENCIL is set, in which case it acts as front.
+    static const uint64 GLS_STENCIL_FUNC_ALWAYS = 0ull << 36;
+    static const uint64 GLS_STENCIL_FUNC_LESS = 1ull << 36;
+    static const uint64 GLS_STENCIL_FUNC_LEQUAL = 2ull << 36;
+    static const uint64 GLS_STENCIL_FUNC_GREATER = 3ull << 36;
+    static const uint64 GLS_STENCIL_FUNC_GEQUAL = 4ull << 36;
+    static const uint64 GLS_STENCIL_FUNC_EQUAL = 5ull << 36;
+    static const uint64 GLS_STENCIL_FUNC_NOTEQUAL = 6ull << 36;
+    static const uint64 GLS_STENCIL_FUNC_NEVER = 7ull << 36;
+    static const uint64 GLS_STENCIL_FUNC_BITS = 7ull << 36;
+
+    static const uint64 GLS_STENCIL_OP_FAIL_KEEP = 0ull << 39;
+    static const uint64 GLS_STENCIL_OP_FAIL_ZERO = 1ull << 39;
+    static const uint64 GLS_STENCIL_OP_FAIL_REPLACE = 2ull << 39;
+    static const uint64 GLS_STENCIL_OP_FAIL_INCR = 3ull << 39;
+    static const uint64 GLS_STENCIL_OP_FAIL_DECR = 4ull << 39;
+    static const uint64 GLS_STENCIL_OP_FAIL_INVERT = 5ull << 39;
+    static const uint64 GLS_STENCIL_OP_FAIL_INCR_WRAP = 6ull << 39;
+    static const uint64 GLS_STENCIL_OP_FAIL_DECR_WRAP = 7ull << 39;
+    static const uint64 GLS_STENCIL_OP_FAIL_BITS = 7ull << 39;
+
+    static const uint64 GLS_STENCIL_OP_ZFAIL_KEEP = 0ull << 42;
+    static const uint64 GLS_STENCIL_OP_ZFAIL_ZERO = 1ull << 42;
+    static const uint64 GLS_STENCIL_OP_ZFAIL_REPLACE = 2ull << 42;
+    static const uint64 GLS_STENCIL_OP_ZFAIL_INCR = 3ull << 42;
+    static const uint64 GLS_STENCIL_OP_ZFAIL_DECR = 4ull << 42;
+    static const uint64 GLS_STENCIL_OP_ZFAIL_INVERT = 5ull << 42;
+    static const uint64 GLS_STENCIL_OP_ZFAIL_INCR_WRAP = 6ull << 42;
+    static const uint64 GLS_STENCIL_OP_ZFAIL_DECR_WRAP = 7ull << 42;
+    static const uint64 GLS_STENCIL_OP_ZFAIL_BITS = 7ull << 42;
+
+    static const uint64 GLS_STENCIL_OP_PASS_KEEP = 0ull << 45;
+    static const uint64 GLS_STENCIL_OP_PASS_ZERO = 1ull << 45;
+    static const uint64 GLS_STENCIL_OP_PASS_REPLACE = 2ull << 45;
+    static const uint64 GLS_STENCIL_OP_PASS_INCR = 3ull << 45;
+    static const uint64 GLS_STENCIL_OP_PASS_DECR = 4ull << 45;
+    static const uint64 GLS_STENCIL_OP_PASS_INVERT = 5ull << 45;
+    static const uint64 GLS_STENCIL_OP_PASS_INCR_WRAP = 6ull << 45;
+    static const uint64 GLS_STENCIL_OP_PASS_DECR_WRAP = 7ull << 45;
+    static const uint64 GLS_STENCIL_OP_PASS_BITS = 7ull << 45;
+
+    // Next 12 bits act as back and are only active when GLS_SEPARATE_STENCIL is set.
+    static const uint64 GLS_BACK_STENCIL_FUNC_ALWAYS = 0ull << 48;
+    static const uint64 GLS_BACK_STENCIL_FUNC_LESS = 1ull << 48;
+    static const uint64 GLS_BACK_STENCIL_FUNC_LEQUAL = 2ull << 48;
+    static const uint64 GLS_BACK_STENCIL_FUNC_GREATER = 3ull << 48;
+    static const uint64 GLS_BACK_STENCIL_FUNC_GEQUAL = 4ull << 48;
+    static const uint64 GLS_BACK_STENCIL_FUNC_EQUAL = 5ull << 48;
+    static const uint64 GLS_BACK_STENCIL_FUNC_NOTEQUAL = 6ull << 48;
+    static const uint64 GLS_BACK_STENCIL_FUNC_NEVER = 7ull << 48;
+    static const uint64 GLS_BACK_STENCIL_FUNC_BITS = 7ull << 48;
+
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_KEEP = 0ull << 51;
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_ZERO = 1ull << 51;
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_REPLACE = 2ull << 51;
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_INCR = 3ull << 51;
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_DECR = 4ull << 51;
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_INVERT = 5ull << 51;
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_INCR_WRAP = 6ull << 51;
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_DECR_WRAP = 7ull << 51;
+    static const uint64 GLS_BACK_STENCIL_OP_FAIL_BITS = 7ull << 51;
+
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_KEEP = 0ull << 54;
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_ZERO = 1ull << 54;
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_REPLACE = 2ull << 54;
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_INCR = 3ull << 54;
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_DECR = 4ull << 54;
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_INVERT = 5ull << 54;
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_INCR_WRAP = 6ull << 54;
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_DECR_WRAP = 7ull << 54;
+    static const uint64 GLS_BACK_STENCIL_OP_ZFAIL_BITS = 7ull << 54;
+
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_KEEP = 0ull << 57;
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_ZERO = 1ull << 57;
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_REPLACE = 2ull << 57;
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_INCR = 3ull << 57;
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_DECR = 4ull << 57;
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_INVERT = 5ull << 57;
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_INCR_WRAP = 6ull << 57;
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_DECR_WRAP = 7ull << 57;
+    static const uint64 GLS_BACK_STENCIL_OP_PASS_BITS = 7ull << 57;
+
+    static const uint64 GLS_SEPARATE_STENCIL = GLS_BACK_STENCIL_OP_FAIL_BITS | GLS_BACK_STENCIL_OP_ZFAIL_BITS | GLS_BACK_STENCIL_OP_PASS_BITS;
+    static const uint64 GLS_STENCIL_OP_BITS = GLS_STENCIL_OP_FAIL_BITS | GLS_STENCIL_OP_ZFAIL_BITS | GLS_STENCIL_OP_PASS_BITS | GLS_SEPARATE_STENCIL;
+    static const uint64 GLS_STENCIL_FRONT_OPS = GLS_STENCIL_OP_FAIL_BITS | GLS_STENCIL_OP_ZFAIL_BITS | GLS_STENCIL_OP_PASS_BITS;
+    static const uint64 GLS_STENCIL_BACK_OPS = GLS_SEPARATE_STENCIL;
+
+    static const uint64 GLS_DEPTH_TEST_MASK = 1ull << 60;
+    static const uint64 GLS_CLOCKWISE = 1ull << 61;
+    static const uint64 GLS_MIRROR_VIEW = 1ull << 62;
+    static const uint64 GLS_OVERRIDE = 1ull << 63;		// override the render prog state
+
+    static const uint64 GLS_KEEP = GLS_DEPTH_TEST_MASK;
+    static const uint64 GLS_DEFAULT = 0;
+
+#define STENCIL_SHADOW_TEST_VALUE		128
+#define STENCIL_SHADOW_MASK_VALUE		255
+
 }

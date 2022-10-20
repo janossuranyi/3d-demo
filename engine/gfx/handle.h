@@ -33,6 +33,10 @@ namespace gfx {
             return internal_handle_ == other.internal_handle_;
         }
 
+        bool operator==(const Handle<Tag, Invalid>& other) const {
+            return internal_handle_ == other.internal_handle_;
+        }
+
         bool operator==(base_type other) const {
             return internal_handle_ == other;
         }
@@ -63,7 +67,7 @@ namespace gfx {
     template<typename Handle>
     class HandleGenerator {
     public:
-        HandleGenerator : next_(1) {
+        HandleGenerator() : next_{1} {
         }
         ~HandleGenerator() = default;
 
@@ -75,3 +79,14 @@ namespace gfx {
     };
 
 }
+
+namespace std {
+    template <typename Tag, int Invalid> struct hash<gfx::Handle<Tag, Invalid>> {
+        typedef gfx::Handle<Tag, Invalid> argument_type;
+        typedef std::size_t result_type;
+        result_type operator()(const argument_type& k) const {
+            std::hash<typename gfx::Handle<Tag, Invalid>::base_type> base_hash;
+            return base_hash(k.internal());
+        }
+    };
+}  // namespace std

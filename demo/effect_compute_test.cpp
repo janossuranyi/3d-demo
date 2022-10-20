@@ -1,5 +1,5 @@
 #include "effect_compute_test.h"
-#include "resources/filesystem.h"
+#include "resource/filesystem.h"
 #include "unit_rect.h"
 #include "gpu.h"
 #include "gpu_utils.h"
