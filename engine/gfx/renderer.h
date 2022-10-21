@@ -12,9 +12,10 @@
 #include "handle.h"
 #include "resource/memory.h"
 
-#define MAX_TEXTURE_SAMPLERS 8
+#define MAX_TEXTURE_SAMPLERS 15
 
 namespace gfx {
+    using StateBits = uint64_t;
 
     struct VertexBufferTag {};
     struct IndexBufferTag {};
@@ -147,10 +148,12 @@ namespace gfx {
 
     // texture
     enum class TextureWrap { Repeat, ClampToEdge, ClampToBorder, MirroredRepeat };
-    enum class TextureFilter { Nearest, Linear, NearestLinear, LinearNearest };
+    enum class TextureFilter { Nearest, Linear, NearestLinear, LinearNearest, LinearLinear };
+    enum class TextureShape { D1, D2, CubeMap, D3 };
 
     // Primitives
     enum class PrimitiveType { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };
+    
 
     namespace cmd {
         struct CreateVertexBuffer {
@@ -210,6 +213,7 @@ namespace gfx {
 
         struct LinkProgram {
             ProgramHandle handle;
+            std::vector<ShaderHandle> shaders;
         };
 
         struct DeleteProgram {
@@ -230,7 +234,9 @@ namespace gfx {
             uint16_t width, height;
             TextureFormat format;
             TextureWrap wrap;
-            TextureFilter filter;
+            TextureFilter min_filter;
+            TextureFilter mag_filter;
+            bool srgb;
             Memory data;
         };
 
@@ -239,7 +245,9 @@ namespace gfx {
             uint16_t width, height;
             TextureFormat format;
             TextureWrap wrap;
-            TextureFilter filter;
+            TextureFilter min_filter;
+            TextureFilter mag_filter;
+            bool srgb;
             std::array<Memory, 6> data;
         };
 
@@ -278,35 +286,6 @@ namespace gfx {
 
     using UniformData = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4>;
 
-#define SCISSOR_SHIFT       0
-#define SCISSOR_MASK        (1ULL<<SCISSOR_SHIFT)
-#define CULLFACE_SHIFT      1
-#define CULLFACE_MASK       (1ULL<<CULLFACE_SHIFT)
-#define DEPTHTEST_SHIFT     2
-#define DEPTHTEST_MASK      (1ULL<<DEPTHTEST_SHIFT)
-#define FRONT_FACE_SHIFT    3
-#define FRONT_FACE_MASK     (1ULL<<FRONT_FACE_SHIFT)
-#define POLYGON_MODE_SHIFT  4
-#define POLYGON_MODE_MASK   (1ULL<<POLYGON_MODE_SHIFT)
-#define BLEND_SHIFT         5
-#define BLEND_MASK          (1ULL<<BLEND_SHIFT)
-#define BLEND_EQ_SHIFT      6
-#define BLEND_EQ_MASK       (7ULL<<BLEND_EQ_SHIFT)
-#define BLEND_EQ_A_SHIFT    9
-#define BLEND_EQ_A_MASK     (7ULL<<BLEND_EQ_A_SHIFT)
-#define BLEND_FUNC_SRC_SHIFT    12
-#define BLEND_FUNC_SRC_MASK     (15ULL<<BLEND_FUNC_SRC_SHIFT)
-#define BLEND_FUNC_SRC_A_SHIFT  16
-#define BLEND_FUNC_SRC_A_MASK   (15ULL<<BLEND_FUNC_SRC_A_SHIFT)
-#define BLEND_FUNC_DST_SHIFT    20
-#define BLEND_FUNC_DST_MASK     (15ULL<<BLEND_FUNC_DST_SHIFT)
-#define BLEND_FUNC_DST_A_SHIFT  24
-#define BLEND_FUNC_DST_A_MASK   (15ULL<<BLEND_FUNC_DST_A_SHIFT)
-#define COLOR_MASK_SHIFT        28
-#define COLOR_MASK_MASK         (1ULL<<COLOR_MASK_SHIFT)
-#define DEPTH_MASK_SHIFT        29
-#define DEPTH_MASK_MASK         (1ULL<<DEPTH_MASK_SHIFT)
-
 
     struct RenderItem {
         struct TextureBinding {
@@ -328,30 +307,7 @@ namespace gfx {
         uint16_t scissor_w = 0;
         uint16_t scissor_h = 0;
 
-        bool depth_test = true;
-        bool cull_face = true;
-        CullFrontFace cull_front_face = CullFrontFace::CCW;
-        PolygonMode polygon_mode = PolygonMode::Fill;
-        bool blend = false;
-        BlendEquation blend_eq_color = BlendEquation::Add;
-        BlendEquation blend_eq_alpha = BlendEquation::Add;
-        BlendFunc blend_src_color = BlendFunc::One;
-        BlendFunc blend_dst_color = BlendFunc::Zero;
-        BlendFunc blend_src_alpha = BlendFunc::One;
-        BlendFunc blend_dst_alpha = BlendFunc::Zero;
-        bool color_mask = true;
-        bool depth_mask = true;
-
-        uint64_t encoded_state{ 0 };
-
-        bool operator==(RenderItem& other) {
-            return encoded_state == other.encoded_state;
-        }
-        bool operator!=(RenderItem& other) {
-            return encoded_state != other.encoded_state;
-        }
-
-        void encode_state();
+        StateBits state_bits;
     };
 
     struct View {
@@ -432,7 +388,6 @@ namespace gfx {
     };
 
 #define uint64 uint64_t
-    using StateBits = uint64_t;
 
     // one/zero is flipped on src/dest so a gl state of 0 is SRC_ONE,DST_ZERO
     static const uint64 GLS_SRCBLEND_ONE = 0 << 0;

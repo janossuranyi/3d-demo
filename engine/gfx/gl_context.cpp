@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <GL/glew.h>
+#include <glm/glm.hpp>
 #include <cassert>
 #include <unordered_map>
 #include "handle.h"
@@ -84,6 +85,161 @@ namespace gfx {
 
 		return GL_VERTEX_SHADER;
 	}
+
+	static GLenum MapTextureShape(TextureShape shape)
+	{
+		switch (shape) {
+		case TextureShape::D1:
+			return GL_TEXTURE_1D;
+		case TextureShape::D2:
+			return GL_TEXTURE_2D;
+		case TextureShape::D3:
+			return GL_TEXTURE_3D;
+		case TextureShape::CubeMap:
+			return GL_TEXTURE_CUBE_MAP;
+		}
+	}
+
+	// GL TextureFormatInfo.
+	struct TextureFormatInfo {
+		GLenum internal_format;
+		GLenum internal_format_srgb;
+		GLenum format;
+		GLenum type;
+		bool supported;
+	};
+
+	TextureFormatInfo s_texture_format[] = {
+		{GL_ALPHA,              GL_ZERO,         GL_ALPHA,            GL_UNSIGNED_BYTE,                false}, // A8
+		{GL_R8,                 GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                false}, // R8
+		{GL_R8I,                GL_ZERO,         GL_RED,              GL_BYTE,                         false}, // R8I
+		{GL_R8UI,               GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                false}, // R8U
+		{GL_R8_SNORM,           GL_ZERO,         GL_RED,              GL_BYTE,                         false}, // R8S
+		{GL_R16,                GL_ZERO,         GL_RED,              GL_UNSIGNED_SHORT,               false}, // R16
+		{GL_R16I,               GL_ZERO,         GL_RED,              GL_SHORT,                        false}, // R16I
+		{GL_R16UI,              GL_ZERO,         GL_RED,              GL_UNSIGNED_SHORT,               false}, // R16U
+		{GL_R16F,               GL_ZERO,         GL_RED,              GL_HALF_FLOAT,                   false}, // R16F
+		{GL_R16_SNORM,          GL_ZERO,         GL_RED,              GL_SHORT,                        false}, // R16S
+		{GL_R32I,               GL_ZERO,         GL_RED,              GL_INT,                          false}, // R32I
+		{GL_R32UI,              GL_ZERO,         GL_RED,              GL_UNSIGNED_INT,                 false}, // R32U
+		{GL_R32F,               GL_ZERO,         GL_RED,              GL_FLOAT,                        false}, // R32F
+		{GL_RG8,                GL_ZERO,         GL_RG,               GL_UNSIGNED_BYTE,                false}, // RG8
+		{GL_RG8I,               GL_ZERO,         GL_RG,               GL_BYTE,                         false}, // RG8I
+		{GL_RG8UI,              GL_ZERO,         GL_RG,               GL_UNSIGNED_BYTE,                false}, // RG8U
+		{GL_RG8_SNORM,          GL_ZERO,         GL_RG,               GL_BYTE,                         false}, // RG8S
+		{GL_RG16,               GL_ZERO,         GL_RG,               GL_UNSIGNED_SHORT,               false}, // RG16
+		{GL_RG16I,              GL_ZERO,         GL_RG,               GL_SHORT,                        false}, // RG16I
+		{GL_RG16UI,             GL_ZERO,         GL_RG,               GL_UNSIGNED_SHORT,               false}, // RG16U
+		{GL_RG16F,              GL_ZERO,         GL_RG,               GL_FLOAT,                        false}, // RG16F
+		{GL_RG16_SNORM,         GL_ZERO,         GL_RG,               GL_SHORT,                        false}, // RG16S
+		{GL_RG32I,              GL_ZERO,         GL_RG,               GL_INT,                          false}, // RG32I
+		{GL_RG32UI,             GL_ZERO,         GL_RG,               GL_UNSIGNED_INT,                 false}, // RG32U
+		{GL_RG32F,              GL_ZERO,         GL_RG,               GL_FLOAT,                        false}, // RG32F
+		{GL_RGB8,               GL_SRGB8,        GL_RGB,              GL_UNSIGNED_BYTE,                false}, // RGB8
+		{GL_RGB8I,              GL_ZERO,         GL_RGB,              GL_BYTE,                         false}, // RGB8I
+		{GL_RGB8UI,             GL_ZERO,         GL_RGB,              GL_UNSIGNED_BYTE,                false}, // RGB8U
+		{GL_RGB8_SNORM,         GL_ZERO,         GL_RGB,              GL_BYTE,                         false}, // RGB8S
+		{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_BGRA,             GL_UNSIGNED_BYTE,                false}, // BGRA8
+		{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_RGBA,             GL_UNSIGNED_BYTE,                false}, // RGBA8
+		{GL_RGBA8I,             GL_ZERO,         GL_RGBA,             GL_BYTE,                         false}, // RGBA8I
+		{GL_RGBA8UI,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_BYTE,                false}, // RGBA8U
+		{GL_RGBA8_SNORM,        GL_ZERO,         GL_RGBA,             GL_BYTE,                         false}, // RGBA8S
+		{GL_RGBA16,             GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT,               false}, // RGBA16
+		{GL_RGBA16I,            GL_ZERO,         GL_RGBA,             GL_SHORT,                        false}, // RGBA16I
+		{GL_RGBA16UI,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT,               false}, // RGBA16U
+		{GL_RGBA16F,            GL_ZERO,         GL_RGBA,             GL_HALF_FLOAT,                   false}, // RGBA16F
+		{GL_RGBA16_SNORM,       GL_ZERO,         GL_RGBA,             GL_SHORT,                        false}, // RGBA16S
+		{GL_RGBA32I,            GL_ZERO,         GL_RGBA,             GL_INT,                          false}, // RGBA32I
+		{GL_RGBA32UI,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT,                 false}, // RGBA32U
+		{GL_RGBA32F,            GL_ZERO,         GL_RGBA,             GL_FLOAT,                        false}, // RGBA32F
+		{GL_RGBA4,              GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_4_4_4_4_REV,   false}, // RGBA4
+		{GL_RGB5_A1,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_1_5_5_5_REV,   false}, // RGB5A1
+		{GL_RGB10_A2,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT_2_10_10_10_REV,  false}, // RGB10A2
+		{GL_R11F_G11F_B10F,     GL_ZERO,         GL_RGB,              GL_UNSIGNED_INT_10F_11F_11F_REV, false}, // RG11B10F
+		{GL_DEPTH_COMPONENT16,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_SHORT,               false}, // D16
+		{GL_DEPTH_COMPONENT24,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 false}, // D24
+		{GL_DEPTH24_STENCIL8,   GL_ZERO,         GL_DEPTH_STENCIL,    GL_UNSIGNED_INT_24_8,            false}, // D24S8
+		{GL_DEPTH_COMPONENT32,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 false}, // D32
+		{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false}, // D16F
+		{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false}, // D24F
+		{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false}, // D32F
+		{GL_STENCIL_INDEX8,     GL_ZERO,         GL_STENCIL_INDEX,    GL_UNSIGNED_BYTE,                false}, // D0S8
+	};
+
+	static const std::unordered_map<BlendEquation, GLenum> s_blend_equation_map = {
+		{BlendEquation::Add, GL_FUNC_ADD},
+		{BlendEquation::Subtract, GL_FUNC_SUBTRACT},
+		{BlendEquation::ReverseSubtract, GL_FUNC_REVERSE_SUBTRACT},
+		{BlendEquation::Min, GL_MIN},
+		{BlendEquation::Max, GL_MAX}
+	};
+	static const std::unordered_map<BlendFunc, GLenum> s_blend_func_map = {
+		{BlendFunc::Zero, GL_ZERO},
+		{BlendFunc::One, GL_ONE},
+		{BlendFunc::SrcColor, GL_SRC_COLOR},
+		{BlendFunc::OneMinusSrcColor, GL_ONE_MINUS_SRC_COLOR},
+		{BlendFunc::DstColor, GL_DST_COLOR},
+		{BlendFunc::OneMinusDstColor, GL_ONE_MINUS_DST_COLOR},
+		{BlendFunc::SrcAlpha, GL_SRC_ALPHA},
+		{BlendFunc::OneMinusSrcAlpha, GL_ONE_MINUS_SRC_ALPHA},
+		{BlendFunc::DstAlpha, GL_DST_ALPHA},
+		{BlendFunc::OneMinusDstAlpha, GL_ONE_MINUS_DST_ALPHA},
+		{BlendFunc::ConstantColor, GL_CONSTANT_COLOR},
+		{BlendFunc::OneMinusConstantColor, GL_ONE_MINUS_CONSTANT_COLOR},
+		{BlendFunc::ConstantAlpha, GL_CONSTANT_ALPHA},
+		{BlendFunc::OneMinusConstantAlpha, GL_ONE_MINUS_CONSTANT_ALPHA},
+		{BlendFunc::SrcAlphaSaturate, GL_SRC_ALPHA_SATURATE},
+	};
+	static const std::unordered_map<TextureWrap, GLenum> s_texture_wrap_map = {
+		{TextureWrap::ClampToBorder, GL_CLAMP_TO_BORDER},
+		{TextureWrap::ClampToEdge, GL_CLAMP_TO_EDGE},
+		{TextureWrap::MirroredRepeat, GL_MIRRORED_REPEAT},
+		{TextureWrap::Repeat, GL_REPEAT}
+	};
+	static const std::unordered_map<TextureFilter, GLenum> s_texture_filter_map = {
+		{TextureFilter::Linear, GL_LINEAR},
+		{TextureFilter::LinearNearest, GL_LINEAR_MIPMAP_NEAREST},
+		{TextureFilter::Nearest, GL_NEAREST},
+		{TextureFilter::NearestLinear, GL_NEAREST_MIPMAP_LINEAR},
+		{TextureFilter::LinearLinear, GL_LINEAR_MIPMAP_LINEAR}
+	};
+
+	class UniformBinder {
+	public:
+		UniformBinder() : uniform_location_{ 0 } {
+		}
+
+		~UniformBinder() = default;
+
+		void operator()(const int& value) {
+			GL_CHECK(glUniform1i(uniform_location_, value));
+		}
+		void operator()(const float& value) {
+			GL_CHECK(glUniform1f(uniform_location_, value));
+		}
+		void operator()(const glm::vec2& value) {
+			GL_CHECK(glUniform2fv(uniform_location_, 1, &value[0]));
+		}
+		void operator()(const glm::vec3& value) {
+			GL_CHECK(glUniform3fv(uniform_location_, 1, &value[0]));
+		}
+		void operator()(const glm::vec4& value) {
+			GL_CHECK(glUniform4fv(uniform_location_, 1, &value[0]));
+		}
+		void operator()(const glm::mat3& value) {
+			GL_CHECK(glUniformMatrix3fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
+		}
+		void operator()(const glm::mat4& value) {
+			GL_CHECK(glUniformMatrix4fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
+		}
+
+		void update(GLint location, const UniformData& value) {
+			uniform_location_ = location;
+			std::visit(*this, value);
+		}
+	private:
+		GLint uniform_location_;
+	};
 
 	int OpenGLRenderContext::get_red_bits() const {
 		return window_.redBits;
@@ -189,9 +345,6 @@ namespace gfx {
 			return;
 
 		const auto result = index_buffer_map_.find(cmd.handle);
-		if (result == index_buffer_map_.end())
-			return;
-
 		const auto& data = result->second;
 		const GLsizeiptr size = data.size > 0 ? GLsizeiptr(data.size) : cmd.data.size();
 		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,		data.buffer));
@@ -202,11 +355,7 @@ namespace gfx {
 	void OpenGLRenderContext::operator()(const cmd::DeleteIndexBuffer& cmd)
 	{
 		const auto result = index_buffer_map_.find(cmd.handle);
-		if (result == index_buffer_map_.end())
-			return;
-
-		const auto& data = result->second;
-		GL_CHECK(glDeleteBuffers(1, &data.buffer));
+		GL_CHECK(glDeleteBuffers(1, &result->second.buffer));
 		index_buffer_map_.erase(cmd.handle);
 	}
 
@@ -242,19 +391,171 @@ namespace gfx {
 			GL_CHECK(glDeleteShader(shader));
 			return;
 		}
+
 		shader_map_.emplace(cmd.handle, ShaderData{ shader, cmd.source, cmd.stage, true });
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteShader& cmd)
 	{
 		auto result = shader_map_.find(cmd.handle);
-		if (result == shader_map_.end())
-			return;
-
-		auto& data = result->second;
-		GL_CHECK(glDeleteShader(data.shader));
+		GL_CHECK(glDeleteShader(result->second.shader));
 
 		shader_map_.erase(cmd.handle);
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::CreateProgram& cmd)
+	{
+		GLuint program;
+		GL_CHECK(program = glCreateProgram());
+		if (program)
+		{
+			const ProgramData data = { program, false, {}};
+			program_map_.emplace(cmd.handle, data);
+		}
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::LinkProgram& cmd)
+	{
+		auto& p_data = program_map_.at(cmd.handle);
+		for (auto& s_handle : cmd.shaders)
+		{
+			auto& s_data = shader_map_.at(s_handle);
+			GL_CHECK(glAttachShader(p_data.program, s_data.shader));
+		}
+		GL_CHECK(glLinkProgram(p_data.program));
+		GLint result = GL_FALSE;
+
+		GL_CHECK(glGetProgramiv(p_data.program, GL_LINK_STATUS, &result));
+
+		if (result == GL_FALSE)
+		{
+			GLint infologLen;
+			GL_CHECK(glGetProgramiv(p_data.program, GL_INFO_LOG_LENGTH, &infologLen));
+			if (infologLen > 0) {
+				std::vector<char> logBuf(infologLen);
+				GL_CHECK(glGetProgramInfoLog(p_data.program, infologLen, nullptr, logBuf.data()));
+				Error("Linking of shader program failed: %s", logBuf.data());
+			}
+			return;
+		}
+		p_data.linked = true;
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::DeleteProgram& cmd)
+	{
+		auto& p_data = program_map_.at(cmd.handle);
+		GL_CHECK(glDeleteProgram(p_data.program));
+		program_map_.erase(cmd.handle);
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::CreateTexture2D& cmd)
+	{
+		GLuint texture;
+		const GLenum target = GL_TEXTURE_2D;
+		GL_CHECK(glGenTextures(1, &texture));
+		GL_CHECK(glBindTexture(target, texture));
+		auto& texinfo = s_texture_format[static_cast<int>( cmd.format )];
+
+		GL_CHECK(glTexImage2D(target, 0, 
+			(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format), 
+			cmd.width, 
+			cmd.height, 
+			0, 
+			texinfo.format, 
+			texinfo.type, 
+			cmd.data.data()));
+
+		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
+		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
+		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
+
+		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter));
+		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter));
+		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap));
+		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap));
+
+		GL_CHECK(glGenerateMipmap(target));
+		GL_CHECK(glBindTexture(target, 0));
+
+		const TextureData t_data{ texture, target };
+		texture_map_.emplace(cmd.handle, t_data);
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::CreateTextureCubeMap& cmd)
+	{
+		GLuint texture;
+		const GLenum target = GL_TEXTURE_CUBE_MAP;
+		GL_CHECK(glGenTextures(1, &texture));
+		GL_CHECK(glBindTexture(target, texture));
+		auto& texinfo = s_texture_format[static_cast<int>(cmd.format)];
+		for (unsigned int face = 0; face < 6; ++face) {
+			GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
+				(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format),
+				cmd.width,
+				cmd.height,
+				0,
+				texinfo.format,
+				texinfo.type,
+				cmd.data[face].data()));
+		}
+		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
+		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
+		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
+
+		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter));
+		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter));
+		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap));
+		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap));
+		GL_CHECK(glGenerateMipmap(target));
+		GL_CHECK(glBindTexture(target, 0));
+
+		const TextureData t_data{ texture, target };
+		texture_map_.emplace(cmd.handle, t_data);
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::CreateFramebuffer& cmd)
+	{
+		if (frame_buffer_map_.count(cmd.handle) > 0)
+			return;
+
+		FrameBufferData fb_data;
+
+		GL_CHECK(glGenFramebuffers(1, &fb_data.frame_buffer));
+		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+		std::vector<GLenum> draw_buffers;
+		int attachment{ 0 };
+		for (auto fb_texture : cmd.textures)
+		{
+			const auto& gl_texture = texture_map_.find(fb_texture);
+			assert(gl_texture != texture_map_.end());
+			draw_buffers.emplace_back(GL_COLOR_ATTACHMENT0 + attachment++);
+			GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), GL_TEXTURE_2D, gl_texture->second.texture, 0));
+		}
+		GL_CHECK(glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
+
+		// Create depth buffer.
+		GL_CHECK(glGenRenderbuffers(1, &fb_data.depth_render_buffer));
+		GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
+		GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
+		GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
+			fb_data.depth_render_buffer));
+
+		// Check frame buffer status.
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			Error("[CreateFrameBuffer] The framebuffer is not complete. Status: 0x%x", status);
+		}
+
+		// Unbind.
+		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
+		// Add to map.
+		frame_buffer_map_.emplace(cmd.handle, fb_data);
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::DeleteFramebuffer& cmd)
+	{
+
 	}
 
 	bool OpenGLRenderContext::create_window(uint16_t w, uint16_t h, bool fullscreen, const std::string& name) {
@@ -383,7 +684,18 @@ namespace gfx {
 		window_.w = _w;
 		window_.h = _h;
 
+		SDL_GL_MakeCurrent(windowHandle_, NULL);
+
 		return true;
+	}
+
+	void OpenGLRenderContext::process_command_list(const std::vector<RenderCommand>& cmds)
+	{
+		assert(windowHandle_);
+		for (auto& c : cmds)
+		{
+			std::visit(*this, c);
+		}
 	}
 
 	void OpenGLRenderContext::destroy_window()
@@ -401,6 +713,57 @@ namespace gfx {
 
 	OpenGLRenderContext::~OpenGLRenderContext()
 	{
+		// freeing resources
+		std::vector<GLuint> list1;
+		std::vector<GLuint> list2;
+
+		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
+		for (auto& r : frame_buffer_map_) {
+			list1.push_back(r.second.frame_buffer);
+			list2.push_back(r.second.depth_render_buffer);
+		}
+		GL_CHECK(glDeleteRenderbuffers(GLsizei(list2.size()), list2.data()));
+		GL_CHECK(glDeleteFramebuffers(GLsizei(list1.size()), list1.data()));
+
+		GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+		GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+
+		list1.clear();
+		for (auto& r : texture_map_) {
+			list1.push_back(r.second.texture);
+		}
+		GL_CHECK(glDeleteTextures(GLsizei(list1.size()), list1.data()));
+
+		for (auto& r : shader_map_) {
+			GL_CHECK(glDeleteShader(r.second.shader));
+		}
+
+		GL_CHECK(glUseProgram(0));
+
+		for (auto& r : program_map_) {
+			GL_CHECK(glDeleteProgram(r.second.program));
+		}
+
+		GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
+		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
+		list1.clear();
+		for (auto& r : vertex_buffer_map_) {
+			list1.push_back(r.second.buffer);
+		}
+		for (auto& r : index_buffer_map_) {
+			list1.push_back(r.second.buffer);
+		}
+		GL_CHECK(glDeleteBuffers(GLsizei(list1.size()), list1.data()));
+
+		frame_buffer_map_.clear();
+		vertex_buffer_map_.clear();
+		index_buffer_map_.clear();
+		texture_map_.clear();
+		shader_map_.clear();
+		program_map_.clear();
+
 		destroy_window();
 	}
 
