@@ -706,6 +706,19 @@ namespace gfx {
 			SDL_DestroyWindow(windowHandle_);
 	}
 
+	void OpenGLRenderContext::start_rendering()
+	{
+	}
+
+	void OpenGLRenderContext::stop_rendering()
+	{
+	}
+
+	bool OpenGLRenderContext::frame(const Frame* frame)
+	{
+		return false;
+	}
+
 	glm::ivec2 OpenGLRenderContext::get_window_size() const
 	{
 		return glm::ivec2(window_.w, window_.h);

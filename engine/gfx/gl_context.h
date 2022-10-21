@@ -16,6 +16,10 @@ namespace gfx {
 		bool create_window(uint16_t w, uint16_t h, bool fullscreen, const std::string& name) override;
 		void process_command_list(const std::vector<RenderCommand>& cmds) override;
 		void destroy_window() override;
+		void start_rendering() override;
+		void stop_rendering() override;
+		bool frame(const Frame* frame) override;
+
 		glm::ivec2 get_window_size() const override;
 
 		int get_red_bits() const override;
