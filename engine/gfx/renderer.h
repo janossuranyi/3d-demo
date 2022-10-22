@@ -13,6 +13,7 @@
 #include "resource/memory.h"
 
 #define MAX_TEXTURE_SAMPLERS 15
+#define MAX_UNIFORM_BUFFERS 8
 
 namespace gfx {
     using StateBits = uint64_t;
@@ -25,7 +26,9 @@ namespace gfx {
     struct ProgramTag {};
     struct TextureTag {};
     struct FrameBufferTag {};
+    struct ConstantBufferTag {};
 
+    using ConstantBufferHandle = Handle<ConstantBufferTag, -1>;
     using VertexBufferHandle = Handle<VertexBufferTag, -1>;
     using IndexBufferHandle = Handle<IndexBufferTag, -1>;
     using DynVertexBufferHandle = Handle<DynVertexBufferTag, -1>;
@@ -40,6 +43,12 @@ namespace gfx {
 
     // Shader stage
     enum class ShaderStage { Vertex, Geometry, Fragment, Compute };
+
+    enum class ClearBits : uint32_t {
+        Color = 0x01,
+        Depth = 0x02,
+        Stencil = 0x04
+    };
 
     // Buffer usage
     enum class BufferUsage {
@@ -156,6 +165,24 @@ namespace gfx {
     
 
     namespace cmd {
+        struct CreateConstantBuffer {
+            ConstantBufferHandle handle;
+            Memory data;
+            uint32_t size;
+            BufferUsage usage;
+        };
+
+        struct UpdateConstantBuffer {
+            ConstantBufferHandle handle;
+            Memory data;
+            uint32_t offset;
+            uint32_t size;
+        };
+
+        struct DeleteConstantBuffer {
+            ConstantBufferHandle handle;
+        };
+
         struct CreateVertexBuffer {
             VertexBufferHandle handle;
             Memory data;
@@ -267,6 +294,7 @@ namespace gfx {
     }
 
     using RenderCommand = std::variant<
+        cmd::CreateConstantBuffer,
         cmd::CreateVertexBuffer,
         cmd::CreateIndexBuffer,
         cmd::CreateProgram,
@@ -275,8 +303,10 @@ namespace gfx {
         cmd::CreateTexture1D,
         cmd::CreateTexture2D,
         cmd::CreateTextureCubeMap,
+        cmd::UpdateConstantBuffer,
         cmd::UpdateIndexBuffer,
         cmd::UpdateVertexBuffer,
+        cmd::DeleteConstantBuffer,
         cmd::DeleteFramebuffer,
         cmd::DeleteIndexBuffer,
         cmd::DeleteProgram,
@@ -310,11 +340,21 @@ namespace gfx {
         StateBits state_bits;
     };
 
-    struct View {
+    struct RenderPass {
+
+        RenderPass() : 
+            clear_color{ 0.0f,0.0f,0.0f,1.0f }, 
+            clear_bits{ GLS_CLEAR_COLOR | GLS_CLEAR_DEPTH },
+            frame_buffer{ FrameBufferHandle::invalid } {
+        }
+
         void clear();
-        glm::vec4 clear_color{ 0.0f,0.0f,0.0f,1.0f };
-        FrameBufferHandle frame_buffer{ FrameBufferHandle::invalid };
+
+        glm::vec4 clear_color;
+        uint16_t clear_bits;
+        FrameBufferHandle frame_buffer;
         std::vector<RenderItem> render_items;
+        std::array<ConstantBufferHandle, MAX_UNIFORM_BUFFERS> constant_buffers;
     };
 
     class Renderer;
@@ -323,8 +363,10 @@ namespace gfx {
         Frame();
         ~Frame() = default;
 
+        RenderPass& renderPass(uint32_t index);
+
         RenderItem active_item;
-        std::vector<View> views;
+        std::vector<RenderPass> render_passes;
         std::vector<RenderCommand> commands_pre;
         std::vector<RenderCommand> commands_post;
     };
@@ -382,12 +424,16 @@ namespace gfx {
         std::unique_ptr<RenderContext> shared_render_context_;
 
         // Render thread proc.
-        void renderThread();
+        void renderThread() {};
         bool renderFrame(Frame* frame);
 
     };
 
 #define uint64 uint64_t
+
+    static const uint16_t GLS_CLEAR_COLOR = 0x0001U;
+    static const uint16_t GLS_CLEAR_DEPTH = 0x0002U;
+    static const uint16_t GLS_CLEAR_STENCIL = 0x0004U;
 
     // one/zero is flipped on src/dest so a gl state of 0 is SRC_ONE,DST_ZERO
     static const uint64 GLS_SRCBLEND_ONE = 0 << 0;

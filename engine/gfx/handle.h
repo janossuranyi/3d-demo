@@ -45,6 +45,10 @@ namespace gfx {
             return internal_handle_ != other.internal_handle_;
         }
 
+        bool operator!=(const Handle<Tag, Invalid>& other) const {
+            return internal_handle_ != other.internal_handle_;
+        }
+
         bool operator!=(base_type other) const {
             return internal_handle_ != other;
         }
@@ -60,6 +64,9 @@ namespace gfx {
             return tmp;
         }
 
+        bool isValid() const {
+            return internal_handle_ != Invalid;
+        }
     private:
         base_type internal_handle_;
     };

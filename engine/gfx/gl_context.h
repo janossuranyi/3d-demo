@@ -2,6 +2,7 @@
 #include <cinttypes>
 #include <unordered_map>
 #include <GL/glew.h>
+#include <SDL.h>
 #include "renderer.h"
 #include "render_context.h"
 
@@ -43,6 +44,9 @@ namespace gfx {
 		void operator()(const cmd::CreateTextureCubeMap& cmd);
 		void operator()(const cmd::CreateFramebuffer& cmd);
 		void operator()(const cmd::DeleteFramebuffer& cmd);
+		void operator()(const cmd::CreateConstantBuffer& cmd);
+		void operator()(const cmd::UpdateConstantBuffer& cmd);
+		void operator()(const cmd::DeleteConstantBuffer& cmd);
 
 		template <typename T> void operator()(const T& c) {
 			static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
@@ -59,6 +63,12 @@ namespace gfx {
 
 			int w;
 			int h;
+		};
+
+		struct ConstantBufferData {
+			GLuint buffer;
+			uint32_t size;
+			BufferUsage usage;
 		};
 
 		struct VertexBufferData {
@@ -112,6 +122,7 @@ namespace gfx {
 		std::unordered_map<TextureHandle, TextureData> texture_map_;
 		std::unordered_map<ShaderHandle, ShaderData> shader_map_;
 		std::unordered_map<ProgramHandle, ProgramData> program_map_;
+		std::unordered_map<ConstantBufferHandle, ConstantBufferData> constant_buffer_map_;
 		std::unordered_map<VertexBufferHandle, VertexBufferData> vertex_buffer_map_;
 		std::unordered_map<IndexBufferHandle, IndexBufferData> index_buffer_map_;
 		std::unordered_map<FrameBufferHandle, FrameBufferData> frame_buffer_map_;

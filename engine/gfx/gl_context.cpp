@@ -265,6 +265,56 @@ namespace gfx {
 		return window_.stencilBits;
 	}
 
+	void OpenGLRenderContext::operator()(const cmd::CreateConstantBuffer& cmd)
+	{
+		if (constant_buffer_map_.count(cmd.handle) > 0)
+			return;
+
+		GLuint buffer = static_cast<GLuint>(0xffff);
+		const GLenum _usage = MapBufferUsage(cmd.usage);
+
+		GL_CHECK(glGenBuffers(1, &buffer));
+		assert(buffer != 0xffff);
+
+		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
+
+		GL_CHECK(glBindBuffer(GL_UNIFORM_BUFFER, buffer));
+		if (cmd.data.data())
+			GL_CHECK(glBufferData(GL_UNIFORM_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
+		else
+			GL_CHECK(glBufferData(GL_UNIFORM_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
+
+		constant_buffer_map_.emplace(cmd.handle, ConstantBufferData{ buffer, _size, cmd.usage });
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::UpdateConstantBuffer& cmd)
+	{
+		if (cmd.data.data() == nullptr)
+			return;
+
+		const auto result = constant_buffer_map_.find(cmd.handle);
+		if (result == constant_buffer_map_.end())
+			return;
+
+		const auto& data = result->second;
+		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
+		GL_CHECK(glBindBuffer(GL_UNIFORM_BUFFER, data.buffer));
+		GL_CHECK(glBufferSubData(GL_UNIFORM_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::DeleteConstantBuffer& cmd)
+	{
+		const auto result = constant_buffer_map_.find(cmd.handle);
+		if (result == constant_buffer_map_.end())
+			return;
+
+		const auto& data = result->second;
+
+		GL_CHECK(glDeleteBuffers(1, &data.buffer));
+
+		constant_buffer_map_.erase(cmd.handle);
+	}
+
 	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
 	{
 		if (vertex_buffer_map_.count(cmd.handle) > 0)
@@ -524,7 +574,7 @@ namespace gfx {
 		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
 		std::vector<GLenum> draw_buffers;
 		int attachment{ 0 };
-		for (auto fb_texture : cmd.textures)
+		for (auto& fb_texture : cmd.textures)
 		{
 			const auto& gl_texture = texture_map_.find(fb_texture);
 			assert(gl_texture != texture_map_.end());
@@ -716,6 +766,105 @@ namespace gfx {
 
 	bool OpenGLRenderContext::frame(const Frame* frame)
 	{
+		for (auto& pass : frame->render_passes)
+		{
+			if (pass.render_items.empty() || !pass.frame_buffer.isValid())
+				continue;
+
+			uint16_t fb_width, fb_height;
+			if (pass.frame_buffer.internal() > 0) {
+				FrameBufferData& fb_data = frame_buffer_map_.at(pass.frame_buffer);
+				fb_width = fb_data.width;
+				fb_height = fb_data.height;
+				GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+			}
+			else {
+				fb_width = window_.w;
+				fb_height = window_.h;
+				GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+			}
+
+			GLbitfield clear_bits = 0;
+			if (pass.clear_bits & GLS_CLEAR_COLOR) {
+				clear_bits |= GL_COLOR_BUFFER_BIT;
+			}
+			if (pass.clear_bits & GLS_CLEAR_DEPTH) {
+				clear_bits |= GL_DEPTH_BUFFER_BIT;
+			}
+			if (pass.clear_bits & GLS_CLEAR_STENCIL) {
+				clear_bits |= GL_STENCIL_BUFFER_BIT;
+			}
+
+			if (clear_bits) {
+				GL_CHECK(glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a));
+				GL_CHECK(glDisable(GL_SCISSOR_TEST));
+				GL_CHECK(glClear(clear_bits));
+			}
+
+			for (auto i = 0; pass.render_items.size(); ++i)
+			{
+				auto* prev = i < 0 ? &pass.render_items[i - 1] : nullptr;
+				auto* item = &pass.render_items[i];
+
+				set_state(item->state_bits, false);
+				if (!prev || prev->scissor != item->scissor)
+				{
+					if (item->scissor) GL_CHECK(glEnable(GL_SCISSOR_TEST));
+					else GL_CHECK(glDisable(GL_SCISSOR_TEST));
+				}
+				if (item->scissor)
+				{
+					GL_CHECK(glScissor(item->scissor_x, item->scissor_y, item->scissor_w, item->scissor_h));
+				}
+				ProgramData& program_data = program_map_.at(item->program);
+				if (!prev || prev->program != item->program) {
+					assert(item->program.isValid());
+					GL_CHECK(glUseProgram(program_data.program));
+				}
+
+				UniformBinder binder;
+				for (auto& cb : item->uniforms)
+				{
+					auto location = program_data.uniform_location_map.find(cb.first);
+					GLint uniform_location;
+					if (location != program_data.uniform_location_map.end()) {
+						uniform_location = location->second;
+					}
+					else {
+						GL_CHECK(uniform_location = glGetUniformLocation(program_data.program, cb.first.c_str()));
+						program_data.uniform_location_map.emplace(cb.first, uniform_location);
+
+						if (uniform_location == -1) {
+							Warning("Uniform variable %s not found!!!", cb.first.c_str());
+						}
+					}
+
+					if (uniform_location == -1) continue;
+
+					binder.update(uniform_location, cb.second);
+				}
+				
+				size_t texture_count = std::max(prev ? prev->textures.size() : 0, item->textures.size());
+				for (auto j = 0; j < texture_count; ++j) {
+					glActiveTexture(GL_TEXTURE0 + j);
+					if (j > item->textures.size()) {
+						GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+						GL_CHECK(glBindTexture(GL_TEXTURE_1D, 0));
+						GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+					}
+					else if (!item->textures[j].handle.isValid()) {
+						GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+						GL_CHECK(glBindTexture(GL_TEXTURE_1D, 0));
+						GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+					}
+					else {
+						TextureData& tdata = texture_map_.at(item->textures[j].handle);
+						GL_CHECK(glBindTexture(tdata.target, tdata.texture));
+					}
+				}
+			}
+		}
+
 		return false;
 	}
 
