@@ -40,8 +40,10 @@ namespace gfx {
 		void operator()(const cmd::CreateProgram& cmd);
 		void operator()(const cmd::LinkProgram& cmd);
 		void operator()(const cmd::DeleteProgram& cmd);
+		void operator()(const cmd::CreateTexture1D& cmd);
 		void operator()(const cmd::CreateTexture2D& cmd);
 		void operator()(const cmd::CreateTextureCubeMap& cmd);
+		void operator()(const cmd::DeleteTexture& cmd);
 		void operator()(const cmd::CreateFramebuffer& cmd);
 		void operator()(const cmd::DeleteFramebuffer& cmd);
 		void operator()(const cmd::CreateConstantBuffer& cmd);
@@ -127,8 +129,12 @@ namespace gfx {
 		std::unordered_map<IndexBufferHandle, IndexBufferData> index_buffer_map_;
 		std::unordered_map<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
 
-		GLuint active_vertex_buffer_{ 0 };
-		GLuint active_index_buffer_{ 0 };
+		VertexDeclType active_vertex_decl_{ VertexDeclType::Count };
+
+		GLuint shared_vertex_array_{ 0 };
+		GLint gl_max_vertex_attribs_{ 0 };
+
+		GLenum active_ib_type_{ 0 };
 
 	};
 

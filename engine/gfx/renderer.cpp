@@ -37,6 +37,32 @@ namespace gfx {
 		return true;
 	}
 
+	VertexBufferHandle Renderer::createVertexBuffer(uint32_t size, BufferUsage usage, Memory data)
+	{
+		VertexBufferHandle handle = vertex_buffer_handle_.next();
+		submitPreFrameCommand(cmd::CreateVertexBuffer{ handle, std::move(data), size, usage });
+
+		return handle;
+	}
+
+	IndexBufferHandle Renderer::createIndexBuffer(uint32_t size, BufferUsage usage, Memory data)
+	{
+		IndexBufferHandle handle = index_buffer_handle_.next();
+		submitPreFrameCommand(cmd::CreateIndexBuffer{ handle, std::move(data), size, usage });
+
+		return handle;
+	}
+
+	TextureHandle Renderer::createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, Memory data)
+	{
+		TextureHandle handle = texture_handle_.next();
+		submitPreFrameCommand(cmd::CreateTexture2D{ handle,width,height,format,wrap,minfilter,magfilter,srgb,std::move(data) });
+
+		texture_data_[handle] = TextureData{ width,height,format };
+
+		return handle;
+	}
+
 	bool Renderer::renderFrame(Frame* frame)
 	{
 		shared_render_context_->process_command_list(frame->commands_pre);

@@ -105,6 +105,7 @@ include_directories(
   external/glew-2.1.0/include/
   external/glm/
   external/stb/
+  external/half/
   external/tinygltf/
   ${SDL2_INCLUDE_DIR}
 )

@@ -16,6 +16,11 @@
 #define MAX_UNIFORM_BUFFERS 8
 
 namespace gfx {
+
+    static const uint16_t GLS_CLEAR_COLOR = 0x0001U;
+    static const uint16_t GLS_CLEAR_DEPTH = 0x0002U;
+    static const uint16_t GLS_CLEAR_STENCIL = 0x0004U;
+
     using StateBits = uint64_t;
 
     struct VertexBufferTag {};
@@ -163,7 +168,7 @@ namespace gfx {
     // Primitives
     enum class PrimitiveType { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };
 
-    enum class VertexDeclType { Draw, Shadow };
+    enum class VertexDeclType { Draw, Shadow, Count };
 
 
     namespace cmd {
@@ -326,10 +331,12 @@ namespace gfx {
 
         VertexBufferHandle vb;
         IndexBufferHandle ib;
-        size_t ib_offset;
+        uint32_t ib_offset;
+        uint32_t vb_offset;
         uint32_t primitive_count;
         PrimitiveType primitive_type;
         ProgramHandle program;
+        VertexDeclType vertexDecl;
         std::unordered_map<std::string, UniformData> uniforms;
         std::array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
 
@@ -364,7 +371,6 @@ namespace gfx {
     public:
         Frame();
         ~Frame() = default;
-
         RenderPass& renderPass(uint32_t index);
 
         RenderItem active_item;
@@ -381,6 +387,11 @@ namespace gfx {
         ~Renderer();
 
         bool init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
+        VertexBufferHandle createVertexBuffer(uint32_t size, BufferUsage usage, Memory data);
+        IndexBufferHandle createIndexBuffer(uint32_t size, BufferUsage usage, Memory data);
+        TextureHandle createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, Memory data);
+        FrameBufferHandle createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
+        FrameBufferHandle createFrameBuffer(const std::vector<TextureHandle> textures);
 
     private:
         uint16_t width_, height_;
@@ -432,10 +443,6 @@ namespace gfx {
     };
 
 #define uint64 uint64_t
-
-    static const uint16_t GLS_CLEAR_COLOR = 0x0001U;
-    static const uint16_t GLS_CLEAR_DEPTH = 0x0002U;
-    static const uint16_t GLS_CLEAR_STENCIL = 0x0004U;
 
     // one/zero is flipped on src/dest so a gl state of 0 is SRC_ONE,DST_ZERO
     static const uint64 GLS_SRCBLEND_ONE = 0 << 0;

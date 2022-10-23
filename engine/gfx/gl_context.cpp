@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <cassert>
 #include <unordered_map>
+#include <array>
 #include "handle.h"
 #include "gl_context.h"
 #include "logger.h"
@@ -99,6 +100,58 @@ namespace gfx {
 			return GL_TEXTURE_CUBE_MAP;
 		}
 	}
+
+	static GLenum MapDrawMode(PrimitiveType p)
+	{
+		switch (p)
+		{
+		case PrimitiveType::Lines:
+			return GL_LINES;
+		case PrimitiveType::LineLoop:
+			return GL_LINE_LOOP;
+		case PrimitiveType::LineStrip:
+			return GL_LINE_STRIP;
+		case PrimitiveType::Point:
+			return GL_POINTS;
+		case PrimitiveType::Triangles:
+			return GL_TRIANGLES;
+		case PrimitiveType::TriangleFan:
+			return GL_TRIANGLE_FAN;
+		case PrimitiveType::TriangleStrip:
+			return GL_TRIANGLE_STRIP;
+		}
+	}
+
+	struct VertexAttribFormat {
+		GLint size;
+		GLenum type;
+		GLboolean normalized;
+		GLsizeiptr pointer;
+	};
+
+	struct VertexLayout {
+		std::vector<VertexAttribFormat> attributes;
+		uint32_t stride;
+	};
+
+	static const VertexLayout drawVertLayout = {
+		{
+			{4,		GL_FLOAT,			GL_FALSE,	0},
+			{2,		GL_HALF_FLOAT,		GL_FALSE,	16},
+			{4,		GL_UNSIGNED_BYTE,	GL_TRUE,	20},
+			{4,		GL_UNSIGNED_BYTE,	GL_TRUE,	24},
+			{4,		GL_UNSIGNED_BYTE,	GL_TRUE,	28}
+		}, 32
+	};
+
+	static const VertexLayout shadowVertLayout = { 
+		{
+			{4,		GL_FLOAT,			GL_FALSE,	0},
+			{2,		GL_HALF_FLOAT,		GL_FALSE,	16},
+		}, 20
+	};
+
+	static const std::array<VertexLayout, 2> s_vertexLayouts = { drawVertLayout, shadowVertLayout };
 
 	// GL TextureFormatInfo.
 	struct TextureFormatInfo {
@@ -498,6 +551,15 @@ namespace gfx {
 		program_map_.erase(cmd.handle);
 	}
 
+	void OpenGLRenderContext::operator()(const cmd::CreateTexture1D& cmd) {}
+
+	void OpenGLRenderContext::operator()(const cmd::DeleteTexture& cmd) 
+	{
+		auto& t_data = texture_map_.at(cmd.handle);
+		GL_CHECK(glDeleteTextures(1, &t_data.texture));
+		texture_map_.erase(cmd.handle);
+	}
+
 	void OpenGLRenderContext::operator()(const cmd::CreateTexture2D& cmd)
 	{
 		GLuint texture;
@@ -569,6 +631,9 @@ namespace gfx {
 			return;
 
 		FrameBufferData fb_data;
+
+		fb_data.width = cmd.width;
+		fb_data.height = cmd.height;
 
 		GL_CHECK(glGenFramebuffers(1, &fb_data.frame_buffer));
 		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
@@ -734,7 +799,12 @@ namespace gfx {
 		window_.w = _w;
 		window_.h = _h;
 
-		SDL_GL_MakeCurrent(windowHandle_, NULL);
+		GL_CHECK(glCreateVertexArrays(1, &shared_vertex_array_));
+		GL_CHECK(glBindVertexArray(shared_vertex_array_));
+
+		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &gl_max_vertex_attribs_);
+
+		//SDL_GL_MakeCurrent(windowHandle_, NULL);
 
 		return true;
 	}
@@ -784,6 +854,9 @@ namespace gfx {
 				GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 			}
 
+			(void)fb_width;
+			(void)fb_height;
+
 			GLbitfield clear_bits = 0;
 			if (pass.clear_bits & GLS_CLEAR_COLOR) {
 				clear_bits |= GL_COLOR_BUFFER_BIT;
@@ -809,15 +882,16 @@ namespace gfx {
 				set_state(item->state_bits, false);
 				if (!prev || prev->scissor != item->scissor)
 				{
-					if (item->scissor) GL_CHECK(glEnable(GL_SCISSOR_TEST));
-					else GL_CHECK(glDisable(GL_SCISSOR_TEST));
+					if (item->scissor)	GL_CHECK(glEnable(GL_SCISSOR_TEST));
+					else				GL_CHECK(glDisable(GL_SCISSOR_TEST));
 				}
 				if (item->scissor)
 				{
 					GL_CHECK(glScissor(item->scissor_x, item->scissor_y, item->scissor_w, item->scissor_h));
 				}
 				ProgramData& program_data = program_map_.at(item->program);
-				if (!prev || prev->program != item->program) {
+				if (!prev || prev->program != item->program)
+				{
 					assert(item->program.isValid());
 					GL_CHECK(glUseProgram(program_data.program));
 				}
@@ -827,7 +901,8 @@ namespace gfx {
 				{
 					auto location = program_data.uniform_location_map.find(cb.first);
 					GLint uniform_location;
-					if (location != program_data.uniform_location_map.end()) {
+					if (location != program_data.uniform_location_map.end())
+					{
 						uniform_location = location->second;
 					}
 					else {
@@ -844,7 +919,7 @@ namespace gfx {
 					binder.update(uniform_location, cb.second);
 				}
 				
-				size_t texture_count = std::max(prev ? prev->textures.size() : 0, item->textures.size());
+				const auto texture_count = std::max(prev ? prev->textures.size() : 0, item->textures.size());
 				for (auto j = 0; j < texture_count; ++j) {
 					glActiveTexture(GL_TEXTURE0 + j);
 					const TextureData& tdata = texture_map_.at(item->textures[j].handle);
@@ -855,7 +930,68 @@ namespace gfx {
 						GL_CHECK(glBindTexture(tdata.target, tdata.texture));
 					}
 				}
-			}
+
+				if (!prev || prev->vb != item->vb)
+				{
+					auto& vb_data = vertex_buffer_map_.at(item->vb);
+					GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
+				}
+				if ((!prev || prev->ib != item->ib) && item->ib.isValid()) 
+				{
+					auto& ib = index_buffer_map_.at(item->ib);
+					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
+					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+				}
+
+				if (active_vertex_decl_ != item->vertexDecl || !prev || prev->vb != item->vb)
+				{
+					const auto vertdecl_idx = static_cast<size_t>(item->vertexDecl);
+
+					assert(vertdecl_idx < sizeof(s_vertexLayouts)/sizeof(s_vertexLayouts[0]));
+
+					for (unsigned j = 0; j < gl_max_vertex_attribs_; ++j) 
+					{
+						if (j < s_vertexLayouts[vertdecl_idx].attributes.size())
+						{
+							const auto& attr = s_vertexLayouts[vertdecl_idx].attributes[j];
+							GL_CHECK(glEnableVertexAttribArray(j));
+							GL_CHECK(glVertexAttribPointer(j, attr.size, attr.type, attr.normalized, s_vertexLayouts[vertdecl_idx].stride, reinterpret_cast<const void*>(attr.pointer)));
+						}
+						else {
+							GL_CHECK(glDisableVertexAttribArray(j));
+						}
+					}
+					active_vertex_decl_ = item->vertexDecl;
+				}
+
+				const GLenum mode = MapDrawMode(item->primitive_type);
+				if (item->ib.isValid())
+				{
+					const int base_vertex = item->vb_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
+					GL_CHECK(glDrawElementsBaseVertex(mode, item->primitive_count, active_ib_type_, reinterpret_cast<void*>(static_cast<std::uintptr_t>(item->ib_offset)), base_vertex));
+				}
+				else 
+				{
+					GLsizei count = item->primitive_count;
+					if (
+						item->primitive_type == PrimitiveType::Triangles ||
+						item->primitive_type == PrimitiveType::TriangleFan ||
+						item->primitive_type == PrimitiveType::TriangleStrip)
+					{
+						count *= 3;
+					}
+					else if (
+						item->primitive_type == PrimitiveType::Lines ||
+						item->primitive_type == PrimitiveType::LineLoop ||
+						item->primitive_type == PrimitiveType::LineStrip)
+					{
+						count *= 2;
+					}
+
+					glDrawArrays(mode, item->ib_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride, count);
+				}
+
+			} // render_items
 		}
 
 		return false;
