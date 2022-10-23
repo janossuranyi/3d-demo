@@ -285,7 +285,12 @@ namespace gfx {
 		void operator()(const glm::mat4& value) {
 			GL_CHECK(glUniformMatrix4fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
 		}
-
+		void operator()(const std::vector<float>& value) {
+			glUniform1fv(uniform_location_, value.size(), (const GLfloat*)value.data());
+		}
+		void operator()(const std::vector<glm::vec4>& value) {
+			glUniform4fv(uniform_location_, value.size(), (const GLfloat*)value.data());
+		}
 		void update(GLint location, const UniformData& value) {
 			uniform_location_ = location;
 			std::visit(*this, value);
@@ -965,29 +970,31 @@ namespace gfx {
 				}
 
 				const GLenum mode = MapDrawMode(item->primitive_type);
+				const GLsizei count = item->vertex_count;
+				/*
+									if (
+										item->primitive_type == PrimitiveType::Triangles ||
+										item->primitive_type == PrimitiveType::TriangleFan ||
+										item->primitive_type == PrimitiveType::TriangleStrip)
+									{
+										count *= 3;
+									}
+									else if (
+										item->primitive_type == PrimitiveType::Lines ||
+										item->primitive_type == PrimitiveType::LineLoop ||
+										item->primitive_type == PrimitiveType::LineStrip)
+									{
+										count *= 2;
+									}
+				*/
+
 				if (item->ib.isValid())
 				{
 					const int base_vertex = item->vb_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
-					GL_CHECK(glDrawElementsBaseVertex(mode, item->primitive_count, active_ib_type_, reinterpret_cast<void*>(static_cast<std::uintptr_t>(item->ib_offset)), base_vertex));
+					GL_CHECK(glDrawElementsBaseVertex(mode, count, active_ib_type_, reinterpret_cast<void*>(static_cast<std::uintptr_t>(item->ib_offset)), base_vertex));
 				}
 				else 
 				{
-					GLsizei count = item->primitive_count;
-					if (
-						item->primitive_type == PrimitiveType::Triangles ||
-						item->primitive_type == PrimitiveType::TriangleFan ||
-						item->primitive_type == PrimitiveType::TriangleStrip)
-					{
-						count *= 3;
-					}
-					else if (
-						item->primitive_type == PrimitiveType::Lines ||
-						item->primitive_type == PrimitiveType::LineLoop ||
-						item->primitive_type == PrimitiveType::LineStrip)
-					{
-						count *= 2;
-					}
-
 					glDrawArrays(mode, item->ib_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride, count);
 				}
 

@@ -33,6 +33,13 @@ namespace gfx {
 		unorm tangent;		//4
 		unorm color;		//4 = 32
 
+		VertexDecl<VertexDeclType::Draw>() :
+			position{ 0.0f,0.0f,0.0f,0.0f },
+			texcoord{ 0,0 },
+			normal{ 0,0,0,0 },
+			tangent{ 0,0,0,0 },
+			color{ 0,0,0,0 } {}
+
 		DrawVert& set_position(const float* apos);
 		DrawVert& set_texcoord(const float* apos);
 		DrawVert& set_normal(const float* apos);
@@ -82,8 +89,8 @@ namespace gfx {
 
 	inline DrawVert& VertexDecl<VertexDeclType::Draw>::set_texcoord(const float* apos)
 	{
-		texcoord.s = apos[0];
-		texcoord.t = apos[1];
+		texcoord.s = F32toF16(apos[0]);
+		texcoord.t = F32toF16(apos[1]);
 
 		return *this;
 	}

@@ -53,6 +53,14 @@ namespace gfx {
 		return handle;
 	}
 
+	ConstantBufferHandle Renderer::createConstantBuffer(uint32_t size, BufferUsage usage, Memory data)
+	{
+		ConstantBufferHandle handle = constant_buffer_handle_.next();
+		submitPreFrameCommand(cmd::CreateConstantBuffer{ handle, std::move(data), size, usage });
+
+		return handle;
+	}
+
 	TextureHandle Renderer::createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, Memory data)
 	{
 		TextureHandle handle = texture_handle_.next();
@@ -63,22 +71,207 @@ namespace gfx {
 		return handle;
 	}
 
-	bool Renderer::renderFrame(Frame* frame)
+	TextureHandle Renderer::createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, std::vector<Memory>& data)
 	{
-		shared_render_context_->process_command_list(frame->commands_pre);
-		if (!shared_render_context_->frame(frame)) {
+		if (data.size() != 6)
+		{
+			Warning("Cubemap must contains 6 texture image");
+			return TextureHandle();
+		}
+
+		TextureHandle handle = texture_handle_.next();
+		submitPreFrameCommand(cmd::CreateTextureCubeMap{ handle,width,height,format,wrap,minfilter,magfilter,srgb,std::move(data)});
+
+		texture_data_[handle] = TextureData{ width,height,format };
+
+		return handle;
+	}
+
+	FrameBufferHandle Renderer::createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format)
+	{
+		FrameBufferHandle handle = frame_buffer_handle_.next();
+		TextureHandle color = createTexture2D(width, height, format, TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, false, Memory());
+		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height,std::vector<TextureHandle>{color} });
+
+		return handle;
+	}
+
+	FrameBufferHandle Renderer::createFrameBuffer(std::vector<TextureHandle>& textures)
+	{
+		if (textures.empty())
+		{
+			Warning("Framebuffer required one color texture at least");
+			return FrameBufferHandle();
+		}
+
+		uint16_t w = texture_data_.at(textures[0]).width, h = texture_data_.at(textures[0]).height;
+
+		for (auto& t : textures)
+		{
+			auto& tdata = texture_data_.at(t);
+			if (tdata.width != w || tdata.height != h)
+			{
+				Warning("Framebuffer textures must be same size");
+				return FrameBufferHandle();
+			}
+		}
+		
+		FrameBufferHandle handle = frame_buffer_handle_.next();
+		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,w,h,std::move(textures)});
+
+		return handle;
+	}
+
+	ProgramHandle Renderer::createProgram()
+	{
+		ProgramHandle handle = program_handle_.next();
+		submitPreFrameCommand(cmd::CreateProgram{handle});
+
+		return handle;
+	}
+
+	ShaderHandle Renderer::createShader(ShaderStage stage, const std::string& source)
+	{
+		if (source.empty())
+		{
+			Warning("Shader source is empty!!!");
+			return ShaderHandle();
+		}
+
+		ShaderHandle handle = shader_handle_.next();
+		submitPreFrameCommand(cmd::CreateShader{handle,stage,source});
+
+		return handle;
+	}
+
+	void Renderer::linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders)
+	{
+		submitPreFrameCommand(cmd::LinkProgram{ handle, std::move(shaders)});
+	}
+
+	void Renderer::updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset)
+	{
+		submitPreFrameCommand(cmd::UpdateVertexBuffer{ handle,std::move(data),offset,0 });
+	}
+
+	void Renderer::updateIndexBuffer(IndexBufferHandle handle, Memory data, uint32_t offset)
+	{
+		submitPreFrameCommand(cmd::UpdateIndexBuffer{ handle,std::move(data),offset });
+	}
+
+	void Renderer::updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint32_t offset)
+	{
+		submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
+	}
+
+	void Renderer::deleteVertexBuffer(VertexBufferHandle handle)
+	{
+		submitPostFrameCommand(cmd::DeleteVertexBuffer{ handle });
+	}
+
+	void Renderer::deleteIndexBuffer(IndexBufferHandle handle)
+	{
+		submitPostFrameCommand(cmd::DeleteIndexBuffer{ handle });
+	}
+
+	void Renderer::deleteConstantBuffer(ConstantBufferHandle handle)
+	{
+		submitPostFrameCommand(cmd::DeleteConstantBuffer{ handle });
+	}
+
+	void Renderer::deleteFrameBuffer(FrameBufferHandle handle)
+	{
+		submitPostFrameCommand(cmd::DeleteFramebuffer{ handle });
+	}
+
+	void Renderer::setRenderState(StateBits bits)
+	{
+		submit_->active_item.state_bits = bits;
+	}
+
+	void Renderer::setScissorEnable(bool enabled)
+	{
+		submit_->active_item.scissor = enabled;
+	}
+
+	void Renderer::setScissor(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+	{
+		submit_->active_item.scissor_x = x;
+		submit_->active_item.scissor_y = y;
+		submit_->active_item.scissor_w = w;
+		submit_->active_item.scissor_h = h;
+	}
+
+	void Renderer::setVertexBuffer(VertexBufferHandle handle)
+	{
+		submit_->active_item.vb = handle;
+		submit_->active_item.vb_offset = 0;
+	}
+
+	void Renderer::setIndexBuffer(IndexBufferHandle handle)
+	{
+		submit_->active_item.ib = handle;
+		submit_->active_item.ib_offset = 0;
+	}
+
+	void Renderer::setPrimitiveType(PrimitiveType type)
+	{
+		submit_->active_item.primitive_type = type;
+	}
+
+	void Renderer::setProgramVar(const std::string& name, int value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+	void Renderer::setProgramVar(const std::string& name, float value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+	void Renderer::setProgramVar(const std::string& name, const glm::vec2& value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+	void Renderer::setProgramVar(const std::string& name, const glm::vec3& value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+	void Renderer::setProgramVar(const std::string& name, const glm::vec4& value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+	void Renderer::setProgramVar(const std::string& name, const glm::mat3& value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+	void Renderer::setProgramVar(const std::string& name, const glm::mat4& value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+	void Renderer::setProgramVar(const std::string& name, const std::vector<float>& value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+	void Renderer::setProgramVar(const std::string& name, const std::vector<glm::vec4>& value)
+	{
+		setProgramVar(name, UniformData{ value });
+	}
+
+
+	bool Renderer::frame()
+	{
+		// single thread yet
+		if (!renderFrame(submit_)) {
+			Error("render failed!");
 			return false;
 		}
-		shared_render_context_->process_command_list(frame->commands_post);
-
-		frame->commands_post.clear();
-		frame->commands_pre.clear();
-		frame->active_item = RenderItem();
-		for (auto& pass : frame->render_passes) {
-			pass.clear();
-		}
-
-		frame->renderPass(0).frame_buffer = FrameBufferHandle{ 0 };
 	}
 
 	void Renderer::submitPreFrameCommand(RenderCommand command)
@@ -105,5 +298,45 @@ namespace gfx {
 		}
 
 		return render_passes[index];
+	}
+	void Renderer::setProgramVar(const std::string& name, UniformData data)
+	{
+		submit_->active_item.uniforms[name] = data;
+	}
+	void Renderer::submit(uint32_t pass, ProgramHandle program)
+	{
+		submit(pass, program, 0);
+	}
+	void Renderer::submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count)
+	{
+		submit(pass, program, vertex_count);
+	}
+	void Renderer::submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset)
+	{
+		auto& item = submit_->active_item;
+		item.program = program;
+		item.vertex_count = vertex_count;
+		item.ib_offset = ib_offset;
+		item.vb_offset = vb_offset;
+
+		submit_->renderPass(pass).render_items.emplace_back(std::move(item));
+		item = RenderItem();
+	}
+
+	bool Renderer::renderFrame(Frame* frame)
+	{
+		shared_render_context_->process_command_list(frame->commands_pre);
+		if (!shared_render_context_->frame(frame)) return false;
+		shared_render_context_->process_command_list(frame->commands_post);
+
+		frame->active_item = RenderItem();
+		for (auto& pass : frame->render_passes)
+			pass.clear();
+
+		frame->renderPass(0).frame_buffer = FrameBufferHandle{ 0 };
+		frame->commands_pre.clear();
+		frame->commands_post.clear();
+
+		return true;
 	}
 }

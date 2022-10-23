@@ -282,7 +282,7 @@ namespace gfx {
             TextureFilter min_filter;
             TextureFilter mag_filter;
             bool srgb;
-            std::array<Memory, 6> data;
+            std::vector<Memory> data;
         };
 
         struct DeleteTexture {
@@ -305,6 +305,7 @@ namespace gfx {
         cmd::CreateVertexBuffer,
         cmd::CreateIndexBuffer,
         cmd::CreateProgram,
+        cmd::LinkProgram,
         cmd::CreateFramebuffer,
         cmd::CreateShader,
         cmd::CreateTexture1D,
@@ -321,7 +322,7 @@ namespace gfx {
         cmd::DeleteTexture,
         cmd::DeleteVertexBuffer>;
 
-    using UniformData = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4>;
+    using UniformData = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, std::vector<float>, std::vector<glm::vec4>>;
 
 
     struct RenderItem {
@@ -333,7 +334,7 @@ namespace gfx {
         IndexBufferHandle ib;
         uint32_t ib_offset;
         uint32_t vb_offset;
-        uint32_t primitive_count;
+        uint32_t vertex_count;
         PrimitiveType primitive_type;
         ProgramHandle program;
         VertexDeclType vertexDecl;
@@ -389,9 +390,48 @@ namespace gfx {
         bool init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
         VertexBufferHandle createVertexBuffer(uint32_t size, BufferUsage usage, Memory data);
         IndexBufferHandle createIndexBuffer(uint32_t size, BufferUsage usage, Memory data);
+        ConstantBufferHandle createConstantBuffer(uint32_t size, BufferUsage usage, Memory data);
         TextureHandle createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, Memory data);
+        TextureHandle createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, std::vector<Memory>& data);
         FrameBufferHandle createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
-        FrameBufferHandle createFrameBuffer(const std::vector<TextureHandle> textures);
+        FrameBufferHandle createFrameBuffer(std::vector<TextureHandle>& textures);
+        ProgramHandle createProgram();
+        ShaderHandle createShader(ShaderStage stage, const std::string& source);
+        void linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders);
+
+        void updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset);
+        void updateIndexBuffer(IndexBufferHandle handle, Memory data, uint32_t offset);
+        void updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint32_t offset);
+
+        void deleteVertexBuffer(VertexBufferHandle handle);
+        void deleteIndexBuffer(IndexBufferHandle handle);
+        void deleteConstantBuffer(ConstantBufferHandle handle);
+        void deleteFrameBuffer(FrameBufferHandle handle);
+
+        void setRenderState(StateBits bits);
+        void setScissorEnable(bool enabled);
+        void setScissor(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+        void setVertexBuffer(VertexBufferHandle handle);
+        void setIndexBuffer(IndexBufferHandle handle);
+        void setPrimitiveType(PrimitiveType type);
+
+        void setProgramVar(const std::string& name, int value);
+        void setProgramVar(const std::string& name, float value);
+        void setProgramVar(const std::string& name, const glm::vec2& value);
+        void setProgramVar(const std::string& name, const glm::vec3& value);
+        void setProgramVar(const std::string& name, const glm::vec4& value);
+        void setProgramVar(const std::string& name, const glm::mat3& value);
+        void setProgramVar(const std::string& name, const glm::mat4& value);
+        void setProgramVar(const std::string& name, const std::vector<float>& value);
+        void setProgramVar(const std::string& name, const std::vector<glm::vec4>& value);
+        void setProgramVar(const std::string& name, UniformData data);
+
+        void submit(uint32_t pass, ProgramHandle program);
+        void submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count);
+        void submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset);
+
+        bool frame();
+        bool renderFrame(Frame* frame);
 
     private:
         uint16_t width_, height_;
@@ -401,6 +441,7 @@ namespace gfx {
         std::thread render_thread_;
 
         // Handles.
+        HandleGenerator<ConstantBufferHandle> constant_buffer_handle_;
         HandleGenerator<VertexBufferHandle> vertex_buffer_handle_;
         HandleGenerator<IndexBufferHandle> index_buffer_handle_;
         HandleGenerator<ShaderHandle> shader_handle_;
@@ -438,7 +479,6 @@ namespace gfx {
 
         // Render thread proc.
         void renderThread() {};
-        bool renderFrame(Frame* frame);
 
     };
 
