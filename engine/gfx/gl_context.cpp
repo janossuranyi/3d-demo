@@ -847,18 +847,11 @@ namespace gfx {
 				size_t texture_count = std::max(prev ? prev->textures.size() : 0, item->textures.size());
 				for (auto j = 0; j < texture_count; ++j) {
 					glActiveTexture(GL_TEXTURE0 + j);
-					if (j > item->textures.size()) {
-						GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
-						GL_CHECK(glBindTexture(GL_TEXTURE_1D, 0));
-						GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
-					}
-					else if (!item->textures[j].handle.isValid()) {
-						GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
-						GL_CHECK(glBindTexture(GL_TEXTURE_1D, 0));
-						GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+					const TextureData& tdata = texture_map_.at(item->textures[j].handle);
+					if (j > item->textures.size() || !item->textures[j].handle.isValid()) {
+						GL_CHECK(glBindTexture(tdata.target, 0));
 					}
 					else {
-						TextureData& tdata = texture_map_.at(item->textures[j].handle);
 						GL_CHECK(glBindTexture(tdata.target, tdata.texture));
 					}
 				}

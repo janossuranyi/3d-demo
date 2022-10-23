@@ -162,7 +162,9 @@ namespace gfx {
 
     // Primitives
     enum class PrimitiveType { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };
-    
+
+    enum class VertexDeclType { Draw, Shadow };
+
 
     namespace cmd {
         struct CreateConstantBuffer {
