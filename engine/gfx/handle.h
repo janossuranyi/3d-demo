@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cinttypes>
+#include <limits>
 
 namespace gfx {
 
@@ -79,14 +80,13 @@ namespace gfx {
         ~HandleGenerator() = default;
 
         Handle next() {
-
-            if (free_.empty())
-                return next_++;
-
-            Handle r = free_.back();
-            free_.pop_back();
-
-            return r;
+            if (next_ == std::numeric_limits<Handle::base_type>::max() && !free_.empty())
+            {
+                Handle r = free_.back();
+                free_.pop_back();
+                return r;
+            }
+            return next_++;
         }
 
         void release(Handle h) {

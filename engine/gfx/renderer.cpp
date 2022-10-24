@@ -1,3 +1,8 @@
+#include <thread>
+#include <condition_variable>
+#include <mutex>
+#include <vector>
+#include <chrono>
 #include "renderer.h"
 #include "logger.h"
 #include "gl_context.h"
@@ -15,14 +20,22 @@ namespace gfx {
 		height_{0},
 		window_title_{"JS-Engine"},
 		use_thread_{false},
-		render_thread_{},
-		swapped_frames_{true},
 		submit_{&frames_[0]},
 		render_{ &frames_[1] }
-	{}
+	{
+	}
 
 	Renderer::~Renderer()
 	{
+		if (use_thread_)
+		{
+			{
+				std::lock_guard<std::mutex> lck(render_mtx_);
+				should_terminate_ = true;
+			}
+			render_cond_.notify_all();
+			render_thread_.join();
+		}
 	}
 
 	bool Renderer::init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread) {
@@ -31,8 +44,18 @@ namespace gfx {
 			return false;
 		}
 
+		use_thread_ = use_thread;
 		shared_render_context_.reset(new OpenGLRenderContext());
 		shared_render_context_->create_window(width, height, false, title);
+
+		if (use_thread_)
+		{
+			render_thread_ = std::thread(&Renderer::renderThread, this);
+		}
+		else
+		{
+			shared_render_context_->start_rendering();
+		}
 
 		return true;
 	}
@@ -96,7 +119,9 @@ namespace gfx {
 	{
 		FrameBufferHandle handle = frame_buffer_handle_.next();
 		TextureHandle color = createTexture2D(width, height, format, TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, false, Memory());
-		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height,std::vector<TextureHandle>{color} });
+		auto textures = std::vector<TextureHandle>{ color };
+		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height, textures});
+		frame_buffer_textures_.emplace(handle, textures);
 
 		return handle;
 	}
@@ -122,7 +147,8 @@ namespace gfx {
 		}
 		
 		FrameBufferHandle handle = frame_buffer_handle_.next();
-		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,w,h,std::move(textures)});
+		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,w,h,textures});
+		frame_buffer_textures_.emplace(handle, std::move(textures));
 
 		return handle;
 	}
@@ -172,31 +198,59 @@ namespace gfx {
 	void Renderer::deleteVertexBuffer(VertexBufferHandle handle)
 	{
 		submitPostFrameCommand(cmd::DeleteVertexBuffer{ handle });
+
+		vertex_buffer_handle_.release(handle);
 	}
 
 	void Renderer::deleteIndexBuffer(IndexBufferHandle handle)
 	{
 		submitPostFrameCommand(cmd::DeleteIndexBuffer{ handle });
+
+		index_buffer_handle_.release(handle);
 	}
 
 	void Renderer::deleteConstantBuffer(ConstantBufferHandle handle)
 	{
 		submitPostFrameCommand(cmd::DeleteConstantBuffer{ handle });
+
+		constant_buffer_handle_.release(handle);
 	}
 
 	void Renderer::deleteFrameBuffer(FrameBufferHandle handle)
 	{
 		submitPostFrameCommand(cmd::DeleteFramebuffer{ handle });
+		frame_buffer_handle_.release(handle);
+
+		for (auto& texture_handle : frame_buffer_textures_.at(handle))
+		{
+			submitPostFrameCommand(cmd::DeleteTexture{ texture_handle });
+
+			texture_data_.erase(texture_handle);
+			texture_handle_.release(texture_handle);
+		}
+		frame_buffer_textures_.erase(handle);
 	}
 
 	void Renderer::deleteProgram(ProgramHandle handle)
 	{
-		submitPreFrameCommand(cmd::DeleteProgram{ handle });
+		submitPostFrameCommand(cmd::DeleteProgram{ handle });
+
+		program_handle_.release(handle);
 	}
 
 	void Renderer::deleteShader(ShaderHandle handle)
 	{
-		submitPreFrameCommand(cmd::DeleteShader{ handle });
+		submitPostFrameCommand(cmd::DeleteShader{ handle });
+
+		shader_handle_.release(handle);
+	}
+
+	void Renderer::deleteTexture(TextureHandle handle)
+	{
+		submitPostFrameCommand(cmd::DeleteTexture{ handle });
+
+		texture_data_.erase(handle);
+		texture_handle_.release(handle);
 	}
 
 	void Renderer::setRenderState(StateBits bits)
@@ -307,11 +361,28 @@ namespace gfx {
 
 	bool Renderer::frame()
 	{
-		// single thread yet
-		if (!renderFrame(submit_)) {
-			Error("render failed!");
-			return false;
+
+		if (!use_thread_)
+		{
+			if (!renderFrame(submit_)) {
+				Error("render failed!");
+				return false;
+			}
 		}
+		else
+		{
+			// wait previous render to finnish
+			{
+				std::unique_lock<std::mutex> lck(render_mtx_);
+				render_cond_.wait(lck, [this] {return render_done_; });
+				std::swap(render_, submit_);
+				render_job_submitted_ = true;
+				render_done_ = false;
+			}
+			render_cond_.notify_all();
+		}
+
+		return true;
 	}
 
 	void Renderer::submitPreFrameCommand(RenderCommand command)
@@ -322,6 +393,34 @@ namespace gfx {
 	void Renderer::submitPostFrameCommand(RenderCommand command)
 	{
 		submit_->commands_post.emplace_back(std::move(command));
+	}
+
+	void Renderer::renderThread()
+	{
+		Info("Rendering thread start... %d", std::this_thread::get_id());
+
+		shared_render_context_->start_rendering();
+		while (!should_terminate_)
+		{
+			std::unique_lock<std::mutex> lck(render_mtx_);
+
+			render_done_ = true;
+			render_cond_.notify_all();
+
+			render_cond_.wait(lck, [this] {return should_terminate_ || render_job_submitted_; });
+
+			render_job_submitted_ = false;
+			render_done_ = false;
+
+			lck.unlock();
+
+			if (!renderFrame(render_))
+			{
+				should_terminate_ = true;
+			}
+		}
+		shared_render_context_->stop_rendering();
+		Info("Rendering thread stopped!");
 	}
 	
 	Frame::Frame()
@@ -385,5 +484,13 @@ namespace gfx {
 		frame->commands_post.clear();
 
 		return true;
+	}
+	void Renderer::waitForFrameEnd()
+	{
+		if (use_thread_)
+		{
+			std::unique_lock<std::mutex> lck(render_mtx_);
+			render_cond_.wait(lck, [this] {return render_done_; });
+		}
 	}
 }

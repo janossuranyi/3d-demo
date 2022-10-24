@@ -125,6 +125,8 @@ namespace gfx {
         RGB5A1,
         RGB10A2,
         RG11B10F,
+        RGB8_COMPRESSED,
+        RGBA8_COMPRESSED,
         // Depth formats.
         D16,
         D24,
@@ -411,6 +413,7 @@ namespace gfx {
         void deleteFrameBuffer(FrameBufferHandle handle);
         void deleteProgram(ProgramHandle handle);
         void deleteShader(ShaderHandle handle);
+        void deleteTexture(TextureHandle handle);
 
         void setRenderState(StateBits bits);
         void setScissorEnable(bool enabled);
@@ -441,13 +444,20 @@ namespace gfx {
 
         bool frame();
         bool renderFrame(Frame* frame);
+        void waitForFrameEnd();
 
     private:
         uint16_t width_, height_;
         std::string window_title_;
 
         bool use_thread_;
+        bool render_done_{ true };
+        bool render_job_submitted_{ false };
+        bool should_terminate_{ false };
+
         std::thread render_thread_;
+        std::mutex render_mtx_;
+        std::condition_variable render_cond_;
 
         // Handles.
         HandleGenerator<ConstantBufferHandle> constant_buffer_handle_;
@@ -471,10 +481,6 @@ namespace gfx {
         // Framebuffers.
         std::unordered_map<FrameBufferHandle, std::vector<TextureHandle>> frame_buffer_textures_;
 
-        std::mutex swap_mutex_;
-        std::condition_variable swap_cv_;
-        bool swapped_frames_;
-
         Frame frames_[2];
         Frame* submit_;
         Frame* render_;
@@ -487,7 +493,7 @@ namespace gfx {
         std::unique_ptr<RenderContext> shared_render_context_;
 
         // Render thread proc.
-        void renderThread() {};
+        void renderThread();
 
     };
 

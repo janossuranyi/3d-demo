@@ -141,6 +141,8 @@ namespace gfx {
 		IndexBufferHandle active_ib_{ IndexBufferHandle::invalid };
 		ProgramHandle active_program_{ ProgramHandle::invalid };
 		bool scissor_test_{ false };
+		int active_vertex_attribs_{ 0 };
+		GLuint temp_;
 	};
 
 }

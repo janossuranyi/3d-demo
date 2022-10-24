@@ -209,6 +209,8 @@ namespace gfx {
 		{GL_RGB5_A1,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_1_5_5_5_REV,   false}, // RGB5A1
 		{GL_RGB10_A2,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT_2_10_10_10_REV,  false}, // RGB10A2
 		{GL_R11F_G11F_B10F,     GL_ZERO,         GL_RGB,              GL_UNSIGNED_INT_10F_11F_11F_REV, false}, // RG11B10F
+		{GL_COMPRESSED_RGB,     GL_COMPRESSED_SRGB,GL_RGB,            GL_UNSIGNED_BYTE,                false}, // RGB8_COMPRESSED
+		{GL_COMPRESSED_RGBA,    GL_COMPRESSED_SRGB_ALPHA,GL_RGBA,     GL_UNSIGNED_BYTE,                false}, // RGBA8_COMPRESSED
 		{GL_DEPTH_COMPONENT16,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_SHORT,               false}, // D16
 		{GL_DEPTH_COMPONENT24,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 false}, // D24
 		{GL_DEPTH24_STENCIL8,   GL_ZERO,         GL_DEPTH_STENCIL,    GL_UNSIGNED_INT_24_8,            false}, // D24S8
@@ -369,8 +371,11 @@ namespace gfx {
 		const auto& data = result->second;
 
 		GL_CHECK(glDeleteBuffers(1, &data.buffer));
-
 		constant_buffer_map_.erase(cmd.handle);
+#ifdef _DEBUG
+		Info("Uniform buffer %d deleted", cmd.handle);
+#endif
+
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
@@ -419,8 +424,11 @@ namespace gfx {
 		const auto& data = result->second;
 
 		GL_CHECK(glDeleteBuffers(1, &data.buffer));
-
 		vertex_buffer_map_.erase(cmd.handle);
+
+#ifdef _DEBUG
+		Info("Vertex buffer %d deleted", cmd.handle);
+#endif
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateIndexBuffer& cmd)
@@ -465,6 +473,11 @@ namespace gfx {
 		const auto result = index_buffer_map_.find(cmd.handle);
 		GL_CHECK(glDeleteBuffers(1, &result->second.buffer));
 		index_buffer_map_.erase(cmd.handle);
+
+#ifdef _DEBUG
+		Info("Uniform buffer %d deleted", cmd.handle);
+#endif
+
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateShader& cmd)
@@ -507,8 +520,12 @@ namespace gfx {
 	{
 		auto result = shader_map_.find(cmd.handle);
 		GL_CHECK(glDeleteShader(result->second.shader));
-
 		shader_map_.erase(cmd.handle);
+
+#ifdef _DEBUG
+		Info("Shader %d deleted", cmd.handle);
+#endif
+
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateProgram& cmd)
@@ -554,6 +571,11 @@ namespace gfx {
 		auto& p_data = program_map_.at(cmd.handle);
 		GL_CHECK(glDeleteProgram(p_data.program));
 		program_map_.erase(cmd.handle);
+
+#ifdef _DEBUG
+		Info("Program %d deleted", cmd.handle);
+#endif
+
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateTexture1D& cmd) {}
@@ -563,6 +585,11 @@ namespace gfx {
 		auto& t_data = texture_map_.at(cmd.handle);
 		GL_CHECK(glDeleteTextures(1, &t_data.texture));
 		texture_map_.erase(cmd.handle);
+
+#ifdef _DEBUG
+		Info("Texture %d deleted", cmd.handle);
+#endif
+
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateTexture2D& cmd)
@@ -675,7 +702,12 @@ namespace gfx {
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteFramebuffer& cmd)
 	{
-
+		auto& fbData = frame_buffer_map_.at(cmd.handle);
+		GL_CHECK(glDeleteFramebuffers(1, &fbData.frame_buffer));
+		GL_CHECK(glDeleteRenderbuffers(1, &fbData.depth_render_buffer));
+#ifdef _DEBUG
+		Info("Framebuffer %d deleted", cmd.handle);
+#endif
 	}
 
 	bool OpenGLRenderContext::create_window(uint16_t w, uint16_t h, bool fullscreen, const std::string& name) {
@@ -747,7 +779,7 @@ namespace gfx {
 
 		Info("glewInit done");
 
-		SDL_GL_SetSwapInterval(1);
+		SDL_GL_SetSwapInterval(-1);
 
 		std::string renderer = (char*)glGetString(GL_RENDERER);
 		std::string version = (char*)glGetString(GL_VERSION);
@@ -812,7 +844,7 @@ namespace gfx {
 		GL_CHECK(glDepthMask(GL_TRUE));
 		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &gl_max_vertex_attribs_);
 
-		//SDL_GL_MakeCurrent(windowHandle_, NULL);
+		SDL_GL_MakeCurrent(windowHandle_, NULL);
 
 		return true;
 	}
@@ -836,10 +868,12 @@ namespace gfx {
 
 	void OpenGLRenderContext::start_rendering()
 	{
+		SDL_GL_MakeCurrent(windowHandle_, glcontext_);
 	}
 
 	void OpenGLRenderContext::stop_rendering()
 	{
+		SDL_GL_MakeCurrent(windowHandle_, NULL);
 	}
 
 	bool OpenGLRenderContext::frame(const Frame* frame)
@@ -885,6 +919,11 @@ namespace gfx {
 			{
 				auto* prev = i < 0 ? &pass.render_items[i - 1] : nullptr;
 				auto* item = &pass.render_items[i];
+
+				if (item->program == ProgramHandle::invalid)
+				{
+					continue;
+				}
 
 				set_state(item->state_bits, false);
 				if (scissor_test_ != item->scissor)
@@ -963,13 +1002,17 @@ namespace gfx {
 						if (j < s_vertexLayouts[vertdecl_idx].attributes.size())
 						{
 							const auto& attr = s_vertexLayouts[vertdecl_idx].attributes[j];
-							GL_CHECK(glEnableVertexAttribArray(j));
+							if (j >= active_vertex_attribs_)
+							{
+								GL_CHECK(glEnableVertexAttribArray(j));
+							}
 							GL_CHECK(glVertexAttribPointer(j, attr.size, attr.type, attr.normalized, s_vertexLayouts[vertdecl_idx].stride, reinterpret_cast<const void*>(attr.pointer)));
 						}
-						else {
+						else if (j < active_vertex_attribs_) {
 							GL_CHECK(glDisableVertexAttribArray(j));
 						}
 					}
+					active_vertex_attribs_ = s_vertexLayouts[vertdecl_idx].attributes.size();
 					active_vertex_decl_ = item->vertexDecl;
 					active_vb_ = item->vb;
 				}
@@ -1018,6 +1061,11 @@ namespace gfx {
 
 	OpenGLRenderContext::~OpenGLRenderContext()
 	{
+#if _DEBUG
+		Info("OpenGLRenderContext::dtor");
+#endif
+		SDL_GL_MakeCurrent(windowHandle_, glcontext_);
+		
 		// freeing resources
 		std::vector<GLuint> list1;
 		std::vector<GLuint> list2;
@@ -1052,6 +1100,7 @@ namespace gfx {
 
 		GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
 		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+		GL_CHECK(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 
 		list1.clear();
 		for (auto& r : vertex_buffer_map_) {
@@ -1060,7 +1109,11 @@ namespace gfx {
 		for (auto& r : index_buffer_map_) {
 			list1.push_back(r.second.buffer);
 		}
+		for (auto& r : constant_buffer_map_) {
+			list1.push_back(r.second.buffer);
+		}
 		GL_CHECK(glDeleteBuffers(GLsizei(list1.size()), list1.data()));
+		GL_CHECK(glDeleteVertexArrays(1, &shared_vertex_array_));
 
 		frame_buffer_map_.clear();
 		vertex_buffer_map_.clear();

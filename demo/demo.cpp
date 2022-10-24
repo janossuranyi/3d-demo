@@ -9,7 +9,6 @@
 #include "resource/resource_manager.h"
 #include "engine/gfx/gfx.h"
 
-#include "effect_pointcube.h"
 #include "effect_compute_test.h"
 #include "effect_model_loading.h"
 #include "effect_test_engine.h"

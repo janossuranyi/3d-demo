@@ -125,14 +125,18 @@ EngineTestEffect::~EngineTestEffect()
 	renderer.deleteProgram(prgPoints);
 	renderer.deleteProgram(prgPP);
 	renderer.deleteProgram(prgSkybox);
+	renderer.deleteFrameBuffer(fb);
+	
 	renderer.deleteVertexBuffer(vb_points);
 	renderer.deleteVertexBuffer(vb_pp);
 	renderer.deleteVertexBuffer(vb_skybox);
+	renderer.frame();
+//	renderer.waitForFrameEnd();
 }
 
 bool EngineTestEffect::Init()
 {
-    renderer.init(gfx::RendererType::OpenGL, 1440, 900, "test", false);
+    renderer.init(gfx::RendererType::OpenGL, 1440, 900, "test", true);
 
 	glm::ivec2 win_size = renderer.getFramebufferSize();
 
@@ -173,7 +177,7 @@ bool EngineTestEffect::Init()
 		}
 
 		skybox =
-			renderer.createTextureCubemap(img_x, img_y, gfx::TextureFormat::RGB8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, true, sky_images);
+			renderer.createTextureCubemap(img_x, img_y, gfx::TextureFormat::RGB8_COMPRESSED, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, true, sky_images);
 	}
 
 	{
