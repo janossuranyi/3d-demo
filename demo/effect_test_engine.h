@@ -9,6 +9,7 @@
 
 struct EngineTestEffect : public Effect
 {
+	~EngineTestEffect();
 	bool Init();
 	bool Update(float time);
 	bool HandleEvent(const SDL_Event* ev, float time);
@@ -20,9 +21,8 @@ struct EngineTestEffect : public Effect
 	gfx::TextureHandle color_attachment;
 	gfx::TextureHandle skybox;
 
-	float pp_offset;
-
 	const int NUMPOINTS = 500000;
+	float pp_offset{ 1.0f / 1000.0f };
 
 	float rotX, rotY, eyeZ;
 	glm::mat4 P;

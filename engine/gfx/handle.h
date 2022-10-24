@@ -65,7 +65,7 @@ namespace gfx {
         }
 
         bool isValid() const {
-            return internal_handle_ != Invalid;
+            return internal_handle_ != invalid;
         }
     private:
         base_type internal_handle_;

@@ -136,6 +136,11 @@ namespace gfx {
 
 		GLenum active_ib_type_{ 0 };
 
+		// cache
+		VertexBufferHandle active_vb_{ VertexBufferHandle::invalid };
+		IndexBufferHandle active_ib_{ IndexBufferHandle::invalid };
+		ProgramHandle active_program_{ ProgramHandle::invalid };
+		bool scissor_test_{ false };
 	};
 
 }

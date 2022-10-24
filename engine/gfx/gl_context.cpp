@@ -806,7 +806,10 @@ namespace gfx {
 
 		GL_CHECK(glCreateVertexArrays(1, &shared_vertex_array_));
 		GL_CHECK(glBindVertexArray(shared_vertex_array_));
-
+		GL_CHECK(glEnable(GL_PROGRAM_POINT_SIZE));
+		GL_CHECK(glEnable(GL_DEPTH_TEST));
+		GL_CHECK(glDisable(GL_SCISSOR_TEST));
+		GL_CHECK(glDepthMask(GL_TRUE));
 		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &gl_max_vertex_attribs_);
 
 		//SDL_GL_MakeCurrent(windowHandle_, NULL);
@@ -875,30 +878,33 @@ namespace gfx {
 
 			if (clear_bits) {
 				GL_CHECK(glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a));
-				GL_CHECK(glDisable(GL_SCISSOR_TEST));
 				GL_CHECK(glClear(clear_bits));
 			}
 
-			for (auto i = 0; pass.render_items.size(); ++i)
+			for (auto i = 0; i < pass.render_items.size(); ++i)
 			{
 				auto* prev = i < 0 ? &pass.render_items[i - 1] : nullptr;
 				auto* item = &pass.render_items[i];
 
 				set_state(item->state_bits, false);
-				if (!prev || prev->scissor != item->scissor)
+				if (scissor_test_ != item->scissor)
 				{
 					if (item->scissor)	GL_CHECK(glEnable(GL_SCISSOR_TEST));
 					else				GL_CHECK(glDisable(GL_SCISSOR_TEST));
+
+					scissor_test_ = item->scissor;
 				}
 				if (item->scissor)
 				{
 					GL_CHECK(glScissor(item->scissor_x, item->scissor_y, item->scissor_w, item->scissor_h));
 				}
+
 				ProgramData& program_data = program_map_.at(item->program);
-				if (!prev || prev->program != item->program)
+				if (active_program_ != item->program)
 				{
 					assert(item->program.isValid());
 					GL_CHECK(glUseProgram(program_data.program));
+					active_program_ = item->program;
 				}
 
 				UniformBinder binder;
@@ -924,19 +930,17 @@ namespace gfx {
 					binder.update(uniform_location, cb.second);
 				}
 				
-				const auto texture_count = std::max(prev ? prev->textures.size() : 0, item->textures.size());
-				for (auto j = 0; j < texture_count; ++j) {
-					glActiveTexture(GL_TEXTURE0 + j);
-					const TextureData& tdata = texture_map_.at(item->textures[j].handle);
-					if (j > item->textures.size() || !item->textures[j].handle.isValid()) {
-						GL_CHECK(glBindTexture(tdata.target, 0));
-					}
-					else {
+				for (auto j = 0; j < item->textures.size(); ++j) {
+					if (item->textures[j].handle.isValid())
+					{
+						glActiveTexture(GL_TEXTURE0 + j);
+
+						const TextureData& tdata = texture_map_.at(item->textures[j].handle);
 						GL_CHECK(glBindTexture(tdata.target, tdata.texture));
 					}
 				}
 
-				if (!prev || prev->vb != item->vb)
+				if (active_vb_ != item->vb)
 				{
 					auto& vb_data = vertex_buffer_map_.at(item->vb);
 					GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
@@ -948,7 +952,7 @@ namespace gfx {
 					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 				}
 
-				if (active_vertex_decl_ != item->vertexDecl || !prev || prev->vb != item->vb)
+				if (active_vertex_decl_ != item->vertexDecl || item->vb != active_vb_)
 				{
 					const auto vertdecl_idx = static_cast<size_t>(item->vertexDecl);
 
@@ -967,6 +971,7 @@ namespace gfx {
 						}
 					}
 					active_vertex_decl_ = item->vertexDecl;
+					active_vb_ = item->vb;
 				}
 
 				const GLenum mode = MapDrawMode(item->primitive_type);
@@ -1001,7 +1006,9 @@ namespace gfx {
 			} // render_items
 		}
 
-		return false;
+		SDL_GL_SwapWindow(windowHandle_);
+
+		return true;
 	}
 
 	glm::ivec2 OpenGLRenderContext::get_window_size() const

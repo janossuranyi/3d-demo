@@ -37,6 +37,11 @@ namespace gfx {
 		return true;
 	}
 
+	glm::ivec2 Renderer::getFramebufferSize() const
+	{
+		return shared_render_context_->get_window_size();
+	}
+
 	VertexBufferHandle Renderer::createVertexBuffer(uint32_t size, BufferUsage usage, Memory data)
 	{
 		VertexBufferHandle handle = vertex_buffer_handle_.next();
@@ -146,7 +151,7 @@ namespace gfx {
 
 	void Renderer::linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders)
 	{
-		submitPreFrameCommand(cmd::LinkProgram{ handle, std::move(shaders)});
+		submitPreFrameCommand(cmd::LinkProgram{ handle, shaders });
 	}
 
 	void Renderer::updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset)
@@ -184,6 +189,16 @@ namespace gfx {
 		submitPostFrameCommand(cmd::DeleteFramebuffer{ handle });
 	}
 
+	void Renderer::deleteProgram(ProgramHandle handle)
+	{
+		submitPreFrameCommand(cmd::DeleteProgram{ handle });
+	}
+
+	void Renderer::deleteShader(ShaderHandle handle)
+	{
+		submitPreFrameCommand(cmd::DeleteShader{ handle });
+	}
+
 	void Renderer::setRenderState(StateBits bits)
 	{
 		submit_->active_item.state_bits = bits;
@@ -217,6 +232,31 @@ namespace gfx {
 	void Renderer::setPrimitiveType(PrimitiveType type)
 	{
 		submit_->active_item.primitive_type = type;
+	}
+
+	void Renderer::setTexure(uint16_t unit, TextureHandle handle)
+	{
+		submit_->active_item.textures[unit].handle = handle;
+	}
+
+	void Renderer::setClearBits(unsigned pass, uint16_t value)
+	{
+		submit_->renderPass(pass).clear_bits = value;
+	}
+
+	void Renderer::setFrameBuffer(unsigned pass, FrameBufferHandle handle)
+	{
+		submit_->renderPass(pass).frame_buffer = handle;
+	}
+
+	void Renderer::setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle)
+	{
+		submit_->renderPass(pass).constant_buffers[index] = handle;
+	}
+
+	void Renderer::setClearColor(unsigned pass, const glm::vec4& value)
+	{
+		submit_->renderPass(pass).clear_color = value;
 	}
 
 	void Renderer::setProgramVar(const std::string& name, int value)
@@ -309,7 +349,7 @@ namespace gfx {
 	}
 	void Renderer::submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count)
 	{
-		submit(pass, program, vertex_count);
+		submit(pass, program, vertex_count, 0, 0);
 	}
 	void Renderer::submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset)
 	{
@@ -326,12 +366,19 @@ namespace gfx {
 	bool Renderer::renderFrame(Frame* frame)
 	{
 		shared_render_context_->process_command_list(frame->commands_pre);
-		if (!shared_render_context_->frame(frame)) return false;
+
+		if (!shared_render_context_->frame(frame))
+		{
+			return false;
+		}
+
 		shared_render_context_->process_command_list(frame->commands_post);
 
 		frame->active_item = RenderItem();
 		for (auto& pass : frame->render_passes)
+		{
 			pass.clear();
+		}
 
 		frame->renderPass(0).frame_buffer = FrameBufferHandle{ 0 };
 		frame->commands_pre.clear();

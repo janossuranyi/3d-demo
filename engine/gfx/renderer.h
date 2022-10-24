@@ -388,6 +388,8 @@ namespace gfx {
         ~Renderer();
 
         bool init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
+        glm::ivec2 getFramebufferSize() const;
+
         VertexBufferHandle createVertexBuffer(uint32_t size, BufferUsage usage, Memory data);
         IndexBufferHandle createIndexBuffer(uint32_t size, BufferUsage usage, Memory data);
         ConstantBufferHandle createConstantBuffer(uint32_t size, BufferUsage usage, Memory data);
@@ -407,6 +409,8 @@ namespace gfx {
         void deleteIndexBuffer(IndexBufferHandle handle);
         void deleteConstantBuffer(ConstantBufferHandle handle);
         void deleteFrameBuffer(FrameBufferHandle handle);
+        void deleteProgram(ProgramHandle handle);
+        void deleteShader(ShaderHandle handle);
 
         void setRenderState(StateBits bits);
         void setScissorEnable(bool enabled);
@@ -414,6 +418,11 @@ namespace gfx {
         void setVertexBuffer(VertexBufferHandle handle);
         void setIndexBuffer(IndexBufferHandle handle);
         void setPrimitiveType(PrimitiveType type);
+        void setTexure(uint16_t unit, TextureHandle handle);
+        void setClearColor(unsigned pass, const glm::vec4& value);
+        void setClearBits(unsigned pass, uint16_t value);
+        void setFrameBuffer(unsigned pass, FrameBufferHandle handle);
+        void setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
 
         void setProgramVar(const std::string& name, int value);
         void setProgramVar(const std::string& name, float value);
