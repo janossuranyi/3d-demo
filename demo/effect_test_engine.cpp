@@ -140,10 +140,12 @@ bool EngineTestEffect::Init()
 
 	glm::ivec2 win_size = renderer.getFramebufferSize();
 
+	depth_attachment =
+		renderer.createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::D24S8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, Memory());
     color_attachment = 
-        renderer.createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, Memory());
+        renderer.createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, Memory());
     fb = 
-        renderer.createFrameBuffer(std::vector<gfx::TextureHandle>{color_attachment});
+        renderer.createFrameBuffer(std::vector<gfx::TextureHandle>{color_attachment}, depth_attachment);
 
 
 	const std::vector<std::string> textures_faces = {

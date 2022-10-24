@@ -618,10 +618,13 @@ namespace gfx {
 		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap));
 
-		GL_CHECK(glGenerateMipmap(target));
+		if (cmd.mipmap)
+		{
+			GL_CHECK(glGenerateMipmap(target));
+		}
 		GL_CHECK(glBindTexture(target, 0));
 
-		const TextureData t_data{ texture, target };
+		const TextureData t_data{ texture, target, cmd.format };
 		texture_map_.emplace(cmd.handle, t_data);
 	}
 
@@ -675,17 +678,45 @@ namespace gfx {
 		{
 			const auto& gl_texture = texture_map_.find(fb_texture);
 			assert(gl_texture != texture_map_.end());
+
 			draw_buffers.emplace_back(GL_COLOR_ATTACHMENT0 + attachment++);
 			GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), GL_TEXTURE_2D, gl_texture->second.texture, 0));
 		}
 		GL_CHECK(glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
 
-		// Create depth buffer.
-		GL_CHECK(glGenRenderbuffers(1, &fb_data.depth_render_buffer));
-		GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
-		GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
-		GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
-			fb_data.depth_render_buffer));
+		if (cmd.depth_stencil_texture.isValid())
+		{
+			auto& depth = texture_map_.at(cmd.depth_stencil_texture);
+			// Stencil only
+			if (depth.format == TextureFormat::D0S8)
+			{
+				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+			}
+			// depth only
+			else if (
+				depth.format == TextureFormat::D16 ||
+				depth.format == TextureFormat::D16F ||
+				depth.format == TextureFormat::D24 ||
+				depth.format == TextureFormat::D24F ||
+				depth.format == TextureFormat::D32 ||
+				depth.format == TextureFormat::D32F)
+			{
+				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+			}
+			else // depth+stencil
+			{
+				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+			}
+		}
+		else
+		{
+			// Create depth buffer.
+			GL_CHECK(glGenRenderbuffers(1, &fb_data.depth_render_buffer));
+			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
+			GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
+			GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
+				fb_data.depth_render_buffer));
+		}
 
 		// Check frame buffer status.
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);

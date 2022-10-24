@@ -18,7 +18,7 @@ struct EngineTestEffect : public Effect
 	gfx::Renderer renderer;
 	gfx::VertexBufferHandle vb_points, vb_pp, vb_skybox;
 	gfx::FrameBufferHandle fb;
-	gfx::TextureHandle color_attachment;
+	gfx::TextureHandle color_attachment, depth_attachment;
 	gfx::TextureHandle skybox;
 
 	const int NUMPOINTS = 500000;

@@ -89,10 +89,10 @@ namespace gfx {
 		return handle;
 	}
 
-	TextureHandle Renderer::createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, Memory data)
+	TextureHandle Renderer::createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data)
 	{
 		TextureHandle handle = texture_handle_.next();
-		submitPreFrameCommand(cmd::CreateTexture2D{ handle,width,height,format,wrap,minfilter,magfilter,srgb,std::move(data) });
+		submitPreFrameCommand(cmd::CreateTexture2D{ handle,width,height,format,wrap,minfilter,magfilter,srgb,mipmap,std::move(data) });
 
 		texture_data_[handle] = TextureData{ width,height,format };
 
@@ -118,15 +118,14 @@ namespace gfx {
 	FrameBufferHandle Renderer::createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format)
 	{
 		FrameBufferHandle handle = frame_buffer_handle_.next();
-		TextureHandle color = createTexture2D(width, height, format, TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, false, Memory());
-		auto textures = std::vector<TextureHandle>{ color };
-		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height, textures});
-		frame_buffer_textures_.emplace(handle, textures);
+		TextureHandle color = createTexture2D(width, height, format, TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, false, false, Memory());
+		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height, TextureHandle(), std::vector<TextureHandle>{ color } });
+		frame_buffer_textures_.emplace(handle, std::vector<TextureHandle>{ color });
 
 		return handle;
 	}
 
-	FrameBufferHandle Renderer::createFrameBuffer(std::vector<TextureHandle>& textures)
+	FrameBufferHandle Renderer::createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture)
 	{
 		if (textures.empty())
 		{
@@ -147,7 +146,12 @@ namespace gfx {
 		}
 		
 		FrameBufferHandle handle = frame_buffer_handle_.next();
-		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,w,h,textures});
+		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,w,h,depth_texture,textures});
+		if (depth_texture.isValid())
+		{
+			textures.push_back(depth_texture);
+		}
+
 		frame_buffer_textures_.emplace(handle, std::move(textures));
 
 		return handle;

@@ -273,6 +273,7 @@ namespace gfx {
             TextureFilter min_filter;
             TextureFilter mag_filter;
             bool srgb;
+            bool mipmap;
             Memory data;
         };
 
@@ -294,6 +295,7 @@ namespace gfx {
         struct CreateFramebuffer {
             FrameBufferHandle handle;
             uint16_t width, height;
+            TextureHandle depth_stencil_texture;
             std::vector<TextureHandle> textures;
         };
 
@@ -395,10 +397,10 @@ namespace gfx {
         VertexBufferHandle createVertexBuffer(uint32_t size, BufferUsage usage, Memory data);
         IndexBufferHandle createIndexBuffer(uint32_t size, BufferUsage usage, Memory data);
         ConstantBufferHandle createConstantBuffer(uint32_t size, BufferUsage usage, Memory data);
-        TextureHandle createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, Memory data);
+        TextureHandle createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data);
         TextureHandle createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, std::vector<Memory>& data);
         FrameBufferHandle createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
-        FrameBufferHandle createFrameBuffer(std::vector<TextureHandle>& textures);
+        FrameBufferHandle createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
         ProgramHandle createProgram();
         ShaderHandle createShader(ShaderStage stage, const std::string& source);
         void linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders);

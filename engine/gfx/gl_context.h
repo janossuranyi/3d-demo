@@ -102,6 +102,7 @@ namespace gfx {
 		struct TextureData {
 			GLuint texture;
 			GLenum target;
+			TextureFormat format;
 		};
 
 		struct FrameBufferData {
