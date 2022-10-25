@@ -19,6 +19,7 @@ namespace gfx {
 		void destroy_window() override;
 		void start_rendering() override;
 		void stop_rendering() override;
+		void dispatch_compute(RenderItem& item) override;
 		bool frame(const Frame* frame) override;
 
 		glm::ivec2 get_window_size() const override;
@@ -49,6 +50,9 @@ namespace gfx {
 		void operator()(const cmd::CreateConstantBuffer& cmd);
 		void operator()(const cmd::UpdateConstantBuffer& cmd);
 		void operator()(const cmd::DeleteConstantBuffer& cmd);
+		void operator()(const cmd::CreateFence& cmd);
+		void operator()(const cmd::DeleteFence& cmd);
+		void operator()(const cmd::WaitSync& cmd);
 
 		template <typename T> void operator()(const T& c) {
 			static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
@@ -122,6 +126,7 @@ namespace gfx {
 
 		Window_t window_;
 
+		std::unordered_map<FenceHandle, GLsync> fence_map_;
 		std::unordered_map<TextureHandle, TextureData> texture_map_;
 		std::unordered_map<ShaderHandle, ShaderData> shader_map_;
 		std::unordered_map<ProgramHandle, ProgramData> program_map_;

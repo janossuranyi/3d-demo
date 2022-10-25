@@ -80,12 +80,6 @@ namespace gfx {
         ~HandleGenerator() = default;
 
         Handle next() {
-            if (next_ == std::numeric_limits<Handle::base_type>::max() && !free_.empty())
-            {
-                Handle r = free_.back();
-                free_.pop_back();
-                return r;
-            }
             return next_++;
         }
 

@@ -12,8 +12,9 @@
 #include "handle.h"
 #include "resource/memory.h"
 
-#define MAX_TEXTURE_SAMPLERS 15
+#define MAX_TEXTURE_SAMPLERS 8
 #define MAX_UNIFORM_BUFFERS 8
+#define MAX_IMAGE_UNITS 8
 
 namespace gfx {
 
@@ -32,6 +33,7 @@ namespace gfx {
     struct TextureTag {};
     struct FrameBufferTag {};
     struct ConstantBufferTag {};
+    struct FenceTag {};
 
     using ConstantBufferHandle = Handle<ConstantBufferTag, -1>;
     using VertexBufferHandle = Handle<VertexBufferTag, -1>;
@@ -42,6 +44,7 @@ namespace gfx {
     using ProgramHandle = Handle<ProgramTag, -1>;
     using TextureHandle = Handle<TextureTag, -1>;
     using FrameBufferHandle = Handle<FrameBufferTag, -1>;
+    using FenceHandle = Handle<FenceTag, -1>;
 
     // Renderer type
     enum class RendererType { Null, OpenGL };
@@ -64,6 +67,8 @@ namespace gfx {
 
     // Index buffer type
     enum class IndexBufferType { U16, U32 };
+
+    enum class Access { Read, Write, ReadWrite };
     // Texture format.
 /*
  * RGBA16S
@@ -302,6 +307,20 @@ namespace gfx {
         struct DeleteFramebuffer {
             FrameBufferHandle handle;
         };
+
+        struct CreateFence {
+            FenceHandle handle;
+        };
+
+        struct DeleteFence {
+            FenceHandle handle;
+        };
+
+        struct WaitSync {
+            FenceHandle handle;
+            uint64_t timeout;
+            bool client;
+        };
     }
 
     using RenderCommand = std::variant<
@@ -324,14 +343,27 @@ namespace gfx {
         cmd::DeleteProgram,
         cmd::DeleteShader,
         cmd::DeleteTexture,
-        cmd::DeleteVertexBuffer>;
+        cmd::DeleteVertexBuffer,
+        cmd::CreateFence,
+        cmd::DeleteFence,
+        cmd::WaitSync>;
 
     using UniformData = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, std::vector<float>, std::vector<glm::vec4>>;
 
 
     struct RenderItem {
+
         struct TextureBinding {
             TextureHandle handle;
+        };
+
+        struct ImageBinding {
+            TextureHandle handle;
+            uint16_t level;
+            bool layered;
+            uint16_t layer;
+            Access access;
+            TextureFormat format;
         };
 
         VertexBufferHandle vb;
@@ -352,10 +384,19 @@ namespace gfx {
         uint16_t scissor_h = 0;
 
         StateBits state_bits;
+
+        struct {
+            uint16_t num_groups_x;
+            uint16_t num_groups_y;
+            uint16_t num_groups_z;
+            std::array<ImageBinding, MAX_IMAGE_UNITS> images;
+        } compute_job;
+
+        bool compute = false;
+
     };
 
     struct RenderPass {
-
         RenderPass() : 
             clear_color{ 0.0f,0.0f,0.0f,1.0f }, 
             clear_bits{ GLS_CLEAR_COLOR | GLS_CLEAR_DEPTH },
@@ -403,6 +444,9 @@ namespace gfx {
         FrameBufferHandle createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
         ProgramHandle createProgram();
         ShaderHandle createShader(ShaderStage stage, const std::string& source);
+        FenceHandle createFence();
+        
+
         void linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders);
 
         void updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset);
@@ -416,7 +460,11 @@ namespace gfx {
         void deleteProgram(ProgramHandle handle);
         void deleteShader(ShaderHandle handle);
         void deleteTexture(TextureHandle handle);
+        void deleteFence(FenceHandle handle);
+        void WaitSync(FenceHandle handle, bool client, uint64_t timeout);
 
+        void setComputeJob(glm::ivec3 num_groups);
+        void setImageTexture(uint16_t unit, TextureHandle handle, uint16_t level, bool layered, uint16_t layer, Access access, TextureFormat format);
         void setRenderState(StateBits bits);
         void setScissorEnable(bool enabled);
         void setScissor(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
@@ -469,6 +517,7 @@ namespace gfx {
         HandleGenerator<ProgramHandle> program_handle_;
         HandleGenerator<TextureHandle> texture_handle_;
         HandleGenerator<FrameBufferHandle> frame_buffer_handle_;
+        HandleGenerator<FenceHandle> fence_handle_;
 
         std::unordered_map<IndexBufferHandle, IndexBufferType> index_buffer_types_;
 

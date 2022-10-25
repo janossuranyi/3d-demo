@@ -16,6 +16,7 @@ namespace gfx {
 		virtual void set_state(StateBits stateBits, bool force) = 0;
 		virtual void start_rendering() = 0;
 		virtual void stop_rendering() = 0;
+		virtual void dispatch_compute(RenderItem& item) = 0;
 		virtual void process_command_list(const std::vector<RenderCommand>& cmds) = 0;
 		virtual bool frame(const Frame* frame) = 0;
 

@@ -120,6 +120,36 @@ static const float kernels[][9] = {
 	}
 };
 
+static const char* compute_shader = "#version 450 core\n \
+\
+layout(local_size_x = 1, local_size_y = 1) in;\
+layout(rgba8, binding = 0) uniform image2D img_output;\
+\
+uniform float fa;\
+uniform float angle;\
+\
+const vec3 black = vec3(0.0);\
+\
+void main()\
+{\
+\
+    ivec2 pc = ivec2(gl_GlobalInvocationID.xy);\
+\
+    float y = 256.0 + 240.0 * sin(float(pc.x - 1.5 * angle) / 16.0) * cos(float(pc.x + angle) / 128.0);\
+    float x = 256.0 + 240.0 * cos(float(pc.x + angle) / 64.0);\
+    float r = x / 512.0;\
+    float b = y / 512.0;\
+    float g = 0.5 * r + fa * b;\
+    vec3 white = vec3(r, g, b);\
+\
+    float H = 20.0 + 18.0 * cos(float(pc.x + angle) / 256.0);\
+\
+    vec4 pixel = vec4(mix(black, white,\
+        abs(y - pc.y) < H || abs(x - pc.x) < H), 1.0);\
+\
+    imageStore(img_output, pc, pixel);\
+}";
+
 EngineTestEffect::~EngineTestEffect()
 {
 	renderer.deleteProgram(prgPoints);
@@ -140,6 +170,8 @@ bool EngineTestEffect::Init()
 
 	glm::ivec2 win_size = renderer.getFramebufferSize();
 
+	texDyn =
+		renderer.createTexture2D(512, 512, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, Memory());
 	depth_attachment =
 		renderer.createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::D24S8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, Memory());
     color_attachment = 
@@ -246,6 +278,14 @@ bool EngineTestEffect::Init()
 		vb_skybox =
 			renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, Memory(buffer));
 	}
+	
+	{
+		prgComp = renderer.createProgram();	
+		gfx::ShaderHandle comp_shader = renderer.createShader(gfx::ShaderStage::Compute, std::string(compute_shader));
+		renderer.linkProgram(prgComp, std::vector<gfx::ShaderHandle>{ comp_shader});
+		renderer.deleteShader(comp_shader);
+	}
+
 	{
 		std::vector<gfx::ShaderHandle> shaders(2);
 		std::string fs = ResourceManager::get_text_resource("draw_point2.fs.glsl");
@@ -276,6 +316,17 @@ bool EngineTestEffect::Init()
 		shaders[0] = renderer.createShader(gfx::ShaderStage::Vertex, vs);
 		shaders[1] = renderer.createShader(gfx::ShaderStage::Fragment, fs);
 		renderer.linkProgram(prgPP, shaders);
+		renderer.deleteShader(shaders[0]);
+		renderer.deleteShader(shaders[1]);
+	}
+	{
+		std::vector<gfx::ShaderHandle> shaders(2);
+		std::string fs = ResourceManager::get_text_resource("view_depthbuf.fs.glsl");
+		std::string vs = ResourceManager::get_text_resource("view_depthbuf.vs.glsl");
+		prgDepth = renderer.createProgram();
+		shaders[0] = renderer.createShader(gfx::ShaderStage::Vertex, vs);
+		shaders[1] = renderer.createShader(gfx::ShaderStage::Fragment, fs);
+		renderer.linkProgram(prgDepth, shaders);
 		renderer.deleteShader(shaders[0]);
 		renderer.deleteShader(shaders[1]);
 	}
@@ -344,12 +395,13 @@ bool EngineTestEffect::HandleEvent(const SDL_Event* ev, float time)
 
 void EngineTestEffect::Render()
 {
+	uint16_t pass = 0;
+
 	glm::mat4 W(1.0f);
 	W = glm::rotate(W, glm::radians(rotX), glm::vec3(1, 0, 0));
 	W = glm::rotate(W, glm::radians(rotY), glm::vec3(0, 1, 0));
 
 	const glm::mat4 WVP = VP * W;
-	uint16_t pass = 0;
 
 	renderer.setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
 	renderer.setFrameBuffer(pass, fb);
@@ -388,6 +440,22 @@ void EngineTestEffect::Render()
 
 	renderer.setProgramVar("g_kernel", v_kernel);
 	renderer.submit(pass, prgPP, 6);
+
+	++pass;
+	renderer.setClearBits(pass, 0);
+	renderer.setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
+	renderer.setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS);
+	renderer.setPrimitiveType(gfx::PrimitiveType::Triangles);
+	renderer.setTexure(0, depth_attachment);
+	renderer.setVertexBuffer(vb_pp);
+	renderer.setProgramVar("samp0", 0);
+	renderer.setRenderState(0);
+	float scale = 0.2f;
+	glm::mat4 _w = glm::translate(glm::mat4(1.0f), glm::vec3( (1.0f - scale), (1.0f - scale), 0.0f));
+	_w = glm::scale(_w, glm::vec3(scale));
+	renderer.setProgramVar("m_W", _w);
+	renderer.setProgramVar("g_far", 1700.0f);
+	renderer.submit(pass, prgDepth, 6);
 
 	renderer.frame();
 }

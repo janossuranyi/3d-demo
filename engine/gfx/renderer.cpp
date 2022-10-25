@@ -179,6 +179,14 @@ namespace gfx {
 		return handle;
 	}
 
+	FenceHandle Renderer::createFence()
+	{
+		FenceHandle handle = fence_handle_.next();
+		submitPostFrameCommand(cmd::CreateFence{handle});
+
+		return handle;
+	}
+
 	void Renderer::linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders)
 	{
 		submitPreFrameCommand(cmd::LinkProgram{ handle, shaders });
@@ -255,6 +263,31 @@ namespace gfx {
 
 		texture_data_.erase(handle);
 		texture_handle_.release(handle);
+	}
+
+	void Renderer::deleteFence(FenceHandle handle)
+	{
+		submitPostFrameCommand(cmd::DeleteFence{ handle });
+		fence_handle_.release(handle);
+	}
+
+	void Renderer::WaitSync(FenceHandle handle, bool client, uint64_t timeout)
+	{
+		submitPostFrameCommand(cmd::WaitSync{ handle,timeout,client });
+	}
+
+	void Renderer::setComputeJob(glm::ivec3 num_groups)
+	{
+		submit_->active_item.compute = true;
+		submit_->active_item.compute_job.num_groups_x = num_groups.x;
+		submit_->active_item.compute_job.num_groups_y = num_groups.y;
+		submit_->active_item.compute_job.num_groups_z = num_groups.z;
+	}
+
+	void Renderer::setImageTexture(uint16_t unit, TextureHandle handle, uint16_t level, bool layered, uint16_t layer, Access access, TextureFormat format)
+	{
+		assert(unit < MAX_IMAGE_UNITS);
+		submit_->active_item.compute_job.images[unit] = RenderItem::ImageBinding{ handle,level,layered,layer,access,format };
 	}
 
 	void Renderer::setRenderState(StateBits bits)

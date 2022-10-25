@@ -19,7 +19,7 @@ struct EngineTestEffect : public Effect
 	gfx::VertexBufferHandle vb_points, vb_pp, vb_skybox;
 	gfx::FrameBufferHandle fb;
 	gfx::TextureHandle color_attachment, depth_attachment;
-	gfx::TextureHandle skybox;
+	gfx::TextureHandle skybox, texDyn;
 
 	const int NUMPOINTS = 500000;
 	float pp_offset{ 1.0f / 1000.0f };
@@ -31,6 +31,8 @@ struct EngineTestEffect : public Effect
 	gfx::ProgramHandle prgPoints;
 	gfx::ProgramHandle prgPP;
 	gfx::ProgramHandle prgSkybox;
+	gfx::ProgramHandle prgDepth;
+	gfx::ProgramHandle prgComp;
 
 };
 

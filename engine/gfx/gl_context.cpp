@@ -122,6 +122,16 @@ namespace gfx {
 		}
 	}
 
+	static GLenum MapAccess(Access a)
+	{
+		switch (a)
+		{
+		case Access::Read:		return GL_READ_ONLY;
+		case Access::Write:		return GL_WRITE_ONLY;
+		case Access::ReadWrite:	return GL_READ_WRITE;
+		}
+	}
+
 	struct VertexAttribFormat {
 		GLint size;
 		GLenum type;
@@ -376,6 +386,38 @@ namespace gfx {
 		Info("Uniform buffer %d deleted", cmd.handle);
 #endif
 
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::CreateFence& cmd)
+	{
+		GL_CHECK(fence_map_[cmd.handle] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::DeleteFence& cmd)
+	{
+		GLsync sync = fence_map_.at(cmd.handle);
+
+		GL_CHECK(glDeleteSync(sync));
+
+		fence_map_.erase(cmd.handle);
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::WaitSync& cmd)
+	{
+		GLsync sync = fence_map_.at(cmd.handle);
+		if (cmd.client)
+		{
+			GLenum result{};
+			GL_CHECK(result = glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, cmd.timeout));
+			if (result != GL_CONDITION_SATISFIED && result != GL_ALREADY_SIGNALED)
+			{
+				Warning("glClientWaitSync timeout expired: %d", result);
+			}
+		}
+		else
+		{
+			GL_CHECK(glWaitSync(sync, 0, GL_TIMEOUT_IGNORED));
+		}
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
@@ -907,6 +949,10 @@ namespace gfx {
 		SDL_GL_MakeCurrent(windowHandle_, NULL);
 	}
 
+	void OpenGLRenderContext::dispatch_compute(RenderItem& item)
+	{
+	}
+
 	bool OpenGLRenderContext::frame(const Frame* frame)
 	{
 		for (auto& pass : frame->render_passes)
@@ -1010,19 +1056,19 @@ namespace gfx {
 					}
 				}
 
-				if (active_vb_ != item->vb)
+				if (!item->compute && active_vb_ != item->vb)
 				{
 					auto& vb_data = vertex_buffer_map_.at(item->vb);
 					GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
 				}
-				if ((!prev || prev->ib != item->ib) && item->ib.isValid()) 
+				if (!item->compute && (!prev || prev->ib != item->ib) && item->ib.isValid())
 				{
 					auto& ib = index_buffer_map_.at(item->ib);
 					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
 					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 				}
 
-				if (active_vertex_decl_ != item->vertexDecl || item->vb != active_vb_)
+				if (!item->compute && (active_vertex_decl_ != item->vertexDecl || item->vb != active_vb_))
 				{
 					const auto vertdecl_idx = static_cast<size_t>(item->vertexDecl);
 
@@ -1048,35 +1094,53 @@ namespace gfx {
 					active_vb_ = item->vb;
 				}
 
-				const GLenum mode = MapDrawMode(item->primitive_type);
-				const GLsizei count = item->vertex_count;
-				/*
-									if (
-										item->primitive_type == PrimitiveType::Triangles ||
-										item->primitive_type == PrimitiveType::TriangleFan ||
-										item->primitive_type == PrimitiveType::TriangleStrip)
-									{
-										count *= 3;
-									}
-									else if (
-										item->primitive_type == PrimitiveType::Lines ||
-										item->primitive_type == PrimitiveType::LineLoop ||
-										item->primitive_type == PrimitiveType::LineStrip)
-									{
-										count *= 2;
-									}
-				*/
-
-				if (item->ib.isValid())
+				if (item->compute)
 				{
-					const int base_vertex = item->vb_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
-					GL_CHECK(glDrawElementsBaseVertex(mode, count, active_ib_type_, reinterpret_cast<void*>(static_cast<std::uintptr_t>(item->ib_offset)), base_vertex));
-				}
-				else 
-				{
-					glDrawArrays(mode, item->ib_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride, count);
-				}
+					for (int k = 0; k < item->compute_job.images.size(); ++k)
+					{
+						auto& img = item->compute_job.images[k];
+						if (img.handle.isValid())
+						{
+							const TextureData& tdata = texture_map_.at(img.handle);
+							GL_CHECK(glBindImageTexture(k, tdata.texture, img.level, img.layered, img.layer, MapAccess(img.access), s_texture_format[static_cast<size_t>(img.format)].internal_format));
+						}
+					}
 
+					GL_CHECK(glDispatchCompute(item->compute_job.num_groups_x, item->compute_job.num_groups_y, item->compute_job.num_groups_z));
+					continue;
+				}
+				else
+				{
+
+					const GLenum mode = MapDrawMode(item->primitive_type);
+					const GLsizei count = item->vertex_count;
+					/*
+										if (
+											item->primitive_type == PrimitiveType::Triangles ||
+											item->primitive_type == PrimitiveType::TriangleFan ||
+											item->primitive_type == PrimitiveType::TriangleStrip)
+										{
+											count *= 3;
+										}
+										else if (
+											item->primitive_type == PrimitiveType::Lines ||
+											item->primitive_type == PrimitiveType::LineLoop ||
+											item->primitive_type == PrimitiveType::LineStrip)
+										{
+											count *= 2;
+										}
+					*/
+
+					if (item->ib.isValid())
+					{
+						const int base_vertex = item->vb_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
+						GL_CHECK(glDrawElementsBaseVertex(mode, count, active_ib_type_, reinterpret_cast<void*>(static_cast<std::uintptr_t>(item->ib_offset)), base_vertex));
+					}
+					else
+					{
+						glDrawArrays(mode, item->ib_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride, count);
+					}
+				}
 			} // render_items
 		}
 
