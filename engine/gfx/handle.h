@@ -84,7 +84,7 @@ namespace gfx {
         }
 
         void release(Handle h) {
-            free_.push_back(h);
+            //free_.push_back(h);
         }
     private:
         Handle next_;

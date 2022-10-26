@@ -24,7 +24,7 @@ struct EngineTestEffect : public Effect
 	const int NUMPOINTS = 500000;
 	float pp_offset{ 1.0f / 1000.0f };
 
-	float rotX, rotY, eyeZ;
+	float rotX, rotY, eyeZ, angle;
 	glm::mat4 P;
 	glm::mat4 VP;
 
@@ -33,6 +33,6 @@ struct EngineTestEffect : public Effect
 	gfx::ProgramHandle prgSkybox;
 	gfx::ProgramHandle prgDepth;
 	gfx::ProgramHandle prgComp;
-
+	gfx::ProgramHandle prgViewTex;
 };
 

@@ -12,6 +12,7 @@ namespace gfx {
 	void RenderPass::clear() {
 		clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
 		render_items.clear();
+		compute_items.clear();
 		frame_buffer = FrameBufferHandle::invalid;
 	}
 
@@ -20,6 +21,7 @@ namespace gfx {
 		height_{0},
 		window_title_{"JS-Engine"},
 		use_thread_{false},
+		compute_active_{false},
 		submit_{&frames_[0]},
 		render_{ &frames_[1] }
 	{
@@ -182,7 +184,7 @@ namespace gfx {
 	FenceHandle Renderer::createFence()
 	{
 		FenceHandle handle = fence_handle_.next();
-		submitPostFrameCommand(cmd::CreateFence{handle});
+		//submitPostFrameCommand(cmd::CreateFence{handle});
 
 		return handle;
 	}
@@ -273,21 +275,23 @@ namespace gfx {
 
 	void Renderer::WaitSync(FenceHandle handle, bool client, uint64_t timeout)
 	{
-		submitPostFrameCommand(cmd::WaitSync{ handle,timeout,client });
+		submit_->active_compute.fence = handle;
+		submit_->active_compute.wait_sync_client = client;
+		submit_->active_compute.wait_timeout = timeout;
 	}
 
-	void Renderer::setComputeJob(glm::ivec3 num_groups)
+	void Renderer::setComputeJob(glm::ivec3 num_groups, FenceHandle fence)
 	{
-		submit_->active_item.compute = true;
-		submit_->active_item.compute_job.num_groups_x = num_groups.x;
-		submit_->active_item.compute_job.num_groups_y = num_groups.y;
-		submit_->active_item.compute_job.num_groups_z = num_groups.z;
+		submit_->active_compute.num_groups_x = num_groups.x;
+		submit_->active_compute.num_groups_y = num_groups.y;
+		submit_->active_compute.num_groups_z = num_groups.z;
+		submit_->active_compute.fence = fence;
 	}
 
 	void Renderer::setImageTexture(uint16_t unit, TextureHandle handle, uint16_t level, bool layered, uint16_t layer, Access access, TextureFormat format)
 	{
 		assert(unit < MAX_IMAGE_UNITS);
-		submit_->active_item.compute_job.images[unit] = RenderItem::ImageBinding{ handle,level,layered,layer,access,format };
+		submit_->active_compute.images[unit] = ImageBinding{ handle,level,layered,layer,access,format };
 	}
 
 	void Renderer::setRenderState(StateBits bits)
@@ -395,6 +399,15 @@ namespace gfx {
 		setProgramVar(name, UniformData{ value });
 	}
 
+	void gfx::Renderer::beginCompute()
+	{
+		compute_active_ = true;
+	}
+
+	void gfx::Renderer::endCompute()
+	{
+		compute_active_ = false;
+	}
 
 	bool Renderer::frame()
 	{
@@ -463,6 +476,7 @@ namespace gfx {
 	Frame::Frame()
 	{
 		active_item = RenderItem();
+		active_compute = ComputeItem();
 		render_passes.assign(4, RenderPass());
 	}
 
@@ -477,7 +491,12 @@ namespace gfx {
 	}
 	void Renderer::setProgramVar(const std::string& name, UniformData data)
 	{
-		submit_->active_item.uniforms[name] = data;
+		if(compute_active_) submit_->active_compute.uniforms[name] = data;
+		else submit_->active_item.uniforms[name] = data;
+	}
+	void gfx::Renderer::submit(uint32_t pass)
+	{
+		submit(pass, ProgramHandle());
 	}
 	void Renderer::submit(uint32_t pass, ProgramHandle program)
 	{
@@ -489,14 +508,24 @@ namespace gfx {
 	}
 	void Renderer::submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset)
 	{
-		auto& item = submit_->active_item;
-		item.program = program;
-		item.vertex_count = vertex_count;
-		item.ib_offset = ib_offset;
-		item.vb_offset = vb_offset;
+		if (!compute_active_)
+		{
+			auto& item = submit_->active_item;
+			item.program = program;
+			item.vertex_count = vertex_count;
+			item.ib_offset = ib_offset;
+			item.vb_offset = vb_offset;
+			submit_->renderPass(pass).render_items.emplace_back(std::move(item));
+			item = RenderItem();
+		}
+		else
+		{
+			auto& item = submit_->active_compute;
+			item.program = program;
+			submit_->renderPass(pass).compute_items.emplace_back(item);
+			item = ComputeItem();
+		}
 
-		submit_->renderPass(pass).render_items.emplace_back(std::move(item));
-		item = RenderItem();
 	}
 
 	bool Renderer::renderFrame(Frame* frame)

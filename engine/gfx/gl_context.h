@@ -19,7 +19,6 @@ namespace gfx {
 		void destroy_window() override;
 		void start_rendering() override;
 		void stop_rendering() override;
-		void dispatch_compute(RenderItem& item) override;
 		bool frame(const Frame* frame) override;
 
 		glm::ivec2 get_window_size() const override;
@@ -52,7 +51,6 @@ namespace gfx {
 		void operator()(const cmd::DeleteConstantBuffer& cmd);
 		void operator()(const cmd::CreateFence& cmd);
 		void operator()(const cmd::DeleteFence& cmd);
-		void operator()(const cmd::WaitSync& cmd);
 
 		template <typename T> void operator()(const T& c) {
 			static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
@@ -143,12 +141,18 @@ namespace gfx {
 		GLenum active_ib_type_{ 0 };
 
 		// cache
-		VertexBufferHandle active_vb_{ VertexBufferHandle::invalid };
-		IndexBufferHandle active_ib_{ IndexBufferHandle::invalid };
-		ProgramHandle active_program_{ ProgramHandle::invalid };
+		VertexBufferHandle active_vb_{};
+		IndexBufferHandle active_ib_{};
+		ProgramHandle active_program_{};
+		FrameBufferHandle active_fb_{};
+
 		bool scissor_test_{ false };
 		int active_vertex_attribs_{ 0 };
 		GLuint temp_;
+
+		void compute(const RenderPass& pass);
+		void setup_uniforms(ProgramData& program_data, const UniformMap& uniforms);
+		void setup_textures(const TextureBindings& textures);
 	};
 
 }

@@ -402,24 +402,6 @@ namespace gfx {
 		fence_map_.erase(cmd.handle);
 	}
 
-	void OpenGLRenderContext::operator()(const cmd::WaitSync& cmd)
-	{
-		GLsync sync = fence_map_.at(cmd.handle);
-		if (cmd.client)
-		{
-			GLenum result{};
-			GL_CHECK(result = glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, cmd.timeout));
-			if (result != GL_CONDITION_SATISFIED && result != GL_ALREADY_SIGNALED)
-			{
-				Warning("glClientWaitSync timeout expired: %d", result);
-			}
-		}
-		else
-		{
-			GL_CHECK(glWaitSync(sync, 0, GL_TIMEOUT_IGNORED));
-		}
-	}
-
 	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
 	{
 		if (vertex_buffer_map_.count(cmd.handle) > 0)
@@ -949,28 +931,149 @@ namespace gfx {
 		SDL_GL_MakeCurrent(windowHandle_, NULL);
 	}
 
-	void OpenGLRenderContext::dispatch_compute(RenderItem& item)
+	void OpenGLRenderContext::setup_textures(const TextureBindings& textures)
 	{
+		for (auto j = 0; j < textures.size(); ++j) {
+			if (textures[j].handle.isValid())
+			{
+				GL_CHECK(
+					glActiveTexture(GL_TEXTURE0 + j)
+				);
+
+				const TextureData& tdata = texture_map_.at(textures[j].handle);
+				GL_CHECK(
+					glBindTexture(tdata.target, tdata.texture)
+				);
+			}
+		}
+	}
+
+	void OpenGLRenderContext::setup_uniforms(ProgramData& program_data, const UniformMap& uniforms)
+	{
+		UniformBinder binder;
+		for (auto& cb : uniforms)
+		{
+			auto location = program_data.uniform_location_map.find(cb.first);
+			GLint uniform_location;
+			if (location != program_data.uniform_location_map.end())
+			{
+				uniform_location = location->second;
+			}
+			else {
+				GL_CHECK(uniform_location = glGetUniformLocation(program_data.program, cb.first.c_str()));
+				program_data.uniform_location_map.emplace(cb.first, uniform_location);
+
+				if (uniform_location == -1) {
+					Warning("Uniform variable %s not found!!!", cb.first.c_str());
+				}
+			}
+
+			if (uniform_location == -1) continue;
+
+			binder.update(uniform_location, cb.second);
+		}
+
+	}
+
+	void OpenGLRenderContext::compute(const RenderPass& pass)
+	{
+		for (int i = 0; i < pass.compute_items.size(); ++i)
+		{
+			auto* item = &pass.compute_items[i];
+			if (!item->program.isValid())
+			{
+				if (item->fence.isValid())
+				{
+					GLsync sync = fence_map_.at(item->fence);
+					if (item->wait_sync_client)
+					{
+						GLenum result{};
+						GL_CHECK(
+							result = glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, item->wait_timeout)
+						);
+						if (result == GL_TIMEOUT_EXPIRED)
+						{
+							Warning("glClientWaitSync timeout expired!");
+						}
+					}
+					else
+					{
+						GL_CHECK(glWaitSync(sync, 0, GL_TIMEOUT_IGNORED));
+					}
+				}
+				continue;
+			}
+
+			ProgramData& program_data = program_map_.at(item->program);
+			if (active_program_ != item->program)
+			{
+				assert(item->program.isValid());
+				GL_CHECK(glUseProgram(program_data.program));
+				active_program_ = item->program;
+			}
+
+			setup_uniforms(program_data, item->uniforms);
+			setup_textures(item->textures);
+
+			for (int k = 0; k < item->images.size(); ++k)
+			{
+				auto& img = item->images[k];
+				if (img.handle.isValid())
+				{
+					const TextureData& tdata = texture_map_.at(img.handle);
+					GL_CHECK(
+						glBindImageTexture(k, tdata.texture, img.level, img.layered, img.layer, MapAccess(img.access), s_texture_format[static_cast<size_t>(img.format)].internal_format)
+					);
+				}
+			}
+
+			GL_CHECK(
+				glDispatchCompute(item->num_groups_x, item->num_groups_y, item->num_groups_z)
+			);
+
+			if (item->fence.isValid())
+			{
+				GLsync syncObj;
+				GL_CHECK(
+					syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
+				);
+				fence_map_[item->fence] = syncObj;
+			}
+		}
 	}
 
 	bool OpenGLRenderContext::frame(const Frame* frame)
 	{
 		for (auto& pass : frame->render_passes)
 		{
+			if (!pass.compute_items.empty())
+			{
+				compute(pass);
+			}
+
 			if (pass.render_items.empty() || !pass.frame_buffer.isValid())
 				continue;
 
 			uint16_t fb_width, fb_height;
+
 			if (pass.frame_buffer.internal() > 0) {
 				FrameBufferData& fb_data = frame_buffer_map_.at(pass.frame_buffer);
 				fb_width = fb_data.width;
 				fb_height = fb_data.height;
-				GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+				if (active_fb_ != pass.frame_buffer)
+				{
+					GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+					active_fb_ = pass.frame_buffer;
+				}
 			}
 			else {
 				fb_width = window_.w;
 				fb_height = window_.h;
-				GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+				if (active_fb_.internal() > 0)
+				{
+					GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+					active_fb_ = FrameBufferHandle(0);
+				}
 			}
 
 			(void)fb_width;
@@ -988,6 +1091,9 @@ namespace gfx {
 			}
 
 			if (clear_bits) {
+				set_state(0, false);
+				scissor_test_ = false;
+				GL_CHECK(glDisable(GL_SCISSOR_TEST));
 				GL_CHECK(glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a));
 				GL_CHECK(glClear(clear_bits));
 			}
@@ -1023,58 +1129,28 @@ namespace gfx {
 					active_program_ = item->program;
 				}
 
-				UniformBinder binder;
-				for (auto& cb : item->uniforms)
-				{
-					auto location = program_data.uniform_location_map.find(cb.first);
-					GLint uniform_location;
-					if (location != program_data.uniform_location_map.end())
-					{
-						uniform_location = location->second;
-					}
-					else {
-						GL_CHECK(uniform_location = glGetUniformLocation(program_data.program, cb.first.c_str()));
-						program_data.uniform_location_map.emplace(cb.first, uniform_location);
+				setup_uniforms(program_data, item->uniforms);
+				setup_textures(item->textures);
 
-						if (uniform_location == -1) {
-							Warning("Uniform variable %s not found!!!", cb.first.c_str());
-						}
-					}
-
-					if (uniform_location == -1) continue;
-
-					binder.update(uniform_location, cb.second);
-				}
-				
-				for (auto j = 0; j < item->textures.size(); ++j) {
-					if (item->textures[j].handle.isValid())
-					{
-						glActiveTexture(GL_TEXTURE0 + j);
-
-						const TextureData& tdata = texture_map_.at(item->textures[j].handle);
-						GL_CHECK(glBindTexture(tdata.target, tdata.texture));
-					}
-				}
-
-				if (!item->compute && active_vb_ != item->vb)
+				if (active_vb_ != item->vb)
 				{
 					auto& vb_data = vertex_buffer_map_.at(item->vb);
 					GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
 				}
-				if (!item->compute && (!prev || prev->ib != item->ib) && item->ib.isValid())
+				if ((!prev || prev->ib != item->ib) && item->ib.isValid())
 				{
 					auto& ib = index_buffer_map_.at(item->ib);
 					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
 					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 				}
 
-				if (!item->compute && (active_vertex_decl_ != item->vertexDecl || item->vb != active_vb_))
+				if ((active_vertex_decl_ != item->vertexDecl || item->vb != active_vb_))
 				{
 					const auto vertdecl_idx = static_cast<size_t>(item->vertexDecl);
 
-					assert(vertdecl_idx < sizeof(s_vertexLayouts)/sizeof(s_vertexLayouts[0]));
+					assert(vertdecl_idx < sizeof(s_vertexLayouts) / sizeof(s_vertexLayouts[0]));
 
-					for (unsigned j = 0; j < gl_max_vertex_attribs_; ++j) 
+					for (unsigned j = 0; j < gl_max_vertex_attribs_; ++j)
 					{
 						if (j < s_vertexLayouts[vertdecl_idx].attributes.size())
 						{
@@ -1094,53 +1170,26 @@ namespace gfx {
 					active_vb_ = item->vb;
 				}
 
-				if (item->compute)
+				const GLenum mode = MapDrawMode(item->primitive_type);
+				const GLsizei count = item->vertex_count;
+				if (item->ib.isValid())
 				{
-					for (int k = 0; k < item->compute_job.images.size(); ++k)
-					{
-						auto& img = item->compute_job.images[k];
-						if (img.handle.isValid())
-						{
-							const TextureData& tdata = texture_map_.at(img.handle);
-							GL_CHECK(glBindImageTexture(k, tdata.texture, img.level, img.layered, img.layer, MapAccess(img.access), s_texture_format[static_cast<size_t>(img.format)].internal_format));
-						}
-					}
-
-					GL_CHECK(glDispatchCompute(item->compute_job.num_groups_x, item->compute_job.num_groups_y, item->compute_job.num_groups_z));
-					continue;
+					const int base_vertex = item->vb_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
+					GL_CHECK(glDrawElementsBaseVertex(
+						mode,
+						count,
+						active_ib_type_,
+						reinterpret_cast<void*>(static_cast<GLintptr>(item->ib_offset)),
+						base_vertex));
 				}
 				else
 				{
-
-					const GLenum mode = MapDrawMode(item->primitive_type);
-					const GLsizei count = item->vertex_count;
-					/*
-										if (
-											item->primitive_type == PrimitiveType::Triangles ||
-											item->primitive_type == PrimitiveType::TriangleFan ||
-											item->primitive_type == PrimitiveType::TriangleStrip)
-										{
-											count *= 3;
-										}
-										else if (
-											item->primitive_type == PrimitiveType::Lines ||
-											item->primitive_type == PrimitiveType::LineLoop ||
-											item->primitive_type == PrimitiveType::LineStrip)
-										{
-											count *= 2;
-										}
-					*/
-
-					if (item->ib.isValid())
-					{
-						const int base_vertex = item->vb_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
-						GL_CHECK(glDrawElementsBaseVertex(mode, count, active_ib_type_, reinterpret_cast<void*>(static_cast<std::uintptr_t>(item->ib_offset)), base_vertex));
-					}
-					else
-					{
-						glDrawArrays(mode, item->ib_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride, count);
-					}
+					glDrawArrays(
+						mode,
+						item->ib_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride,
+						count);
 				}
+
 			} // render_items
 		}
 

@@ -288,6 +288,18 @@ bool EngineTestEffect::Init()
 
 	{
 		std::vector<gfx::ShaderHandle> shaders(2);
+		std::string fs = ResourceManager::get_text_resource("test_compute2.fs.glsl");
+		std::string vs = ResourceManager::get_text_resource("test_compute2.vs.glsl");
+		prgViewTex = renderer.createProgram();
+		shaders[0] = renderer.createShader(gfx::ShaderStage::Vertex, vs);
+		shaders[1] = renderer.createShader(gfx::ShaderStage::Fragment, fs);
+		renderer.linkProgram(prgViewTex, shaders);
+		renderer.deleteShader(shaders[0]);
+		renderer.deleteShader(shaders[1]);
+	}
+
+	{
+		std::vector<gfx::ShaderHandle> shaders(2);
 		std::string fs = ResourceManager::get_text_resource("draw_point2.fs.glsl");
 		std::string vs = ResourceManager::get_text_resource("draw_point2.vs.glsl");
 		prgPoints = renderer.createProgram();
@@ -344,6 +356,7 @@ bool EngineTestEffect::Init()
 
 bool EngineTestEffect::Update(float time)
 {
+	angle += 0.1f * time;
 	rotY += time * 0.01f;
 	rotX = 15.0f;
 	rotX = std::fmodf(rotX, 360.0f);
@@ -396,6 +409,18 @@ bool EngineTestEffect::HandleEvent(const SDL_Event* ev, float time)
 void EngineTestEffect::Render()
 {
 	uint16_t pass = 0;
+	gfx::FenceHandle fence;
+
+	renderer.beginCompute();
+	{
+		fence = renderer.createFence();
+		renderer.setComputeJob(glm::ivec3(512, 512, 1), fence);
+		renderer.setImageTexture(0, texDyn, 0, false, 0, gfx::Access::Write, gfx::TextureFormat::RGBA8);
+		renderer.setProgramVar("angle", angle);
+		renderer.setProgramVar("fa", 0.7f);
+		renderer.submit(pass, prgComp);
+		renderer.endCompute();
+	}
 
 	glm::mat4 W(1.0f);
 	W = glm::rotate(W, glm::radians(rotX), glm::vec3(1, 0, 0));
@@ -416,7 +441,7 @@ void EngineTestEffect::Render()
 	++pass;
 	renderer.setClearBits(pass, 0);
 	renderer.setFrameBuffer(pass, fb);
-	renderer.setRenderState(gfx::GLS_DEPTHMASK|gfx::GLS_DEPTHFUNC_LESS);
+	renderer.setRenderState(gfx::GLS_DEPTHFUNC_LESS|gfx::GLS_DEPTHMASK);
 	renderer.setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer.setTexure(0, skybox);
 	renderer.setVertexBuffer(vb_skybox);
@@ -426,9 +451,9 @@ void EngineTestEffect::Render()
 	renderer.submit(pass, prgSkybox, 36);
 
 	++pass;
-	renderer.setClearBits(pass, 0);
+	//renderer.setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
 	renderer.setFrameBuffer(pass, gfx::FrameBufferHandle{0});
-	renderer.setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS);
+	renderer.setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
 	renderer.setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer.setTexure(0, color_attachment);
 	renderer.setVertexBuffer(vb_pp);
@@ -444,18 +469,41 @@ void EngineTestEffect::Render()
 	++pass;
 	renderer.setClearBits(pass, 0);
 	renderer.setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
-	renderer.setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS);
+	renderer.setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer.setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer.setTexure(0, depth_attachment);
 	renderer.setVertexBuffer(vb_pp);
 	renderer.setProgramVar("samp0", 0);
-	renderer.setRenderState(0);
 	float scale = 0.2f;
 	glm::mat4 _w = glm::translate(glm::mat4(1.0f), glm::vec3( (1.0f - scale), (1.0f - scale), 0.0f));
 	_w = glm::scale(_w, glm::vec3(scale));
 	renderer.setProgramVar("m_W", _w);
 	renderer.setProgramVar("g_far", 1700.0f);
 	renderer.submit(pass, prgDepth, 6);
+
+
+	++pass;
+	renderer.setClearBits(pass, 0);
+	renderer.setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
+	renderer.setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
+	renderer.setPrimitiveType(gfx::PrimitiveType::Triangles);
+	renderer.setTexure(0, texDyn);
+	renderer.setVertexBuffer(vb_pp);
+	renderer.setProgramVar("samp0", 0);
+	scale = 0.5f;
+	_w = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f + scale, -1.0f + scale, 0.0f));
+	_w = glm::scale(_w, glm::vec3(scale));
+	renderer.setProgramVar("m_W", _w);
+	
+	renderer.beginCompute();
+	{
+		renderer.WaitSync(fence, false, 0);
+		renderer.submit(pass);
+		renderer.endCompute();
+	}
+	
+	renderer.deleteFence(fence);
+	renderer.submit(pass, prgViewTex, 6);
 
 	renderer.frame();
 }

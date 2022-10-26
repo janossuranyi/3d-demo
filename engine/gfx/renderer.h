@@ -345,26 +345,42 @@ namespace gfx {
         cmd::DeleteTexture,
         cmd::DeleteVertexBuffer,
         cmd::CreateFence,
-        cmd::DeleteFence,
-        cmd::WaitSync>;
+        cmd::DeleteFence>;
 
     using UniformData = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, std::vector<float>, std::vector<glm::vec4>>;
+    using UniformMap = std::unordered_map<std::string, UniformData>;
 
+    struct TextureBinding {
+        TextureHandle handle;
+    };
+
+    using TextureBindings = std::array<TextureBinding, MAX_TEXTURE_SAMPLERS>;
+
+    struct ImageBinding {
+        TextureHandle handle;
+        uint16_t level;
+        bool layered;
+        uint16_t layer;
+        Access access;
+        TextureFormat format;
+    };
+
+    using ImageBindings = std::array<ImageBinding, MAX_IMAGE_UNITS>;
+
+    struct ComputeItem {
+        uint16_t num_groups_x;
+        uint16_t num_groups_y;
+        uint16_t num_groups_z;
+        ProgramHandle program;
+        FenceHandle fence;
+        bool wait_sync_client{false};
+        uint64_t wait_timeout;
+        ImageBindings images;
+        TextureBindings textures;
+        UniformMap uniforms;
+    };
 
     struct RenderItem {
-
-        struct TextureBinding {
-            TextureHandle handle;
-        };
-
-        struct ImageBinding {
-            TextureHandle handle;
-            uint16_t level;
-            bool layered;
-            uint16_t layer;
-            Access access;
-            TextureFormat format;
-        };
 
         VertexBufferHandle vb;
         IndexBufferHandle ib;
@@ -374,7 +390,7 @@ namespace gfx {
         PrimitiveType primitive_type;
         ProgramHandle program;
         VertexDeclType vertexDecl;
-        std::unordered_map<std::string, UniformData> uniforms;
+        UniformMap uniforms;
         std::array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
 
         bool scissor = false;
@@ -384,16 +400,6 @@ namespace gfx {
         uint16_t scissor_h = 0;
 
         StateBits state_bits;
-
-        struct {
-            uint16_t num_groups_x;
-            uint16_t num_groups_y;
-            uint16_t num_groups_z;
-            std::array<ImageBinding, MAX_IMAGE_UNITS> images;
-        } compute_job;
-
-        bool compute = false;
-
     };
 
     struct RenderPass {
@@ -409,6 +415,7 @@ namespace gfx {
         uint16_t clear_bits;
         FrameBufferHandle frame_buffer;
         std::vector<RenderItem> render_items;
+        std::vector<ComputeItem> compute_items;
         std::array<ConstantBufferHandle, MAX_UNIFORM_BUFFERS> constant_buffers;
     };
 
@@ -420,6 +427,8 @@ namespace gfx {
         RenderPass& renderPass(uint32_t index);
 
         RenderItem active_item;
+        ComputeItem active_compute;
+
         std::vector<RenderPass> render_passes;
         std::vector<RenderCommand> commands_pre;
         std::vector<RenderCommand> commands_post;
@@ -446,7 +455,6 @@ namespace gfx {
         ShaderHandle createShader(ShaderStage stage, const std::string& source);
         FenceHandle createFence();
         
-
         void linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders);
 
         void updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset);
@@ -461,9 +469,12 @@ namespace gfx {
         void deleteShader(ShaderHandle handle);
         void deleteTexture(TextureHandle handle);
         void deleteFence(FenceHandle handle);
-        void WaitSync(FenceHandle handle, bool client, uint64_t timeout);
 
-        void setComputeJob(glm::ivec3 num_groups);
+        void beginCompute();
+        void endCompute();
+
+        void setComputeJob(glm::ivec3 num_groups, FenceHandle fence);
+        void WaitSync(FenceHandle handle, bool client, uint64_t timeout);
         void setImageTexture(uint16_t unit, TextureHandle handle, uint16_t level, bool layered, uint16_t layer, Access access, TextureFormat format);
         void setRenderState(StateBits bits);
         void setScissorEnable(bool enabled);
@@ -488,6 +499,7 @@ namespace gfx {
         void setProgramVar(const std::string& name, const std::vector<glm::vec4>& value);
         void setProgramVar(const std::string& name, UniformData data);
 
+        void submit(uint32_t pass);
         void submit(uint32_t pass, ProgramHandle program);
         void submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count);
         void submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset);
@@ -531,6 +543,8 @@ namespace gfx {
 
         // Framebuffers.
         std::unordered_map<FrameBufferHandle, std::vector<TextureHandle>> frame_buffer_textures_;
+
+        bool compute_active_;
 
         Frame frames_[2];
         Frame* submit_;
