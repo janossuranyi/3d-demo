@@ -834,7 +834,7 @@ namespace gfx {
 
 		Info("glewInit done");
 
-		SDL_GL_SetSwapInterval(-1);
+		SDL_GL_SetSwapInterval(1);
 
 		std::string renderer = (char*)glGetString(GL_RENDERER);
 		std::string version = (char*)glGetString(GL_VERSION);
@@ -933,7 +933,7 @@ namespace gfx {
 
 	void OpenGLRenderContext::setup_textures(const TextureBindings& textures)
 	{
-		for (auto j = 0; j < textures.size(); ++j) {
+		for (int j = 0; j < textures.size(); ++j) {
 			if (textures[j].handle.isValid())
 			{
 				GL_CHECK(
@@ -1053,6 +1053,14 @@ namespace gfx {
 
 			if (pass.render_items.empty() || !pass.frame_buffer.isValid())
 				continue;
+
+			for (int i = 0; i < pass.constant_buffers.size(); ++i)
+			{
+				if (pass.constant_buffers[i].isValid())
+				{
+					GL_CHECK(glBindBufferBase(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(pass.constant_buffers[i]).buffer));
+				}
+			}
 
 			uint16_t fb_width, fb_height;
 
@@ -1174,7 +1182,7 @@ namespace gfx {
 				const GLsizei count = item->vertex_count;
 				if (item->ib.isValid())
 				{
-					const int base_vertex = item->vb_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
+					const int base_vertex = item->vb_offset; // s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
 					GL_CHECK(glDrawElementsBaseVertex(
 						mode,
 						count,
@@ -1186,7 +1194,7 @@ namespace gfx {
 				{
 					glDrawArrays(
 						mode,
-						item->ib_offset / s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride,
+						item->vb_offset, // s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride,
 						count);
 				}
 

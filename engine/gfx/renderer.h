@@ -10,7 +10,7 @@
 #include <mutex>
 #include <glm/glm.hpp>
 #include "handle.h"
-#include "resource/memory.h"
+#include "gfx/memory.h"
 
 #define MAX_TEXTURE_SAMPLERS 8
 #define MAX_UNIFORM_BUFFERS 8
@@ -441,72 +441,72 @@ namespace gfx {
         Renderer();
         ~Renderer();
 
-        bool init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
-        glm::ivec2 getFramebufferSize() const;
+        bool                init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
+        glm::ivec2          getFramebufferSize() const;
 
-        VertexBufferHandle createVertexBuffer(uint32_t size, BufferUsage usage, Memory data);
-        IndexBufferHandle createIndexBuffer(uint32_t size, BufferUsage usage, Memory data);
+        VertexBufferHandle  createVertexBuffer(uint32_t size, BufferUsage usage, Memory data);
+        IndexBufferHandle   createIndexBuffer(uint32_t size, BufferUsage usage, Memory data);
         ConstantBufferHandle createConstantBuffer(uint32_t size, BufferUsage usage, Memory data);
-        TextureHandle createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data);
-        TextureHandle createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, std::vector<Memory>& data);
-        FrameBufferHandle createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
-        FrameBufferHandle createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
-        ProgramHandle createProgram();
-        ShaderHandle createShader(ShaderStage stage, const std::string& source);
-        FenceHandle createFence();
+        TextureHandle       createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data);
+        TextureHandle       createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, std::vector<Memory>& data);
+        FrameBufferHandle   createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
+        FrameBufferHandle   createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
+        ProgramHandle       createProgram();
+        ShaderHandle        createShader(ShaderStage stage, const std::string& source);
+        FenceHandle         createFence();
         
-        void linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders);
+        void                linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders);
 
-        void updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset);
-        void updateIndexBuffer(IndexBufferHandle handle, Memory data, uint32_t offset);
-        void updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint32_t offset);
+        void                updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset);
+        void                updateIndexBuffer(IndexBufferHandle handle, Memory data, uint32_t offset);
+        void                updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint32_t offset);
 
-        void deleteVertexBuffer(VertexBufferHandle handle);
-        void deleteIndexBuffer(IndexBufferHandle handle);
-        void deleteConstantBuffer(ConstantBufferHandle handle);
-        void deleteFrameBuffer(FrameBufferHandle handle);
-        void deleteProgram(ProgramHandle handle);
-        void deleteShader(ShaderHandle handle);
-        void deleteTexture(TextureHandle handle);
-        void deleteFence(FenceHandle handle);
+        void                deleteVertexBuffer(VertexBufferHandle handle);
+        void                deleteIndexBuffer(IndexBufferHandle handle);
+        void                deleteConstantBuffer(ConstantBufferHandle handle);
+        void                deleteFrameBuffer(FrameBufferHandle handle);
+        void                deleteProgram(ProgramHandle handle);
+        void                deleteShader(ShaderHandle handle);
+        void                deleteTexture(TextureHandle handle);
+        void                deleteFence(FenceHandle handle);
 
-        void beginCompute();
-        void endCompute();
+        void                beginCompute();
+        void                endCompute();
 
-        void setComputeJob(glm::ivec3 num_groups, FenceHandle fence);
-        void WaitSync(FenceHandle handle, bool client, uint64_t timeout);
-        void setImageTexture(uint16_t unit, TextureHandle handle, uint16_t level, bool layered, uint16_t layer, Access access, TextureFormat format);
-        void setRenderState(StateBits bits);
-        void setScissorEnable(bool enabled);
-        void setScissor(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-        void setVertexBuffer(VertexBufferHandle handle);
-        void setIndexBuffer(IndexBufferHandle handle);
-        void setPrimitiveType(PrimitiveType type);
-        void setTexure(uint16_t unit, TextureHandle handle);
-        void setClearColor(unsigned pass, const glm::vec4& value);
-        void setClearBits(unsigned pass, uint16_t value);
-        void setFrameBuffer(unsigned pass, FrameBufferHandle handle);
-        void setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
+        void                setComputeJob(glm::ivec3 num_groups, FenceHandle fence);
+        void                WaitSync(FenceHandle handle, bool client, uint64_t timeout);
+        void                setImageTexture(uint16_t unit, TextureHandle handle, uint16_t level, bool layered, uint16_t layer, Access access, TextureFormat format);
+        void                setRenderState(StateBits bits);
+        void                setScissorEnable(bool enabled);
+        void                setScissor(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+        void                setVertexBuffer(VertexBufferHandle handle);
+        void                setIndexBuffer(IndexBufferHandle handle);
+        void                setPrimitiveType(PrimitiveType type);
+        void                setTexure(uint16_t unit, TextureHandle handle);
+        void                setClearColor(unsigned pass, const glm::vec4& value);
+        void                setClearBits(unsigned pass, uint16_t value);
+        void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
+        void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
 
-        void setProgramVar(const std::string& name, int value);
-        void setProgramVar(const std::string& name, float value);
-        void setProgramVar(const std::string& name, const glm::vec2& value);
-        void setProgramVar(const std::string& name, const glm::vec3& value);
-        void setProgramVar(const std::string& name, const glm::vec4& value);
-        void setProgramVar(const std::string& name, const glm::mat3& value);
-        void setProgramVar(const std::string& name, const glm::mat4& value);
-        void setProgramVar(const std::string& name, const std::vector<float>& value);
-        void setProgramVar(const std::string& name, const std::vector<glm::vec4>& value);
-        void setProgramVar(const std::string& name, UniformData data);
+        void                setProgramVar(const std::string& name, int value);
+        void                setProgramVar(const std::string& name, float value);
+        void                setProgramVar(const std::string& name, const glm::vec2& value);
+        void                setProgramVar(const std::string& name, const glm::vec3& value);
+        void                setProgramVar(const std::string& name, const glm::vec4& value);
+        void                setProgramVar(const std::string& name, const glm::mat3& value);
+        void                setProgramVar(const std::string& name, const glm::mat4& value);
+        void                setProgramVar(const std::string& name, const std::vector<float>& value);
+        void                setProgramVar(const std::string& name, const std::vector<glm::vec4>& value);
+        void                setProgramVar(const std::string& name, UniformData data);
 
-        void submit(uint32_t pass);
-        void submit(uint32_t pass, ProgramHandle program);
-        void submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count);
-        void submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset);
+        void                submit(uint32_t pass);
+        void                submit(uint32_t pass, ProgramHandle program);
+        void                submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count);
+        void                submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset);
 
-        bool frame();
-        bool renderFrame(Frame* frame);
-        void waitForFrameEnd();
+        bool                frame();
+        bool                renderFrame(Frame* frame);
+        void                waitForFrameEnd();
 
     private:
         uint16_t width_, height_;

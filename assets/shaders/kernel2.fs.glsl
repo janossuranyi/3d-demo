@@ -1,4 +1,4 @@
-#version 330 core
+#version 450 core
 
 in INTERFACE {
 	vec2 TexCoord;
@@ -7,8 +7,66 @@ in INTERFACE {
 out vec4 fso_Color;
 
 uniform sampler2D samp0;
-uniform float g_kernel[9];
 uniform float g_offset;
+uniform int g_kernel;
+
+#define KERNEL_BLUR 0
+#define KERNEL_BOTTOM_SOBEL 1
+#define KERNEL_IDENTITY 2
+#define KERNEL_EMBOSS 3
+#define KERNEL_LEFT_SOBEL 4
+#define KERNEL_OUTLINE 5
+#define KERNEL_RIGHT_SOBEL 6
+#define KERNEL_SHARPEN 7
+#define KERNEL_TOP_SOBEL 8
+
+const float kernels[9][9] = {
+	{
+		0.0625f, 0.125f, 0.0625f,
+		0.125f, 0.25f, 0.125f,
+		0.0625f, 0.125f, 0.0625f
+	},
+	{
+		-1.0f, -2.0f, -1.0f,
+		 0.0f,  0.0f,  0.0f,
+		 1.0f,  2.0f,  1.0f
+	},
+	{
+		0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+	},
+	{
+		-2.0f, -1.0f, 0.0f,
+		-1.0f,  1.0f, 1.0f,
+		 0.0f,  1.0f, 2.0f
+	},
+	{
+		1.0f, 0.0f, -1.0f,
+		2.0f, 0.0f, -2.0f,
+		1.0f, 0.0f, -1.0f
+	},
+	{
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  8.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f
+	},
+	{
+		-1.0f, 0.0f, 1.0f,
+		-2.0f, 0.0f, 2.0f,
+		-1.0f, 0.0f, 1.0f
+	},
+	{
+		 0.0f, -1.0f,  0.0f,
+		-1.0f,  5.0f, -1.0f,
+		 0.0f, -1.0f,  0.0f
+	},
+	{
+		 1.0f,  2.0f,  1.0f,
+		 0.0f,  0.0f,  0.0f,
+		-1.0f, -2.0f, -1.0f
+	}
+};
 
 float GammaIEC(float c)
 {
@@ -46,7 +104,8 @@ void main() {
 	vec3 col = vec3(0.0);
 	for (int i = 0; i < 9; i++)
 	{
-		col += sampleTex[i] * g_kernel[i];
+		//col += sampleTex[i] * g_kernel[i];
+		col += sampleTex[i] * kernels[g_kernel][i];
 	}
 
 	fso_Color = vec4(GammaIEC(col), 1.0);

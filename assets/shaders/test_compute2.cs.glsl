@@ -1,14 +1,10 @@
 #version 450 core
 
-layout(local_size_x = 1, local_size_y = 1) in;
+layout(local_size_x = 8, local_size_y = 8) in;
 layout(rgba8, binding = 0) uniform image2D img_output;
 
 uniform float fa;
-
-layout(std140) uniform cb_vars
-{
-	float angle;
-};
+uniform float angle;
 
 const vec3 black = vec3(0.0);
 
