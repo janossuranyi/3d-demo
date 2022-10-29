@@ -18,8 +18,7 @@ const float PI = 3.14159265359;
 const float kLightRadius = 5;
 vec3 kLightColor = vec3(1.0,1.0,1.0) * 20;
 
-layout (location = 0) out vec4 BloomColor;
-layout (location = 1) out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
 
 in INTERFACE {
    vec3 FragPos;
@@ -213,12 +212,5 @@ void main()
     //finalColor = GammaIEC(tonemap(finalColor));
 
     FragColor = vec4(finalColor,1);
-
-    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > 4.0)
-        BloomColor = vec4(FragColor.rgb, 1.0);
-    else
-        BloomColor = vec4(0.0, 0.0, 0.0, 1.0);
-
 }
 

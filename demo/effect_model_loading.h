@@ -40,6 +40,8 @@ struct LoadModelEffect : public Effect
 	RenderMesh3D m_mesh;
 	
 	GpuProgram gauss;
+	GpuProgram bloom_prepass;
+	GpuProgram bloom;
 	GpuProgram shader;
 	GpuProgram fxaa;
 	
@@ -59,5 +61,7 @@ struct LoadModelEffect : public Effect
 	float angleY{0.0f};
 	float posY{ 1.0f };
 	float posZ{ 0.0f };
+	float exposure{ 1.0f };
 
+	void blur(int iter, int w, int h, int active_src = 0);
 };

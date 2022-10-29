@@ -11,7 +11,7 @@
 
 #include "effect_model_loading.h"
 
-static const int ResDiv = 32;
+static const int ResDiv = 4;
 
 bool LoadModelEffect::Init()
 {
@@ -23,7 +23,7 @@ bool LoadModelEffect::Init()
         return false;
     }
 
-    glm::vec3 clearColor = glm::pow(glm::vec3(0.05f, 0.05f, 0.2f), glm::vec3(1.f / 2.2f));
+    glm::vec3 clearColor = glm::pow(glm::vec3(0.001f, 0.001f, 0.001f), glm::vec3(1.f / 2.2f));
 
     pipeline.setScreenRect(0, 0, GPU::window().width, GPU::window().height);
     pipeline.setState(GLS_DEPTHFUNC_LESS | GLS_CULL_FRONTSIDED/* | GLS_POLYMODE_LINE*/);
@@ -42,9 +42,23 @@ bool LoadModelEffect::Init()
         return false;
     }
 
-    if (!fxaa.loadShader(
+    if (!bloom_prepass.loadShader(
+        FileSystem::resolve("assets/shaders/fxaa.vs.glsl"),
+        FileSystem::resolve("assets/shaders/bloom_prepass.fs.glsl")))
+    {
+        return false;
+    }
+
+    if (!bloom.loadShader(
         FileSystem::resolve("assets/shaders/fxaa.vs.glsl"),
         FileSystem::resolve("assets/shaders/bloom.fs.glsl")))
+    {
+        return false;
+    }
+
+    if (!fxaa.loadShader(
+        FileSystem::resolve("assets/shaders/fxaa.vs.glsl"),
+        FileSystem::resolve("assets/shaders/fxaa3.fs.glsl")))
     {
         return false;
     }
@@ -64,16 +78,12 @@ bool LoadModelEffect::Init()
     //glEnable(GL_FRAMEBUFFER_SRGB);
 
     cb_color = GpuTexture2D::createShared();
-    cb_color->createRGB16F(GPU::window().width, GPU::window().height, 0);
+    cb_color->createR11G11B10(GPU::window().width, GPU::window().height, 0);
     cb_color->withDefaultLinearClampEdge().updateParameters();
-    cb_color2 = GpuTexture2D::createShared();
-    cb_color2->createRGB16F(GPU::window().width, GPU::window().height, 0);
-    cb_color2->withDefaultLinearClampEdge().updateParameters();
     cb_depth = GpuTexture2D::createShared();
     cb_depth->createDepthStencil(GPU::window().width, GPU::window().height);
     if (!fb.create()
-        .addColorAttachment(0, cb_color2)
-        .addColorAttachment(1, cb_color)
+        .addColorAttachment(0, cb_color)
         .setDepthStencilAttachment(cb_depth)
         .checkCompletness())
     {
@@ -81,7 +91,7 @@ bool LoadModelEffect::Init()
     }
 
     cb_copy = GpuTexture2D::createShared();
-    cb_copy->createRGB8(GPU::window().width, GPU::window().height, 0);
+    cb_copy->createR11G11B10(GPU::window().width, GPU::window().height, 0);
     cb_copy->withDefaultLinearClampEdge().updateParameters();
     if (!fb_copy.create()
         .addColorAttachment(0, cb_copy)
@@ -92,7 +102,7 @@ bool LoadModelEffect::Init()
     for (int i = 0; i < 2; ++i)
     {
         cb_blur[i] = GpuTexture2D::createShared();
-        cb_blur[i]->createRGB8(GPU::window().width / ResDiv, GPU::window().height / ResDiv, 0);
+        cb_blur[i]->createR11G11B10(GPU::window().width / ResDiv, GPU::window().height / ResDiv, 0);
         cb_blur[i]->withDefaultLinearClampEdge().updateParameters();
 
         if (!fb_blur[i].create()
@@ -123,8 +133,8 @@ bool LoadModelEffect::Init()
 
 bool LoadModelEffect::Update(float time)
 {
-    angleY += 0.01f * time;
-    angleY = std::fmodf(angleY, 360.0f);
+//    angleY += 0.01f * time;
+    //angleY = std::fmodf(angleY, 360.0f);
     return true;
 }
 
@@ -148,8 +158,43 @@ bool LoadModelEffect::HandleEvent(const SDL_Event* ev, float time)
         {
             posY += 0.001f * time;
         }
+        else if (ev->key.keysym.sym == SDLK_1)
+        {
+            exposure -= 0.001 * time;
+            if (exposure < 0.0f) exposure += 0.001;
+        }
+        else if (ev->key.keysym.sym == SDLK_2)
+        {
+            exposure += 0.001 * time;
+        }
+        else if (ev->key.keysym.sym == SDLK_SPACE)
+        {
+            angleY += 0.01f * time;
+            angleY = std::fmodf(angleY, 360.0f);
+        }
     }
     return true;
+}
+
+void LoadModelEffect::blur(int iter, int w, int h, int active_src)
+{
+    glm::vec2 u_direction(1, 0);
+    pipeline.useProgram(gauss);
+    pipeline.setLayout(vertFormat);
+    pipeline.setScreenRect(0, 0, w, h);
+
+    for (int i = 0; i < iter; ++i)
+    {
+        fb_blur[1-active_src].bind();
+        pipeline.bindTexture(*cb_blur[active_src], 0);
+        gauss.set("u_direction", u_direction);
+        pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
+
+        fb_blur[active_src].bind();
+        pipeline.bindTexture(*cb_blur[1-active_src], 0);
+        gauss.set("u_direction", vec2(1.0) - u_direction);
+        pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
+    }
 }
 
 void LoadModelEffect::Render()
@@ -167,46 +212,39 @@ void LoadModelEffect::Render()
 
     pipeline.setState(GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS | GLS_CULL_TWOSIDED);
     int w = GPU::window().width, h = GPU::window().height;
-    int active_fb = 0;
 
     fb.bindToRead();
-    fb_copy.bindToWrite();
-    glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-
-    fb_copy.bindToRead();
-    fb_blur[1-active_fb].bindToWrite();
+    fb_blur[1].bindToWrite();
     glBlitFramebuffer(0, 0, w, h, 0, 0, w / ResDiv, h / ResDiv, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
-    glm::vec2 u_direction(1, 0);
-    pipeline.useProgram(gauss);
+    blur(2, w / ResDiv, h / ResDiv, 1);
+
     pipeline.setLayout(vertFormat);
-    pipeline.setScreenRect(0, 0, w / ResDiv, h / ResDiv);
-
-    for (int i = 0; i < 2; ++i)
-    {
-        fb_blur[active_fb].bind();
-        pipeline.bindTexture(*cb_blur[1 - active_fb], 0);
-        gauss.set("u_direction", u_direction);
-        pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
-
-        fb_blur[1-active_fb].bind();
-        pipeline.bindTexture(*cb_blur[active_fb], 0);
-        gauss.set("u_direction", vec2(1.0)-u_direction);
-        pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
-
-    }
+    pipeline.setScreenRect(0, 0, w/ResDiv, h/ResDiv);    
     
-    pipeline.bindDefaultFramebuffer();
+    fb_blur[0].bind();
+    pipeline.bindTexture(*cb_blur[0], 0);
+    pipeline.useProgram(bloom_prepass);
+    bloom_prepass.set("g_fTreshold", 0.2f);
+    pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
 
-    pipeline.setScreenRect(0, 0, w, h );
-    pipeline.setLayout(vertFormat);
-//    pipeline.bindTexture(*cb_color, 0);
+    blur(2, w / ResDiv, h / ResDiv, 0);
+
+    pipeline.setScreenRect(0, 0, w, h);
+    fb_copy.bind();
     pipeline.bindTexture(*cb_color, 0);
-    pipeline.bindTexture(*cb_blur[1-active_fb], 1);
-    pipeline.setState(GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_CULL_TWOSIDED);
-    pipeline.useProgram(fxaa);
-    fxaa.set("exposure", 1.2f);
+    pipeline.bindTexture(*cb_blur[0], 1);
+    pipeline.useProgram(bloom);
+    bloom.set("exposure", exposure);
+    pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
 
+    pipeline.setLayout(vertFormat);
+    pipeline.setScreenRect(0, 0, w, h);
+    pipeline.bindDefaultFramebuffer();
+    pipeline.clear(1, 0, 0);
+    pipeline.bindTexture(*cb_copy, 0);
+    //pipeline.bindTexture(*cb_color, 0);
+    pipeline.useProgram(fxaa);
     pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
     
 }
