@@ -273,6 +273,30 @@ void GpuProgram::set(const std::string& name, int i) const
 		glUniform1i(loc, i);
 	}
 }
+void GpuProgram::set(const std::string& name, float i) const
+{
+	GLint loc = getLocation(name);
+	if (loc > -1)
+	{
+		glUniform1f(loc, i);
+	}
+}
+void GpuProgram::set(const std::string& name, const glm::ivec2& i) const
+{
+	GLint loc = getLocation(name);
+	if (loc > -1)
+	{
+		glUniform2iv(loc, 1, &i[0]);
+	}
+}
+void GpuProgram::set(const std::string& name, const glm::vec2& i) const
+{
+	GLint loc = getLocation(name);
+	if (loc > -1)
+	{
+		glUniform2fv(loc, 1, &i[0]);
+	}
+}
 void GpuProgram::use() const
 {
 	assert(_program != 0xFFFF);

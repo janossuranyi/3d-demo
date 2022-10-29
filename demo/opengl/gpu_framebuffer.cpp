@@ -34,6 +34,7 @@ GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, std::shared_ptr<Gp
 {
 	GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture->mTexture, 0));
 	m_textures.push_back(texture);
+	m_attachments.push_back(GL_COLOR_ATTACHMENT0 + index);
 
 	return *this;
 }
@@ -42,7 +43,8 @@ GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, std::shared_ptr<Gp
 {
 	GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_CUBE_MAP, texture->mTexture, 0));
 	m_textures.push_back(texture);
-	
+	m_attachments.push_back(GL_COLOR_ATTACHMENT0 + index);
+
 	return *this;
 }
 
@@ -58,6 +60,7 @@ GpuFrameBuffer& GpuFrameBuffer::addColorAttachment(int index, int w, int h, Inte
 
 	GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_RENDERBUFFER, rbo));
 	m_renderBuffers.push_back(rbo);
+	m_attachments.push_back(GL_COLOR_ATTACHMENT0 + index);
 
 	return *this;
 }
@@ -91,6 +94,8 @@ GpuFrameBuffer& GpuFrameBuffer::setDepthStencilAttachment(std::shared_ptr<GpuTex
 
 bool GpuFrameBuffer::checkCompletness()
 {
+	GL_CHECK(glDrawBuffers(m_attachments.size(), m_attachments.data()));
+
 	GLenum result;
 	GL_CHECK(result = glCheckFramebufferStatus(GL_FRAMEBUFFER));
 
@@ -123,6 +128,16 @@ bool GpuFrameBuffer::checkCompletness()
 void GpuFrameBuffer::bind()
 {
 	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, m_fbo));
+}
+
+void GpuFrameBuffer::bindToRead()
+{
+	GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo));
+}
+
+void GpuFrameBuffer::bindToWrite()
+{
+	GL_CHECK(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo));
 }
 
 void GpuFrameBuffer::bindDefault()

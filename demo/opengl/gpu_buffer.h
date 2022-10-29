@@ -14,7 +14,11 @@ public:
 
 	/** Empty constructor initializes a VERTEX buffer
 	*/
-	GpuBuffer() :mTarget(BufferTarget::VERTEX) {}
+	GpuBuffer() :mTarget(BufferTarget::VERTEX),
+		mBuffer{ INVALID_BUFFER },
+		mIsReference{false},
+		mIsMapped{false}
+	{}
 
 	/** Destroys the underlying gpu buffer
 	*/

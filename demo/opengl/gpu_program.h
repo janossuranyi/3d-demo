@@ -42,8 +42,10 @@ public:
 	void set(int index, int n, const glm::vec2* v) const;
 	void set(int index, int n, const glm::vec3* v) const;
 	void set(int index, int n, const glm::vec4* v) const;
+	void set(const std::string& name, const glm::ivec2& i) const;
+	void set(const std::string& name, const glm::vec2& i) const;
 	void set(const std::string& name, int i) const;
-
+	void set(const std::string& name, float i) const;
 	void use() const;
 	void dispatchCompute(unsigned int x, unsigned int y, unsigned int z) const;
 	void destroy();

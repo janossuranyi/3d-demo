@@ -26,6 +26,8 @@ public:
 
 	bool checkCompletness();
 	void bind();
+	void bindToRead();
+	void bindToWrite();
 	static void bindDefault();
 
 private:
@@ -34,5 +36,6 @@ private:
 	std::shared_ptr<GpuTexture2D> m_depthRenderTexture;
 	std::vector<std::shared_ptr<GpuTexture>> m_textures;
 	std::vector<GLuint> m_renderBuffers;
+	std::vector<GLenum> m_attachments;
 	bool m_completed;
 };

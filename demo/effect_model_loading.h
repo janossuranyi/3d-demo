@@ -19,9 +19,14 @@ struct LoadModelEffect : public Effect
 	LoadModelEffect() :
 		pipeline(),
 		fb(),
-		fb_color(),
-		fb_depth(),
+		cb_color(),
+		cb_color2(),
+		cb_depth(),
 		vertFormat(),
+		fb_copy(),
+		fb_blur(),
+		cb_copy(),
+		cb_blur(),
 		m_mesh() {}
 
 	// Inherited via Effect
@@ -33,13 +38,21 @@ struct LoadModelEffect : public Effect
 	World world;
 	Pipeline pipeline;
 	RenderMesh3D m_mesh;
+	
+	GpuProgram gauss;
 	GpuProgram shader;
 	GpuProgram fxaa;
+	
 	std::unique_ptr<GpuBuffer> rectBuffer;
 
-	std::shared_ptr<GpuTexture2D> fb_color;
-	std::shared_ptr<GpuTexture2D> fb_depth;
+	std::shared_ptr<GpuTexture2D> cb_color, cb_color2;
+	std::shared_ptr<GpuTexture2D> cb_depth;
+
 	GpuFrameBuffer fb;
+	GpuFrameBuffer fb_copy;
+	GpuFrameBuffer fb_blur[2];
+	std::shared_ptr<GpuTexture2D> cb_blur[2];
+	std::shared_ptr<GpuTexture2D> cb_copy;
 
 	VertexLayout vertFormat;
 
