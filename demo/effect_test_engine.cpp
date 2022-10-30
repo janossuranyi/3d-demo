@@ -6,7 +6,7 @@
 #include "logger.h"
 #include "effect_test_engine.h"
 #include "engine/gfx/gfx.h"
-
+#include "engine/gfx/draw_vert.h"
 
 static float UNIT_BOX_POSITIONS[] = {
 	// positions          
@@ -282,6 +282,14 @@ bool EngineTestEffect::Init()
 
 	VP = P * V;
 
+	layout.begin()
+		.add("position", gfx::AttributeType::Float, 4, false)
+		.add("texcoord", gfx::AttributeType::Half, 2, false)
+		.add("normal", gfx::AttributeType::UnsignedByte, 4, true)
+		.add("tangent", gfx::AttributeType::UnsignedByte, 4, true)
+		.add("color", gfx::AttributeType::UnsignedByte, 4, true)
+		.end();
+
     return true;
 }
 
@@ -415,6 +423,7 @@ void EngineTestEffect::Render()
 	renderer.setPrimitiveType(gfx::PrimitiveType::Point);
 	renderer.setRenderState(gfx::GLS_DEPTHFUNC_LESS);
 	renderer.setProgramVar("m_WVP", WVP);
+	renderer.setVertexDecl(layout);
 	renderer.submit(pass, prgPoints, count, offs, 0);
 
 	W = glm::rotate(glm::mat4(1), glm::radians(rotY), glm::vec3(0, 1, 0));
@@ -476,7 +485,7 @@ void EngineTestEffect::Render()
 	_w = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f + scale, -1.0f + scale, 0.0f));
 	_w = glm::scale(_w, glm::vec3(scale));
 	renderer.setProgramVar("m_W", _w);
-	
+
 	renderer.beginCompute();
 	{
 		renderer.WaitSync(fence, false, 0);

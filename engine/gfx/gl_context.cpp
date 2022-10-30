@@ -57,6 +57,29 @@ namespace gfx {
 #define GL_FLUSH_ERRORS()
 #endif
 
+	static inline GLenum MapAttribType(const AttributeType type)
+	{
+		switch (type) {
+		case AttributeType::Byte:
+			return GL_BYTE;
+		case AttributeType::UnsignedByte:
+			return GL_UNSIGNED_BYTE;
+		case AttributeType::Short:
+			return GL_SHORT;
+		case AttributeType::UnsignedShort:
+			return GL_UNSIGNED_SHORT;
+		case AttributeType::Int:
+			return GL_INT;
+		case AttributeType::UnsignedInt:
+			return GL_UNSIGNED_INT;
+		case AttributeType::Half:
+			return GL_HALF_FLOAT;
+		default:
+			return GL_FLOAT;
+		}
+
+	}
+
 	static inline GLenum MapBufferUsage(const BufferUsage usage)
 	{
 		switch (usage) {
@@ -1152,29 +1175,29 @@ namespace gfx {
 					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 				}
 
-				if ((active_vertex_decl_ != item->vertexDecl || item->vb != active_vb_))
+				if (active_vertex_decl_.empty() || item->vb != active_vb_)
 				{
-					const auto vertdecl_idx = static_cast<size_t>(item->vertexDecl);
-
-					assert(vertdecl_idx < sizeof(s_vertexLayouts) / sizeof(s_vertexLayouts[0]));
-
-					for (unsigned j = 0; j < gl_max_vertex_attribs_; ++j)
+					if (item->vertexDecl.empty() == false)
 					{
-						if (j < s_vertexLayouts[vertdecl_idx].attributes.size())
-						{
-							const auto& attr = s_vertexLayouts[vertdecl_idx].attributes[j];
-							if (j >= active_vertex_attribs_)
-							{
-								GL_CHECK(glEnableVertexAttribArray(j));
-							}
-							GL_CHECK(glVertexAttribPointer(j, attr.size, attr.type, attr.normalized, s_vertexLayouts[vertdecl_idx].stride, reinterpret_cast<const void*>(attr.pointer)));
-						}
-						else if (j < active_vertex_attribs_) {
-							GL_CHECK(glDisableVertexAttribArray(j));
-						}
+						active_vertex_decl_ = item->vertexDecl;
 					}
-					active_vertex_attribs_ = s_vertexLayouts[vertdecl_idx].attributes.size();
-					active_vertex_decl_ = item->vertexDecl;
+
+					for (int j = 0; j < active_vertex_decl_.attributes().size(); ++j)
+					{
+						GL_CHECK(glDisableVertexAttribArray(j));
+					}
+					for (int j = 0; j < active_vertex_decl_.attributes().size(); ++j)
+					{
+						const VertexAttribute& attr = active_vertex_decl_.attributes()[j];
+						GL_CHECK(glEnableVertexAttribArray(j));
+						GL_CHECK(glVertexAttribPointer(
+							j,
+							attr.count,
+							MapAttribType(attr.type),
+							attr.normalized ? GL_TRUE : GL_FALSE,
+							active_vertex_decl_.stride(),
+							attr.offset));
+					}
 					active_vb_ = item->vb;
 				}
 

@@ -32,6 +32,7 @@ struct EngineTestEffect : public Effect
 	glm::mat4 P;
 	glm::mat4 VP;
 
+	gfx::VertexDecl_t layout;
 	gfx::ProgramHandle prgPoints;
 	gfx::ProgramHandle prgPP;
 	gfx::ProgramHandle prgSkybox;

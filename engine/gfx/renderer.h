@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include "handle.h"
 #include "gfx/memory.h"
+#include "vertex.h"
 
 #define MAX_TEXTURE_SAMPLERS 8
 #define MAX_UNIFORM_BUFFERS 8
@@ -176,7 +177,6 @@ namespace gfx {
     enum class PrimitiveType { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };
 
     enum class VertexDeclType { Draw, Shadow, Count };
-
 
     namespace cmd {
         struct CreateConstantBuffer {
@@ -389,7 +389,7 @@ namespace gfx {
         uint32_t vertex_count;
         PrimitiveType primitive_type;
         ProgramHandle program;
-        VertexDeclType vertexDecl;
+        VertexDecl_t vertexDecl;
         UniformMap uniforms;
         std::array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
 
@@ -487,6 +487,7 @@ namespace gfx {
         void                setClearBits(unsigned pass, uint16_t value);
         void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
         void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
+        void                setVertexDecl(const VertexDecl_t& decl);
 
         void                setProgramVar(const std::string& name, int value);
         void                setProgramVar(const std::string& name, float value);

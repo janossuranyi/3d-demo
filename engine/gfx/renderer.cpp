@@ -398,7 +398,10 @@ namespace gfx {
 	{
 		setProgramVar(name, UniformData{ value });
 	}
-
+	void Renderer::setVertexDecl(const VertexDecl_t& vertDecl)
+	{
+		submit_->active_item.vertexDecl = vertDecl;
+	}
 	void gfx::Renderer::beginCompute()
 	{
 		compute_active_ = true;

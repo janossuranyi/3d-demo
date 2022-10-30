@@ -42,7 +42,7 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<LoadModelEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<EngineTestEffect>();
 
     if (!activeEffect->Init())
         return;
@@ -78,13 +78,13 @@ void App_EventLoop()
 
 
         Uint32 tick1 = SDL_GetTicks();
-#if 1
+#if 0
         GL_FLUSH_ERRORS();
 
         if (sync) GL_CHECK(glDeleteSync(sync));
 #endif
         activeEffect->Render();
-#if 1
+#if 0
         GL_CHECK(sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
 
         //glFinish();
@@ -99,8 +99,9 @@ void App_EventLoop()
             sampleCount = 0;
             ticks = 0;
         }
-
+#if 0
         GPU::flipSwapChain();
+#endif
     }
 }
 
@@ -114,7 +115,7 @@ int main(int argc, char** argv)
     ResourceManager::add_resource_path("../assets");
 
     Info("V_Init Start");
-#if 1
+#if 0
     if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 0, FULLSCREEN))
     {
         Info("V_Init Done");
@@ -126,7 +127,7 @@ int main(int argc, char** argv)
     Info("V_Shutdown...");
     V_Shutdown();
 #endif
-   // App_EventLoop();
+    App_EventLoop();
 	Info("Program terminated");
 	return 0;
 }

@@ -133,7 +133,7 @@ namespace gfx {
 		std::unordered_map<IndexBufferHandle, IndexBufferData> index_buffer_map_;
 		std::unordered_map<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
 
-		VertexDeclType active_vertex_decl_{ VertexDeclType::Count };
+		VertexDecl_t active_vertex_decl_{};
 
 		GLuint shared_vertex_array_{ 0 };
 		GLint gl_max_vertex_attribs_{ 0 };
