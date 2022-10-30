@@ -169,7 +169,7 @@ bool LoadModelEffect::HandleEvent(const SDL_Event* ev, float time)
         }
         else if (ev->key.keysym.sym == SDLK_SPACE)
         {
-            angleY += 0.01f * time;
+            angleY += 0.05f * time;
             angleY = std::fmodf(angleY, 360.0f);
         }
     }
@@ -206,43 +206,19 @@ void LoadModelEffect::Render()
     pipeline.setView(vec3(0, posY, posZ), vec3(0, posY-1.0f, posZ-3.0f));
     pipeline.setState(GLS_DEPTHFUNC_LESS | GLS_CULL_FRONTSIDED /* | GLS_POLYMODE_LINE */);
     pipeline.useProgram(shader);
+    shader.set("exposure", exposure);
     pipeline.clear(true, true, false);
 
     world.renderWorld(pipeline);
 
     pipeline.setState(GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS | GLS_CULL_TWOSIDED);
     int w = GPU::window().width, h = GPU::window().height;
-
-    fb.bindToRead();
-    fb_blur[1].bindToWrite();
-    glBlitFramebuffer(0, 0, w, h, 0, 0, w / ResDiv, h / ResDiv, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-
-    blur(2, w / ResDiv, h / ResDiv, 1);
-
-    pipeline.setLayout(vertFormat);
-    pipeline.setScreenRect(0, 0, w/ResDiv, h/ResDiv);    
     
-    fb_blur[0].bind();
-    pipeline.bindTexture(*cb_blur[0], 0);
-    pipeline.useProgram(bloom_prepass);
-    bloom_prepass.set("g_fTreshold", 0.2f);
-    pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
-
-    blur(2, w / ResDiv, h / ResDiv, 0);
-
-    pipeline.setScreenRect(0, 0, w, h);
-    fb_copy.bind();
-    pipeline.bindTexture(*cb_color, 0);
-    pipeline.bindTexture(*cb_blur[0], 1);
-    pipeline.useProgram(bloom);
-    bloom.set("exposure", exposure);
-    pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
-
     pipeline.setLayout(vertFormat);
     pipeline.setScreenRect(0, 0, w, h);
     pipeline.bindDefaultFramebuffer();
     pipeline.clear(1, 0, 0);
-    pipeline.bindTexture(*cb_copy, 0);
+    pipeline.bindTexture(*cb_color, 0);
     //pipeline.bindTexture(*cb_color, 0);
     pipeline.useProgram(fxaa);
     pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);

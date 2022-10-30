@@ -20,6 +20,8 @@ vec3 kLightColor = vec3(1.0,1.0,1.0) * 20;
 
 layout (location = 0) out vec4 FragColor;
 
+uniform float exposure = 1.0;
+
 in INTERFACE {
    vec3 FragPos;
    vec2 TexCoords;
@@ -154,9 +156,7 @@ struct light_t
 };
 
 light_t lights[] = light_t[](
-    light_t(In.TangentLightPos, kLightColor),
-    light_t(In.TangentLightPos + vec3(-10,0,0), vec3(2,2,2)),
-    light_t(In.TangentLightPos + vec3(10,0,0), vec3(2,2,2))
+    light_t(In.TangentLightPos, kLightColor)
 );
 
 void main()
@@ -208,8 +208,10 @@ void main()
         finalColor += color;
     }
 
+    //finalColor = clamp(finalColor,0.0,1.0);
+    finalColor = vec3(1.0) - exp(-finalColor * exposure);
 
-    //finalColor = GammaIEC(tonemap(finalColor));
+    finalColor = GammaIEC(tonemap(finalColor));
 
     FragColor = vec4(finalColor,1);
 }
