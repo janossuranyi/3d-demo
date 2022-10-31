@@ -11,6 +11,33 @@
 
 namespace gfx {
 
+
+	static GLbitfield MapBarrierBits(uint32_t bits)
+	{
+		uint32_t result = 0;
+
+		if (bits & barrier::AtomicCounter)
+			result |= GL_ATOMIC_COUNTER_BARRIER_BIT;
+		if (bits & barrier::BufferUpdate)
+			result |= GL_BUFFER_UPDATE_BARRIER_BIT;
+		if (bits & barrier::ClientMappedBuffer)
+			result |= GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT;
+		if (bits & barrier::FrameBuffer)
+			result != GL_FRAMEBUFFER_BARRIER_BIT;
+		if (bits & barrier::QueryBuffer)
+			result |= GL_QUERY_BUFFER_BARRIER_BIT;
+		if (bits & barrier::ShaderImageAccess)
+			result |= GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
+		if (bits & barrier::TextureUpdate)
+			result |= GL_TEXTURE_UPDATE_BARRIER_BIT;
+		if (bits & barrier::TransformFeedback)
+			result |= GL_TRANSFORM_FEEDBACK_BARRIER_BIT;
+		if (bits & barrier::Uniform)
+			result |= GL_UNIFORM_BARRIER_BIT;
+
+		return result;
+	}
+
 	static const char* MapShaderStageTitle(ShaderStage type)
 	{
 		switch (type)
@@ -154,37 +181,6 @@ namespace gfx {
 		case Access::ReadWrite:	return GL_READ_WRITE;
 		}
 	}
-
-	struct VertexAttribFormat {
-		GLint size;
-		GLenum type;
-		GLboolean normalized;
-		GLsizeiptr pointer;
-	};
-
-	struct VertexLayout {
-		std::vector<VertexAttribFormat> attributes;
-		uint32_t stride;
-	};
-
-	static const VertexLayout drawVertLayout = {
-		{
-			{4,		GL_FLOAT,			GL_FALSE,	0},
-			{2,		GL_HALF_FLOAT,		GL_FALSE,	16},
-			{4,		GL_UNSIGNED_BYTE,	GL_TRUE,	20},
-			{4,		GL_UNSIGNED_BYTE,	GL_TRUE,	24},
-			{4,		GL_UNSIGNED_BYTE,	GL_TRUE,	28}
-		}, 32
-	};
-
-	static const VertexLayout shadowVertLayout = { 
-		{
-			{4,		GL_FLOAT,			GL_FALSE,	0},
-			{2,		GL_HALF_FLOAT,		GL_FALSE,	16},
-		}, 20
-	};
-
-	static const std::array<VertexLayout, 2> s_vertexLayouts = { drawVertLayout, shadowVertLayout };
 
 	// GL TextureFormatInfo.
 	struct TextureFormatInfo {
@@ -660,10 +656,10 @@ namespace gfx {
 		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
 		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
 
-		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter));
-		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter));
-		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap));
-		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
 
 		if (cmd.mipmap)
 		{
@@ -696,11 +692,14 @@ namespace gfx {
 		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
 		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
 
-		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter));
-		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter));
-		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap));
-		GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap));
-		GL_CHECK(glGenerateMipmap(target));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
+		if (cmd.mipmap)
+		{ 
+			GL_CHECK(glGenerateMipmap(target));
+		}
 		GL_CHECK(glBindTexture(target, 0));
 
 		const TextureData t_data{ texture, target };
@@ -1023,6 +1022,11 @@ namespace gfx {
 					{
 						GL_CHECK(glWaitSync(sync, 0, GL_TIMEOUT_IGNORED));
 					}
+				}
+				if (item->barrier_bits)
+				{
+					GLbitfield bits = MapBarrierBits(item->barrier_bits);
+					GL_CHECK(glMemoryBarrier(bits));
 				}
 				continue;
 			}

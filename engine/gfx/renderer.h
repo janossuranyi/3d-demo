@@ -175,8 +175,19 @@ namespace gfx {
 
     // Primitives
     enum class PrimitiveType { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };
-
-    enum class VertexDeclType { Draw, Shadow, Count };
+    
+    namespace barrier {
+        const uint32_t Uniform = 1 << 0;
+        const uint32_t ShaderImageAccess = 1 << 1;
+        const uint32_t TextureUpdate = 1 << 2;
+        const uint32_t BufferUpdate = 1 << 3;
+        const uint32_t ClientMappedBuffer = 1 << 4;
+        const uint32_t FrameBuffer = 1 << 5;
+        const uint32_t TransformFeedback = 1 << 6;
+        const uint32_t AtomicCounter = 1 << 7;
+        const uint32_t ShaderStorage = 1 << 8;
+        const uint32_t QueryBuffer = 1 << 9;
+    }
 
     namespace cmd {
         struct CreateConstantBuffer {
@@ -290,6 +301,7 @@ namespace gfx {
             TextureFilter min_filter;
             TextureFilter mag_filter;
             bool srgb;
+            bool mipmap;
             std::vector<Memory> data;
         };
 
@@ -320,6 +332,10 @@ namespace gfx {
             FenceHandle handle;
             uint64_t timeout;
             bool client;
+        };
+
+        struct MemoryBarrier {
+            uint32_t barrier_bits;
         };
     }
 
@@ -378,6 +394,7 @@ namespace gfx {
         ImageBindings images;
         TextureBindings textures;
         UniformMap uniforms;
+        uint32_t barrier_bits;
     };
 
     struct RenderItem {
@@ -448,7 +465,7 @@ namespace gfx {
         IndexBufferHandle   createIndexBuffer(uint32_t size, BufferUsage usage, Memory data);
         ConstantBufferHandle createConstantBuffer(uint32_t size, BufferUsage usage, Memory data);
         TextureHandle       createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data);
-        TextureHandle       createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, std::vector<Memory>& data);
+        TextureHandle       createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, std::vector<Memory>& data);
         FrameBufferHandle   createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
         FrameBufferHandle   createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
         ProgramHandle       createProgram();
@@ -475,6 +492,7 @@ namespace gfx {
 
         void                setComputeJob(glm::ivec3 num_groups, FenceHandle fence);
         void                WaitSync(FenceHandle handle, bool client, uint64_t timeout);
+        void                MemoryBarrier(uint32_t barrier_bits);
         void                setImageTexture(uint16_t unit, TextureHandle handle, uint16_t level, bool layered, uint16_t layer, Access access, TextureFormat format);
         void                setRenderState(StateBits bits);
         void                setScissorEnable(bool enabled);

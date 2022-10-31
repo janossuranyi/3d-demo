@@ -91,7 +91,7 @@ EngineTestEffect::~EngineTestEffect()
 bool EngineTestEffect::Init()
 {
     renderer.init(gfx::RendererType::OpenGL, 1440, 900, "test", true);
-	vtx_cache.init(&renderer, CACHE_SIZE, CACHE_SIZE/4);
+	vtx_cache.start(&renderer);
 
 
 	glm::ivec2 win_size = renderer.getFramebufferSize();
@@ -122,7 +122,7 @@ bool EngineTestEffect::Init()
 		for (auto& side : textures_faces)
 		{
 			auto fname = ResourceManager::get_resource(side);
-			uint8_t* image = stbi_load(fname.c_str(), &x, &y, &n, 3);
+			uint8_t* image = stbi_load(fname.c_str(), &x, &y, &n, 4);
 			if (img_x == 0)
 			{
 				img_x = x;
@@ -132,12 +132,12 @@ bool EngineTestEffect::Init()
 			{
 				Warning("Cube faces size not equal");
 			}
-			sky_images.emplace_back(image, x * y * 3);
+			sky_images.emplace_back(image, x * y * 4);
 			stbi_image_free(image);
 		}
 
 		skybox =
-			renderer.createTextureCubemap(img_x, img_y, gfx::TextureFormat::RGB8_COMPRESSED, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, true, sky_images);
+			renderer.createTextureCubemap(img_x, img_y, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, true, false, sky_images);
 	}
 
 	{
@@ -283,11 +283,11 @@ bool EngineTestEffect::Init()
 	VP = P * V;
 
 	layout.begin()
-		.add("position", gfx::AttributeType::Float, 4, false)
-		.add("texcoord", gfx::AttributeType::Half, 2, false)
-		.add("normal", gfx::AttributeType::UnsignedByte, 4, true)
-		.add("tangent", gfx::AttributeType::UnsignedByte, 4, true)
-		.add("color", gfx::AttributeType::UnsignedByte, 4, true)
+		.add(gfx::AttributeName::Position,	gfx::AttributeType::Float,			4, false)
+		.add(gfx::AttributeName::TexCoord0, gfx::AttributeType::Half,			2, false)
+		.add(gfx::AttributeName::Normal,	gfx::AttributeType::UnsignedByte,	4, true)
+		.add(gfx::AttributeName::Tangent,	gfx::AttributeType::UnsignedByte,	4, true)
+		.add(gfx::AttributeName::Color0,	gfx::AttributeType::UnsignedByte,	4, true)
 		.end();
 
     return true;
@@ -391,7 +391,7 @@ void EngineTestEffect::Render()
 			buffer[i].set_texcoord(r);
 		}
 
-		vc_pp = vtx_cache.allocVertex(std::move(gfx::Memory(buffer)));
+		vc_pp = vtx_cache.allocVertex(gfx::Memory(buffer));
 		//		vb_pp = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
 	}
 
@@ -399,8 +399,8 @@ void EngineTestEffect::Render()
 
 	renderer.beginCompute();
 	{
-		fence = renderer.createFence();
-		renderer.setComputeJob(glm::ivec3(512/8, 512/8, 1), fence);
+		//fence = renderer.createFence();
+		renderer.setComputeJob(glm::ivec3(512 / 8, 512 / 8, 1), gfx::FenceHandle{});
 		renderer.setImageTexture(0, texDyn, 0, false, 0, gfx::Access::Write, gfx::TextureFormat::RGBA8);
 		renderer.setProgramVar("angle", angle);
 		renderer.setProgramVar("fa", 0.7f);
@@ -415,7 +415,7 @@ void EngineTestEffect::Render()
 	const glm::mat4 WVP = VP * W;
 
 	uint32_t count, offs;
-	vb_points = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_points, offs, count);
+	vb_points = vtx_cache.getVertexBuffer(vc_points, offs, count);
 
 	renderer.setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
 	renderer.setFrameBuffer(pass, fb);
@@ -431,7 +431,7 @@ void EngineTestEffect::Render()
 
 	++pass;
 
-	vb_skybox = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_skybox, offs, count);
+	vb_skybox = vtx_cache.getVertexBuffer(vc_skybox, offs, count);
 
 	renderer.setClearBits(pass, 0);
 	renderer.setFrameBuffer(pass, fb);
@@ -445,7 +445,7 @@ void EngineTestEffect::Render()
 	renderer.submit(pass, prgSkybox, count, offs, 0);
 
 	++pass;
-	vb_pp = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_pp, offs, count);
+	vb_pp = vtx_cache.getVertexBuffer(vc_pp, offs, count);
 	//renderer.setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
 	renderer.setFrameBuffer(pass, gfx::FrameBufferHandle{0});
 	renderer.setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
@@ -488,12 +488,12 @@ void EngineTestEffect::Render()
 
 	renderer.beginCompute();
 	{
-		renderer.WaitSync(fence, false, 0);
+		renderer.MemoryBarrier(gfx::barrier::ShaderImageAccess);
 		renderer.submit(pass);
 		renderer.endCompute();
 	}
 	
-	renderer.deleteFence(fence);
+	//renderer.deleteFence(fence);
 	renderer.submit(pass, prgViewTex, count, offs, 0);
 
 	renderer.frame();

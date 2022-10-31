@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include "engine/gfx/gfx.h"
 #include "engine/gfx/vertex_cache.h"
+#include "engine/gfx/draw_vert.h"
 #include "effect.h"
 #include "resource/filesystem.h"
 #include "resource/resource_manager.h"
@@ -39,6 +40,6 @@ struct EngineTestEffect : public Effect
 	gfx::ProgramHandle prgDepth;
 	gfx::ProgramHandle prgComp;
 	gfx::ProgramHandle prgViewTex;
-	gfx::VertexCache vtx_cache;
+	gfx::VertexCache<gfx::DrawVert, 64*1024*1024, 128*1024> vtx_cache;
 };
 

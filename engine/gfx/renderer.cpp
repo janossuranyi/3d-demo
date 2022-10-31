@@ -101,7 +101,7 @@ namespace gfx {
 		return handle;
 	}
 
-	TextureHandle Renderer::createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, std::vector<Memory>& data)
+	TextureHandle Renderer::createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, std::vector<Memory>& data)
 	{
 		if (data.size() != 6)
 		{
@@ -110,7 +110,7 @@ namespace gfx {
 		}
 
 		TextureHandle handle = texture_handle_.next();
-		submitPreFrameCommand(cmd::CreateTextureCubeMap{ handle,width,height,format,wrap,minfilter,magfilter,srgb,std::move(data)});
+		submitPreFrameCommand(cmd::CreateTextureCubeMap{ handle,width,height,format,wrap,minfilter,magfilter,srgb,mipmap,std::move(data)});
 
 		texture_data_[handle] = TextureData{ width,height,format };
 
@@ -278,6 +278,11 @@ namespace gfx {
 		submit_->active_compute.fence = handle;
 		submit_->active_compute.wait_sync_client = client;
 		submit_->active_compute.wait_timeout = timeout;
+	}
+
+	void Renderer::MemoryBarrier(uint32_t barrier_bits)
+	{
+		submit_->active_compute.barrier_bits = barrier_bits;
 	}
 
 	void Renderer::setComputeJob(glm::ivec3 num_groups, FenceHandle fence)
@@ -543,6 +548,7 @@ namespace gfx {
 		shared_render_context_->process_command_list(frame->commands_post);
 
 		frame->active_item = RenderItem();
+		frame->active_compute = ComputeItem();
 		for (auto& pass : frame->render_passes)
 		{
 			pass.clear();

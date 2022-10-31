@@ -21,10 +21,9 @@ bool ResourceManager::add_resource_path(const std::string& path)
             auto const abs_path = std::filesystem::absolute(e);
             auto const short_name = std::filesystem::path(abs_path).filename();
             resource_map_.insert(std::make_pair(short_name.string(), abs_path.string()));
-
-            Info("[ResourceManager]: %s - (%s) added", short_name.string().c_str(), abs_path.string().c_str());
         }
     }
+    Info("[ResourceManager]: dir %s added", path.c_str());
 
     return true;
 }

@@ -24,7 +24,7 @@ namespace gfx {
 		return attributes_;
 	}
 
-	VertexDecl_t& VertexDecl_t::add(const std::string& name, AttributeType type, uint16_t count, bool normalized)
+	VertexDecl_t& VertexDecl_t::add(AttributeName name, AttributeType type, uint16_t count, bool normalized)
 	{
 		const int typeSize = getTypeSize(type);
 		attributes_.emplace_back(VertexAttribute{ name,type,count, reinterpret_cast<char*>(static_cast<uintptr_t>(stride_)),normalized });

@@ -1,7 +1,17 @@
 #include "memory.h"
+#include "logger.h"
 
 namespace gfx {
 	Memory::Memory() : data_(nullptr), size_(0) {
+	}
+
+	Memory::~Memory()
+	{
+#ifdef _DEBUG_MEM
+		if (size_ > 0) {
+			Info("[gfx::Memory] free %d bytes", size_);
+		}
+#endif
 	}
 
 	Memory::Memory(size_t asize) : size_(asize) {

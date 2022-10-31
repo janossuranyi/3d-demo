@@ -13,7 +13,7 @@ namespace gfx {
         Memory();
 
         /// Destroys memory block.
-        ~Memory() = default;
+        ~Memory();
 
         // Copyable.
         Memory(const Memory&) = default;
