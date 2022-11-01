@@ -1,6 +1,11 @@
-#version 450 core
+#ifndef LOCAL_SIZE_X
+#define LOCAL_SIZE_X 1
+#endif
+#ifndef LOCAL_SIZE_Y
+#define LOCAL_SIZE_Y 1
+#endif
 
-layout(local_size_x = 8, local_size_y = 8) in;
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y) in;
 layout(rgba8, binding = 0) uniform image2D img_output;
 
 uniform float fa;

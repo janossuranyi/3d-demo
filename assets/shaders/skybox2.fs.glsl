@@ -1,4 +1,3 @@
-#version 330 core
 
 out vec4 FS_OUT;
 uniform samplerCube samp0;

@@ -68,6 +68,8 @@ set(ENGINE_FILES
   ${ENGINE_SCENE_C}
   ${ENGINE_MATH_H}
   ${ENGINE_MATH_C}
+  engine/engine.h
+  engine/common.h
 )
 
 set(DEMO_FILES
@@ -151,8 +153,8 @@ if(WIN32)
 endif()
 
 source_group("Shaders" FILES ${SHADERS} )
-source_group("engine\\gfx" FILES ${ENGINE_GFX} )
-source_group("engine\\input" FILES ${ENGINE_INPUT} )
-source_group("engine\\scene" FILES ${ENGINE_SCENE} )
-source_group("engine\\resource" FILES ${ENGINE_RSRC} )
-source_group("engine\\math" FILES ${ENGINE_MATH} )
+source_group("gfx" FILES ${ENGINE_GFX} )
+source_group("input" FILES ${ENGINE_INPUT} )
+source_group("scene" FILES ${ENGINE_SCENE} )
+source_group("resource" FILES ${ENGINE_RSRC} )
+source_group("math" FILES ${ENGINE_MATH} )

@@ -1,4 +1,3 @@
-#version 330 core
 //#extension GL_ARB_explicit_uniform_location : enable
 
 layout(location = 0) in vec4 va_position;

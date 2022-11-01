@@ -1,13 +1,9 @@
+#include "engine/engine.h"
 #include <SDL.h>
-#include <GL/glew.h>
-#include <string>
 #include <filesystem>
-#include <map>
 #include <memory>
 #include "demo.h"
 #include "logger.h"
-#include "resource/resource_manager.h"
-#include "engine/gfx/gfx.h"
 
 #include "effect_model_loading.h"
 #include "effect_test_engine.h"
@@ -110,9 +106,10 @@ namespace fs = std::filesystem;
 int main(int argc, char** argv)
 {
 
-    FileSystem::set_working_dir(fs::absolute(fs::path("../")).string().c_str());
+    rc::FileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
 
-    ResourceManager::add_resource_path("../assets");
+    rc::ResourceManager::add_resource_path("../assets/shaders");
+    rc::ResourceManager::add_resource_path("../assets/textures");
 
     Info("V_Init Start");
 #if 0

@@ -5,13 +5,15 @@
 #include "gpu_program.h"
 #include "gpu_types.h"
 #include "pipeline.h"
-#include "resource/filesystem.h"
+#include "engine/resource/filesystem.h"
 #include "demo.h"
 #include "unit_rect.h"
 
 #include "effect_model_loading.h"
 
 static const int ResDiv = 4;
+
+using namespace rc;
 
 bool LoadModelEffect::Init()
 {

@@ -1,15 +1,7 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include <array>
-#include <unordered_map>
-#include <vector>
-#include <variant>
-#include <thread>
-#include <mutex>
-#include <glm/glm.hpp>
-#include "handle.h"
+#include "../common.h"
+#include "gfx/handle.h"
 #include "gfx/memory.h"
 #include "vertex.h"
 

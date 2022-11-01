@@ -1,4 +1,3 @@
-#version 430 core
 
 in INTERFACE {
 	vec2 TexCoord;

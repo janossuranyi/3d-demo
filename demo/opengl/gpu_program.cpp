@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <string>
 #include "demo.h"
-#include "resource/filesystem.h"
+#include "engine/resource/filesystem.h"
 #include "logger.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
@@ -11,7 +11,7 @@
 #undef _std
 #define _std std::
 
-
+using namespace rc;
 
 GpuProgram::GpuProgram()
 {

@@ -1,12 +1,8 @@
-#include <string>
-#include <stb_image.h>
-#include <glm/glm.hpp>
-#include <glm/matrix.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "engine/engine.h"
 #include "logger.h"
 #include "effect_test_engine.h"
-#include "engine/gfx/gfx.h"
-#include "engine/gfx/draw_vert.h"
+
+using namespace rc;
 
 static float UNIT_BOX_POSITIONS[] = {
 	// positions          
@@ -93,6 +89,7 @@ bool EngineTestEffect::Init()
     renderer.init(gfx::RendererType::OpenGL, 1440, 900, "test", true);
 	vtx_cache.start(&renderer);
 
+	gfx::ShaderManager sm(&renderer);
 
 	glm::ivec2 win_size = renderer.getFramebufferSize();
 	
@@ -107,12 +104,12 @@ bool EngineTestEffect::Init()
 
 
 	const std::vector<std::string> textures_faces = {
-	"right.jpg",
-	"left.jpg",
-	"top.jpg",
-	"bottom.jpg",
-	"front.jpg",
-	"back.jpg"
+	"textures/skybox/right.jpg",
+	"textures/skybox/left.jpg",
+	"textures/skybox/top.jpg",
+	"textures/skybox/bottom.jpg",
+	"textures/skybox/front.jpg",
+	"textures/skybox/back.jpg"
 	};
 
 	{
@@ -208,71 +205,24 @@ bool EngineTestEffect::Init()
 		//vb_skybox = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
 	}
 	
-	{
-		std::vector<gfx::ShaderHandle> shaders(1);
-		std::string cs = ResourceManager::get_text_resource("test_compute2.cs.glsl");
-		prgComp = renderer.createProgram();
-		shaders[0] = renderer.createShader(gfx::ShaderStage::Compute, cs);
-		renderer.linkProgram(prgComp, shaders);
-		renderer.deleteShader(shaders[0]);
-	}
+	prgComp = sm.createProgram(gfx::ComputeProgram{ "Compute01",
+		"shaders/test_compute2.cs.glsl" , {{"LOCAL_SIZE_X", "8"},{"LOCAL_SIZE_Y","8"}} });
+		prgViewTex	= sm.createProgram(gfx::RenderProgram{ "Rect",
+			"shaders/test_compute2.vs.glsl",
+			"shaders/test_compute2.fs.glsl",{} });
+		prgPoints	= sm.createProgram(gfx::RenderProgram{ "Draw_Points",
+			"shaders/draw_point2.vs.glsl",
+			"shaders/draw_point2.fs.glsl",{} });	
+		prgSkybox	= sm.createProgram(gfx::RenderProgram{ "SkyBox",
+			"shaders/skybox2.vs.glsl",
+			"shaders/skybox2.fs.glsl" ,{} });
+		prgPP		= sm.createProgram(gfx::RenderProgram{ "Kernel_Filter",
+			"shaders/kernel2.vs.glsl",
+			"shaders/kernel2.fs.glsl" ,{} });
+		prgDepth	= sm.createProgram(gfx::RenderProgram{ "DepthViewer",
+			"shaders/view_depthbuf.vs.glsl",
+			"shaders/view_depthbuf.fs.glsl" ,{} });
 
-	{
-		std::vector<gfx::ShaderHandle> shaders(2);
-		std::string fs = ResourceManager::get_text_resource("test_compute2.fs.glsl");
-		std::string vs = ResourceManager::get_text_resource("test_compute2.vs.glsl");
-		prgViewTex = renderer.createProgram();
-		shaders[0] = renderer.createShader(gfx::ShaderStage::Vertex, vs);
-		shaders[1] = renderer.createShader(gfx::ShaderStage::Fragment, fs);
-		renderer.linkProgram(prgViewTex, shaders);
-		renderer.deleteShader(shaders[0]);
-		renderer.deleteShader(shaders[1]);
-	}
-
-	{
-		std::vector<gfx::ShaderHandle> shaders(2);
-		std::string fs = ResourceManager::get_text_resource("draw_point2.fs.glsl");
-		std::string vs = ResourceManager::get_text_resource("draw_point2.vs.glsl");
-		prgPoints = renderer.createProgram();
-		shaders[0] = renderer.createShader(gfx::ShaderStage::Vertex, vs);
-		shaders[1] = renderer.createShader(gfx::ShaderStage::Fragment, fs);
-		renderer.linkProgram(prgPoints, shaders);
-		renderer.deleteShader(shaders[0]);
-		renderer.deleteShader(shaders[1]);
-	}
-	{
-		std::vector<gfx::ShaderHandle> shaders(2);
-		std::string fs = ResourceManager::get_text_resource("skybox2.fs.glsl");
-		std::string vs = ResourceManager::get_text_resource("skybox2.vs.glsl");
-		prgSkybox = renderer.createProgram();
-		shaders[0] = renderer.createShader(gfx::ShaderStage::Vertex, vs);
-		shaders[1] = renderer.createShader(gfx::ShaderStage::Fragment, fs);
-		renderer.linkProgram(prgSkybox, shaders);
-		renderer.deleteShader(shaders[0]);
-		renderer.deleteShader(shaders[1]);
-	}
-	{
-		std::vector<gfx::ShaderHandle> shaders(2);
-		std::string fs = ResourceManager::get_text_resource("kernel2.fs.glsl");
-		std::string vs = ResourceManager::get_text_resource("kernel2.vs.glsl");
-		prgPP = renderer.createProgram();
-		shaders[0] = renderer.createShader(gfx::ShaderStage::Vertex, vs);
-		shaders[1] = renderer.createShader(gfx::ShaderStage::Fragment, fs);
-		renderer.linkProgram(prgPP, shaders);
-		renderer.deleteShader(shaders[0]);
-		renderer.deleteShader(shaders[1]);
-	}
-	{
-		std::vector<gfx::ShaderHandle> shaders(2);
-		std::string fs = ResourceManager::get_text_resource("view_depthbuf.fs.glsl");
-		std::string vs = ResourceManager::get_text_resource("view_depthbuf.vs.glsl");
-		prgDepth = renderer.createProgram();
-		shaders[0] = renderer.createShader(gfx::ShaderStage::Vertex, vs);
-		shaders[1] = renderer.createShader(gfx::ShaderStage::Fragment, fs);
-		renderer.linkProgram(prgDepth, shaders);
-		renderer.deleteShader(shaders[0]);
-		renderer.deleteShader(shaders[1]);
-	}
 
 	eyeZ = 1200.0f;
 	glm::vec3 viewPos{ 0, 0, eyeZ };

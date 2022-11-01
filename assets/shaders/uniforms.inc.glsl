@@ -1,4 +1,3 @@
-#version 410 core
 
 layout(std140) uniform Matrixes {
     mat4 rpMtxInvProj;

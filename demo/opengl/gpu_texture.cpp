@@ -3,11 +3,13 @@
 #include "stb_image.h"
 
 #include "logger.h"
-#include "resource/filesystem.h"
-#include "resource/resource_manager.h"
+#include "engine/resource/filesystem.h"
+#include "engine/resource/resource_manager.h"
 #include "gpu.h"
 #include "gpu_utils.h"
 #include "gpu_texture.h"
+
+using namespace rc;
 
 GpuTexture::~GpuTexture() noexcept
 {
