@@ -393,9 +393,10 @@ namespace gfx {
 
         VertexBufferHandle vb;
         IndexBufferHandle ib;
-        uint32_t ib_offset;
-        uint32_t vb_offset;
-        uint32_t vertex_count;
+        uint ib_offset;
+        uint vb_offset;
+        uint vertex_count;
+        uint instance_count{1};
         PrimitiveType primitive_type;
         ProgramHandle program;
         VertexDecl_t vertexDecl;
@@ -492,6 +493,7 @@ namespace gfx {
         void                setVertexBuffer(VertexBufferHandle handle);
         void                setIndexBuffer(IndexBufferHandle handle);
         void                setPrimitiveType(PrimitiveType type);
+        void                setSetInstanceCount(uint count);
         void                setTexure(uint16_t unit, TextureHandle handle);
         void                setClearColor(unsigned pass, const glm::vec4& value);
         void                setClearBits(unsigned pass, uint16_t value);

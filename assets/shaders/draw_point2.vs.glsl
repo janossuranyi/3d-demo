@@ -6,7 +6,9 @@ layout(location = 2) in vec4 va_normal;
 layout(location = 3) in vec4 va_tangent;
 layout(location = 4) in vec4 va_color;
 
-uniform mat4 m_WVP;
+uniform mat4 m_W;
+uniform mat4 m_VP;
+uniform mat4 m_W2;
 
 out INTERFACE {
 	vec4 fragColor;
@@ -15,6 +17,9 @@ out INTERFACE {
 
 void main() {
 	Out.fragColor = va_color;
-	gl_Position = m_WVP * va_position;
+
+	mat4 W = (gl_InstanceID % 2) == 1 ? m_W2 : m_W;
+
+	gl_Position = m_VP * W * va_position;
 	gl_PointSize = clamp(20 - (gl_Position.z / 50), 1, 20);
 }

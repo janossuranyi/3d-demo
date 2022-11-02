@@ -17,8 +17,8 @@ struct EngineTestEffect : public Effect
 	bool HandleEvent(const SDL_Event* ev, float time);
 	void Render();
 
-	gfx::Renderer renderer;
 	gfx::vtxCacheHandle vc_points, vc_pp, vc_skybox;
+	gfx::VertexCache<gfx::DrawVert, 64 * 1024 * 1024, 128 * 1024> vtx_cache;
 
 	gfx::VertexBufferHandle vb_points, vb_pp, vb_skybox;
 	gfx::FrameBufferHandle fb;
@@ -40,6 +40,5 @@ struct EngineTestEffect : public Effect
 	gfx::ProgramHandle prgDepth;
 	gfx::ProgramHandle prgComp;
 	gfx::ProgramHandle prgViewTex;
-	gfx::VertexCache<gfx::DrawVert, 64*1024*1024, 128*1024> vtx_cache;
 };
 

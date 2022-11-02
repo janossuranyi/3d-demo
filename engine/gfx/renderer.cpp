@@ -334,6 +334,11 @@ namespace gfx {
 		submit_->active_item.primitive_type = type;
 	}
 
+	void Renderer::setSetInstanceCount(uint count)
+	{
+		submit_->active_item.instance_count = count;
+	}
+
 	void Renderer::setTexure(uint16_t unit, TextureHandle handle)
 	{
 		submit_->active_item.textures[unit].handle = handle;

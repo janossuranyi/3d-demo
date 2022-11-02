@@ -795,7 +795,7 @@ namespace gfx {
 			return false;
 		}
 
-		Info("SD_Init done");
+		Info("SDL_Init done");
 
 		/*
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -811,7 +811,9 @@ namespace gfx {
 		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 		//SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_TRUE);
+#ifdef _DEBUG
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#endif
 		//SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, SDL_TRUE);
 
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
@@ -860,6 +862,14 @@ namespace gfx {
 
 		std::string renderer = (char*)glGetString(GL_RENDERER);
 		std::string version = (char*)glGetString(GL_VERSION);
+
+		Info("OpenGL extensions");
+		GLint numExts; glGetIntegerv(GL_NUM_EXTENSIONS, &numExts);
+		for (int ext = 0; ext < numExts; ++ext)
+		{
+			const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, ext);
+			Info("%s", extension);
+		}
 		const float gl_version = float(atof(version.c_str()));
 		glVersion_ = int(gl_version * 100);
 
@@ -929,7 +939,7 @@ namespace gfx {
 	void OpenGLRenderContext::process_command_list(const std::vector<RenderCommand>& cmds)
 	{
 		assert(windowHandle_);
-		for (auto& c : cmds)
+		for (auto& const c : cmds)
 		{
 			std::visit(*this, c);
 		}
@@ -955,17 +965,24 @@ namespace gfx {
 
 	void OpenGLRenderContext::setup_textures(const TextureBindings& textures)
 	{
+		static Array<TextureHandle, MAX_TEXTURE_SAMPLERS> cache_;
+
 		for (int j = 0; j < textures.size(); ++j) {
 			if (textures[j].handle.isValid())
 			{
-				GL_CHECK(
-					glActiveTexture(GL_TEXTURE0 + j)
-				);
+				if (cache_[j] != textures[j].handle)
+				{
+					const TextureData& tdata = texture_map_.at(textures[j].handle);
+					//GL_CHECK(
+					//	glActiveTexture(GL_TEXTURE0 + j)
+					//);
+					//glBindTexture(tdata.target, tdata.texture)
 
-				const TextureData& tdata = texture_map_.at(textures[j].handle);
-				GL_CHECK(
-					glBindTexture(tdata.target, tdata.texture)
-				);
+					GL_CHECK(
+						glBindMultiTextureEXT(GL_TEXTURE0 + j, tdata.target, tdata.texture);
+					);
+					cache_[j] = tdata.texture;
+				}
 			}
 		}
 	}
@@ -1127,8 +1144,11 @@ namespace gfx {
 
 			if (clear_bits) {
 				set_state(0, false);
-				scissor_test_ = false;
-				GL_CHECK(glDisable(GL_SCISSOR_TEST));
+				if (scissor_test_)
+				{
+					scissor_test_ = false;
+					GL_CHECK(glDisable(GL_SCISSOR_TEST));
+				}
 				GL_CHECK(glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a));
 				GL_CHECK(glClear(clear_bits));
 			}
@@ -1209,20 +1229,22 @@ namespace gfx {
 				const GLsizei count = item->vertex_count;
 				if (item->ib.isValid())
 				{
-					const int base_vertex = item->vb_offset; // s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
-					GL_CHECK(glDrawElementsBaseVertex(
+					const GLuint base_vertex = item->vb_offset; // s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
+					GL_CHECK(glDrawElementsInstancedBaseVertex(
 						mode,
 						count,
 						active_ib_type_,
 						reinterpret_cast<void*>(static_cast<GLintptr>(item->ib_offset)),
+						static_cast<GLsizei>(item->instance_count),
 						base_vertex));
 				}
 				else
 				{
-					glDrawArrays(
+					glDrawArraysInstanced(
 						mode,
 						item->vb_offset, // s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride,
-						count);
+						static_cast<GLsizei>(count),
+						static_cast<GLsizei>(item->instance_count));
 				}
 
 			} // render_items
