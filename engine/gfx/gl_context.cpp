@@ -597,6 +597,8 @@ namespace gfx {
 			auto& s_data = shader_map_.at(s_handle);
 			GL_CHECK(glAttachShader(p_data.program, s_data.shader));
 		}
+
+		p_data.linked = false;
 		GL_CHECK(glLinkProgram(p_data.program));
 		GLint result = GL_FALSE;
 
@@ -611,9 +613,18 @@ namespace gfx {
 				GL_CHECK(glGetProgramInfoLog(p_data.program, infologLen, nullptr, logBuf.data()));
 				Error("Linking of shader program failed: %s", logBuf.data());
 			}
-			return;
 		}
-		p_data.linked = true;
+		else
+		{
+			p_data.linked = true;
+		}
+
+		for (auto& s_handle : cmd.shaders)
+		{
+			auto& s_data = shader_map_.at(s_handle);
+			GL_CHECK(glDetachShader(p_data.program, s_data.shader));
+		}
+
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteProgram& cmd)
