@@ -92,9 +92,9 @@ bool EngineTestEffect::Init()
 
     renderer->init(gfx::RendererType::OpenGL, 1440, 900, "test", true);
 
-	vtx_cache.start(renderer);
+	vtx_cache.start(renderer, 64 * 1024 * 1024, 128 * 1024);
 
-	sm->setVersionString("#version 450 core\n");
+	//sm->setVersionString("#version 450 core\n");
 
 	glm::ivec2 win_size = renderer->getFramebufferSize();
 	
@@ -371,11 +371,11 @@ void EngineTestEffect::Render()
 
 	glm::mat4 W2(1.0f);
 	W2 = glm::rotate(W2, glm::radians(rotX+90.0f), glm::vec3(1, 0, 0));
-	W2 = glm::rotate(W2, glm::radians(rotY), glm::vec3(0, 1, 0));
+	W2 = glm::rotate(W2, glm::radians(rotY+90.0f), glm::vec3(0, 1, 0));
 	//const glm::mat4 WVP = VP * W;
 
 	uint32_t count, offs;
-	vb_points = vtx_cache.getVertexBuffer(vc_points, offs, count);
+	vb_points = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_points, offs, count);
 
 	renderer->setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
 	renderer->setFrameBuffer(pass, fb);
@@ -394,7 +394,7 @@ void EngineTestEffect::Render()
 
 	++pass;
 
-	vb_skybox = vtx_cache.getVertexBuffer(vc_skybox, offs, count);
+	vb_skybox = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_skybox, offs, count);
 
 	renderer->setClearBits(pass, 0);
 	renderer->setFrameBuffer(pass, fb);
@@ -408,7 +408,7 @@ void EngineTestEffect::Render()
 	renderer->submit(pass, prgSkybox, count, offs, 0);
 
 	++pass;
-	vb_pp = vtx_cache.getVertexBuffer(vc_pp, offs, count);
+	vb_pp = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_pp, offs, count);
 	//renderer.setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
 	renderer->setFrameBuffer(pass, gfx::FrameBufferHandle{0});
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);

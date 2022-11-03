@@ -23,11 +23,11 @@ namespace gfx {
 
 		glm::ivec2 get_window_size() const override;
 
-		int get_red_bits() const override;
-		int get_green_bits() const override;
-		int get_blue_bits() const override;
-		int get_depth_bits() const override;
-		int get_stencil_bits() const override;
+		int red_bits() const override;
+		int green_bits() const override;
+		int blue_bits() const override;
+		int depth_bits() const override;
+		int stencil_bits() const override;
 
 		void operator()(const cmd::CreateVertexBuffer& cmd);
 		void operator()(const cmd::UpdateVertexBuffer& cmd);

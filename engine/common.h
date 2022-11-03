@@ -9,7 +9,9 @@
 #include <glm/gtc/quaternion.hpp>
 #include <stb_image.h>
 
+#include <condition_variable>
 #include <cinttypes>
+#include <chrono>
 #include <vector>
 #include <array>
 #include <variant>
@@ -31,10 +33,19 @@ template<typename T>
 using Set = std::unordered_set<T>;
 template<typename T, size_t size>
 using Array = std::array<T, size>;
+template<typename T>
+using UniqePtr = std::unique_ptr<T>;
+template<typename T>
+using SharedPtr = std::shared_ptr<T>;
+using Mutex = std::mutex;
+using Thread = std::thread;
+using ConditionVar = std::condition_variable;
 
 using uint = unsigned int;
 using int8 = int8_t;
 using uint8 = uint8_t;
+using int16 = int16_t;
+using uint16 = uint16_t;
 using int32 = int32_t;
 using uint32 = uint32_t;
 using int64 = int64_t;

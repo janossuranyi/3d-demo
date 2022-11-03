@@ -1,3 +1,4 @@
+#include "version.inc.glsl"
 
 in INTERFACE {
 	vec2 TexCoord;

@@ -1,3 +1,4 @@
+#include "version.inc.glsl"
 
 in INTERFACE {
 	vec4 fragColor;

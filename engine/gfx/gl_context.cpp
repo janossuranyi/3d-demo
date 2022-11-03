@@ -1,12 +1,10 @@
-#include <SDL.h>
-#include <GL/glew.h>
-#include <glm/glm.hpp>
-#include <cassert>
-#include <unordered_map>
-#include <array>
-#include "handle.h"
-#include "gl_context.h"
+#include "../common.h"
+#include "./handle.h"
+#include "./gl_context.h"
 #include "logger.h"
+
+#include <SDL.h>
+#include <cassert>
 
 
 namespace gfx {
@@ -301,25 +299,34 @@ namespace gfx {
 		void operator()(const float& value) {
 			GL_CHECK(glUniform1f(uniform_location_, value));
 		}
-		void operator()(const glm::vec2& value) {
+		void operator()(const ivec2& value) {
+			GL_CHECK(glUniform2iv(uniform_location_, 1, &value[0]));
+		}
+		void operator()(const ivec3& value) {
+			GL_CHECK(glUniform3iv(uniform_location_, 1, &value[0]));
+		}
+		void operator()(const ivec4& value) {
+			GL_CHECK(glUniform4iv(uniform_location_, 1, &value[0]));
+		}
+		void operator()(const vec2& value) {
 			GL_CHECK(glUniform2fv(uniform_location_, 1, &value[0]));
 		}
-		void operator()(const glm::vec3& value) {
+		void operator()(const vec3& value) {
 			GL_CHECK(glUniform3fv(uniform_location_, 1, &value[0]));
 		}
-		void operator()(const glm::vec4& value) {
+		void operator()(const vec4& value) {
 			GL_CHECK(glUniform4fv(uniform_location_, 1, &value[0]));
 		}
-		void operator()(const glm::mat3& value) {
+		void operator()(const mat3& value) {
 			GL_CHECK(glUniformMatrix3fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
 		}
-		void operator()(const glm::mat4& value) {
+		void operator()(const mat4& value) {
 			GL_CHECK(glUniformMatrix4fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
 		}
-		void operator()(const std::vector<float>& value) {
+		void operator()(const Vector<float>& value) {
 			glUniform1fv(uniform_location_, value.size(), (const GLfloat*)value.data());
 		}
-		void operator()(const std::vector<glm::vec4>& value) {
+		void operator()(const Vector<vec4>& value) {
 			glUniform4fv(uniform_location_, value.size(), (const GLfloat*)value.data());
 		}
 		void update(GLint location, const UniformData& value) {
@@ -330,26 +337,26 @@ namespace gfx {
 		GLint uniform_location_;
 	};
 
-	int OpenGLRenderContext::get_red_bits() const {
+	int OpenGLRenderContext::red_bits() const {
 		return window_.redBits;
 	}
 
-	int OpenGLRenderContext::get_green_bits() const
+	int OpenGLRenderContext::green_bits() const
 	{
 		return window_.greenBits;
 	}
 
-	int OpenGLRenderContext::get_blue_bits() const
+	int OpenGLRenderContext::blue_bits() const
 	{
 		return window_.blueBits;
 	}
 
-	int OpenGLRenderContext::get_depth_bits() const
+	int OpenGLRenderContext::depth_bits() const
 	{
 		return window_.depthBits;
 	}
 
-	int OpenGLRenderContext::get_stencil_bits() const
+	int OpenGLRenderContext::stencil_bits() const
 	{
 		return window_.stencilBits;
 	}

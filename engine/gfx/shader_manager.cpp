@@ -15,28 +15,35 @@ namespace gfx {
         ShaderHandle v, f;
 
         {
-            String output(version_string_);
+            String src = rc::ResourceManager::get_text_resource_with_includes(p.vertex);
+            String output;
 
             for (auto& def : p.defs)
             {
                  output += "#define " + def.first + " " + def.second + "\n";
             }
 
-            output += rc::ResourceManager::get_text_resource_with_includes(p.vertex);
+            // 1st row must be the version directiv
+            auto index = src.find_first_of("\n");
+            src.insert(index, output);
 
-            v = R_->createShader(ShaderStage::Vertex, output);
+            v = R_->createShader(ShaderStage::Vertex, src);
         }
 
         {
-            String output(version_string_);
+            String src = rc::ResourceManager::get_text_resource_with_includes(p.fragment);
+            String output;
+
             for (auto& def : p.defs)
             {
                 output += "#define " + def.first + " " + def.second + "\n";
             }
 
-            output += rc::ResourceManager::get_text_resource_with_includes(p.fragment);
+            // 1st row must be the version directiv
+            auto index = src.find_first_of("\n");
+            src.insert(index, output);
 
-            f = R_->createShader(ShaderStage::Fragment, output);
+            f = R_->createShader(ShaderStage::Fragment, src);
         }
 
         R_->linkProgram(prg, Vector<ShaderHandle>{ v,f });
@@ -59,16 +66,19 @@ namespace gfx {
         ShaderHandle c;
 
         {
-            String output(version_string_);
+            String src = rc::ResourceManager::get_text_resource_with_includes(p.compute);
+            String output;
 
             for (auto& def : p.defs)
             {
                 output += "#define " + def.first + " " + def.second + "\n";
             }
 
-            output += rc::ResourceManager::get_text_resource_with_includes(p.compute);
+            // 1st row must be the version directiv
+            auto index = src.find_first_of("\n") + 1;
+            src.insert(index, output);
 
-            c = R_->createShader(ShaderStage::Compute, output);
+            c = R_->createShader(ShaderStage::Compute, src);
         }
 
         R_->linkProgram(prg, Vector<ShaderHandle>{ c });

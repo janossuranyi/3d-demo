@@ -20,11 +20,11 @@ namespace gfx {
 		virtual bool frame(const Frame* frame) = 0;
 
 		virtual glm::ivec2 get_window_size() const = 0;
-		virtual int get_red_bits() const = 0;
-		virtual int get_green_bits() const = 0;
-		virtual int get_blue_bits() const = 0;
-		virtual int get_depth_bits() const = 0;
-		virtual int get_stencil_bits() const = 0;
+		virtual int red_bits() const = 0;
+		virtual int green_bits() const = 0;
+		virtual int blue_bits() const = 0;
+		virtual int depth_bits() const = 0;
+		virtual int stencil_bits() const = 0;
 		
 
 	};

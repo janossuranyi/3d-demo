@@ -1,3 +1,4 @@
+#include "version.inc.glsl"
 #ifndef LOCAL_SIZE_X
 #define LOCAL_SIZE_X 1
 #endif

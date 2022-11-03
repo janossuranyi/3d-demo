@@ -1,11 +1,8 @@
-#include <thread>
-#include <condition_variable>
-#include <mutex>
-#include <vector>
-#include <chrono>
-#include "renderer.h"
+#include "../common.h"
+#include "./renderer.h"
+#include "./gl_context.h"
+
 #include "logger.h"
-#include "gl_context.h"
 
 namespace gfx {
 

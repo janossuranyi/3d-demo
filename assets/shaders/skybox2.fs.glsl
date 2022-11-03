@@ -1,3 +1,4 @@
+#include "version.inc.glsl"
 
 out vec4 FS_OUT;
 uniform samplerCube samp0;
