@@ -79,7 +79,10 @@ void App_EventLoop()
 
         if (sync) GL_CHECK(glDeleteSync(sync));
 #endif
-        activeEffect->Render();
+        if (!activeEffect->Render())
+        {
+            running = false;
+        }
 #if 0
         GL_CHECK(sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
 

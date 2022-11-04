@@ -557,6 +557,7 @@ namespace gfx {
 				GL_CHECK(glGetShaderInfoLog(shader, infologLen, nullptr, logBuf.data()));
 				const char* sType = MapShaderStageTitle(cmd.stage);
 				Error("%s shader compilation failed: %s", sType, logBuf.data());
+				render_errors_.emplace_back(RenderError{ ErrorType::ShaderCompilerError, cmd.handle });
 			}
 
 			GL_CHECK(glDeleteShader(shader));
@@ -594,8 +595,13 @@ namespace gfx {
 		auto& p_data = program_map_.at(cmd.handle);
 		for (auto& s_handle : cmd.shaders)
 		{
-			auto& s_data = shader_map_.at(s_handle);
-			GL_CHECK(glAttachShader(p_data.program, s_data.shader));
+			auto& s_data = shader_map_.find(s_handle);
+			if (s_data == std::end(shader_map_))
+			{
+				render_errors_.emplace_back(RenderError{ ErrorType::ShaderLinkingError, cmd.handle });
+				return;
+			}
+			GL_CHECK(glAttachShader(p_data.program, s_data->second.shader));
 		}
 
 		p_data.linked = false;
@@ -612,6 +618,7 @@ namespace gfx {
 				std::vector<char> logBuf(infologLen);
 				GL_CHECK(glGetProgramInfoLog(p_data.program, infologLen, nullptr, logBuf.data()));
 				Error("Linking of shader program failed: %s", logBuf.data());
+				render_errors_.emplace_back(RenderError{ ErrorType::ShaderLinkingError, cmd.handle });
 			}
 		}
 		else
@@ -1271,6 +1278,24 @@ namespace gfx {
 		SDL_GL_SwapWindow(windowHandle_);
 
 		return true;
+	}
+
+	RenderError OpenGLRenderContext::getError()
+	{
+		if (render_errors_.empty())
+		{
+			return RenderError{ ErrorType::NoError };
+		}
+
+		RenderError e = render_errors_.back();
+		render_errors_.pop_back();
+
+		return e;
+	}
+
+	bool OpenGLRenderContext::hasError() const
+	{
+		return !render_errors_.empty();
 	}
 
 	glm::ivec2 OpenGLRenderContext::get_window_size() const

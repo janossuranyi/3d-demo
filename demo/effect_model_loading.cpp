@@ -199,7 +199,7 @@ void LoadModelEffect::blur(int iter, int w, int h, int active_src)
     }
 }
 
-void LoadModelEffect::Render()
+bool LoadModelEffect::Render()
 {
     fb.bind();
 
@@ -224,5 +224,7 @@ void LoadModelEffect::Render()
     //pipeline.bindTexture(*cb_color, 0);
     pipeline.useProgram(fxaa);
     pipeline.drawArrays(eDrawMode::TRIANGLES, 0, 6);
+
+    return true;
     
 }

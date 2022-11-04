@@ -164,6 +164,14 @@ namespace gfx {
     enum class TextureWrap { Repeat, ClampToEdge, ClampToBorder, MirroredRepeat };
     enum class TextureFilter { Nearest, Linear, NearestLinear, LinearNearest, LinearLinear };
     enum class TextureShape { D1, D2, CubeMap, D3 };
+    enum class ErrorType { NoError, ShaderCompilerError, ShaderLinkingError };
+
+    using ErrorTarget = std::variant<ShaderHandle, ProgramHandle>;
+
+    struct RenderError {
+        ErrorType type;
+        ErrorTarget handle;
+    };
 
     // Primitives
     enum class PrimitiveType { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };
@@ -516,7 +524,7 @@ namespace gfx {
         void                submit(uint pass, ProgramHandle program);
         void                submit(uint pass, ProgramHandle program, uint vertex_count);
         void                submit(uint pass, ProgramHandle program, uint vertex_count, uint vb_offset, uint ib_offset);
-
+        RenderError         getError();
         bool                frame();
         bool                renderFrame(Frame* frame);
         void                waitForFrameEnd();

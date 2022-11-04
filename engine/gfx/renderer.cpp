@@ -419,9 +419,13 @@ namespace gfx {
 		compute_active_ = false;
 	}
 
+	RenderError Renderer::getError()
+	{
+		return shared_render_context_->getError();
+	}
+
 	bool Renderer::frame()
 	{
-
 		if (!use_thread_)
 		{
 			if (!renderFrame(submit_)) {
@@ -431,10 +435,17 @@ namespace gfx {
 		}
 		else
 		{
+
 			// wait previous render to finnish
 			{
 				std::unique_lock<std::mutex> lck(render_mtx_);
-				render_cond_.wait(lck, [this] {return render_done_; });
+				render_cond_.wait(lck, [this] {return render_done_ || should_terminate_; });
+
+				if (should_terminate_) 
+				{ 
+					return false; 
+				}
+
 				std::swap(render_, submit_);
 				render_job_submitted_ = true;
 				render_done_ = false;
@@ -480,6 +491,7 @@ namespace gfx {
 			}
 		}
 		shared_render_context_->stop_rendering();
+		render_cond_.notify_all();
 		Info("Rendering thread stopped!");
 	}
 	
@@ -541,6 +553,10 @@ namespace gfx {
 	bool Renderer::renderFrame(Frame* frame)
 	{
 		shared_render_context_->process_command_list(frame->commands_pre);
+
+		if (shared_render_context_->hasError()) {
+			return false;
+		}
 
 		if (!shared_render_context_->frame(frame))
 		{

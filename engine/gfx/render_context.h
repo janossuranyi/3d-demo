@@ -18,7 +18,8 @@ namespace gfx {
 		virtual void stop_rendering() = 0;
 		virtual void process_command_list(const std::vector<RenderCommand>& cmds) = 0;
 		virtual bool frame(const Frame* frame) = 0;
-
+		virtual RenderError getError() = 0;
+		virtual bool hasError() const = 0;
 		virtual glm::ivec2 get_window_size() const = 0;
 		virtual int red_bits() const = 0;
 		virtual int green_bits() const = 0;

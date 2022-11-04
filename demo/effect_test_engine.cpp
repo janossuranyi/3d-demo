@@ -327,7 +327,7 @@ bool EngineTestEffect::HandleEvent(const SDL_Event* ev, float time)
 	return true;
 }
 
-void EngineTestEffect::Render()
+bool EngineTestEffect::Render()
 {
 	gfx::Renderer* renderer = ctx::Context::default()->hwr();
 
@@ -459,5 +459,16 @@ void EngineTestEffect::Render()
 	//renderer.deleteFence(fence);
 	renderer->submit(pass, prgViewTex, count, offs, 0);
 
-	renderer->frame();
+	if (!renderer->frame())
+	{
+		gfx::RenderError err = renderer->getError();
+
+		while (err.type != gfx::ErrorType::NoError) {
+			Error("Render error occured: %d", err.type);
+			err = renderer->getError();
+		}
+		return false;
+	}
+
+	return true;
 }

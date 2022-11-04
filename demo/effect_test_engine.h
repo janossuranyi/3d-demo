@@ -15,7 +15,7 @@ struct EngineTestEffect : public Effect
 	bool Init();
 	bool Update(float time);
 	bool HandleEvent(const SDL_Event* ev, float time);
-	void Render();
+	bool Render();
 
 	gfx::vtxCacheHandle vc_points, vc_pp, vc_skybox;
 	gfx::VertexCache vtx_cache;

@@ -20,7 +20,8 @@ namespace gfx {
 		void start_rendering() override;
 		void stop_rendering() override;
 		bool frame(const Frame* frame) override;
-
+		RenderError getError();
+		bool hasError() const;
 		glm::ivec2 get_window_size() const override;
 
 		int red_bits() const override;
@@ -132,6 +133,8 @@ namespace gfx {
 		std::unordered_map<VertexBufferHandle, VertexBufferData> vertex_buffer_map_;
 		std::unordered_map<IndexBufferHandle, IndexBufferData> index_buffer_map_;
 		std::unordered_map<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
+
+		Vector<RenderError> render_errors_;
 
 		VertexDecl_t active_vertex_decl_{};
 
