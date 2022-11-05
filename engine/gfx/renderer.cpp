@@ -1,10 +1,15 @@
-#include "../common.h"
 #include "./renderer.h"
 #include "./gl_context.h"
 
 #include "logger.h"
 
 namespace gfx {
+
+	RenderPass::RenderPass() :
+		clear_color{ 0.0f,0.0f,0.0f,1.0f },
+		clear_bits{ GLS_CLEAR_COLOR | GLS_CLEAR_DEPTH },
+		frame_buffer{ FrameBufferHandle::invalid } {
+	}
 
 	void RenderPass::clear() {
 		clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -62,6 +67,14 @@ namespace gfx {
 	glm::ivec2 Renderer::getFramebufferSize() const
 	{
 		return shared_render_context_->get_window_size();
+	}
+
+	VertexLayoutHandle Renderer::createVertexLayout(const VertexDecl& decl)
+	{
+		VertexLayoutHandle handle = vertex_layout_handle_.next();
+		submitPreFrameCommand(cmd::CreateVertexLayout{ handle, decl });
+
+		return handle;
 	}
 
 	VertexBufferHandle Renderer::createVertexBuffer(uint32_t size, BufferUsage usage, Memory data)
@@ -204,6 +217,11 @@ namespace gfx {
 	void Renderer::updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint32_t offset)
 	{
 		submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
+	}
+
+	void Renderer::deleteVertexLayout(VertexLayoutHandle handle)
+	{
+		submitPostFrameCommand(cmd::DeleteVertexLayout{ handle });
 	}
 
 	void Renderer::deleteVertexBuffer(VertexBufferHandle handle)
@@ -405,7 +423,7 @@ namespace gfx {
 	{
 		setProgramVar(name, UniformData{ value });
 	}
-	void Renderer::setVertexDecl(const VertexDecl_t& vertDecl)
+	void Renderer::setVertexDecl(const VertexDecl& vertDecl)
 	{
 		submit_->active_item.vertexDecl = vertDecl;
 	}
@@ -417,11 +435,6 @@ namespace gfx {
 	void gfx::Renderer::endCompute()
 	{
 		compute_active_ = false;
-	}
-
-	RenderError Renderer::getError()
-	{
-		return shared_render_context_->getError();
 	}
 
 	bool Renderer::frame()
@@ -516,6 +529,10 @@ namespace gfx {
 		if(compute_active_) submit_->active_compute.uniforms[name] = data;
 		else submit_->active_item.uniforms[name] = data;
 	}
+	void Renderer::setAttribBinding(ushort index, VertexBufferHandle vb, uint offset, ushort stride, ushort divisor)
+	{
+		submit_->active_item.bindings.emplace_back(VertexAttribBinding{ index,vb,offset,stride,divisor });
+	}
 	void gfx::Renderer::submit(uint32_t pass)
 	{
 		submit(pass, ProgramHandle());
@@ -553,10 +570,6 @@ namespace gfx {
 	bool Renderer::renderFrame(Frame* frame)
 	{
 		shared_render_context_->process_command_list(frame->commands_pre);
-
-		if (shared_render_context_->hasError()) {
-			return false;
-		}
 
 		if (!shared_render_context_->frame(frame))
 		{

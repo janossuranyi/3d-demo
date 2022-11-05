@@ -108,6 +108,9 @@ bool EngineTestEffect::Init()
         renderer->createFrameBuffer(std::vector<gfx::TextureHandle>{color_attachment}, depth_attachment);
 
 
+	tmp = renderer->createVertexBuffer(256, gfx::BufferUsage::Static, gfx::Memory(Vector<float>{0.5f, 0.0f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f}));
+
+
 	const std::vector<std::string> textures_faces = {
 	"textures/skybox/right.jpg",
 	"textures/skybox/left.jpg",
@@ -143,8 +146,8 @@ bool EngineTestEffect::Init()
 	}
 
 	{
-		const size_t bufSize = sizeof(gfx::DrawVert) * NUMPOINTS;
-		std::vector<gfx::DrawVert> buffer(NUMPOINTS);
+		const size_t bufSize = sizeof(DrawVert) * NUMPOINTS;
+		std::vector<DrawVert> buffer(NUMPOINTS);
 
 		const int n = 1000, n2 = n / 2; // particles spread in the cube
 
@@ -171,8 +174,8 @@ bool EngineTestEffect::Init()
 	}
 
 	{
-		const size_t bufSize = sizeof(gfx::DrawVert) * 6;
-		std::vector<gfx::DrawVert> buffer(6);
+		const size_t bufSize = sizeof(DrawVert) * 6;
+		std::vector<DrawVert> buffer(6);
 		float r[4]{0.f,0.f,0.f,1.f};
 
 		for (int i = 0; i < 6; ++i)
@@ -191,9 +194,9 @@ bool EngineTestEffect::Init()
 
 	{
 		const int vert_count = (sizeof(UNIT_BOX_POSITIONS) / sizeof(float) / 3);
-		const size_t bufSize = sizeof(gfx::DrawVert) * vert_count;
+		const size_t bufSize = sizeof(DrawVert) * vert_count;
 
-		std::vector<gfx::DrawVert> buffer(vert_count);
+		std::vector<DrawVert> buffer(vert_count);
 
 		float r[4]{ 0.f,0.f,0.f,1.f };
 
@@ -238,12 +241,17 @@ bool EngineTestEffect::Init()
 	VP = P * V;
 
 	layout.begin()
-		.add(gfx::AttributeName::Position,	gfx::AttributeType::Float,			4, false)
-		.add(gfx::AttributeName::TexCoord0, gfx::AttributeType::Half,			2, false)
-		.add(gfx::AttributeName::Normal,	gfx::AttributeType::UnsignedByte,	4, true)
-		.add(gfx::AttributeName::Tangent,	gfx::AttributeType::UnsignedByte,	4, true)
-		.add(gfx::AttributeName::Color0,	gfx::AttributeType::UnsignedByte,	4, true)
+		.add(gfx::AttributeName::Position,	gfx::AttributeType::Float,	4, false)
+		.add(gfx::AttributeName::TexCoord0, gfx::AttributeType::Half,	2, false)
+		.add(gfx::AttributeName::Normal,	gfx::AttributeType::UByte,	4, true)
+		.add(gfx::AttributeName::Tangent,	gfx::AttributeType::UByte,	4, true)
+		.add(gfx::AttributeName::Color0,	gfx::AttributeType::UByte,	4, true)
+		
+		.addInstance(gfx::AttributeName::TexCoord1, gfx::AttributeType::Float, 1, false, 0, 1, 1)
 		.end();
+
+	layout_handle = renderer->createVertexLayout(layout);
+	layout.setHandle(layout_handle);
 
     return true;
 }
@@ -335,7 +343,7 @@ bool EngineTestEffect::Render()
 	gfx::FenceHandle fence;
 
 	{
-		std::vector<gfx::DrawVert> buffer(6);
+		std::vector<DrawVert> buffer(6);
 		float r[4]{ 0.f,0.f,0.f,1.f };
 
 		for (int i = 0; i < 6; ++i)
@@ -375,7 +383,7 @@ bool EngineTestEffect::Render()
 	//const glm::mat4 WVP = VP * W;
 
 	uint32_t count, offs;
-	vb_points = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_points, offs, count);
+	vb_points = vtx_cache.getVertexBuffer<DrawVert>(vc_points, offs, count);
 
 	renderer->setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
 	renderer->setFrameBuffer(pass, fb);
@@ -387,6 +395,7 @@ bool EngineTestEffect::Render()
 	renderer->setProgramVar("m_W2", W2);
 	renderer->setVertexDecl(layout);
 	renderer->setSetInstanceCount(2);
+	renderer->setAttribBinding(1, tmp, 0, 4, 1);
 	renderer->submit(pass, prgPoints, count, offs, 0);
 
 	W = glm::rotate(glm::mat4(1), glm::radians(rotY), glm::vec3(0, 1, 0));
@@ -394,7 +403,7 @@ bool EngineTestEffect::Render()
 
 	++pass;
 
-	vb_skybox = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_skybox, offs, count);
+	vb_skybox = vtx_cache.getVertexBuffer<DrawVert>(vc_skybox, offs, count);
 
 	renderer->setClearBits(pass, 0);
 	renderer->setFrameBuffer(pass, fb);
@@ -408,7 +417,7 @@ bool EngineTestEffect::Render()
 	renderer->submit(pass, prgSkybox, count, offs, 0);
 
 	++pass;
-	vb_pp = vtx_cache.getVertexBuffer<gfx::DrawVert>(vc_pp, offs, count);
+	vb_pp = vtx_cache.getVertexBuffer<DrawVert>(vc_pp, offs, count);
 	//renderer.setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
 	renderer->setFrameBuffer(pass, gfx::FrameBufferHandle{0});
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
@@ -461,12 +470,6 @@ bool EngineTestEffect::Render()
 
 	if (!renderer->frame())
 	{
-		gfx::RenderError err = renderer->getError();
-
-		while (err.type != gfx::ErrorType::NoError) {
-			Error("Render error occured: %d", err.type);
-			err = renderer->getError();
-		}
 		return false;
 	}
 

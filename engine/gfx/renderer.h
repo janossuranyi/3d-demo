@@ -8,6 +8,7 @@
 #define MAX_TEXTURE_SAMPLERS 8
 #define MAX_UNIFORM_BUFFERS 8
 #define MAX_IMAGE_UNITS 8
+#define MAX_LAYOUT_BUFFERS 4
 
 namespace gfx {
 
@@ -17,6 +18,7 @@ namespace gfx {
 
     using StateBits = uint64;
 
+    struct VertexLayoutTag {};
     struct VertexBufferTag {};
     struct IndexBufferTag {};
     struct DynVertexBufferTag {};
@@ -28,6 +30,7 @@ namespace gfx {
     struct ConstantBufferTag {};
     struct FenceTag {};
 
+    using VertexLayoutHandle = Handle<VertexLayoutTag, -1>;
     using ConstantBufferHandle = Handle<ConstantBufferTag, -1>;
     using VertexBufferHandle = Handle<VertexBufferTag, -1>;
     using IndexBufferHandle = Handle<IndexBufferTag, -1>;
@@ -164,14 +167,6 @@ namespace gfx {
     enum class TextureWrap { Repeat, ClampToEdge, ClampToBorder, MirroredRepeat };
     enum class TextureFilter { Nearest, Linear, NearestLinear, LinearNearest, LinearLinear };
     enum class TextureShape { D1, D2, CubeMap, D3 };
-    enum class ErrorType { NoError, ShaderCompilerError, ShaderLinkingError };
-
-    using ErrorTarget = std::variant<ShaderHandle, ProgramHandle>;
-
-    struct RenderError {
-        ErrorType type;
-        ErrorTarget handle;
-    };
 
     // Primitives
     enum class PrimitiveType { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };
@@ -189,7 +184,74 @@ namespace gfx {
         const uint QueryBuffer          = 1 << 9;
     }
 
+    enum class AttributeType { Byte, UByte, Short, UShort, Int, UInt, Half, Float };
+    enum class AttributeName {
+        Position,
+        TexCoord0,
+        TexCoord1,
+        TexCoord2,
+        TexCoord3,
+        TexCoord4,
+        TexCoord5,
+        TexCoord6,
+        Normal,
+        Tangent,
+        Color0,
+        Color1,
+        Color2,
+        Color3,
+        Color4,
+        Color5,
+        Color6
+    };
+
+    struct VertexAttribute
+    {
+        AttributeName name;
+        AttributeType type;
+        ushort count;
+        uint offset;
+        bool normalized;
+        ushort divisor;
+        ushort binding;
+    };
+
+    using AttributeList = std::vector<VertexAttribute>;
+
+    class VertexDecl
+    {
+    public:
+
+        ~VertexDecl() = default;
+        VertexDecl() = default;
+
+        ushort stride() const;
+        bool empty() const;
+        VertexDecl& begin();
+        VertexDecl& end();
+        const AttributeList& attributes() const;
+        VertexDecl& add(AttributeName name, AttributeType type, ushort count, bool normalized);
+        VertexDecl& addInstance(AttributeName name, AttributeType type, ushort count, bool normalized, uint offset, ushort binding, ushort divisior);
+        void setHandle(VertexLayoutHandle handle);
+        VertexLayoutHandle handle() const;
+    private:
+        ushort getTypeSize(AttributeType type) const;
+        ushort stride_;
+        AttributeList attributes_;
+        VertexLayoutHandle handle_{};
+    };
+
     namespace cmd {
+
+        struct CreateVertexLayout {
+            VertexLayoutHandle handle;
+            VertexDecl decl;
+        };
+
+        struct DeleteVertexLayout {
+            VertexLayoutHandle handle;
+        };
+
         struct CreateConstantBuffer {
             ConstantBufferHandle handle;
             Memory data;
@@ -340,6 +402,8 @@ namespace gfx {
     }
 
     using RenderCommand = std::variant<
+        cmd::CreateVertexLayout,
+        cmd::DeleteVertexLayout,
         cmd::CreateConstantBuffer,
         cmd::CreateVertexBuffer,
         cmd::CreateIndexBuffer,
@@ -383,6 +447,16 @@ namespace gfx {
 
     using ImageBindings = std::array<ImageBinding, MAX_IMAGE_UNITS>;
 
+    struct VertexAttribBinding {
+        ushort index;
+        VertexBufferHandle vb;
+        uint offset;
+        ushort stride;
+        ushort divisor;
+    };
+
+    using VertexAttribBindings = Vector<VertexAttribBinding>;
+
     struct ComputeItem {
         uint16_t num_groups_x;
         uint16_t num_groups_y;
@@ -398,7 +472,7 @@ namespace gfx {
     };
 
     struct RenderItem {
-
+        VertexAttribBindings bindings;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
         uint ib_offset;
@@ -407,30 +481,27 @@ namespace gfx {
         uint instance_count{1};
         PrimitiveType primitive_type;
         ProgramHandle program;
-        VertexDecl_t vertexDecl;
+        VertexDecl vertexDecl;
         UniformMap uniforms;
         std::array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
 
         bool scissor = false;
-        uint16_t scissor_x = 0;
-        uint16_t scissor_y = 0;
-        uint16_t scissor_w = 0;
-        uint16_t scissor_h = 0;
+        ushort scissor_x = 0;
+        ushort scissor_y = 0;
+        ushort scissor_w = 0;
+        ushort scissor_h = 0;
 
         StateBits state_bits;
     };
 
     struct RenderPass {
-        RenderPass() : 
-            clear_color{ 0.0f,0.0f,0.0f,1.0f }, 
-            clear_bits{ GLS_CLEAR_COLOR | GLS_CLEAR_DEPTH },
-            frame_buffer{ FrameBufferHandle::invalid } {
-        }
+
+        RenderPass();
 
         void clear();
 
         glm::vec4 clear_color;
-        uint16_t clear_bits;
+        ushort clear_bits;
         FrameBufferHandle frame_buffer;
         std::vector<RenderItem> render_items;
         std::vector<ComputeItem> compute_items;
@@ -462,6 +533,7 @@ namespace gfx {
         bool                init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
         glm::ivec2          getFramebufferSize() const;
 
+        VertexLayoutHandle  createVertexLayout(const VertexDecl& decl);
         VertexBufferHandle  createVertexBuffer(uint size, BufferUsage usage, Memory data);
         IndexBufferHandle   createIndexBuffer(uint size, BufferUsage usage, Memory data);
         ConstantBufferHandle createConstantBuffer(uint size, BufferUsage usage, Memory data);
@@ -479,6 +551,7 @@ namespace gfx {
         void                updateIndexBuffer(IndexBufferHandle handle, Memory data, uint offset);
         void                updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint offset);
 
+        void                deleteVertexLayout(VertexLayoutHandle handle);
         void                deleteVertexBuffer(VertexBufferHandle handle);
         void                deleteIndexBuffer(IndexBufferHandle handle);
         void                deleteConstantBuffer(ConstantBufferHandle handle);
@@ -507,7 +580,7 @@ namespace gfx {
         void                setClearBits(unsigned pass, uint16_t value);
         void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
         void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
-        void                setVertexDecl(const VertexDecl_t& decl);
+        void                setVertexDecl(const VertexDecl& decl);
 
         void                setProgramVar(const std::string& name, int value);
         void                setProgramVar(const std::string& name, float value);
@@ -520,11 +593,11 @@ namespace gfx {
         void                setProgramVar(const std::string& name, const std::vector<glm::vec4>& value);
         void                setProgramVar(const std::string& name, UniformData data);
 
+        void                setAttribBinding(ushort index, VertexBufferHandle vb, uint offset, ushort stride, ushort divisor);
         void                submit(uint pass);
         void                submit(uint pass, ProgramHandle program);
         void                submit(uint pass, ProgramHandle program, uint vertex_count);
         void                submit(uint pass, ProgramHandle program, uint vertex_count, uint vb_offset, uint ib_offset);
-        RenderError         getError();
         bool                frame();
         bool                renderFrame(Frame* frame);
         void                waitForFrameEnd();
@@ -543,6 +616,7 @@ namespace gfx {
         ConditionVar render_cond_;
 
         // Handles.
+        HandleGenerator<VertexLayoutHandle> vertex_layout_handle_;
         HandleGenerator<ConstantBufferHandle> constant_buffer_handle_;
         HandleGenerator<VertexBufferHandle> vertex_buffer_handle_;
         HandleGenerator<IndexBufferHandle> index_buffer_handle_;

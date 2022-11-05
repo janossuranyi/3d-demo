@@ -3,7 +3,7 @@
 #include <SDL.h>
 #include "engine/gfx/gfx.h"
 #include "engine/gfx/vertex_cache.h"
-#include "engine/gfx/draw_vert.h"
+#include "draw_vert.h"
 #include "effect.h"
 #include "resource/filesystem.h"
 #include "resource/resource_manager.h"
@@ -21,6 +21,7 @@ struct EngineTestEffect : public Effect
 	gfx::VertexCache vtx_cache;
 
 	gfx::VertexBufferHandle vb_points, vb_pp, vb_skybox;
+	gfx::VertexBufferHandle tmp;
 	gfx::FrameBufferHandle fb;
 	gfx::TextureHandle color_attachment, depth_attachment;
 	gfx::TextureHandle skybox, texDyn;
@@ -33,12 +34,13 @@ struct EngineTestEffect : public Effect
 	glm::mat4 P;
 	glm::mat4 VP;
 
-	gfx::VertexDecl_t layout;
+	gfx::VertexDecl layout;
 	gfx::ProgramHandle prgPoints;
 	gfx::ProgramHandle prgPP;
 	gfx::ProgramHandle prgSkybox;
 	gfx::ProgramHandle prgDepth;
 	gfx::ProgramHandle prgComp;
 	gfx::ProgramHandle prgViewTex;
+	gfx::VertexLayoutHandle layout_handle;
 };
 

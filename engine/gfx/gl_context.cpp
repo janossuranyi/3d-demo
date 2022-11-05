@@ -1,6 +1,8 @@
 #include "../common.h"
 #include "./handle.h"
 #include "./gl_context.h"
+#include "./vertex.h"
+
 #include "logger.h"
 
 #include <SDL.h>
@@ -21,7 +23,7 @@ namespace gfx {
 		if (bits & barrier::ClientMappedBuffer)
 			result |= GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT;
 		if (bits & barrier::FrameBuffer)
-			result != GL_FRAMEBUFFER_BARRIER_BIT;
+			result |= GL_FRAMEBUFFER_BARRIER_BIT;
 		if (bits & barrier::QueryBuffer)
 			result |= GL_QUERY_BUFFER_BARRIER_BIT;
 		if (bits & barrier::ShaderImageAccess)
@@ -87,15 +89,15 @@ namespace gfx {
 		switch (type) {
 		case AttributeType::Byte:
 			return GL_BYTE;
-		case AttributeType::UnsignedByte:
+		case AttributeType::UByte:
 			return GL_UNSIGNED_BYTE;
 		case AttributeType::Short:
 			return GL_SHORT;
-		case AttributeType::UnsignedShort:
+		case AttributeType::UShort:
 			return GL_UNSIGNED_SHORT;
 		case AttributeType::Int:
 			return GL_INT;
-		case AttributeType::UnsignedInt:
+		case AttributeType::UInt:
 			return GL_UNSIGNED_INT;
 		case AttributeType::Half:
 			return GL_HALF_FLOAT;
@@ -428,6 +430,51 @@ namespace gfx {
 		fence_map_.erase(cmd.handle);
 	}
 
+	void OpenGLRenderContext::operator()(const cmd::DeleteVertexLayout& cmd)
+	{
+		auto& vao = vertex_array_map_.find(cmd.handle);
+		if (vao == std::end(vertex_array_map_))
+		{
+			return;
+		}
+
+		if (active_vertex_layout_ == cmd.handle)
+		{
+			GL_CHECK(glBindVertexArray(0));
+			active_vertex_layout_ = VertexLayoutHandle{};
+		}
+		GL_CHECK(glDeleteVertexArrays(1, &vao->second));
+
+		vertex_array_map_.erase(cmd.handle);
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::CreateVertexLayout& cmd)
+	{
+		if (cmd.decl.empty() || vertex_array_map_.count(cmd.handle) > 0) {
+			return;
+		}
+
+		GLuint vao;
+		GL_CHECK(glGenVertexArrays(1, &vao));
+		GL_CHECK(glBindVertexArray(vao));
+		for (uint i = 0; i < cmd.decl.attributes().size(); ++i)
+		{
+			const auto& attr = cmd.decl.attributes()[i];
+			GLenum type = MapAttribType(attr.type);
+			GL_CHECK(glEnableVertexAttribArray(i));
+			GL_CHECK(glVertexAttribFormat(i, attr.count, type, attr.normalized ? GL_TRUE : GL_FALSE, attr.offset));
+			GL_CHECK(glVertexAttribBinding(i, attr.binding));
+		}
+
+		GL_CHECK(glBindVertexArray(0));
+		for (uint i = 0; i < cmd.decl.attributes().size(); ++i)
+		{
+			GL_CHECK(glDisableVertexAttribArray(i));
+		}
+
+		vertex_array_map_.emplace(cmd.handle, vao);
+	}
+
 	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
 	{
 		if (vertex_buffer_map_.count(cmd.handle) > 0)
@@ -557,7 +604,6 @@ namespace gfx {
 				GL_CHECK(glGetShaderInfoLog(shader, infologLen, nullptr, logBuf.data()));
 				const char* sType = MapShaderStageTitle(cmd.stage);
 				Error("%s shader compilation failed: %s", sType, logBuf.data());
-				render_errors_.emplace_back(RenderError{ ErrorType::ShaderCompilerError, cmd.handle });
 			}
 
 			GL_CHECK(glDeleteShader(shader));
@@ -598,7 +644,6 @@ namespace gfx {
 			auto& s_data = shader_map_.find(s_handle);
 			if (s_data == std::end(shader_map_))
 			{
-				render_errors_.emplace_back(RenderError{ ErrorType::ShaderLinkingError, cmd.handle });
 				return;
 			}
 			GL_CHECK(glAttachShader(p_data.program, s_data->second.shader));
@@ -618,7 +663,6 @@ namespace gfx {
 				std::vector<char> logBuf(infologLen);
 				GL_CHECK(glGetProgramInfoLog(p_data.program, infologLen, nullptr, logBuf.data()));
 				Error("Linking of shader program failed: %s", logBuf.data());
-				render_errors_.emplace_back(RenderError{ ErrorType::ShaderLinkingError, cmd.handle });
 			}
 		}
 		else
@@ -964,7 +1008,7 @@ namespace gfx {
 	void OpenGLRenderContext::process_command_list(const std::vector<RenderCommand>& cmds)
 	{
 		assert(windowHandle_);
-		for (auto& const c : cmds)
+		for (const auto& c : cmds)
 		{
 			std::visit(*this, c);
 		}
@@ -1212,21 +1256,56 @@ namespace gfx {
 				setup_uniforms(program_data, item->uniforms);
 				setup_textures(item->textures);
 
+				// Element buffer setup
+				if ((!prev || prev->ib != item->ib) && item->ib.isValid())
+				{
+					const auto& ib = index_buffer_map_.at(item->ib);
+					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
+					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+				}
+
+				if (active_vb_ != item->vb)
+				{
+					/* change layout if needed */
+					if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
+					{
+						active_vertex_decl_ = item->vertexDecl;
+						active_vertex_layout_ = item->vertexDecl.handle();
+						GLuint const vao = vertex_array_map_.at(item->vertexDecl.handle());
+						GL_CHECK(glBindVertexArray(vao));
+					}
+
+					const auto& vb_data = vertex_buffer_map_.at(item->vb);
+
+					GL_CHECK(glBindVertexBuffer(0, vb_data.buffer, 0, active_vertex_decl_.stride()));
+					glVertexBindingDivisor(0, 0);
+
+					active_vb_ = item->vb;
+				}
+
+				if (!item->bindings.empty())
+				{
+					for (auto& b : item->bindings)
+					{
+						const auto& vb_data = vertex_buffer_map_.at(b.vb);
+						GL_CHECK(glBindVertexBuffer(b.index, vb_data.buffer, b.offset, b.stride));
+						GL_CHECK(glVertexBindingDivisor(b.index, b.divisor));
+					}
+				}
+
+				/*************************************************************************************************/
+				/* Old vertex layout code */
+				/*************************************************************************************************/
+#if USE_GL330
 				if (active_vb_ != item->vb)
 				{
 					auto& vb_data = vertex_buffer_map_.at(item->vb);
 					GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
 				}
-				if ((!prev || prev->ib != item->ib) && item->ib.isValid())
-				{
-					auto& ib = index_buffer_map_.at(item->ib);
-					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
-					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
-				}
 
 				if (active_vertex_decl_.empty() || item->vb != active_vb_)
 				{
-					if (item->vertexDecl.empty() == false)
+					if (!item->vertexDecl.empty())
 					{
 						active_vertex_decl_ = item->vertexDecl;
 					}
@@ -1245,10 +1324,12 @@ namespace gfx {
 							MapAttribType(attr.type),
 							attr.normalized ? GL_TRUE : GL_FALSE,
 							active_vertex_decl_.stride(),
-							attr.offset));
+							reinterpret_cast<const void*>(attr.offset)));
 					}
 					active_vb_ = item->vb;
 				}
+#endif
+				/*************************************************************************************************/
 
 				const GLenum mode = MapDrawMode(item->primitive_type);
 				const GLsizei count = item->vertex_count;
@@ -1267,7 +1348,7 @@ namespace gfx {
 				{
 					glDrawArraysInstanced(
 						mode,
-						item->vb_offset, // s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride,
+						item->vb_offset,
 						static_cast<GLsizei>(count),
 						static_cast<GLsizei>(item->instance_count));
 				}
@@ -1278,24 +1359,6 @@ namespace gfx {
 		SDL_GL_SwapWindow(windowHandle_);
 
 		return true;
-	}
-
-	RenderError OpenGLRenderContext::getError()
-	{
-		if (render_errors_.empty())
-		{
-			return RenderError{ ErrorType::NoError };
-		}
-
-		RenderError e = render_errors_.back();
-		render_errors_.pop_back();
-
-		return e;
-	}
-
-	bool OpenGLRenderContext::hasError() const
-	{
-		return !render_errors_.empty();
 	}
 
 	glm::ivec2 OpenGLRenderContext::get_window_size() const

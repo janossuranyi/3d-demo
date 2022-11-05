@@ -20,8 +20,6 @@ namespace gfx {
 		void start_rendering() override;
 		void stop_rendering() override;
 		bool frame(const Frame* frame) override;
-		RenderError getError();
-		bool hasError() const;
 		glm::ivec2 get_window_size() const override;
 
 		int red_bits() const override;
@@ -30,6 +28,8 @@ namespace gfx {
 		int depth_bits() const override;
 		int stencil_bits() const override;
 
+		void operator()(const cmd::DeleteVertexLayout& cmd);
+		void operator()(const cmd::CreateVertexLayout& cmd);
 		void operator()(const cmd::CreateVertexBuffer& cmd);
 		void operator()(const cmd::UpdateVertexBuffer& cmd);
 		void operator()(const cmd::DeleteVertexBuffer& cmd);
@@ -133,10 +133,9 @@ namespace gfx {
 		std::unordered_map<VertexBufferHandle, VertexBufferData> vertex_buffer_map_;
 		std::unordered_map<IndexBufferHandle, IndexBufferData> index_buffer_map_;
 		std::unordered_map<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
+		std::unordered_map<VertexLayoutHandle, GLuint> vertex_array_map_;
 
-		Vector<RenderError> render_errors_;
-
-		VertexDecl_t active_vertex_decl_{};
+		VertexDecl active_vertex_decl_{};
 
 		GLuint shared_vertex_array_{ 0 };
 		GLint gl_max_vertex_attribs_{ 0 };
@@ -148,6 +147,7 @@ namespace gfx {
 		IndexBufferHandle active_ib_{};
 		ProgramHandle active_program_{};
 		FrameBufferHandle active_fb_{};
+		VertexLayoutHandle active_vertex_layout_{};
 
 		bool scissor_test_{ false };
 		int active_vertex_attribs_{ 0 };
