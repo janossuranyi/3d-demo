@@ -948,6 +948,12 @@ namespace gfx {
 			return false;
 		}
 
+		if (!GLEW_EXT_direct_state_access)
+		{
+			Error("Sorry, EXT_direct_state_access not supported");
+			return false;
+		}
+
 		SDL_version ver;
 
 		SDL_GetVersion(&ver);
@@ -1264,7 +1270,20 @@ namespace gfx {
 					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 				}
 
-				if (active_vb_ != item->vb)
+				bool vb_change = false;
+
+				
+				for (uint j = 0; j < item->vbs.size(); ++j)
+				{
+					if (item->vbs[j] != active_vbs_[j])
+					{
+						vb_change = true;
+						break;
+					}
+				}
+
+				bool layout_change = false;
+				if (vb_change)
 				{
 					/* change layout if needed */
 					if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
@@ -1273,23 +1292,25 @@ namespace gfx {
 						active_vertex_layout_ = item->vertexDecl.handle();
 						GLuint const vao = vertex_array_map_.at(item->vertexDecl.handle());
 						GL_CHECK(glBindVertexArray(vao));
+						layout_change = true;
 					}
 
-					const auto& vb_data = vertex_buffer_map_.at(item->vb);
-
-					GL_CHECK(glBindVertexBuffer(0, vb_data.buffer, 0, active_vertex_decl_.stride()));
-					glVertexBindingDivisor(0, 0);
-
-					active_vb_ = item->vb;
-				}
-
-				if (!item->bindings.empty())
-				{
-					for (auto& b : item->bindings)
+					for (uint j = 0; j < active_vertex_decl_.attributes().size(); ++j)
 					{
-						const auto& vb_data = vertex_buffer_map_.at(b.vb);
-						GL_CHECK(glBindVertexBuffer(b.index, vb_data.buffer, b.offset, b.stride));
-						GL_CHECK(glVertexBindingDivisor(b.index, b.divisor));
+						const auto& attr = active_vertex_decl_.attributes()[j];
+						if (active_vbs_[attr.binding] == item->vbs[attr.binding]) { continue; };
+
+						const auto& binding = item->vbs[attr.binding];
+						if (binding.handle.isValid())
+						{
+							const auto& vb_data = vertex_buffer_map_.at(binding.handle);
+							GL_CHECK(glBindVertexBuffer(attr.binding, vb_data.buffer, binding.offset, attr.stride));
+							if (layout_change)
+							{
+								GL_CHECK(glVertexBindingDivisor(attr.binding, attr.divisor));
+							}
+							active_vbs_[attr.binding] = item->vbs[attr.binding];
+						}
 					}
 				}
 
@@ -1335,7 +1356,7 @@ namespace gfx {
 				const GLsizei count = item->vertex_count;
 				if (item->ib.isValid())
 				{
-					const GLuint base_vertex = item->vb_offset; // s_vertexLayouts[static_cast<size_t>(active_vertex_decl_)].stride;
+					const GLuint base_vertex = item->vb_offset;
 					GL_CHECK(glDrawElementsInstancedBaseVertex(
 						mode,
 						count,

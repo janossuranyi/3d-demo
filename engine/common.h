@@ -19,6 +19,7 @@
 #include <mutex>
 #include <string>
 #include <utility>
+#include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
 

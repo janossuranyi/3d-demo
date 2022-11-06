@@ -144,6 +144,7 @@ namespace gfx {
 
 		// cache
 		VertexBufferHandle active_vb_{};
+		Array<VertexBinding, MAX_LAYOUT_BUFFERS> active_vbs_{};
 		IndexBufferHandle active_ib_{};
 		ProgramHandle active_program_{};
 		FrameBufferHandle active_fb_{};

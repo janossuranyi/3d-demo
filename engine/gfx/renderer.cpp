@@ -332,12 +332,6 @@ namespace gfx {
 		submit_->active_item.scissor_h = h;
 	}
 
-	void Renderer::setVertexBuffer(VertexBufferHandle handle)
-	{
-		submit_->active_item.vb = handle;
-		submit_->active_item.vb_offset = 0;
-	}
-
 	void Renderer::setIndexBuffer(IndexBufferHandle handle)
 	{
 		submit_->active_item.ib = handle;
@@ -529,10 +523,12 @@ namespace gfx {
 		if(compute_active_) submit_->active_compute.uniforms[name] = data;
 		else submit_->active_item.uniforms[name] = data;
 	}
-	void Renderer::setAttribBinding(ushort index, VertexBufferHandle vb, uint offset, ushort stride, ushort divisor)
+
+	void Renderer::setVertexBuffer(ushort index, VertexBufferHandle vb, uint offset)
 	{
-		submit_->active_item.bindings.emplace_back(VertexAttribBinding{ index,vb,offset,stride,divisor });
+		submit_->active_item.vbs[index] = VertexBinding{ vb,offset };
 	}
+
 	void gfx::Renderer::submit(uint32_t pass)
 	{
 		submit(pass, ProgramHandle());

@@ -214,6 +214,7 @@ namespace gfx {
         bool normalized;
         ushort divisor;
         ushort binding;
+        ushort stride;
     };
 
     using AttributeList = std::vector<VertexAttribute>;
@@ -222,21 +223,20 @@ namespace gfx {
     {
     public:
 
-        ~VertexDecl() = default;
         VertexDecl() = default;
+        ~VertexDecl() = default;
 
-        ushort stride() const;
         bool empty() const;
         VertexDecl& begin();
         VertexDecl& end();
+        VertexDecl& reset_offset();
         const AttributeList& attributes() const;
-        VertexDecl& add(AttributeName name, AttributeType type, ushort count, bool normalized);
-        VertexDecl& addInstance(AttributeName name, AttributeType type, ushort count, bool normalized, uint offset, ushort binding, ushort divisior);
+        VertexDecl& add(AttributeName name, AttributeType type, ushort count, bool normalized, ushort stride, ushort binding = 0, ushort divisor = 0);
         void setHandle(VertexLayoutHandle handle);
         VertexLayoutHandle handle() const;
     private:
-        ushort getTypeSize(AttributeType type) const;
-        ushort stride_;
+        static ushort getTypeSize(AttributeType type);
+        ushort offset_;
         AttributeList attributes_;
         VertexLayoutHandle handle_{};
     };
@@ -447,15 +447,20 @@ namespace gfx {
 
     using ImageBindings = std::array<ImageBinding, MAX_IMAGE_UNITS>;
 
-    struct VertexAttribBinding {
-        ushort index;
-        VertexBufferHandle vb;
+    struct VertexBinding {
+        VertexBufferHandle handle;
         uint offset;
-        ushort stride;
-        ushort divisor;
+        inline bool operator!=(const VertexBinding& other) const
+        {
+            return handle != other.handle || offset != other.offset;
+        }
+        inline bool operator==(const VertexBinding& other) const
+        {
+            return handle == other.handle && offset == other.offset;
+        }
     };
 
-    using VertexAttribBindings = Vector<VertexAttribBinding>;
+    using VertexBuffers = Array<VertexBinding, MAX_LAYOUT_BUFFERS>;
 
     struct ComputeItem {
         uint16_t num_groups_x;
@@ -472,8 +477,8 @@ namespace gfx {
     };
 
     struct RenderItem {
-        VertexAttribBindings bindings;
-        VertexBufferHandle vb;
+        VertexBuffers vbs;
+        //VertexBufferHandle vb;
         IndexBufferHandle ib;
         uint ib_offset;
         uint vb_offset;
@@ -571,7 +576,6 @@ namespace gfx {
         void                setRenderState(StateBits bits);
         void                setScissorEnable(bool enabled);
         void                setScissor(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-        void                setVertexBuffer(VertexBufferHandle handle);
         void                setIndexBuffer(IndexBufferHandle handle);
         void                setPrimitiveType(PrimitiveType type);
         void                setSetInstanceCount(uint count);
@@ -593,7 +597,7 @@ namespace gfx {
         void                setProgramVar(const std::string& name, const std::vector<glm::vec4>& value);
         void                setProgramVar(const std::string& name, UniformData data);
 
-        void                setAttribBinding(ushort index, VertexBufferHandle vb, uint offset, ushort stride, ushort divisor);
+        void                setVertexBuffer(ushort index, VertexBufferHandle vb, uint offset);
         void                submit(uint pass);
         void                submit(uint pass, ProgramHandle program);
         void                submit(uint pass, ProgramHandle program, uint vertex_count);

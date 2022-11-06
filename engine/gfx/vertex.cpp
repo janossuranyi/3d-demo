@@ -1,43 +1,37 @@
 #include "gfx/renderer.h"
 
 namespace gfx {
-	uint16_t VertexDecl::stride() const
-	{
-		return stride_;
-	}
+
 	bool VertexDecl::empty() const
 	{
-		return stride_ == 0;
+		return attributes_.empty();
 	}
 
 	VertexDecl& VertexDecl::begin()
 	{ 
 		attributes_.clear();
-		stride_ = 0;
 		return *this; 
 	}
 
 	VertexDecl& VertexDecl::end() { return *this; }
+
+	VertexDecl& VertexDecl::reset_offset()
+	{
+		offset_ = 0;
+
+		return *this;
+	}
 
 	const AttributeList& VertexDecl::attributes() const
 	{
 		return attributes_;
 	}
 
-	VertexDecl& VertexDecl::add(AttributeName name, AttributeType type, ushort count, bool normalized)
+	VertexDecl& VertexDecl::add(AttributeName name, AttributeType type, ushort count, bool normalized, ushort stride, ushort binding, ushort divisor)
 	{
-		const int typeSize = getTypeSize(type);
-		attributes_.emplace_back(VertexAttribute{ name,type,count, static_cast<uint>(stride_),normalized,0,0 });
-		stride_ += typeSize * count;
-
-		return *this;
-	}
-
-	VertexDecl& VertexDecl::addInstance(AttributeName name, AttributeType type, ushort count, bool normalized, uint offset, ushort binding, ushort divisor)
-	{
-		const int typeSize = getTypeSize(type);
-		attributes_.emplace_back(VertexAttribute{ name,type,count,offset,normalized,divisor,binding });
-		//stride_ += typeSize * count;
+		const ushort size = getTypeSize(type);
+		attributes_.emplace_back(VertexAttribute{ name,type,count,offset_,normalized,divisor,binding,stride });
+		offset_ += size * count;
 
 		return *this;
 	}
@@ -52,7 +46,7 @@ namespace gfx {
 		return handle_;
 	}
 	
-	uint16_t VertexDecl::getTypeSize(AttributeType type) const
+	ushort VertexDecl::getTypeSize(AttributeType type)
 	{
 		switch (type) {
 		case AttributeType::Byte: 
