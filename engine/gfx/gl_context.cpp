@@ -1283,61 +1283,63 @@ namespace gfx {
 				}
 
 				bool layout_change = false;
-				if (vb_change || !item->vertexDecl.empty())
+				if (vb_change)
 				{
-#ifndef SEPARATE_ATTRIBUTE_FORMAT
-					active_vertex_decl_ = item->vertexDecl;
-					ushort active_binding = 0xffff;
-					for (uint j = 0; j < active_vertex_decl_.attributes().size(); ++j)
+					if (GLEW_ARB_vertex_attrib_binding)
 					{
-						const auto& attr = active_vertex_decl_.attributes()[j];
-						if (attr.binding != active_binding)
+						/* change layout if needed */
+						if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
 						{
-							active_binding = attr.binding;
+							active_vertex_decl_ = item->vertexDecl;
+							active_vertex_layout_ = item->vertexDecl.handle();
+							GLuint const vao = vertex_array_map_.at(item->vertexDecl.handle());
+							GL_CHECK(glBindVertexArray(vao));
+							layout_change = true;
+						}
+
+						for (uint j = 0; j < active_vertex_decl_.attributes().size(); ++j)
+						{
+							const auto& attr = active_vertex_decl_.attributes()[j];
+							if (active_vbs_[attr.binding] == item->vbs[attr.binding]) { continue; };
+
 							const auto& binding = item->vbs[attr.binding];
 							if (binding.handle.isValid())
 							{
 								const auto& vb_data = vertex_buffer_map_.at(binding.handle);
-								GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
+								GL_CHECK(glBindVertexBuffer(attr.binding, vb_data.buffer, binding.offset, attr.stride));
+								if (layout_change)
+								{
+									GL_CHECK(glVertexBindingDivisor(attr.binding, attr.divisor));
+								}
 								active_vbs_[attr.binding] = item->vbs[attr.binding];
 							}
 						}
-						const GLenum type = MapAttribType(attr.type);
-						GL_CHECK(glEnableVertexAttribArray(j));
-						GL_CHECK(glVertexAttribPointer(j, attr.count, type, (attr.normalized ? GL_TRUE : GL_FALSE), attr.stride, reinterpret_cast<void*>(attr.offset)));
-						GL_CHECK(glVertexAttribDivisor(j, attr.divisor));
 					}
-					//GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
-
-#else
-					/* change layout if needed */
-					if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
+					else
 					{
 						active_vertex_decl_ = item->vertexDecl;
-						active_vertex_layout_ = item->vertexDecl.handle();
-						GLuint const vao = vertex_array_map_.at(item->vertexDecl.handle());
-						GL_CHECK(glBindVertexArray(vao));
-						layout_change = true;
-					}
-
-					for (uint j = 0; j < active_vertex_decl_.attributes().size(); ++j)
-					{
-						const auto& attr = active_vertex_decl_.attributes()[j];
-						if (active_vbs_[attr.binding] == item->vbs[attr.binding]) { continue; };
-
-						const auto& binding = item->vbs[attr.binding];
-						if (binding.handle.isValid())
+						ushort active_binding = 0xffff;
+						for (uint j = 0; j < active_vertex_decl_.attributes().size(); ++j)
 						{
-							const auto& vb_data = vertex_buffer_map_.at(binding.handle);
-							GL_CHECK(glBindVertexBuffer(attr.binding, vb_data.buffer, binding.offset, attr.stride));
-							if (layout_change)
+							const auto& attr = active_vertex_decl_.attributes()[j];
+							if (attr.binding != active_binding)
 							{
-								GL_CHECK(glVertexBindingDivisor(attr.binding, attr.divisor));
+								active_binding = attr.binding;
+								const auto& binding = item->vbs[attr.binding];
+								if (binding.handle.isValid())
+								{
+									const auto& vb_data = vertex_buffer_map_.at(binding.handle);
+									GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
+									active_vbs_[attr.binding] = item->vbs[attr.binding];
+								}
 							}
-							active_vbs_[attr.binding] = item->vbs[attr.binding];
+							const GLenum type = MapAttribType(attr.type);
+							GL_CHECK(glEnableVertexAttribArray(j));
+							GL_CHECK(glVertexAttribPointer(j, attr.count, type, (attr.normalized ? GL_TRUE : GL_FALSE), attr.stride, reinterpret_cast<void*>(attr.offset)));
+							GL_CHECK(glVertexAttribDivisor(j, attr.divisor));
 						}
+						//GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
 					}
-#endif
 				}
 
 				const GLenum mode = MapDrawMode(item->primitive_type);

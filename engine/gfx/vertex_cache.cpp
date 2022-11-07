@@ -68,7 +68,10 @@ namespace gfx {
 
 	vtxCacheHandle VertexCache::realVertexAlloc(Memory data, geoBufferSet& bs)
 	{
-		const size_t bytes = (data.size() + 15) & (~15);
+		const size_t bytes = data.size();
+
+		assert((bytes & 15) == 0);
+
 		if (bytes + bs.vertex_alloced > bs.vertex_size)
 		{
 			Warning("VertexAlloc failed, not enough free space");
@@ -82,7 +85,10 @@ namespace gfx {
 
 	vtxCacheHandle VertexCache::realIndexAlloc(Memory data, geoBufferSet& bs)
 	{
-		const size_t bytes = (data.size() + 15) & (~15);
+		const size_t bytes = data.size();
+
+		assert((bytes & 15) == 0);
+
 		if (bytes + bs.index_alloced > bs.index_size)
 		{
 			Warning("IndexAlloc failed, not enough free space");

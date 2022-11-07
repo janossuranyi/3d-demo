@@ -178,7 +178,7 @@ bool EngineTestEffect::Init()
 
 	{
 		std::vector<DrawVert> buffer(6);
-		float r[4]{0.f,0.f,0.f,1.f};
+		float r[4]{ 0.f,0.f,0.f,1.f };
 
 		for (uint i = 0; i < 6; ++i)
 		{
@@ -191,9 +191,8 @@ bool EngineTestEffect::Init()
 		}
 
 		vc_pp = vtx_cache.allocStaticVertex(gfx::Memory(buffer));
-//		vb_pp = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
+		//		vb_pp = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
 	}
-
 	{
 		const size_t vert_count = (sizeof(UNIT_BOX_POSITIONS) / sizeof(float) / 3);
 		std::vector<DrawVert> buffer(vert_count);
@@ -212,7 +211,7 @@ bool EngineTestEffect::Init()
 		vc_skybox = vtx_cache.allocStaticVertex(gfx::Memory(buffer));
 		//vb_skybox = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
 	}
-	
+
 	prgComp = sm->createProgram(gfx::ComputeProgram{ "Compute01",
 		"shaders/test_compute2.cs.glsl" , {{"LOCAL_SIZE_X", "8"},{"LOCAL_SIZE_Y","8"}} });
 		prgViewTex	= sm->createProgram(gfx::RenderProgram{ "Rect",
@@ -250,8 +249,11 @@ bool EngineTestEffect::Init()
 		.add(gfx::AttributeName::TexCoord1, gfx::AttributeType::Float, 1, false, 4, 1, 1)
 		.end();
 
-	//layout_handle = renderer->createVertexLayout(layout);
-	//layout.setHandle(layout_handle);
+	if (GLEW_ARB_vertex_attrib_binding)
+	{
+		layout_handle = renderer->createVertexLayout(layout);
+		layout.setHandle(layout_handle);
+	}
 
     return true;
 }
@@ -341,7 +343,7 @@ bool EngineTestEffect::Render()
 
 	uint16_t pass = 0;
 	gfx::FenceHandle fence;
-/*
+
 	{
 		std::vector<DrawVert> buffer(6);
 		float r[4]{ 0.f,0.f,0.f,1.f };
@@ -359,7 +361,7 @@ bool EngineTestEffect::Render()
 		vc_pp = vtx_cache.allocVertex(gfx::Memory(buffer));
 		//		vb_pp = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
 	}
-	*/
+	
 	vtx_cache.frame();
 
 	renderer->beginCompute();

@@ -20,14 +20,16 @@ struct DrawVert
 	hvec2 texcoord;		//4
 	unorm4 normal;		//4
 	unorm4 tangent;		//4
-	unorm4 color;		//4 = 28
+	unorm4 color;		//4
+	uint encoded;		//4 = 32
 
 	DrawVert() :
 		position{ 0.0f,0.0f,0.0f },
 		texcoord{ 0,0 },
 		normal{ 0,0,0,0 },
 		tangent{ 0,0,0,0 },
-		color{ 0,0,0,0 } {}
+		color{ 0,0,0,0 },
+		encoded{ 0 } {}
 
 	DrawVert& set_position(const float* apos);
 	DrawVert& set_position(const glm::vec3& apos);
@@ -39,7 +41,15 @@ struct DrawVert
 	DrawVert& set_tangent(const glm::vec4& apos);
 	DrawVert& set_color(const float* apos);
 	DrawVert& set_color(const glm::vec4& apos);
+	DrawVert& set_encoded_data(uint val);
 };
+
+inline DrawVert& DrawVert::set_encoded_data(uint val)
+{
+	encoded = val;
+
+	return *this;
+}
 
 inline DrawVert& DrawVert::set_tangent(const float* apos)
 {

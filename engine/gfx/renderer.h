@@ -230,6 +230,7 @@ namespace gfx {
         VertexDecl& begin();
         VertexDecl& end();
         VertexDecl& reset_offset();
+        size_t size() const;
         const AttributeList& attributes() const;
         VertexDecl& add(AttributeName name, AttributeType type, ushort count, bool normalized, ushort stride, ushort binding = 0, ushort divisor = 0);
         void setHandle(VertexLayoutHandle handle);

@@ -22,6 +22,11 @@ namespace gfx {
 		return *this;
 	}
 
+	size_t VertexDecl::size() const
+	{
+		return attributes_.size();
+	}
+
 	const AttributeList& VertexDecl::attributes() const
 	{
 		return attributes_;
