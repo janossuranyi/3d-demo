@@ -74,7 +74,7 @@ namespace gfx {
 	{
 		bool isStatic = handle & 1;
 		size = (handle & 0xFFFFFFFE) / sizeof(T);
-		offset = (handle >> 31) / sizeof(T);
+		offset = (handle >> 31); // sizeof(T);
 
 		if (isStatic) return static_buffer_set_.vb;
 		else return render_->vb;

@@ -177,11 +177,10 @@ bool EngineTestEffect::Init()
 	}
 
 	{
-		const size_t bufSize = sizeof(DrawVert) * 6;
 		std::vector<DrawVert> buffer(6);
 		float r[4]{0.f,0.f,0.f,1.f};
 
-		for (int i = 0; i < 6; ++i)
+		for (uint i = 0; i < 6; ++i)
 		{
 			r[0] = UNIT_RECT_WITH_ST[i * 4 + 0];
 			r[1] = UNIT_RECT_WITH_ST[i * 4 + 1];
@@ -196,9 +195,7 @@ bool EngineTestEffect::Init()
 	}
 
 	{
-		const int vert_count = (sizeof(UNIT_BOX_POSITIONS) / sizeof(float) / 3);
-		const size_t bufSize = sizeof(DrawVert) * vert_count;
-
+		const size_t vert_count = (sizeof(UNIT_BOX_POSITIONS) / sizeof(float) / 3);
 		std::vector<DrawVert> buffer(vert_count);
 
 		float r[4]{ 0.f,0.f,0.f,1.f };
@@ -344,7 +341,7 @@ bool EngineTestEffect::Render()
 
 	uint16_t pass = 0;
 	gfx::FenceHandle fence;
-
+/*
 	{
 		std::vector<DrawVert> buffer(6);
 		float r[4]{ 0.f,0.f,0.f,1.f };
@@ -362,7 +359,7 @@ bool EngineTestEffect::Render()
 		vc_pp = vtx_cache.allocVertex(gfx::Memory(buffer));
 		//		vb_pp = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
 	}
-
+	*/
 	vtx_cache.frame();
 
 	renderer->beginCompute();
@@ -397,10 +394,10 @@ bool EngineTestEffect::Render()
 	renderer->setProgramVar("m_W2", W2);
 	renderer->setVertexDecl(layout);
 	renderer->setInstanceCount(2);
-	renderer->setVertexBuffer(vb_points);
-	renderer->setVertexBuffer(tmp, 1);
+	renderer->setVertexBuffer(vb_points, 0, offs);
+	renderer->setVertexBuffer(tmp, 1, 0);
 
-	renderer->submit(pass, prgPoints, count, offs, 0);
+	renderer->submit(pass, prgPoints, count, 0, 0);
 
 	W = glm::rotate(glm::mat4(1), glm::radians(rotY), glm::vec3(0, 1, 0));
 	const glm::mat4 sky_view = glm::mat4(glm::mat3(W));
@@ -414,11 +411,11 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_LESS|gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, skybox);
-	renderer->setVertexBuffer(vb_skybox);
+	renderer->setVertexBuffer(vb_skybox,0,offs);
 	renderer->setProgramVar("m_P", P);
 	renderer->setProgramVar("m_V", sky_view);
 	renderer->setProgramVar("samp0", 0);
-	renderer->submit(pass, prgSkybox, count, offs, 0);
+	renderer->submit(pass, prgSkybox, count, 0, 0);
 
 	++pass;
 	vb_pp = vtx_cache.getVertexBuffer<DrawVert>(vc_pp, offs, count);
@@ -427,11 +424,11 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, color_attachment);
-	renderer->setVertexBuffer(vb_pp);
+	renderer->setVertexBuffer(vb_pp,0,offs);
 	renderer->setProgramVar("samp0", 0);
 	renderer->setProgramVar("g_offset", pp_offset);
 	renderer->setProgramVar("g_kernel", kernel);
-	renderer->submit(pass, prgPP, count, offs, 0);
+	renderer->submit(pass, prgPP, count, 0, 0);
 
 	++pass;
 	renderer->setClearBits(pass, 0);
@@ -439,14 +436,14 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, depth_attachment);
-	renderer->setVertexBuffer(vb_pp);
+	renderer->setVertexBuffer(vb_pp,0,offs);
 	renderer->setProgramVar("samp0", 0);
 	float scale = 0.2f;
 	glm::mat4 _w = glm::translate(glm::mat4(1.0f), glm::vec3( (1.0f - scale), (1.0f - scale), 0.0f));
 	_w = glm::scale(_w, glm::vec3(scale));
 	renderer->setProgramVar("m_W", _w);
 	renderer->setProgramVar("g_far", 1700.0f);
-	renderer->submit(pass, prgDepth, count, offs, 0);
+	renderer->submit(pass, prgDepth, count, 0, 0);
 
 
 	++pass;
@@ -455,7 +452,7 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, texDyn);
-	renderer->setVertexBuffer(vb_pp);
+	renderer->setVertexBuffer(vb_pp,0,offs);
 	renderer->setProgramVar("samp0", 0);
 	scale = 0.2f;
 	_w = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f + scale, -1.0f + scale, 0.0f));
@@ -470,7 +467,7 @@ bool EngineTestEffect::Render()
 	}
 	
 	//renderer.deleteFence(fence);
-	renderer->submit(pass, prgViewTex, count, offs, 0);
+	renderer->submit(pass, prgViewTex, count, 0, 0);
 
 	if (!renderer->frame())
 	{
