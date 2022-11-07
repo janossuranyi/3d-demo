@@ -135,7 +135,7 @@ inline float F16toF32(halfFloat_t x)
 	}
 	else if (m == 0)
 	{
-		return s * 0.0f;
+		return 0.0f; // s * 0.0f;
 	}
 	return s * powf(2.0f, -14.0f) * (m / 1024.0f);
 }

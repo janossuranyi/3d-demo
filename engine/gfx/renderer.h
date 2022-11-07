@@ -578,7 +578,7 @@ namespace gfx {
         void                setScissor(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
         void                setIndexBuffer(IndexBufferHandle handle);
         void                setPrimitiveType(PrimitiveType type);
-        void                setSetInstanceCount(uint count);
+        void                setInstanceCount(uint count);
         void                setTexure(uint16_t unit, TextureHandle handle);
         void                setClearColor(unsigned pass, const glm::vec4& value);
         void                setClearBits(unsigned pass, uint16_t value);
@@ -597,7 +597,7 @@ namespace gfx {
         void                setProgramVar(const std::string& name, const std::vector<glm::vec4>& value);
         void                setProgramVar(const std::string& name, UniformData data);
 
-        void                setVertexBuffer(ushort index, VertexBufferHandle vb, uint offset);
+        void                setVertexBuffer(VertexBufferHandle vb, ushort index = 0, uint offset = 0);
         void                submit(uint pass);
         void                submit(uint pass, ProgramHandle program);
         void                submit(uint pass, ProgramHandle program, uint vertex_count);

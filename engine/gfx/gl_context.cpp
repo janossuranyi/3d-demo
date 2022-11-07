@@ -848,6 +848,11 @@ namespace gfx {
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteFramebuffer& cmd)
 	{
+		if (frame_buffer_map_.count(cmd.handle) == 0)
+		{
+			return;
+		}
+
 		auto& fbData = frame_buffer_map_.at(cmd.handle);
 		GL_CHECK(glDeleteFramebuffers(1, &fbData.frame_buffer));
 		GL_CHECK(glDeleteRenderbuffers(1, &fbData.depth_render_buffer));
@@ -925,7 +930,7 @@ namespace gfx {
 			return false;
 		}
 
-		Info("glewInit done");
+		Info("Using GLEW %s", glewGetString(GLEW_VERSION));
 
 		SDL_GL_SetSwapInterval(1);
 
@@ -945,12 +950,6 @@ namespace gfx {
 		if (glVersion_ < 450)
 		{
 			Error("Sorry, I need at least OpenGL 4.5");
-			return false;
-		}
-
-		if (!GLEW_EXT_direct_state_access)
-		{
-			Error("Sorry, EXT_direct_state_access not supported");
 			return false;
 		}
 
@@ -982,10 +981,6 @@ namespace gfx {
 
 		}
 #endif
-		if (GLEW_ARB_explicit_uniform_location)
-		{
-			//videoConf.explicitUnifromLocationEXT = true;
-		}
 
 		SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &window_.redBits);
 		SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &window_.greenBits);
@@ -1048,14 +1043,19 @@ namespace gfx {
 				if (cache_[j] != textures[j].handle)
 				{
 					const TextureData& tdata = texture_map_.at(textures[j].handle);
-					//GL_CHECK(
-					//	glActiveTexture(GL_TEXTURE0 + j)
-					//);
-					//glBindTexture(tdata.target, tdata.texture)
-
-					GL_CHECK(
-						glBindMultiTextureEXT(GL_TEXTURE0 + j, tdata.target, tdata.texture);
-					);
+					if (GLEW_EXT_direct_state_access)
+					{
+						GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + j, tdata.target, tdata.texture));
+					}
+					else if (GLEW_ARB_direct_state_access)
+					{
+						GL_CHECK(glBindTextureUnit(j, tdata.texture));
+					}
+					else
+					{
+						GL_CHECK(glActiveTexture(GL_TEXTURE0 + j));
+						GL_CHECK(glBindTexture(tdata.target, tdata.texture));
+					}
 					cache_[j] = tdata.texture;
 				}
 			}

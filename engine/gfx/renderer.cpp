@@ -31,7 +31,7 @@ namespace gfx {
 
 	Renderer::~Renderer()
 	{
-		if (use_thread_)
+		if (use_thread_ && render_thread_.joinable())
 		{
 			{
 				std::lock_guard<std::mutex> lck(render_mtx_);
@@ -50,7 +50,12 @@ namespace gfx {
 
 		use_thread_ = use_thread;
 		shared_render_context_.reset(new OpenGLRenderContext());
-		shared_render_context_->create_window(width, height, false, title);
+
+		if (!shared_render_context_->create_window(width, height, false, title))
+		{
+			return false;
+		}
+
 
 		if (use_thread_)
 		{
@@ -201,54 +206,84 @@ namespace gfx {
 
 	void Renderer::linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPreFrameCommand(cmd::LinkProgram{ handle, shaders });
 	}
 
 	void Renderer::updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPreFrameCommand(cmd::UpdateVertexBuffer{ handle,std::move(data),offset,0 });
 	}
 
 	void Renderer::updateIndexBuffer(IndexBufferHandle handle, Memory data, uint32_t offset)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPreFrameCommand(cmd::UpdateIndexBuffer{ handle,std::move(data),offset });
 	}
 
 	void Renderer::updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint32_t offset)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
 	}
 
 	void Renderer::deleteVertexLayout(VertexLayoutHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPostFrameCommand(cmd::DeleteVertexLayout{ handle });
 	}
 
 	void Renderer::deleteVertexBuffer(VertexBufferHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPostFrameCommand(cmd::DeleteVertexBuffer{ handle });
-
-		vertex_buffer_handle_.release(handle);
 	}
 
 	void Renderer::deleteIndexBuffer(IndexBufferHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPostFrameCommand(cmd::DeleteIndexBuffer{ handle });
-
-		index_buffer_handle_.release(handle);
 	}
 
 	void Renderer::deleteConstantBuffer(ConstantBufferHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPostFrameCommand(cmd::DeleteConstantBuffer{ handle });
-
-		constant_buffer_handle_.release(handle);
 	}
 
 	void Renderer::deleteFrameBuffer(FrameBufferHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
+
 		submitPostFrameCommand(cmd::DeleteFramebuffer{ handle });
-		frame_buffer_handle_.release(handle);
 
 		for (auto& texture_handle : frame_buffer_textures_.at(handle))
 		{
@@ -262,30 +297,39 @@ namespace gfx {
 
 	void Renderer::deleteProgram(ProgramHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPostFrameCommand(cmd::DeleteProgram{ handle });
-
-		program_handle_.release(handle);
 	}
 
 	void Renderer::deleteShader(ShaderHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPostFrameCommand(cmd::DeleteShader{ handle });
-
-		shader_handle_.release(handle);
 	}
 
 	void Renderer::deleteTexture(TextureHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPostFrameCommand(cmd::DeleteTexture{ handle });
-
 		texture_data_.erase(handle);
-		texture_handle_.release(handle);
 	}
 
 	void Renderer::deleteFence(FenceHandle handle)
 	{
+		if (!handle.isValid())
+		{
+			return;
+		}
 		submitPostFrameCommand(cmd::DeleteFence{ handle });
-		fence_handle_.release(handle);
 	}
 
 	void Renderer::WaitSync(FenceHandle handle, bool client, uint64_t timeout)
@@ -343,7 +387,7 @@ namespace gfx {
 		submit_->active_item.primitive_type = type;
 	}
 
-	void Renderer::setSetInstanceCount(uint count)
+	void Renderer::setInstanceCount(uint count)
 	{
 		submit_->active_item.instance_count = count;
 	}
@@ -524,7 +568,7 @@ namespace gfx {
 		else submit_->active_item.uniforms[name] = data;
 	}
 
-	void Renderer::setVertexBuffer(ushort index, VertexBufferHandle vb, uint offset)
+	void Renderer::setVertexBuffer(VertexBufferHandle vb, ushort index, uint offset)
 	{
 		submit_->active_item.vbs[index] = VertexBinding{ vb,offset };
 	}
