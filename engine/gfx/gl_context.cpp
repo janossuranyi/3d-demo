@@ -1283,8 +1283,33 @@ namespace gfx {
 				}
 
 				bool layout_change = false;
-				if (vb_change)
+				if (vb_change || !item->vertexDecl.empty())
 				{
+#ifndef SEPARATE_ATTRIBUTE_FORMAT
+					active_vertex_decl_ = item->vertexDecl;
+					ushort active_binding = 0xffff;
+					for (uint j = 0; j < active_vertex_decl_.attributes().size(); ++j)
+					{
+						const auto& attr = active_vertex_decl_.attributes()[j];
+						if (attr.binding != active_binding)
+						{
+							active_binding = attr.binding;
+							const auto& binding = item->vbs[attr.binding];
+							if (binding.handle.isValid())
+							{
+								const auto& vb_data = vertex_buffer_map_.at(binding.handle);
+								GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
+								active_vbs_[attr.binding] = item->vbs[attr.binding];
+							}
+						}
+						const GLenum type = MapAttribType(attr.type);
+						GL_CHECK(glEnableVertexAttribArray(j));
+						GL_CHECK(glVertexAttribPointer(j, attr.count, type, (attr.normalized ? GL_TRUE : GL_FALSE), attr.stride, reinterpret_cast<void*>(attr.offset)));
+						GL_CHECK(glVertexAttribDivisor(j, attr.divisor));
+					}
+					GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+#else
 					/* change layout if needed */
 					if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
 					{
@@ -1312,45 +1337,8 @@ namespace gfx {
 							active_vbs_[attr.binding] = item->vbs[attr.binding];
 						}
 					}
-				}
-
-				/*************************************************************************************************/
-				/* Old vertex layout code */
-				/*************************************************************************************************/
-#if USE_GL330
-				if (active_vb_ != item->vb)
-				{
-					auto& vb_data = vertex_buffer_map_.at(item->vb);
-					GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
-				}
-
-				if (active_vertex_decl_.empty() || item->vb != active_vb_)
-				{
-					if (!item->vertexDecl.empty())
-					{
-						active_vertex_decl_ = item->vertexDecl;
-					}
-
-					for (int j = 0; j < active_vertex_decl_.attributes().size(); ++j)
-					{
-						GL_CHECK(glDisableVertexAttribArray(j));
-					}
-					for (int j = 0; j < active_vertex_decl_.attributes().size(); ++j)
-					{
-						const VertexAttribute& attr = active_vertex_decl_.attributes()[j];
-						GL_CHECK(glEnableVertexAttribArray(j));
-						GL_CHECK(glVertexAttribPointer(
-							j,
-							attr.count,
-							MapAttribType(attr.type),
-							attr.normalized ? GL_TRUE : GL_FALSE,
-							active_vertex_decl_.stride(),
-							reinterpret_cast<const void*>(attr.offset)));
-					}
-					active_vb_ = item->vb;
-				}
 #endif
-				/*************************************************************************************************/
+				}
 
 				const GLenum mode = MapDrawMode(item->primitive_type);
 				const GLsizei count = item->vertex_count;

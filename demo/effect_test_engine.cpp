@@ -250,8 +250,8 @@ bool EngineTestEffect::Init()
 		.add(gfx::AttributeName::TexCoord1, gfx::AttributeType::Float, 1, false, 4, 1, 1)
 		.end();
 
-	layout_handle = renderer->createVertexLayout(layout);
-	layout.setHandle(layout_handle);
+	//layout_handle = renderer->createVertexLayout(layout);
+	//layout.setHandle(layout_handle);
 
     return true;
 }
@@ -394,10 +394,10 @@ bool EngineTestEffect::Render()
 	renderer->setProgramVar("m_W2", W2);
 	renderer->setVertexDecl(layout);
 	renderer->setInstanceCount(2);
-	renderer->setVertexBuffer(vb_points, 0, offs);
+	renderer->setVertexBuffer(vb_points);
 	renderer->setVertexBuffer(tmp, 1, 0);
 
-	renderer->submit(pass, prgPoints, count, 0, 0);
+	renderer->submit(pass, prgPoints, count, offs, 0);
 
 	W = glm::rotate(glm::mat4(1), glm::radians(rotY), glm::vec3(0, 1, 0));
 	const glm::mat4 sky_view = glm::mat4(glm::mat3(W));
@@ -411,11 +411,11 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_LESS|gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, skybox);
-	renderer->setVertexBuffer(vb_skybox,0,offs);
+	renderer->setVertexBuffer(vb_skybox);
 	renderer->setProgramVar("m_P", P);
 	renderer->setProgramVar("m_V", sky_view);
 	renderer->setProgramVar("samp0", 0);
-	renderer->submit(pass, prgSkybox, count, 0, 0);
+	renderer->submit(pass, prgSkybox, count, offs, 0);
 
 	++pass;
 	vb_pp = vtx_cache.getVertexBuffer<DrawVert>(vc_pp, offs, count);
@@ -424,11 +424,11 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, color_attachment);
-	renderer->setVertexBuffer(vb_pp,0,offs);
+	renderer->setVertexBuffer(vb_pp);
 	renderer->setProgramVar("samp0", 0);
 	renderer->setProgramVar("g_offset", pp_offset);
 	renderer->setProgramVar("g_kernel", kernel);
-	renderer->submit(pass, prgPP, count, 0, 0);
+	renderer->submit(pass, prgPP, count, offs, 0);
 
 	++pass;
 	renderer->setClearBits(pass, 0);
@@ -436,14 +436,14 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, depth_attachment);
-	renderer->setVertexBuffer(vb_pp,0,offs);
+	renderer->setVertexBuffer(vb_pp);
 	renderer->setProgramVar("samp0", 0);
 	float scale = 0.2f;
 	glm::mat4 _w = glm::translate(glm::mat4(1.0f), glm::vec3( (1.0f - scale), (1.0f - scale), 0.0f));
 	_w = glm::scale(_w, glm::vec3(scale));
 	renderer->setProgramVar("m_W", _w);
 	renderer->setProgramVar("g_far", 1700.0f);
-	renderer->submit(pass, prgDepth, count, 0, 0);
+	renderer->submit(pass, prgDepth, count, offs, 0);
 
 
 	++pass;
@@ -452,7 +452,7 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, texDyn);
-	renderer->setVertexBuffer(vb_pp,0,offs);
+	renderer->setVertexBuffer(vb_pp);
 	renderer->setProgramVar("samp0", 0);
 	scale = 0.2f;
 	_w = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f + scale, -1.0f + scale, 0.0f));
@@ -467,7 +467,7 @@ bool EngineTestEffect::Render()
 	}
 	
 	//renderer.deleteFence(fence);
-	renderer->submit(pass, prgViewTex, count, 0, 0);
+	renderer->submit(pass, prgViewTex, count, offs, 0);
 
 	if (!renderer->frame())
 	{
