@@ -1307,7 +1307,7 @@ namespace gfx {
 						GL_CHECK(glVertexAttribPointer(j, attr.count, type, (attr.normalized ? GL_TRUE : GL_FALSE), attr.stride, reinterpret_cast<void*>(attr.offset)));
 						GL_CHECK(glVertexAttribDivisor(j, attr.divisor));
 					}
-					GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
+					//GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 #else
 					/* change layout if needed */
