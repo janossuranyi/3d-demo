@@ -3,6 +3,14 @@
 
 namespace gfx {
 
+	void GLAPIENTRY DebugMessageCallback(GLenum source,
+		GLenum type,
+		GLuint id,
+		GLenum severity,
+		GLsizei length,
+		const GLchar* message,
+		const GLvoid* userParam);
+		
 	void CheckOpenGLError(const char* stmt, const char* fname, int line);
 	GLenum MapAccess(Access a);
 	GLenum MapDrawMode(PrimitiveType p);

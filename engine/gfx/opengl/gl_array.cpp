@@ -40,7 +40,7 @@ namespace gfx {
 			GL_CHECK(glVertexAttribBinding(i, attr.binding));
 		}
 
-		GL_CHECK(glBindVertexArray(0));
+		GL_CHECK(glBindVertexArray(shared_vertex_array_));
 		active_vertex_layout_ = VertexLayoutHandle{};
 		for (uint i = 0; i < cmd.decl.size(); ++i)
 		{

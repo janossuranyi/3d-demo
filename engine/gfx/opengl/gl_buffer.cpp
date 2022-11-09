@@ -18,7 +18,8 @@ namespace gfx {
 
 		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
 
-		GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, buffer));
+		GL_CHECK(
+			glBindBuffer(GL_ARRAY_BUFFER, buffer));
 		if (cmd.data.data())
 			GL_CHECK(glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
 		else
@@ -36,11 +37,13 @@ namespace gfx {
 		const GLenum _usage = MapBufferUsage(cmd.usage);
 
 		GL_CHECK(glGenBuffers(1, &buffer));
+
 		assert(buffer != 0xffff);
 
 		const uint _size = cmd.data.data() ? cmd.data.size() : cmd.size;
 
-		GL_CHECK(glBindBuffer(GL_TEXTURE_BUFFER, buffer));
+		GL_CHECK(
+			glBindBuffer(GL_TEXTURE_BUFFER, buffer));
 		if (cmd.data.data())
 			GL_CHECK(glBufferData(GL_TEXTURE_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
 		else
