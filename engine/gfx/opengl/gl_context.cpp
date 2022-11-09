@@ -626,7 +626,7 @@ namespace gfx {
 				bool layout_change = false;
 				if (vb_change)
 				{
-					if (GLEW_VERSION_4_3 || GLEW_ARB_vertex_attrib_binding)
+					if (glVersion_ >= 430 || GLEW_ARB_vertex_attrib_binding)
 					{
 						/* change layout if needed */
 						if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
@@ -638,7 +638,7 @@ namespace gfx {
 							layout_change = true;
 						}
 
-						for (uint j = 0; j < active_vertex_decl_.attributes().size(); ++j)
+						for (uint j = 0; j < active_vertex_decl_.size(); ++j)
 						{
 							const auto& attr = active_vertex_decl_.attributes()[j];
 							if (active_vbs_[attr.binding] == item->vbs[attr.binding]) { continue; };

@@ -78,8 +78,26 @@ namespace gfx {
 
 		const auto& data = result->second;
 		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
-		GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, data.buffer));
-		GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
+
+		char* mem;
+		if (glVersion_ >= 450)
+		{
+			mem = reinterpret_cast<char*>(glMapNamedBuffer(data.buffer, GL_WRITE_ONLY)); GLC();
+			if (mem) {
+				std::memcpy(mem + cmd.offset, cmd.data.data(), size);
+				GL_CHECK(glUnmapNamedBuffer(data.buffer));
+			}
+		}
+		else
+		{
+			GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, data.buffer));
+			mem = reinterpret_cast<char*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)); GLC();
+			if (mem) {
+				std::memcpy(mem + cmd.offset, cmd.data.data(), size);
+				GL_CHECK(glUnmapBuffer(GL_ARRAY_BUFFER));
+			}
+		}
+		//GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteVertexBuffer& cmd)
