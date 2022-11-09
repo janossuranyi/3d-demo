@@ -79,7 +79,7 @@ namespace gfx {
 		const auto& data = result->second;
 		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
 
-		char* mem;
+		char* mem{};
 		if (glVersion_ >= 450)
 		{
 			mem = reinterpret_cast<char*>(glMapNamedBuffer(data.buffer, GL_WRITE_ONLY)); GLC();
