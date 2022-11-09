@@ -3,10 +3,42 @@
 #include <unordered_map>
 #include <GL/glew.h>
 #include <SDL.h>
-#include "renderer.h"
-#include "render_context.h"
+#include "gfx/renderer.h"
+#include "gfx/render_context.h"
 
 namespace gfx {
+
+
+	// GL TextureFormatInfo.
+	struct TextureFormatInfo {
+		GLenum internal_format;
+		GLenum internal_format_srgb;
+		GLenum format;
+		GLenum type;
+		bool supported;
+	};
+
+	extern TextureFormatInfo s_texture_format[];
+	extern const std::unordered_map<TextureFilter, GLenum> s_texture_filter_map;
+	extern const std::unordered_map<TextureWrap, GLenum> s_texture_wrap_map;
+
+
+#ifdef _DEBUG
+#define GL_FLUSH_ERRORS() while(glGetError() != GL_NO_ERROR) {}
+#define GL_CHECK(stmt) do { \
+            stmt; \
+            CheckOpenGLError(#stmt, __FILE__, __LINE__); \
+        } while (0)
+
+#define GLC() do { \
+            CheckOpenGLError("::", __FILE__, __LINE__); \
+        } while (0)
+#else
+#define GL_CHECK(stmt) stmt
+#define GL_FLUSH_ERRORS()
+#define GLC()
+#endif
+
 
 	class OpenGLRenderContext : public RenderContext {
 	public:
@@ -20,7 +52,7 @@ namespace gfx {
 		void start_rendering() override;
 		void stop_rendering() override;
 		bool frame(const Frame* frame) override;
-		glm::ivec2 get_window_size() const override;
+		ivec2 get_window_size() const override;
 
 		int red_bits() const override;
 		int green_bits() const override;
@@ -52,6 +84,9 @@ namespace gfx {
 		void operator()(const cmd::DeleteConstantBuffer& cmd);
 		void operator()(const cmd::CreateFence& cmd);
 		void operator()(const cmd::DeleteFence& cmd);
+		void operator()(const cmd::CreateTextureBuffer& cmd);
+		void operator()(const cmd::UpdateTextureBuffer& cmd);
+		void operator()(const cmd::DeleteTextureBuffer& cmd);
 
 		template <typename T> void operator()(const T& c) {
 			static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
@@ -72,19 +107,25 @@ namespace gfx {
 
 		struct ConstantBufferData {
 			GLuint buffer;
-			uint32_t size;
+			uint size;
 			BufferUsage usage;
 		};
 
 		struct VertexBufferData {
 			GLuint buffer;
-			uint32_t size;
+			uint size;
+			BufferUsage usage;
+		};
+
+		struct TextureBufferData {
+			GLuint buffer;
+			uint size;
 			BufferUsage usage;
 		};
 
 		struct IndexBufferData {
 			GLuint buffer;
-			uint32_t size;
+			uint size;
 			BufferUsage usage;
 			IndexBufferType type;
 		};
@@ -99,7 +140,7 @@ namespace gfx {
 		struct ProgramData {
 			GLuint program;
 			bool linked;
-			std::unordered_map<std::string, GLint> uniform_location_map;
+			HashMap<String, GLint> uniform_location_map;
 		};
 
 		struct TextureData {
@@ -111,9 +152,9 @@ namespace gfx {
 		struct FrameBufferData {
 			GLuint frame_buffer;
 			GLuint depth_render_buffer;
-			uint16_t width;
-			uint16_t height;
-			std::vector<TextureHandle> textures;
+			ushort width;
+			ushort height;
+			Vector<TextureHandle> textures;
 		};
 
 		StateBits state_bits_;
@@ -125,15 +166,16 @@ namespace gfx {
 
 		Window_t window_;
 
-		std::unordered_map<FenceHandle, GLsync> fence_map_;
-		std::unordered_map<TextureHandle, TextureData> texture_map_;
-		std::unordered_map<ShaderHandle, ShaderData> shader_map_;
-		std::unordered_map<ProgramHandle, ProgramData> program_map_;
-		std::unordered_map<ConstantBufferHandle, ConstantBufferData> constant_buffer_map_;
-		std::unordered_map<VertexBufferHandle, VertexBufferData> vertex_buffer_map_;
-		std::unordered_map<IndexBufferHandle, IndexBufferData> index_buffer_map_;
-		std::unordered_map<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
-		std::unordered_map<VertexLayoutHandle, GLuint> vertex_array_map_;
+		HashMap<FenceHandle, GLsync> fence_map_;
+		HashMap<TextureHandle, TextureData> texture_map_;
+		HashMap<ShaderHandle, ShaderData> shader_map_;
+		HashMap<ProgramHandle, ProgramData> program_map_;
+		HashMap<ConstantBufferHandle, ConstantBufferData> constant_buffer_map_;
+		HashMap<VertexBufferHandle, VertexBufferData> vertex_buffer_map_;
+		HashMap<TextureBufferHandle, TextureBufferData> texture_buffer_map_;
+		HashMap<IndexBufferHandle, IndexBufferData> index_buffer_map_;
+		HashMap<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
+		HashMap<VertexLayoutHandle, GLuint> vertex_array_map_;
 
 		VertexDecl active_vertex_decl_{};
 
@@ -141,10 +183,13 @@ namespace gfx {
 		GLint gl_max_vertex_attribs_{ 0 };
 
 		GLenum active_ib_type_{ 0 };
+		vec4 active_clear_color_{ 0.0f,0.0f,0.0f,1.0f };
 
 		// cache
 		VertexBufferHandle active_vb_{};
 		Array<VertexBinding, MAX_LAYOUT_BUFFERS> active_vbs_{};
+		Array<TextureHandle, MAX_IMAGE_UNITS> active_imagetexes_{};
+		Array<TextureHandle, MAX_TEXTURE_SAMPLERS> active_textures_{};
 		IndexBufferHandle active_ib_{};
 		ProgramHandle active_program_{};
 		FrameBufferHandle active_fb_{};

@@ -1,5 +1,5 @@
-#include "./renderer.h"
-#include "./gl_context.h"
+#include "gfx/renderer.h"
+#include "gfx/opengl/gl_context.h"
 
 #include "logger.h"
 

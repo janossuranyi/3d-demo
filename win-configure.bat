@@ -4,7 +4,7 @@ del /Q /S /F build
 del /Q /S /F /AHS build
 md build
 cd build
-cmake ..
+cmake -L ..
 rem cmake --build . --config Debug
 
 pause

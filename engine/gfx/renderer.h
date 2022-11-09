@@ -20,6 +20,7 @@ namespace gfx {
 
     struct VertexLayoutTag {};
     struct VertexBufferTag {};
+    struct TextureBufferTag {};
     struct IndexBufferTag {};
     struct DynVertexBufferTag {};
     struct DynIndexBufferTag {};
@@ -30,6 +31,7 @@ namespace gfx {
     struct ConstantBufferTag {};
     struct FenceTag {};
 
+    using TextureBufferHandle = Handle<TextureBufferTag, -1>;
     using VertexLayoutHandle = Handle<VertexLayoutTag, -1>;
     using ConstantBufferHandle = Handle<ConstantBufferTag, -1>;
     using VertexBufferHandle = Handle<VertexBufferTag, -1>;
@@ -244,6 +246,24 @@ namespace gfx {
 
     namespace cmd {
 
+        struct CreateTextureBuffer {
+            TextureBufferHandle handle;
+            Memory data;
+            uint size;
+            BufferUsage usage;
+        };
+        
+        struct UpdateTextureBuffer {
+            TextureBufferHandle handle;
+            Memory data;
+            uint offset;
+            uint size;
+        };
+
+        struct DeleteTextureBuffer {
+            TextureBufferHandle handle;
+        };
+
         struct CreateVertexLayout {
             VertexLayoutHandle handle;
             VertexDecl decl;
@@ -426,7 +446,10 @@ namespace gfx {
         cmd::DeleteTexture,
         cmd::DeleteVertexBuffer,
         cmd::CreateFence,
-        cmd::DeleteFence>;
+        cmd::DeleteFence,
+        cmd::CreateTextureBuffer,
+        cmd::UpdateTextureBuffer,
+        cmd::DeleteTextureBuffer>;
 
     using UniformData = std::variant<int, float,ivec2, ivec3, ivec4, vec2, vec3, vec4, mat3, mat4, Vector<float>, Vector<vec4>>;
     using UniformMap = HashMap<String, UniformData>;

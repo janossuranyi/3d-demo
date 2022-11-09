@@ -412,6 +412,7 @@ bool EngineTestEffect::Render()
 	renderer->setFrameBuffer(pass, fb);
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_LESS|gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
+	renderer->setVertexDecl(layout);
 	renderer->setTexure(0, skybox);
 	renderer->setVertexBuffer(vb_skybox);
 	renderer->setProgramVar("m_P", P);
@@ -427,6 +428,7 @@ bool EngineTestEffect::Render()
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, color_attachment);
 	renderer->setVertexBuffer(vb_pp);
+	renderer->setVertexDecl(layout);
 	renderer->setProgramVar("samp0", 0);
 	renderer->setProgramVar("g_offset", pp_offset);
 	renderer->setProgramVar("g_kernel", kernel);
@@ -437,6 +439,7 @@ bool EngineTestEffect::Render()
 	renderer->setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
+	renderer->setVertexDecl(layout);
 	renderer->setTexure(0, depth_attachment);
 	renderer->setVertexBuffer(vb_pp);
 	renderer->setProgramVar("samp0", 0);
@@ -454,6 +457,7 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setTexure(0, texDyn);
+	renderer->setVertexDecl(layout);
 	renderer->setVertexBuffer(vb_pp);
 	renderer->setProgramVar("samp0", 0);
 	scale = 0.2f;

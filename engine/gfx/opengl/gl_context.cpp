@@ -1,195 +1,12 @@
-#include "../common.h"
-#include "./handle.h"
-#include "./gl_context.h"
-#include "./vertex.h"
+#include "common.h"
+#include "gfx/handle.h"
+#include "gfx/vertex.h"
+#include "gfx/opengl/gl_context.h"
+#include "gfx/opengl/gl_helper.h"
 
 #include "logger.h"
 
-#include <SDL.h>
-#include <cassert>
-
-
 namespace gfx {
-
-
-	static GLbitfield MapBarrierBits(uint32_t bits)
-	{
-		uint32_t result = 0;
-
-		if (bits & barrier::AtomicCounter)
-			result |= GL_ATOMIC_COUNTER_BARRIER_BIT;
-		if (bits & barrier::BufferUpdate)
-			result |= GL_BUFFER_UPDATE_BARRIER_BIT;
-		if (bits & barrier::ClientMappedBuffer)
-			result |= GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT;
-		if (bits & barrier::FrameBuffer)
-			result |= GL_FRAMEBUFFER_BARRIER_BIT;
-		if (bits & barrier::QueryBuffer)
-			result |= GL_QUERY_BUFFER_BARRIER_BIT;
-		if (bits & barrier::ShaderImageAccess)
-			result |= GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
-		if (bits & barrier::TextureUpdate)
-			result |= GL_TEXTURE_UPDATE_BARRIER_BIT;
-		if (bits & barrier::TransformFeedback)
-			result |= GL_TRANSFORM_FEEDBACK_BARRIER_BIT;
-		if (bits & barrier::Uniform)
-			result |= GL_UNIFORM_BARRIER_BIT;
-
-		return result;
-	}
-
-	static const char* MapShaderStageTitle(ShaderStage type)
-	{
-		switch (type)
-		{
-		case ShaderStage::Compute:
-			return "Compute";
-		case ShaderStage::Vertex:
-			return "Vertex";
-		case ShaderStage::Geometry:
-			return "Geometry";
-		case ShaderStage::Fragment:
-			return "Fragment";
-		}
-
-		return "Unknown";
-	}
-
-	static void CheckOpenGLError(const char* stmt, const char* fname, int line)
-	{
-		GLenum err = glGetError();
-		if (err != GL_NO_ERROR)
-		{
-			Error("OpenGL error %08x, at %s:%i - for %s\n", err, fname, line, stmt);
-			abort();
-		}
-	}
-
-	static void GLAPIENTRY DebugMessageCallback(GLenum source,
-		GLenum type,
-		GLuint id,
-		GLenum severity,
-		GLsizei length,
-		const GLchar* message,
-		const GLvoid* userParam);
-
-#ifdef _DEBUG
-#define GL_FLUSH_ERRORS() while(glGetError() != GL_NO_ERROR) {}
-#define GL_CHECK(stmt) do { \
-            stmt; \
-            CheckOpenGLError(#stmt, __FILE__, __LINE__); \
-        } while (0)
-#else
-#define GL_CHECK(stmt) stmt
-#define GL_FLUSH_ERRORS()
-#endif
-
-	static inline GLenum MapAttribType(const AttributeType type)
-	{
-		switch (type) {
-		case AttributeType::Byte:
-			return GL_BYTE;
-		case AttributeType::UByte:
-			return GL_UNSIGNED_BYTE;
-		case AttributeType::Short:
-			return GL_SHORT;
-		case AttributeType::UShort:
-			return GL_UNSIGNED_SHORT;
-		case AttributeType::Int:
-			return GL_INT;
-		case AttributeType::UInt:
-			return GL_UNSIGNED_INT;
-		case AttributeType::Half:
-			return GL_HALF_FLOAT;
-		default:
-			return GL_FLOAT;
-		}
-
-	}
-
-	static inline GLenum MapBufferUsage(const BufferUsage usage)
-	{
-		switch (usage) {
-		case BufferUsage::Static:
-			return GL_STATIC_DRAW;
-		case BufferUsage::Dynamic:
-			return GL_DYNAMIC_DRAW;
-		case BufferUsage::Stream:
-			return GL_STREAM_DRAW;
-		}
-
-		return GL_STATIC_DRAW;
-	};
-
-	static inline GLenum MapShaderStage(const ShaderStage type)
-	{
-		switch (type) {
-		case ShaderStage::Vertex:
-			return GL_VERTEX_SHADER;
-		case ShaderStage::Fragment:
-			return GL_FRAGMENT_SHADER;
-		case ShaderStage::Geometry:
-			return GL_GEOMETRY_SHADER;
-		case ShaderStage::Compute:
-			return GL_COMPUTE_SHADER;
-		}
-
-		return GL_VERTEX_SHADER;
-	}
-
-	static GLenum MapTextureShape(TextureShape shape)
-	{
-		switch (shape) {
-		case TextureShape::D1:
-			return GL_TEXTURE_1D;
-		case TextureShape::D2:
-			return GL_TEXTURE_2D;
-		case TextureShape::D3:
-			return GL_TEXTURE_3D;
-		case TextureShape::CubeMap:
-			return GL_TEXTURE_CUBE_MAP;
-		}
-	}
-
-	static GLenum MapDrawMode(PrimitiveType p)
-	{
-		switch (p)
-		{
-		case PrimitiveType::Lines:
-			return GL_LINES;
-		case PrimitiveType::LineLoop:
-			return GL_LINE_LOOP;
-		case PrimitiveType::LineStrip:
-			return GL_LINE_STRIP;
-		case PrimitiveType::Point:
-			return GL_POINTS;
-		case PrimitiveType::Triangles:
-			return GL_TRIANGLES;
-		case PrimitiveType::TriangleFan:
-			return GL_TRIANGLE_FAN;
-		case PrimitiveType::TriangleStrip:
-			return GL_TRIANGLE_STRIP;
-		}
-	}
-
-	static GLenum MapAccess(Access a)
-	{
-		switch (a)
-		{
-		case Access::Read:		return GL_READ_ONLY;
-		case Access::Write:		return GL_WRITE_ONLY;
-		case Access::ReadWrite:	return GL_READ_WRITE;
-		}
-	}
-
-	// GL TextureFormatInfo.
-	struct TextureFormatInfo {
-		GLenum internal_format;
-		GLenum internal_format_srgb;
-		GLenum format;
-		GLenum type;
-		bool supported;
-	};
 
 	TextureFormatInfo s_texture_format[] = {
 		{GL_ALPHA,              GL_ZERO,         GL_ALPHA,            GL_UNSIGNED_BYTE,                false}, // A8
@@ -250,14 +67,14 @@ namespace gfx {
 		{GL_STENCIL_INDEX8,     GL_ZERO,         GL_STENCIL_INDEX,    GL_UNSIGNED_BYTE,                false}, // D0S8
 	};
 
-	static const std::unordered_map<BlendEquation, GLenum> s_blend_equation_map = {
+	const std::unordered_map<BlendEquation, GLenum> s_blend_equation_map = {
 		{BlendEquation::Add, GL_FUNC_ADD},
 		{BlendEquation::Subtract, GL_FUNC_SUBTRACT},
 		{BlendEquation::ReverseSubtract, GL_FUNC_REVERSE_SUBTRACT},
 		{BlendEquation::Min, GL_MIN},
 		{BlendEquation::Max, GL_MAX}
 	};
-	static const std::unordered_map<BlendFunc, GLenum> s_blend_func_map = {
+	const std::unordered_map<BlendFunc, GLenum> s_blend_func_map = {
 		{BlendFunc::Zero, GL_ZERO},
 		{BlendFunc::One, GL_ONE},
 		{BlendFunc::SrcColor, GL_SRC_COLOR},
@@ -274,20 +91,20 @@ namespace gfx {
 		{BlendFunc::OneMinusConstantAlpha, GL_ONE_MINUS_CONSTANT_ALPHA},
 		{BlendFunc::SrcAlphaSaturate, GL_SRC_ALPHA_SATURATE},
 	};
-	static const std::unordered_map<TextureWrap, GLenum> s_texture_wrap_map = {
+	const std::unordered_map<TextureWrap, GLenum> s_texture_wrap_map = {
 		{TextureWrap::ClampToBorder, GL_CLAMP_TO_BORDER},
 		{TextureWrap::ClampToEdge, GL_CLAMP_TO_EDGE},
 		{TextureWrap::MirroredRepeat, GL_MIRRORED_REPEAT},
 		{TextureWrap::Repeat, GL_REPEAT}
 	};
-	static const std::unordered_map<TextureFilter, GLenum> s_texture_filter_map = {
+
+	const std::unordered_map<TextureFilter, GLenum> s_texture_filter_map = {
 		{TextureFilter::Linear, GL_LINEAR},
 		{TextureFilter::LinearNearest, GL_LINEAR_MIPMAP_NEAREST},
 		{TextureFilter::Nearest, GL_NEAREST},
 		{TextureFilter::NearestLinear, GL_NEAREST_MIPMAP_LINEAR},
 		{TextureFilter::LinearLinear, GL_LINEAR_MIPMAP_LINEAR}
 	};
-
 	class UniformBinder {
 	public:
 		UniformBinder() : uniform_location_{ 0 } {
@@ -363,58 +180,6 @@ namespace gfx {
 		return window_.stencilBits;
 	}
 
-	void OpenGLRenderContext::operator()(const cmd::CreateConstantBuffer& cmd)
-	{
-		if (constant_buffer_map_.count(cmd.handle) > 0)
-			return;
-
-		GLuint buffer = static_cast<GLuint>(0xffff);
-		const GLenum _usage = MapBufferUsage(cmd.usage);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-		assert(buffer != 0xffff);
-
-		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
-
-		GL_CHECK(glBindBuffer(GL_UNIFORM_BUFFER, buffer));
-		if (cmd.data.data())
-			GL_CHECK(glBufferData(GL_UNIFORM_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
-		else
-			GL_CHECK(glBufferData(GL_UNIFORM_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
-
-		constant_buffer_map_.emplace(cmd.handle, ConstantBufferData{ buffer, _size, cmd.usage });
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::UpdateConstantBuffer& cmd)
-	{
-		if (cmd.data.data() == nullptr)
-			return;
-
-		const auto result = constant_buffer_map_.find(cmd.handle);
-		if (result == constant_buffer_map_.end())
-			return;
-
-		const auto& data = result->second;
-		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
-		GL_CHECK(glBindBuffer(GL_UNIFORM_BUFFER, data.buffer));
-		GL_CHECK(glBufferSubData(GL_UNIFORM_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteConstantBuffer& cmd)
-	{
-		const auto result = constant_buffer_map_.find(cmd.handle);
-		if (result == constant_buffer_map_.end())
-			return;
-
-		const auto& data = result->second;
-
-		GL_CHECK(glDeleteBuffers(1, &data.buffer));
-		constant_buffer_map_.erase(cmd.handle);
-#ifdef _DEBUG
-		Info("Uniform buffer %d deleted", cmd.handle);
-#endif
-
-	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateFence& cmd)
 	{
@@ -428,437 +193,6 @@ namespace gfx {
 		GL_CHECK(glDeleteSync(sync));
 
 		fence_map_.erase(cmd.handle);
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteVertexLayout& cmd)
-	{
-		auto& vao = vertex_array_map_.find(cmd.handle);
-		if (vao == std::end(vertex_array_map_))
-		{
-			return;
-		}
-
-		if (active_vertex_layout_ == cmd.handle)
-		{
-			GL_CHECK(glBindVertexArray(0));
-			active_vertex_layout_ = VertexLayoutHandle{};
-		}
-		GL_CHECK(glDeleteVertexArrays(1, &vao->second));
-
-		vertex_array_map_.erase(cmd.handle);
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateVertexLayout& cmd)
-	{
-		if (cmd.decl.empty() || vertex_array_map_.count(cmd.handle) > 0) {
-			return;
-		}
-
-		GLuint vao;
-		GL_CHECK(glGenVertexArrays(1, &vao));
-		GL_CHECK(glBindVertexArray(vao));
-		for (uint i = 0; i < cmd.decl.attributes().size(); ++i)
-		{
-			const auto& attr = cmd.decl.attributes()[i];
-			GLenum type = MapAttribType(attr.type);
-			GL_CHECK(glEnableVertexAttribArray(i));
-			GL_CHECK(glVertexAttribFormat(i, attr.count, type, attr.normalized ? GL_TRUE : GL_FALSE, attr.offset));
-			GL_CHECK(glVertexAttribBinding(i, attr.binding));
-		}
-
-		GL_CHECK(glBindVertexArray(0));
-		for (uint i = 0; i < cmd.decl.attributes().size(); ++i)
-		{
-			GL_CHECK(glDisableVertexAttribArray(i));
-		}
-
-		vertex_array_map_.emplace(cmd.handle, vao);
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
-	{
-		if (vertex_buffer_map_.count(cmd.handle) > 0)
-			return;
-
-		GLuint buffer = static_cast<GLuint>(0xffff);
-		const GLenum _usage = MapBufferUsage(cmd.usage);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-		assert(buffer != 0xffff);
-
-		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
-
-		GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-		if (cmd.data.data())
-			GL_CHECK(glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
-		else
-			GL_CHECK(glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
-
-		vertex_buffer_map_.emplace(cmd.handle, VertexBufferData{ buffer, _size, cmd.usage });
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::UpdateVertexBuffer& cmd)
-	{
-		if (cmd.data.data() == nullptr)
-			return;
-
-		const auto result = vertex_buffer_map_.find(cmd.handle);
-		if (result == vertex_buffer_map_.end())
-			return;
-
-		const auto& data = result->second;
-		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
-		GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, data.buffer));
-		GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteVertexBuffer& cmd)
-	{
-		const auto result = vertex_buffer_map_.find(cmd.handle);
-		if (result == vertex_buffer_map_.end())
-			return;
-
-		const auto& data = result->second;
-
-		GL_CHECK(glDeleteBuffers(1, &data.buffer));
-		vertex_buffer_map_.erase(cmd.handle);
-
-#ifdef _DEBUG
-		Info("Vertex buffer %d deleted", cmd.handle);
-#endif
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateIndexBuffer& cmd)
-	{
-		const auto result = index_buffer_map_.find(cmd.handle);
-		if (result != index_buffer_map_.end())
-			return;
-
-		GLuint buffer = static_cast<GLuint>(0xffff);
-		const GLenum _usage = MapBufferUsage(cmd.usage);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-		assert(buffer != 0xffff);
-
-		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
-
-		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer));
-		if (cmd.data.data())
-			GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
-		else
-			GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
-
-		index_buffer_map_.emplace(cmd.handle, IndexBufferData{ buffer, _size, cmd.usage, cmd.type });
-
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::UpdateIndexBuffer& cmd)
-	{
-		if (cmd.data.data() == nullptr)
-			return;
-
-		const auto result = index_buffer_map_.find(cmd.handle);
-		const auto& data = result->second;
-		const GLsizeiptr size = data.size > 0 ? GLsizeiptr(data.size) : cmd.data.size();
-		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,		data.buffer));
-		GL_CHECK(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER,	GLintptr(cmd.offset), size, cmd.data.data()));
-
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteIndexBuffer& cmd)
-	{
-		const auto result = index_buffer_map_.find(cmd.handle);
-		GL_CHECK(glDeleteBuffers(1, &result->second.buffer));
-		index_buffer_map_.erase(cmd.handle);
-
-#ifdef _DEBUG
-		Info("Uniform buffer %d deleted", cmd.handle);
-#endif
-
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateShader& cmd)
-	{
-		if (shader_map_.count(cmd.handle) > 0)
-			return;
-
-		GLuint shader = 0xffff;
-		GL_CHECK(shader = glCreateShader(MapShaderStage(cmd.stage)));
-		
-		assert(shader != 0xffff);
-
-		const GLchar* tmp = cmd.source.c_str();
-		GL_CHECK(glShaderSource(shader, 1, &tmp, nullptr));
-
-		GLint result = GL_FALSE;
-
-		GL_CHECK(glCompileShader(shader));
-		GL_CHECK(glGetShaderiv(shader, GL_COMPILE_STATUS, &result));
-
-		if (result == GL_FALSE)
-		{
-			GLint infologLen;
-			GL_CHECK(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infologLen));
-			if (infologLen > 0) {
-				std::vector<char> logBuf(infologLen);
-				GL_CHECK(glGetShaderInfoLog(shader, infologLen, nullptr, logBuf.data()));
-				const char* sType = MapShaderStageTitle(cmd.stage);
-				Error("%s shader compilation failed: %s", sType, logBuf.data());
-			}
-
-			GL_CHECK(glDeleteShader(shader));
-			return;
-		}
-
-		shader_map_.emplace(cmd.handle, ShaderData{ shader, cmd.source, cmd.stage, true });
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteShader& cmd)
-	{
-		auto result = shader_map_.find(cmd.handle);
-		GL_CHECK(glDeleteShader(result->second.shader));
-		shader_map_.erase(cmd.handle);
-
-#ifdef _DEBUG
-		Info("Shader %d deleted", cmd.handle);
-#endif
-
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateProgram& cmd)
-	{
-		GLuint program;
-		GL_CHECK(program = glCreateProgram());
-		if (program)
-		{
-			const ProgramData data = { program, false, {}};
-			program_map_.emplace(cmd.handle, data);
-		}
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::LinkProgram& cmd)
-	{
-		auto& p_data = program_map_.at(cmd.handle);
-		for (auto& s_handle : cmd.shaders)
-		{
-			auto& s_data = shader_map_.find(s_handle);
-			if (s_data == std::end(shader_map_))
-			{
-				return;
-			}
-			GL_CHECK(glAttachShader(p_data.program, s_data->second.shader));
-		}
-
-		p_data.linked = false;
-		GL_CHECK(glLinkProgram(p_data.program));
-		GLint result = GL_FALSE;
-
-		GL_CHECK(glGetProgramiv(p_data.program, GL_LINK_STATUS, &result));
-
-		if (result == GL_FALSE)
-		{
-			GLint infologLen;
-			GL_CHECK(glGetProgramiv(p_data.program, GL_INFO_LOG_LENGTH, &infologLen));
-			if (infologLen > 0) {
-				std::vector<char> logBuf(infologLen);
-				GL_CHECK(glGetProgramInfoLog(p_data.program, infologLen, nullptr, logBuf.data()));
-				Error("Linking of shader program failed: %s", logBuf.data());
-			}
-		}
-		else
-		{
-			p_data.linked = true;
-		}
-
-		for (auto& s_handle : cmd.shaders)
-		{
-			auto& s_data = shader_map_.at(s_handle);
-			GL_CHECK(glDetachShader(p_data.program, s_data.shader));
-		}
-
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteProgram& cmd)
-	{
-		auto& p_data = program_map_.at(cmd.handle);
-		GL_CHECK(glDeleteProgram(p_data.program));
-		program_map_.erase(cmd.handle);
-
-#ifdef _DEBUG
-		Info("Program %d deleted", cmd.handle);
-#endif
-
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateTexture1D& cmd) {}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteTexture& cmd) 
-	{
-		auto& t_data = texture_map_.at(cmd.handle);
-		GL_CHECK(glDeleteTextures(1, &t_data.texture));
-		texture_map_.erase(cmd.handle);
-
-#ifdef _DEBUG
-		Info("Texture %d deleted", cmd.handle);
-#endif
-
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateTexture2D& cmd)
-	{
-		GLuint texture;
-		const GLenum target = GL_TEXTURE_2D;
-		GL_CHECK(glGenTextures(1, &texture));
-		GL_CHECK(glBindTexture(target, texture));
-		auto& texinfo = s_texture_format[static_cast<int>( cmd.format )];
-
-		GL_CHECK(glTexImage2D(target, 0, 
-			(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format), 
-			cmd.width, 
-			cmd.height, 
-			0, 
-			texinfo.format, 
-			texinfo.type, 
-			cmd.data.data()));
-
-		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
-		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
-		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
-
-		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));
-		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
-		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
-		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
-
-		if (cmd.mipmap)
-		{
-			GL_CHECK(glGenerateMipmap(target));
-		}
-		GL_CHECK(glBindTexture(target, 0));
-
-		const TextureData t_data{ texture, target, cmd.format };
-		texture_map_.emplace(cmd.handle, t_data);
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateTextureCubeMap& cmd)
-	{
-		GLuint texture;
-		const GLenum target = GL_TEXTURE_CUBE_MAP;
-		GL_CHECK(glGenTextures(1, &texture));
-		GL_CHECK(glBindTexture(target, texture));
-		auto& texinfo = s_texture_format[static_cast<int>(cmd.format)];
-		for (unsigned int face = 0; face < 6; ++face) {
-			GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
-				(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format),
-				cmd.width,
-				cmd.height,
-				0,
-				texinfo.format,
-				texinfo.type,
-				cmd.data[face].data()));
-		}
-		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
-		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
-		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
-
-		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));
-		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
-		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
-		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
-		if (cmd.mipmap)
-		{ 
-			GL_CHECK(glGenerateMipmap(target));
-		}
-		GL_CHECK(glBindTexture(target, 0));
-
-		const TextureData t_data{ texture, target };
-		texture_map_.emplace(cmd.handle, t_data);
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateFramebuffer& cmd)
-	{
-		if (frame_buffer_map_.count(cmd.handle) > 0)
-			return;
-
-		FrameBufferData fb_data;
-
-		fb_data.width = cmd.width;
-		fb_data.height = cmd.height;
-
-		GL_CHECK(glGenFramebuffers(1, &fb_data.frame_buffer));
-		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
-		std::vector<GLenum> draw_buffers;
-		int attachment{ 0 };
-		for (auto& fb_texture : cmd.textures)
-		{
-			const auto& gl_texture = texture_map_.find(fb_texture);
-			assert(gl_texture != texture_map_.end());
-
-			draw_buffers.emplace_back(GL_COLOR_ATTACHMENT0 + attachment++);
-			GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), GL_TEXTURE_2D, gl_texture->second.texture, 0));
-		}
-		GL_CHECK(glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
-
-		if (cmd.depth_stencil_texture.isValid())
-		{
-			auto& depth = texture_map_.at(cmd.depth_stencil_texture);
-			// Stencil only
-			if (depth.format == TextureFormat::D0S8)
-			{
-				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
-			}
-			// depth only
-			else if (
-				depth.format == TextureFormat::D16 ||
-				depth.format == TextureFormat::D16F ||
-				depth.format == TextureFormat::D24 ||
-				depth.format == TextureFormat::D24F ||
-				depth.format == TextureFormat::D32 ||
-				depth.format == TextureFormat::D32F)
-			{
-				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
-			}
-			else // depth+stencil
-			{
-				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
-			}
-		}
-		else
-		{
-			// Create depth buffer.
-			GL_CHECK(glGenRenderbuffers(1, &fb_data.depth_render_buffer));
-			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
-			GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
-			GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
-				fb_data.depth_render_buffer));
-		}
-
-		// Check frame buffer status.
-		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			Error("[CreateFrameBuffer] The framebuffer is not complete. Status: 0x%x", status);
-		}
-
-		// Unbind.
-		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-
-		// Add to map.
-		frame_buffer_map_.emplace(cmd.handle, fb_data);
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteFramebuffer& cmd)
-	{
-		if (frame_buffer_map_.count(cmd.handle) == 0)
-		{
-			return;
-		}
-
-		auto& fbData = frame_buffer_map_.at(cmd.handle);
-		GL_CHECK(glDeleteFramebuffers(1, &fbData.frame_buffer));
-		GL_CHECK(glDeleteRenderbuffers(1, &fbData.depth_render_buffer));
-#ifdef _DEBUG
-		Info("Framebuffer %d deleted", cmd.handle);
-#endif
 	}
 
 	bool OpenGLRenderContext::create_window(uint16_t w, uint16_t h, bool fullscreen, const std::string& name) {
@@ -1035,28 +369,27 @@ namespace gfx {
 
 	void OpenGLRenderContext::setup_textures(const TextureBindings& textures)
 	{
-		static Array<TextureHandle, MAX_TEXTURE_SAMPLERS> cache_;
-
-		for (int j = 0; j < textures.size(); ++j) {
+		for (uint j = 0; j < textures.size(); ++j)
+		{
 			if (textures[j].handle.isValid())
 			{
-				if (cache_[j] != textures[j].handle)
+				if (active_textures_[j] != textures[j].handle)
 				{
+					active_textures_[j] = textures[j].handle;
 					const TextureData& tdata = texture_map_.at(textures[j].handle);
-					if (GLEW_EXT_direct_state_access)
-					{
-						GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + j, tdata.target, tdata.texture));
-					}
-					else if (GLEW_ARB_direct_state_access)
+					if (GLEW_VERSION_4_5 || GLEW_ARB_direct_state_access)
 					{
 						GL_CHECK(glBindTextureUnit(j, tdata.texture));
+					}
+					else if (GLEW_EXT_direct_state_access)
+					{
+						GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + j, tdata.target, tdata.texture));
 					}
 					else
 					{
 						GL_CHECK(glActiveTexture(GL_TEXTURE0 + j));
 						GL_CHECK(glBindTexture(tdata.target, tdata.texture));
 					}
-					cache_[j] = tdata.texture;
 				}
 			}
 		}
@@ -1076,10 +409,11 @@ namespace gfx {
 			else {
 				GL_CHECK(uniform_location = glGetUniformLocation(program_data.program, cb.first.c_str()));
 				program_data.uniform_location_map.emplace(cb.first, uniform_location);
-
+#ifdef _DEBUG
 				if (uniform_location == -1) {
 					Warning("Uniform variable %s not found!!!", cb.first.c_str());
 				}
+#endif
 			}
 
 			if (uniform_location == -1) continue;
@@ -1134,15 +468,18 @@ namespace gfx {
 			setup_uniforms(program_data, item->uniforms);
 			setup_textures(item->textures);
 
-			for (int k = 0; k < item->images.size(); ++k)
+			assert(item->images.size() <= MAX_IMAGE_UNITS);
+			for (uint k = 0; k < item->images.size(); ++k)
 			{
-				auto& img = item->images[k];
+				const auto& img = item->images[k];
 				if (img.handle.isValid())
 				{
-					const TextureData& tdata = texture_map_.at(img.handle);
-					GL_CHECK(
-						glBindImageTexture(k, tdata.texture, img.level, img.layered, img.layer, MapAccess(img.access), s_texture_format[static_cast<size_t>(img.format)].internal_format)
-					);
+					const auto& tdata = texture_map_.at(img.handle);
+					if (active_imagetexes_[k] != img.handle)
+					{
+						active_imagetexes_[i] = img.handle;
+						GL_CHECK(glBindImageTexture(k, tdata.texture, img.level, img.layered, img.layer, MapAccess(img.access), s_texture_format[static_cast<size_t>(img.format)].internal_format) );
+					}
 				}
 			}
 
@@ -1224,11 +561,15 @@ namespace gfx {
 					scissor_test_ = false;
 					GL_CHECK(glDisable(GL_SCISSOR_TEST));
 				}
-				GL_CHECK(glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a));
+				if (active_clear_color_ != pass.clear_color)
+				{
+					GL_CHECK(glClearColor(pass.clear_color.r, pass.clear_color.g, pass.clear_color.b, pass.clear_color.a));
+					active_clear_color_ = pass.clear_color;
+				}
 				GL_CHECK(glClear(clear_bits));
 			}
 
-			for (auto i = 0; i < pass.render_items.size(); ++i)
+			for (uint i = 0; i < pass.render_items.size(); ++i)
 			{
 				auto* prev = i < 0 ? &pass.render_items[i - 1] : nullptr;
 				auto* item = &pass.render_items[i];
@@ -1285,7 +626,7 @@ namespace gfx {
 				bool layout_change = false;
 				if (vb_change)
 				{
-					if (GLEW_ARB_vertex_attrib_binding)
+					if (GLEW_VERSION_4_3 || GLEW_ARB_vertex_attrib_binding)
 					{
 						/* change layout if needed */
 						if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
@@ -1319,7 +660,7 @@ namespace gfx {
 					{
 						active_vertex_decl_ = item->vertexDecl;
 						ushort active_binding = 0xffff;
-						for (uint j = 0; j < active_vertex_decl_.attributes().size(); ++j)
+						for (uint j = 0; j < active_vertex_decl_.size(); ++j)
 						{
 							const auto& attr = active_vertex_decl_.attributes()[j];
 							if (attr.binding != active_binding)
