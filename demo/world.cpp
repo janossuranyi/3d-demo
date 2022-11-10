@@ -129,12 +129,12 @@ bool World::loadWorld(const std::string& filename)
 		{
 			entityType = Entity3D::Type::MESH;
 		}
-		for(auto& ext : node.extensions)
+		for(auto& ext_ : node.extensions)
 		{
-			if (ext.first == "KHR_lights_punctual")
+			if (ext_.first == "KHR_lights_punctual")
 			{
 				entityType = Entity3D::Type::LIGHT;
-				light = ext.second.GetNumberAsInt();
+				light = ext_.second.GetNumberAsInt();
 			}
 		}
 
@@ -166,14 +166,14 @@ bool World::loadWorld(const std::string& filename)
 		
 		if (mat.extensions.size())
 		{
-			for (auto& ext : mat.extensions)
+			for (auto& ext_ : mat.extensions)
 			{
-				if (ext.first == "KHR_materials_pbrSpecularGlossiness")
+				if (ext_.first == "KHR_materials_pbrSpecularGlossiness")
 				{
 					m.type = Material::Type::PBR_SPECULAR_GLOSSINESS;
-					for (const auto& key : ext.second.Keys())
+					for (const auto& key : ext_.second.Keys())
 					{
-						auto& val = ext.second.Get(key);
+						auto& val = ext_.second.Get(key);
 						if (key == "diffuseFactor")
 						{
 							m.pbrSpecularGlossiness.diffuseFactor[0] = static_cast<float>(val.Get(0).GetNumberAsDouble());

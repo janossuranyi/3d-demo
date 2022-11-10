@@ -1,3 +1,4 @@
+#include "gfx/vertex.h"
 #include "gfx/renderer.h"
 
 namespace gfx {
@@ -10,12 +11,14 @@ namespace gfx {
 	VertexDecl& VertexDecl::begin()
 	{ 
 		attributes_.clear();
+		offset_ = 0;
+
 		return *this; 
 	}
 
 	VertexDecl& VertexDecl::end() { return *this; }
 
-	VertexDecl& VertexDecl::reset_offset()
+	VertexDecl& VertexDecl::switch_buffer()
 	{
 		offset_ = 0;
 
@@ -32,10 +35,10 @@ namespace gfx {
 		return attributes_;
 	}
 
-	VertexDecl& VertexDecl::add(AttributeName name, AttributeType type, ushort count, bool normalized, ushort stride, ushort binding, ushort divisor)
+	VertexDecl& VertexDecl::add(AttributeName name, AttributeType type, ushort count, bool normalized, ushort stride, bool enabled, ushort binding, ushort divisor)
 	{
 		const ushort size = getTypeSize(type);
-		attributes_.emplace_back(VertexAttribute{ name,type,count,offset_,normalized,divisor,binding,stride });
+		attributes_.emplace_back(VertexAttribute{ name,type,count,offset_,normalized,divisor,binding,stride,enabled });
 		offset_ += size * count;
 
 		return *this;
@@ -50,7 +53,12 @@ namespace gfx {
 	{
 		return handle_;
 	}
-	
+
+	const VertexAttribute& VertexDecl::operator[](const size_t i) const
+	{
+		return attributes_[i];
+	}
+
 	ushort VertexDecl::getTypeSize(AttributeType type)
 	{
 		switch (type) {

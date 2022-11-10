@@ -4,7 +4,7 @@
 
 layout(location = 0) in vec4 in_Position;
 layout(location = 4) in vec4 in_Color;
-layout(location = 5) in float in_Instance;
+layout(location = 6) in float in_Instance;
 
 uniform mat4 m_W;
 uniform mat4 m_VP;

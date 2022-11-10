@@ -33,9 +33,10 @@ namespace gfx {
 		GL_CHECK(glBindVertexArray(vao));
 		for (uint i = 0; i < cmd.decl.size(); ++i)
 		{
-			const auto& attr = cmd.decl.attributes()[i];
+			const auto& attr = cmd.decl[i];
 			GLenum type = MapAttribType(attr.type);
-			GL_CHECK(glEnableVertexAttribArray(i));
+			if (attr.enabled) GL_CHECK(glEnableVertexAttribArray(i));
+			else GL_CHECK(glDisableVertexAttribArray(i));
 			GL_CHECK(glVertexAttribFormat(i, attr.count, type, attr.normalized ? GL_TRUE : GL_FALSE, attr.offset));
 			GL_CHECK(glVertexAttribBinding(i, attr.binding));
 		}

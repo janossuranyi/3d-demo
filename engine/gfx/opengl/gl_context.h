@@ -177,6 +177,8 @@ namespace gfx {
 		HashMap<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
 		HashMap<VertexLayoutHandle, GLuint> vertex_array_map_;
 
+		Set<String> gl_extensions_;
+
 		VertexDecl active_vertex_decl_{};
 
 		GLuint shared_vertex_array_{ 0 };
@@ -202,6 +204,16 @@ namespace gfx {
 		void compute(const RenderPass& pass);
 		void setup_uniforms(ProgramData& program_data, const UniformMap& uniforms);
 		void setup_textures(const TextureBindings& textures);
+
+		bool gl_version_430_{};
+		bool gl_version_450_{};
+
+		// extension exists cache
+		struct {
+			bool ARB_vertex_attrib_binding{};
+			bool ARB_direct_state_access{};
+			bool EXT_direct_state_access{};
+		} ext_;
 	};
 
 }

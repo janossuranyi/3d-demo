@@ -2467,13 +2467,13 @@ static void WriteToMemory_stbi(void *context, void *data, int size) {
 
 bool WriteImageData(const std::string *basepath, const std::string *filename,
                     Image *image, bool embedImages, void *fsPtr) {
-  const std::string ext = GetFilePathExtension(*filename);
+  const std::string ext_ = GetFilePathExtension(*filename);
 
   // Write image to temporary buffer
   std::string header;
   std::vector<unsigned char> data;
 
-  if (ext == "png") {
+  if (ext_ == "png") {
     if ((image->bits != 8) ||
         (image->pixel_type != TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)) {
       // Unsupported pixel format
@@ -2486,7 +2486,7 @@ bool WriteImageData(const std::string *basepath, const std::string *filename,
       return false;
     }
     header = "data:image/png;base64,";
-  } else if (ext == "jpg") {
+  } else if (ext_ == "jpg") {
       return false;
     /*
     if (!stbi_write_jpg_to_func(WriteToMemory_stbi, &data, image->width,
@@ -2496,7 +2496,7 @@ bool WriteImageData(const std::string *basepath, const std::string *filename,
     }
     header = "data:image/jpeg;base64,";
    */
-  } else if (ext == "bmp") {
+  } else if (ext_ == "bmp") {
     if (!stbi_write_bmp_to_func(WriteToMemory_stbi, &data, image->width,
                                 image->height, image->component,
                                 &image->image[0])) {
@@ -2794,22 +2794,22 @@ static void UpdateImageObject(Image &image, std::string &baseDir, int index,
                               WriteImageDataFunction *WriteImageData = nullptr,
                               void *user_data = nullptr) {
   std::string filename;
-  std::string ext;
+  std::string ext_;
   // If image has uri, use it it as a filename
   if (image.uri.size()) {
     filename = GetBaseFilename(image.uri);
-    ext = GetFilePathExtension(filename);
+    ext_ = GetFilePathExtension(filename);
   } else if (image.bufferView != -1) {
     // If there's no URI and the data exists in a buffer,
     // don't change properties or write images
   } else if (image.name.size()) {
-    ext = MimeToExt(image.mimeType);
+    ext_ = MimeToExt(image.mimeType);
     // Otherwise use name as filename
-    filename = image.name + "." + ext;
+    filename = image.name + "." + ext_;
   } else {
-    ext = MimeToExt(image.mimeType);
+    ext_ = MimeToExt(image.mimeType);
     // Fallback to index of image as filename
-    filename = std::to_string(index) + "." + ext;
+    filename = std::to_string(index) + "." + ext_;
   }
 
   // If callback is set, modify image data object

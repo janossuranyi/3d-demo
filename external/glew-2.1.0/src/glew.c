@@ -16222,7 +16222,7 @@ static GLenum GLEWAPIENTRY glewContextInit ()
     GLint i;
     PFNGLGETINTEGERVPROC getIntegerv;
     PFNGLGETSTRINGIPROC getStringi;
-    const char *ext;
+    const char *ext_;
     GLboolean *enable;
 
     #ifdef _WIN32
@@ -16239,15 +16239,15 @@ static GLenum GLEWAPIENTRY glewContextInit ()
     if (getStringi)
       for (i = 0; i<n; ++i)
       {
-        ext = (const char *) getStringi(GL_EXTENSIONS, i);
+        ext_ = (const char *) getStringi(GL_EXTENSIONS, i);
 
         /* Based on extension string(s), glewGetExtension purposes */
-        enable = _glewGetExtensionString(ext);
+        enable = _glewGetExtensionString(ext_);
         if (enable)
           *enable = GL_TRUE;
 
         /* Based on extension string(s), experimental mode, glewIsSupported purposes */
-        enable = _glewGetExtensionEnable(ext);
+        enable = _glewGetExtensionEnable(ext_);
         if (enable)
           *enable = GL_TRUE;
       }
@@ -16258,7 +16258,7 @@ static GLenum GLEWAPIENTRY glewContextInit ()
     const char *end;
     const char *i;
     const char *j;
-    char ext[128];
+    char ext_[128];
     GLboolean *enable;
 
     extensions = (const char *) getString(GL_EXTENSIONS);
@@ -16272,17 +16272,17 @@ static GLenum GLEWAPIENTRY glewContextInit ()
         j = _glewNextSpace(i);
 
         /* Copy extension into NUL terminated string */
-        if (j-i >= (ptrdiff_t) sizeof(ext))
+        if (j-i >= (ptrdiff_t) sizeof(ext_))
           continue;
-        _glewStrCopy(ext, i, ' ');
+        _glewStrCopy(ext_, i, ' ');
 
         /* Based on extension string(s), glewGetExtension purposes */
-        enable = _glewGetExtensionString(ext);
+        enable = _glewGetExtensionString(ext_);
         if (enable)
           *enable = GL_TRUE;
 
         /* Based on extension string(s), experimental mode, glewIsSupported purposes */
-        enable = _glewGetExtensionEnable(ext);
+        enable = _glewGetExtensionEnable(ext_);
         if (enable)
           *enable = GL_TRUE;
       }

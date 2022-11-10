@@ -105,6 +105,50 @@ namespace gfx {
 		{TextureFilter::NearestLinear, GL_NEAREST_MIPMAP_LINEAR},
 		{TextureFilter::LinearLinear, GL_LINEAR_MIPMAP_LINEAR}
 	};
+
+	class VertexAttribSetter {
+	public:
+		VertexAttribSetter() : attrib_index_(0) {}
+		~VertexAttribSetter() = default;
+
+		void operator()(const int& value) {
+			GL_CHECK(glVertexAttribI1i(attrib_index_, value));
+		}
+		void operator()(const uint& value) {
+			GL_CHECK(glVertexAttribI1ui(attrib_index_, value));
+		}
+		void operator()(const float& value) {
+			GL_CHECK(glVertexAttrib1f(attrib_index_, value));
+		}
+		void operator()(const ivec2& value) {
+			GL_CHECK(glVertexAttribI2iv(attrib_index_, &value[0]));
+		}
+		void operator()(const ivec3& value) {
+			GL_CHECK(glVertexAttribI3iv(attrib_index_, &value[0]));
+		}
+		void operator()(const ivec4& value) {
+			GL_CHECK(glVertexAttribI4iv(attrib_index_, &value[0]));
+		}
+		void operator()(const vec2& value) {
+			GL_CHECK(glVertexAttrib2fv(attrib_index_, &value[0]));
+		}
+		void operator()(const vec3& value) {
+			GL_CHECK(glVertexAttrib3fv(attrib_index_, &value[0]));
+		}
+		void operator()(const vec4& value) {
+			GL_CHECK(glVertexAttrib4fv(attrib_index_, &value[0]));
+		}
+
+		void update(GLint index, const VertexAttribData& value)
+		{
+			attrib_index_ = index;
+			std::visit(*this, value);
+		}
+
+	private:
+		GLuint attrib_index_;
+	};
+
 	class UniformBinder {
 	public:
 		UniformBinder() : uniform_location_{ 0 } {
@@ -273,18 +317,22 @@ namespace gfx {
 
 		Info("OpenGL extensions");
 		GLint numExts; glGetIntegerv(GL_NUM_EXTENSIONS, &numExts);
-		for (int ext = 0; ext < numExts; ++ext)
+		for (int ext_ = 0; ext_ < numExts; ++ext_)
 		{
-			const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, ext);
+			const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, ext_);
 			Info("%s", extension);
+			gl_extensions_.emplace(extension);
 		}
 		const float gl_version = float(atof(version.c_str()));
 		glVersion_ = int(gl_version * 100);
 
+		gl_version_430_ = glVersion_ >= 430;
+		gl_version_450_ = glVersion_ >= 450;
+
 		if (glVersion_ < 450)
 		{
-			Error("Sorry, I need at least OpenGL 4.5");
-			return false;
+			Warning("GL_VERSION < 4.5");
+			//return false;
 		}
 
 		SDL_version ver;
@@ -305,7 +353,7 @@ namespace gfx {
 		glDisable(GL_FRAMEBUFFER_SRGB);
 
 #ifdef _DEBUG
-		if (GLEW_ARB_debug_output)
+		if (gl_extensions_.count("GL_ARB_debug_output"))
 		{
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 
@@ -335,6 +383,11 @@ namespace gfx {
 		GL_CHECK(glDepthMask(GL_TRUE));
 		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &gl_max_vertex_attribs_);
 
+
+		ext_.ARB_vertex_attrib_binding = gl_extensions_.count("GL_ARB_vertex_attrib_binding");
+		ext_.ARB_direct_state_access = gl_extensions_.count("GL_ARB_direct_state_access");
+		ext_.EXT_direct_state_access = gl_extensions_.count("GL_EXT_direct_state_access");
+
 		SDL_GL_MakeCurrent(windowHandle_, NULL);
 
 		return true;
@@ -360,6 +413,7 @@ namespace gfx {
 	void OpenGLRenderContext::start_rendering()
 	{
 		SDL_GL_MakeCurrent(windowHandle_, glcontext_);
+		//glewInit();
 	}
 
 	void OpenGLRenderContext::stop_rendering()
@@ -377,11 +431,11 @@ namespace gfx {
 				{
 					active_textures_[j] = textures[j].handle;
 					const TextureData& tdata = texture_map_.at(textures[j].handle);
-					if (GLEW_VERSION_4_5 || GLEW_ARB_direct_state_access)
+					if (gl_version_450_ || ext_.ARB_direct_state_access)
 					{
 						GL_CHECK(glBindTextureUnit(j, tdata.texture));
 					}
-					else if (GLEW_EXT_direct_state_access)
+					else if (ext_.EXT_direct_state_access)
 					{
 						GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + j, tdata.target, tdata.texture));
 					}
@@ -626,7 +680,7 @@ namespace gfx {
 				bool layout_change = false;
 				if (vb_change)
 				{
-					if (glVersion_ >= 430 || GLEW_ARB_vertex_attrib_binding)
+					if (gl_version_430_ || ext_.ARB_vertex_attrib_binding)
 					{
 						/* change layout if needed */
 						if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
@@ -640,7 +694,7 @@ namespace gfx {
 
 						for (uint j = 0; j < active_vertex_decl_.size(); ++j)
 						{
-							const auto& attr = active_vertex_decl_.attributes()[j];
+							const auto& attr = active_vertex_decl_[j];
 							if (active_vbs_[attr.binding] == item->vbs[attr.binding]) { continue; };
 
 							const auto& binding = item->vbs[attr.binding];
@@ -662,7 +716,7 @@ namespace gfx {
 						ushort active_binding = 0xffff;
 						for (uint j = 0; j < active_vertex_decl_.size(); ++j)
 						{
-							const auto& attr = active_vertex_decl_.attributes()[j];
+							const auto& attr = active_vertex_decl_[j];
 							if (attr.binding != active_binding)
 							{
 								active_binding = attr.binding;
@@ -675,12 +729,19 @@ namespace gfx {
 								}
 							}
 							const GLenum type = MapAttribType(attr.type);
-							GL_CHECK(glEnableVertexAttribArray(j));
+							if (attr.enabled) GL_CHECK(glEnableVertexAttribArray(j));
+							else GL_CHECK(glDisableVertexAttribArray(j));
 							GL_CHECK(glVertexAttribPointer(j, attr.count, type, (attr.normalized ? GL_TRUE : GL_FALSE), attr.stride, reinterpret_cast<void*>(attr.offset)));
 							GL_CHECK(glVertexAttribDivisor(j, attr.divisor));
 						}
 						//GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
 					}
+				}
+
+				VertexAttribSetter vas;
+				for (const auto& e : item->vertexAttribs)
+				{
+					vas.update(e.first, e.second);
 				}
 
 				const GLenum mode = MapDrawMode(item->primitive_type);

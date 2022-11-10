@@ -17985,8 +17985,8 @@ typedef const GLchar* (GLAPIENTRY * PFNGLERRORSTRINGREGALPROC) (GLenum error);
 #ifndef GL_REGAL_extension_query
 #define GL_REGAL_extension_query 1
 
-typedef GLboolean (GLAPIENTRY * PFNGLGETEXTENSIONREGALPROC) (const GLchar* ext);
-typedef GLboolean (GLAPIENTRY * PFNGLISSUPPORTEDREGALPROC) (const GLchar* ext);
+typedef GLboolean (GLAPIENTRY * PFNGLGETEXTENSIONREGALPROC) (const GLchar* ext_);
+typedef GLboolean (GLAPIENTRY * PFNGLISSUPPORTEDREGALPROC) (const GLchar* ext_);
 
 #define glGetExtensionREGAL GLEW_GET_FUN(__glewGetExtensionREGAL)
 #define glIsSupportedREGAL GLEW_GET_FUN(__glewIsSupportedREGAL)

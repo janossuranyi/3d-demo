@@ -80,7 +80,7 @@ namespace gfx {
 		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
 
 		char* mem{};
-		if (glVersion_ >= 450)
+		if (gl_version_450_)
 		{
 			mem = reinterpret_cast<char*>(glMapNamedBuffer(data.buffer, GL_WRITE_ONLY)); GLC();
 			if (mem) {

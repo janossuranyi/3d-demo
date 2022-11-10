@@ -1,4 +1,5 @@
 #include "gfx/renderer.h"
+#include "gfx/vertex.h"
 #include "gfx/opengl/gl_context.h"
 
 #include "logger.h"
@@ -43,10 +44,15 @@ namespace gfx {
 	}
 
 	bool Renderer::init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread) {
+
 		if (type != RendererType::OpenGL) {
 			Error("OpenGL only yet!!!");
 			return false;
 		}
+
+		width_ = width;
+		height_ = height;
+		window_title_ = title;
 
 		use_thread_ = use_thread;
 		shared_render_context_.reset(new OpenGLRenderContext());
@@ -392,7 +398,7 @@ namespace gfx {
 		submit_->active_item.instance_count = count;
 	}
 
-	void Renderer::setTexure(uint16_t unit, TextureHandle handle)
+	void Renderer::setTexure(TextureHandle handle, uint16_t unit)
 	{
 		submit_->active_item.textures[unit].handle = handle;
 	}
@@ -464,6 +470,42 @@ namespace gfx {
 	void Renderer::setVertexDecl(const VertexDecl& vertDecl)
 	{
 		submit_->active_item.vertexDecl = vertDecl;
+	}
+	void Renderer::setVertexAttrib(ushort index, int value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
+	}
+	void Renderer::setVertexAttrib(ushort index, uint value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
+	}
+	void Renderer::setVertexAttrib(ushort index, float value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
+	}
+	void Renderer::setVertexAttrib(ushort index, vec2 value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
+	}
+	void Renderer::setVertexAttrib(ushort index, ivec2 value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
+	}
+	void Renderer::setVertexAttrib(ushort index, vec3 value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
+	}
+	void Renderer::setVertexAttrib(ushort index, ivec3 value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
+	}
+	void Renderer::setVertexAttrib(ushort index, vec4 value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
+	}
+	void Renderer::setVertexAttrib(ushort index, ivec4 value)
+	{
+		submit_->active_item.vertexAttribs.emplace(index, value);
 	}
 	void gfx::Renderer::beginCompute()
 	{
