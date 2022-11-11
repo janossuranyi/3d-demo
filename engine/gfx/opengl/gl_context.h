@@ -60,6 +60,7 @@ namespace gfx {
 		int depth_bits() const override;
 		int stencil_bits() const override;
 
+		void operator()(const cmd::CreateBufferTexture& cmd);
 		void operator()(const cmd::DeleteVertexLayout& cmd);
 		void operator()(const cmd::CreateVertexLayout& cmd);
 		void operator()(const cmd::CreateVertexBuffer& cmd);
@@ -200,6 +201,7 @@ namespace gfx {
 		bool scissor_test_{ false };
 		int active_vertex_attribs_{ 0 };
 		GLuint temp_;
+		GLint gl_texture_buffer_offset_alignment_;
 
 		void compute(const RenderPass& pass);
 		void setup_uniforms(ProgramData& program_data, const UniformMap& uniforms);

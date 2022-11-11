@@ -388,6 +388,8 @@ namespace gfx {
 		ext_.ARB_direct_state_access = gl_extensions_.count("GL_ARB_direct_state_access");
 		ext_.EXT_direct_state_access = gl_extensions_.count("GL_EXT_direct_state_access");
 
+		glGetIntegerv(GL_TEXTURE_BUFFER_OFFSET_ALIGNMENT, &gl_texture_buffer_offset_alignment_);
+
 		SDL_GL_MakeCurrent(windowHandle_, NULL);
 
 		return true;
@@ -452,11 +454,11 @@ namespace gfx {
 	void OpenGLRenderContext::setup_uniforms(ProgramData& program_data, const UniformMap& uniforms)
 	{
 		UniformBinder binder;
-		for (auto& cb : uniforms)
+		for (const auto& cb : uniforms)
 		{
 			auto location = program_data.uniform_location_map.find(cb.first);
 			GLint uniform_location;
-			if (location != program_data.uniform_location_map.end())
+			if (location != std::end(program_data.uniform_location_map))
 			{
 				uniform_location = location->second;
 			}
@@ -821,6 +823,7 @@ namespace gfx {
 		GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
 		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 		GL_CHECK(glBindBuffer(GL_UNIFORM_BUFFER, 0));
+		GL_CHECK(glBindBuffer(GL_TEXTURE_BUFFER, 0));
 
 		list1.clear();
 		for (auto& r : vertex_buffer_map_) {
@@ -832,15 +835,25 @@ namespace gfx {
 		for (auto& r : constant_buffer_map_) {
 			list1.push_back(r.second.buffer);
 		}
+		for (auto& r : texture_buffer_map_) {
+			list1.push_back(r.second.buffer);
+		}
 		GL_CHECK(glDeleteBuffers(GLsizei(list1.size()), list1.data()));
 		GL_CHECK(glDeleteVertexArrays(1, &shared_vertex_array_));
 
+		list1.clear();
+		for (auto& r : vertex_array_map_) {
+			list1.push_back(r.second);
+		}
+		GL_CHECK(glDeleteVertexArrays(GLsizei(list1.size()), list1.data()));
+		
 		frame_buffer_map_.clear();
 		vertex_buffer_map_.clear();
 		index_buffer_map_.clear();
 		texture_map_.clear();
 		shader_map_.clear();
 		program_map_.clear();
+		vertex_array_map_.clear();
 
 		destroy_window();
 	}

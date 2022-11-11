@@ -5,6 +5,35 @@
 
 namespace gfx {
 
+	void OpenGLRenderContext::operator()(const cmd::CreateBufferTexture& cmd)
+	{
+		if (texture_map_.count(cmd.htexture))
+		{
+			return;
+		}
+
+		auto& tb = texture_buffer_map_.find(cmd.hbuffer);
+		if (tb == std::end(texture_buffer_map_))
+		{
+			return;
+		}
+
+		GLuint texture;
+		const GLenum target = GL_TEXTURE_BUFFER;
+		GL_CHECK(glGenTextures(1, &texture));
+		GL_CHECK(glBindTexture(target, texture));
+		auto& texinfo = s_texture_format[static_cast<int>(cmd.format)];
+		if (cmd.size == 0) {
+			glTexBuffer(target, texinfo.internal_format, tb->second.buffer);
+		}
+		else {
+			assert((cmd.offset & (gl_texture_buffer_offset_alignment_ - 1)) == 0);
+			glTexBufferRange(target, texinfo.internal_format, tb->second.buffer, cmd.offset, cmd.size);
+		}
+
+		texture_map_.emplace(cmd.htexture, TextureData{ texture, target, cmd.format });
+	}
+
 	void OpenGLRenderContext::operator()(const cmd::CreateTexture1D& cmd) {}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteTexture& cmd)
@@ -21,6 +50,11 @@ namespace gfx {
 
 	void OpenGLRenderContext::operator()(const cmd::CreateTexture2D& cmd)
 	{
+		if (texture_map_.count(cmd.handle))
+		{
+			return;
+		}
+
 		GLuint texture;
 		const GLenum target = GL_TEXTURE_2D;
 		GL_CHECK(glGenTextures(1, &texture));

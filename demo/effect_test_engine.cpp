@@ -127,7 +127,7 @@ bool EngineTestEffect::Init()
 		std::vector<gfx::Memory> sky_images;
 		int x, y, n, img_x = 0, img_y = 0;
 		stbi_set_flip_vertically_on_load(false);
-		for (auto& side : textures_faces)
+		for (const auto& side : textures_faces)
 		{
 			auto fname = ResourceManager::get_resource(side);
 			uint8_t* image = stbi_load(fname.c_str(), &x, &y, &n, 4);
@@ -145,7 +145,7 @@ bool EngineTestEffect::Init()
 		}
 
 		skybox =
-			renderer->createTextureCubemap(img_x, img_y, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, true, false, sky_images);
+			renderer->createTextureCubemap(img_x, img_y, gfx::TextureFormat::RGBA8_COMPRESSED, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, true, false, sky_images);
 	}
 
 	{
@@ -252,6 +252,14 @@ bool EngineTestEffect::Init()
 
 	layout_handle = renderer->createVertexLayout(layout);
 	layout.setHandle(layout_handle);
+
+	Vector<vec4> tbData;
+	for (uint i = 0; i < 256; ++i)
+	{
+		tbData.emplace_back((float)i / 256.0f);
+	}
+	tb = renderer->createTextureBuffer(256 * sizeof(vec4), gfx::BufferUsage::Dynamic, gfx::Memory(tbData));
+	bt = renderer->createBufferTexture(tb, gfx::TextureFormat::RGBA32F);
 
     return true;
 }
@@ -416,7 +424,9 @@ bool EngineTestEffect::Render()
 	renderer->setProgramVar("m_P", P);
 	renderer->setProgramVar("m_V", sky_view);
 	renderer->setProgramVar("samp0", 0);
-	renderer->setTexure(skybox);
+	renderer->setProgramVar("g_vData", 1);
+	renderer->setTexture(skybox, 0);
+	renderer->setTexture(bt, 1);
 	renderer->submit(pass, prgSkybox, count, offs, 0);
 
 	++pass;
@@ -425,7 +435,7 @@ bool EngineTestEffect::Render()
 	renderer->setFrameBuffer(pass, gfx::FrameBufferHandle{0});
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
-	renderer->setTexure(color_attachment);
+	renderer->setTexture(color_attachment);
 	renderer->setVertexBuffer(vb_pp);
 	renderer->setVertexDecl(layout);
 	renderer->setProgramVar("samp0", 0);
@@ -439,7 +449,7 @@ bool EngineTestEffect::Render()
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	renderer->setVertexDecl(layout);
-	renderer->setTexure(depth_attachment);
+	renderer->setTexture(depth_attachment);
 	renderer->setVertexBuffer(vb_pp);
 	renderer->setProgramVar("samp0", 0);
 	float scale = 0.2f;
@@ -455,7 +465,7 @@ bool EngineTestEffect::Render()
 	renderer->setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
 	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
 	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
-	renderer->setTexure(texDyn);
+	renderer->setTexture(texDyn);
 	renderer->setVertexDecl(layout);
 	renderer->setVertexBuffer(vb_pp);
 	renderer->setProgramVar("samp0", 0);

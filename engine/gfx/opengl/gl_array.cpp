@@ -3,7 +3,6 @@
 #include "logger.h"
 
 namespace gfx {
-
 	void OpenGLRenderContext::operator()(const cmd::DeleteVertexLayout& cmd)
 	{
 		auto& vao = vertex_array_map_.find(cmd.handle);

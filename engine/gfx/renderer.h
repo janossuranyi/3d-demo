@@ -16,6 +16,15 @@ namespace gfx {
 
     namespace cmd {
 
+        struct CreateBufferTexture {
+            TextureBufferHandle hbuffer;
+            TextureHandle htexture;
+            TextureFormat format;
+            uint offset;
+            uint size;
+            Memory data;
+        };
+
         struct CreateTextureBuffer {
             TextureBufferHandle handle;
             Memory data;
@@ -219,7 +228,8 @@ namespace gfx {
         cmd::DeleteFence,
         cmd::CreateTextureBuffer,
         cmd::UpdateTextureBuffer,
-        cmd::DeleteTextureBuffer>;
+        cmd::DeleteTextureBuffer,
+        cmd::CreateBufferTexture>;
 
     using VertexAttribData = std::variant<int, uint, float, ivec2, ivec3, ivec4, vec2, vec3, vec4>;
     using UniformData = std::variant<int, float,ivec2, ivec3, ivec4, vec2, vec3, vec4, mat3, mat4, Vector<float>, Vector<vec4>>;
@@ -337,10 +347,12 @@ namespace gfx {
 
         VertexLayoutHandle  createVertexLayout(const VertexDecl& decl);
         VertexBufferHandle  createVertexBuffer(uint size, BufferUsage usage, Memory data);
+        TextureBufferHandle createTextureBuffer(uint size, BufferUsage usage, Memory data);
         IndexBufferHandle   createIndexBuffer(uint size, BufferUsage usage, Memory data);
         ConstantBufferHandle createConstantBuffer(uint size, BufferUsage usage, Memory data);
         TextureHandle       createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data);
         TextureHandle       createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, std::vector<Memory>& data);
+        TextureHandle       createBufferTexture(TextureBufferHandle hbuffer, TextureFormat format, uint offset = 0, uint size = 0);
         FrameBufferHandle   createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
         FrameBufferHandle   createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
         ProgramHandle       createProgram();
@@ -352,6 +364,7 @@ namespace gfx {
         void                updateVertexBuffer(VertexBufferHandle handle, Memory data, uint offset);
         void                updateIndexBuffer(IndexBufferHandle handle, Memory data, uint offset);
         void                updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint offset);
+        void                updateTextureBuffer(TextureBufferHandle handle, Memory data, uint offset);
 
         void                deleteVertexLayout(VertexLayoutHandle handle);
         void                deleteVertexBuffer(VertexBufferHandle handle);
@@ -376,7 +389,7 @@ namespace gfx {
         void                setIndexBuffer(IndexBufferHandle handle);
         void                setPrimitiveType(PrimitiveType type);
         void                setInstanceCount(uint count);
-        void                setTexure(TextureHandle handle, uint16_t unit = 0);
+        void                setTexture(TextureHandle handle, uint16_t unit = 0);
         void                setClearColor(unsigned pass, const glm::vec4& value);
         void                setClearBits(unsigned pass, uint16_t value);
         void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
@@ -434,6 +447,7 @@ namespace gfx {
         HandleGenerator<ProgramHandle> program_handle_;
         HandleGenerator<TextureHandle> texture_handle_;
         HandleGenerator<FrameBufferHandle> frame_buffer_handle_;
+        HandleGenerator<TextureBufferHandle> texture_buffer_handle_;
         HandleGenerator<FenceHandle> fence_handle_;
 
         HashMap<IndexBufferHandle, IndexBufferType> index_buffer_types_;

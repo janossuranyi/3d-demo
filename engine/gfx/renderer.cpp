@@ -82,15 +82,23 @@ namespace gfx {
 
 	VertexLayoutHandle Renderer::createVertexLayout(const VertexDecl& decl)
 	{
-		VertexLayoutHandle handle = vertex_layout_handle_.next();
+		const VertexLayoutHandle handle = vertex_layout_handle_.next();
 		submitPreFrameCommand(cmd::CreateVertexLayout{ handle, decl });
+
+		return handle;
+	}
+
+	TextureBufferHandle Renderer::createTextureBuffer(uint size, BufferUsage usage, Memory data)
+	{
+		const TextureBufferHandle handle = texture_buffer_handle_.next();
+		submitPreFrameCommand(cmd::CreateTextureBuffer{ handle,std::move(data),size,usage });
 
 		return handle;
 	}
 
 	VertexBufferHandle Renderer::createVertexBuffer(uint32_t size, BufferUsage usage, Memory data)
 	{
-		VertexBufferHandle handle = vertex_buffer_handle_.next();
+		const VertexBufferHandle handle = vertex_buffer_handle_.next();
 		submitPreFrameCommand(cmd::CreateVertexBuffer{ handle, std::move(data), size, usage });
 
 		return handle;
@@ -98,7 +106,7 @@ namespace gfx {
 
 	IndexBufferHandle Renderer::createIndexBuffer(uint32_t size, BufferUsage usage, Memory data)
 	{
-		IndexBufferHandle handle = index_buffer_handle_.next();
+		const IndexBufferHandle handle = index_buffer_handle_.next();
 		submitPreFrameCommand(cmd::CreateIndexBuffer{ handle, std::move(data), size, usage });
 
 		return handle;
@@ -106,7 +114,7 @@ namespace gfx {
 
 	ConstantBufferHandle Renderer::createConstantBuffer(uint32_t size, BufferUsage usage, Memory data)
 	{
-		ConstantBufferHandle handle = constant_buffer_handle_.next();
+		const ConstantBufferHandle handle = constant_buffer_handle_.next();
 		submitPreFrameCommand(cmd::CreateConstantBuffer{ handle, std::move(data), size, usage });
 
 		return handle;
@@ -114,7 +122,7 @@ namespace gfx {
 
 	TextureHandle Renderer::createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data)
 	{
-		TextureHandle handle = texture_handle_.next();
+		const TextureHandle handle = texture_handle_.next();
 		submitPreFrameCommand(cmd::CreateTexture2D{ handle,width,height,format,wrap,minfilter,magfilter,srgb,mipmap,std::move(data) });
 
 		texture_data_[handle] = TextureData{ width,height,format };
@@ -130,7 +138,7 @@ namespace gfx {
 			return TextureHandle();
 		}
 
-		TextureHandle handle = texture_handle_.next();
+		const TextureHandle handle = texture_handle_.next();
 		submitPreFrameCommand(cmd::CreateTextureCubeMap{ handle,width,height,format,wrap,minfilter,magfilter,srgb,mipmap,std::move(data)});
 
 		texture_data_[handle] = TextureData{ width,height,format };
@@ -138,10 +146,18 @@ namespace gfx {
 		return handle;
 	}
 
+	TextureHandle Renderer::createBufferTexture(TextureBufferHandle hbuffer, TextureFormat format, uint offset, uint size)
+	{
+		TextureHandle handle = texture_handle_.next();
+		submitPreFrameCommand(cmd::CreateBufferTexture{ hbuffer,handle,format,offset,size });
+
+		return handle;
+	}
+
 	FrameBufferHandle Renderer::createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format)
 	{
-		FrameBufferHandle handle = frame_buffer_handle_.next();
-		TextureHandle color = createTexture2D(width, height, format, TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, false, false, Memory());
+		const FrameBufferHandle handle = frame_buffer_handle_.next();
+		const TextureHandle color = createTexture2D(width, height, format, TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, false, false, Memory());
 		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height, TextureHandle(), std::vector<TextureHandle>{ color } });
 		frame_buffer_textures_.emplace(handle, std::vector<TextureHandle>{ color });
 
@@ -244,6 +260,15 @@ namespace gfx {
 			return;
 		}
 		submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
+	}
+
+	void Renderer::updateTextureBuffer(TextureBufferHandle handle, Memory data, uint offset)
+	{
+		if (!handle.isValid())
+		{
+			return;
+		}
+		submitPreFrameCommand(cmd::UpdateTextureBuffer{ handle,std::move(data),offset,0 });
 	}
 
 	void Renderer::deleteVertexLayout(VertexLayoutHandle handle)
@@ -398,7 +423,7 @@ namespace gfx {
 		submit_->active_item.instance_count = count;
 	}
 
-	void Renderer::setTexure(TextureHandle handle, uint16_t unit)
+	void Renderer::setTexture(TextureHandle handle, uint16_t unit)
 	{
 		submit_->active_item.textures[unit].handle = handle;
 	}
@@ -643,7 +668,7 @@ namespace gfx {
 		{
 			auto& item = submit_->active_compute;
 			item.program = program;
-			submit_->renderPass(pass).compute_items.emplace_back(item);
+			submit_->renderPass(pass).compute_items.emplace_back(std::move(item));
 			item = ComputeItem();
 		}
 
