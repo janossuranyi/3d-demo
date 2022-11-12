@@ -7,8 +7,8 @@ uniform samplerBuffer g_vData;
 
 out INTERFACE {
     vec4 TexCoords;
-    uint flags;
-    vec4 vdata;
+    flat uint flags;
+    flat vec4 vdata;
 } Out;
 
 uniform mat4 m_P;
