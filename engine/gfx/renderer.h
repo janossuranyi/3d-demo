@@ -1,5 +1,6 @@
 #pragma once
 
+#include <new>
 #include "common.h"
 #include "gfx/handle.h"
 #include "gfx/memory.h"
@@ -282,8 +283,9 @@ namespace gfx {
         uint barrier_bits;
     };
 
+    
     struct RenderItem {
-        VertexBuffers vbs;
+        alignas(std::hardware_destructive_interference_size) VertexBuffers vbs;
         //VertexBufferHandle vb;
         IndexBufferHandle ib;
         uint ib_offset;
@@ -305,6 +307,13 @@ namespace gfx {
 
         StateBits state_bits;
     };
+    //static_assert(alignof(RenderItem) == std::hardware_destructive_interference_size, "");
+
+    struct ConstantBufferBinding {
+        ConstantBufferHandle handle;
+        uint offset;
+        uint size;
+    };
 
     struct RenderPass {
 
@@ -312,12 +321,12 @@ namespace gfx {
 
         void clear();
 
-        glm::vec4 clear_color;
+        vec4 clear_color;
         ushort clear_bits;
         FrameBufferHandle frame_buffer;
         std::vector<RenderItem> render_items;
         std::vector<ComputeItem> compute_items;
-        std::array<ConstantBufferHandle, MAX_UNIFORM_BUFFERS> constant_buffers;
+        std::array<ConstantBufferBinding, MAX_UNIFORM_BUFFERS> constant_buffers;
     };
 
     class Renderer;

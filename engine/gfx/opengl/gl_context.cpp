@@ -358,6 +358,9 @@ namespace gfx {
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 
 			glDebugMessageCallbackARB(&DebugMessageCallback, NULL);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_ERROR_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
 			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 
@@ -568,9 +571,14 @@ namespace gfx {
 
 			for (int i = 0; i < pass.constant_buffers.size(); ++i)
 			{
-				if (pass.constant_buffers[i].isValid())
+				if (pass.constant_buffers[i].handle.isValid())
 				{
-					GL_CHECK(glBindBufferBase(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(pass.constant_buffers[i]).buffer));
+					const auto& cbuf = pass.constant_buffers[i];
+					if (cbuf.offset == 0 && cbuf.size == 0) {
+						GL_CHECK(glBindBufferBase(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(cbuf.handle).buffer));
+					} else {
+						GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(cbuf.handle).buffer, cbuf.offset, cbuf.size));
+					}
 				}
 			}
 

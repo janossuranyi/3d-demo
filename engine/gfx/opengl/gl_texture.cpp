@@ -95,7 +95,7 @@ namespace gfx {
 		const GLenum target = GL_TEXTURE_CUBE_MAP;
 		GL_CHECK(glGenTextures(1, &texture));
 		GL_CHECK(glBindTexture(target, texture));
-		auto& texinfo = s_texture_format[static_cast<int>(cmd.format)];
+		auto& texinfo = s_texture_format[static_cast<size_t>(cmd.format)];
 		for (unsigned int face = 0; face < 6; ++face) {
 			GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
 				(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format),
@@ -114,6 +114,7 @@ namespace gfx {
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_R, wrap));
 		if (cmd.mipmap)
 		{
 			GL_CHECK(glGenerateMipmap(target));

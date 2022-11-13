@@ -16,7 +16,7 @@ uniform mat4 m_V;
 
 void main()
 {
-    Out.vdata = texelFetch(g_vData, 100);
+    Out.vdata = texelFetch(g_vData, 200);
     Out.flags = uint(in_Flags.x);
     Out.TexCoords = in_Position;
     vec4 pos = m_P * m_V * in_Position;

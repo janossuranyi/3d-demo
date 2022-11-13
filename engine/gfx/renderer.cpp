@@ -28,6 +28,8 @@ namespace gfx {
 		submit_{&frames_[0]},
 		render_{ &frames_[1] }
 	{
+		Info("sizeof(RenderItem)=%d", sizeof(RenderItem));
+		Info("alignof(RenderItem)=%d", alignof(RenderItem));
 	}
 
 	Renderer::~Renderer()
@@ -440,7 +442,7 @@ namespace gfx {
 
 	void Renderer::setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle)
 	{
-		submit_->renderPass(pass).constant_buffers[index] = handle;
+		submit_->renderPass(pass).constant_buffers[index] = ConstantBufferBinding{ handle,0,0 };
 	}
 
 	void Renderer::setClearColor(unsigned pass, const glm::vec4& value)
@@ -624,7 +626,7 @@ namespace gfx {
 	{
 		const size_t size = render_passes.size();
 		if (size <= index) {
-			render_passes.resize(size * 2);
+			render_passes.resize(2 * size > index ? 2 * size : index + 1);
 		}
 
 		return render_passes[index];
