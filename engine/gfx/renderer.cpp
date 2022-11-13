@@ -114,6 +114,14 @@ namespace gfx {
 		return handle;
 	}
 
+	ShaderStorageBufferHandle gfx::Renderer::createShaderStorageBuffer(uint size, BufferUsage usage, Memory data)
+	{
+		const  ShaderStorageBufferHandle handle = shader_storage_buffer_handle_.next();
+		submitPreFrameCommand(cmd::CreateShaderStorageBuffer{ handle, std::move(data), size, usage });
+
+		return handle;
+	}
+
 	ConstantBufferHandle Renderer::createConstantBuffer(uint32_t size, BufferUsage usage, Memory data)
 	{
 		const ConstantBufferHandle handle = constant_buffer_handle_.next();
@@ -264,6 +272,15 @@ namespace gfx {
 		submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
 	}
 
+	void Renderer::updateShaderStorageBuffer(ShaderStorageBufferHandle handle, Memory data, uint offset)
+	{
+		if (!handle.isValid())
+		{
+			return;
+		}
+		submitPreFrameCommand(cmd::UpdateShaderStorageBuffer{ handle,data,offset });
+	}
+
 	void Renderer::updateTextureBuffer(TextureBufferHandle handle, Memory data, uint offset)
 	{
 		if (!handle.isValid())
@@ -307,6 +324,15 @@ namespace gfx {
 			return;
 		}
 		submitPostFrameCommand(cmd::DeleteConstantBuffer{ handle });
+	}
+
+	void Renderer::deleteShaderStorageBuffer(ShaderStorageBufferHandle handle)
+	{
+		if (!handle.isValid())
+		{
+			return;
+		}
+		submitPostFrameCommand(cmd::DeleteShaderStorageBuffer{ handle });
 	}
 
 	void Renderer::deleteFrameBuffer(FrameBufferHandle handle)

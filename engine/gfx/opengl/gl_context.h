@@ -88,6 +88,9 @@ namespace gfx {
 		void operator()(const cmd::CreateTextureBuffer& cmd);
 		void operator()(const cmd::UpdateTextureBuffer& cmd);
 		void operator()(const cmd::DeleteTextureBuffer& cmd);
+		void operator()(const cmd::CreateShaderStorageBuffer& cmd);
+		void operator()(const cmd::UpdateShaderStorageBuffer& cmd);
+		void operator()(const cmd::DeleteShaderStorageBuffer& cmd);
 
 		template <typename T> void operator()(const T& c) {
 			static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
@@ -113,6 +116,12 @@ namespace gfx {
 		};
 
 		struct VertexBufferData {
+			GLuint buffer;
+			uint size;
+			BufferUsage usage;
+		};
+
+		struct ShaderBufferData {
 			GLuint buffer;
 			uint size;
 			BufferUsage usage;
@@ -173,6 +182,7 @@ namespace gfx {
 		HashMap<ProgramHandle, ProgramData> program_map_;
 		HashMap<ConstantBufferHandle, ConstantBufferData> constant_buffer_map_;
 		HashMap<VertexBufferHandle, VertexBufferData> vertex_buffer_map_;
+		HashMap<ShaderStorageBufferHandle, ShaderBufferData> shader_buffer_map_;
 		HashMap<TextureBufferHandle, TextureBufferData> texture_buffer_map_;
 		HashMap<IndexBufferHandle, IndexBufferData> index_buffer_map_;
 		HashMap<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
@@ -202,6 +212,8 @@ namespace gfx {
 		int active_vertex_attribs_{ 0 };
 		GLuint temp_;
 		GLint gl_texture_buffer_offset_alignment_;
+		GLint gl_max_shader_storage_block_size_;
+		GLint gl_max_uniform_block_size_;
 
 		void compute(const RenderPass& pass);
 		void setup_uniforms(ProgramData& program_data, const UniformMap& uniforms);

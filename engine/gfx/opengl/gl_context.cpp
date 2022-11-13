@@ -392,6 +392,8 @@ namespace gfx {
 		ext_.EXT_direct_state_access = gl_extensions_.count("GL_EXT_direct_state_access");
 
 		glGetIntegerv(GL_TEXTURE_BUFFER_OFFSET_ALIGNMENT, &gl_texture_buffer_offset_alignment_);
+		glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &gl_max_shader_storage_block_size_);
+		glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &gl_max_uniform_block_size_);
 
 		SDL_GL_MakeCurrent(windowHandle_, NULL);
 

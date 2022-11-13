@@ -5,6 +5,64 @@
 
 namespace gfx {
 
+	void gfx::OpenGLRenderContext::operator()(const cmd::CreateShaderStorageBuffer& cmd)
+	{
+
+		if (shader_buffer_map_.count(cmd.handle) > 0)
+			return;
+
+		assert(cmd.size < gl_max_shader_storage_block_size_ && cmd.data.size() < gl_max_shader_storage_block_size_);
+
+		GLuint buffer = static_cast<GLuint>(0xffff);
+		const GLenum _usage = MapBufferUsage(cmd.usage);
+
+		GL_CHECK(glGenBuffers(1, &buffer));
+		assert(buffer != 0xffff);
+
+		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
+
+		GL_CHECK(
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer));
+		if (cmd.data.data())
+			GL_CHECK(glBufferData(GL_SHADER_STORAGE_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
+		else
+			GL_CHECK(glBufferData(GL_SHADER_STORAGE_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
+
+		shader_buffer_map_.emplace(cmd.handle, ShaderBufferData{ buffer, _size, cmd.usage });
+
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::UpdateShaderStorageBuffer& cmd)
+	{
+		if (cmd.data.data() == nullptr)
+			return;
+
+		const auto result = shader_buffer_map_.find(cmd.handle);
+		if (result == shader_buffer_map_.end())
+			return;
+
+		const auto& data = result->second;
+		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
+		GL_CHECK(glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.buffer));
+		GL_CHECK(glBufferSubData(GL_SHADER_STORAGE_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::DeleteShaderStorageBuffer& cmd)
+	{
+		const auto result = shader_buffer_map_.find(cmd.handle);
+		if (result == shader_buffer_map_.end())
+			return;
+
+		const auto& data = result->second;
+
+		GL_CHECK(glDeleteBuffers(1, &data.buffer));
+		shader_buffer_map_.erase(cmd.handle);
+
+#ifdef _DEBUG
+		Info("Shader storage buffer %d deleted", cmd.handle);
+#endif
+	}
+
 	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
 	{
 		if (vertex_buffer_map_.count(cmd.handle) > 0)
@@ -185,6 +243,8 @@ namespace gfx {
 	{
 		if (constant_buffer_map_.count(cmd.handle) > 0)
 			return;
+
+		assert(cmd.size < gl_max_uniform_block_size_ && cmd.data.size() < gl_max_uniform_block_size_);
 
 		GLuint buffer = static_cast<GLuint>(0xffff);
 		const GLenum _usage = MapBufferUsage(cmd.usage);

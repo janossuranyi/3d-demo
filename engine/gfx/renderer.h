@@ -11,6 +11,7 @@
 #define MAX_UNIFORM_BUFFERS 8
 #define MAX_IMAGE_UNITS 8
 #define MAX_LAYOUT_BUFFERS 4
+#define MAX_SHADER_STORAGE_BUFFERS 8
 
 namespace gfx {
 
@@ -51,6 +52,24 @@ namespace gfx {
 
         struct DeleteVertexLayout {
             VertexLayoutHandle handle;
+        };
+
+        struct CreateShaderStorageBuffer {
+            ShaderStorageBufferHandle handle;
+            Memory data;
+            uint size;
+            BufferUsage usage;
+        };
+
+        struct UpdateShaderStorageBuffer {
+            ShaderStorageBufferHandle handle;
+            Memory data;
+            uint offset;
+            uint size;
+        };
+
+        struct DeleteShaderStorageBuffer {
+            ShaderStorageBufferHandle handle;
         };
 
         struct CreateConstantBuffer {
@@ -230,7 +249,10 @@ namespace gfx {
         cmd::CreateTextureBuffer,
         cmd::UpdateTextureBuffer,
         cmd::DeleteTextureBuffer,
-        cmd::CreateBufferTexture>;
+        cmd::CreateBufferTexture,
+        cmd::CreateShaderStorageBuffer,
+        cmd::UpdateShaderStorageBuffer,
+        cmd::DeleteShaderStorageBuffer>;
 
     using VertexAttribData = std::variant<int, uint, float, ivec2, ivec3, ivec4, vec2, vec3, vec4>;
     using UniformData = std::variant<int, float,ivec2, ivec3, ivec4, vec2, vec3, vec4, mat3, mat4, Vector<float>, Vector<vec4>>;
@@ -315,6 +337,12 @@ namespace gfx {
         uint size;
     };
 
+    struct ShaderStorageBinding {
+        ShaderStorageBufferHandle handle;
+        uint offset;
+        uint size;
+    };
+
     struct RenderPass {
 
         RenderPass();
@@ -327,6 +355,7 @@ namespace gfx {
         std::vector<RenderItem> render_items;
         std::vector<ComputeItem> compute_items;
         std::array<ConstantBufferBinding, MAX_UNIFORM_BUFFERS> constant_buffers;
+        std::array<ShaderStorageBinding, MAX_SHADER_STORAGE_BUFFERS> shader_storage_buffers;
     };
 
     class Renderer;
@@ -351,34 +380,37 @@ namespace gfx {
         Renderer();
         ~Renderer();
 
-        bool                init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
-        glm::ivec2          getFramebufferSize() const;
+        bool                        init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
+        glm::ivec2                  getFramebufferSize() const;
 
-        VertexLayoutHandle  createVertexLayout(const VertexDecl& decl);
-        VertexBufferHandle  createVertexBuffer(uint size, BufferUsage usage, Memory data);
-        TextureBufferHandle createTextureBuffer(uint size, BufferUsage usage, Memory data);
-        IndexBufferHandle   createIndexBuffer(uint size, BufferUsage usage, Memory data);
-        ConstantBufferHandle createConstantBuffer(uint size, BufferUsage usage, Memory data);
-        TextureHandle       createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data);
-        TextureHandle       createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, std::vector<Memory>& data);
-        TextureHandle       createBufferTexture(TextureBufferHandle hbuffer, TextureFormat format, uint offset = 0, uint size = 0);
-        FrameBufferHandle   createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
-        FrameBufferHandle   createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
-        ProgramHandle       createProgram();
-        ShaderHandle        createShader(ShaderStage stage, const std::string& source);
-        FenceHandle         createFence();
+        VertexLayoutHandle          createVertexLayout(const VertexDecl& decl);
+        VertexBufferHandle          createVertexBuffer(uint size, BufferUsage usage, Memory data);
+        TextureBufferHandle         createTextureBuffer(uint size, BufferUsage usage, Memory data);
+        IndexBufferHandle           createIndexBuffer(uint size, BufferUsage usage, Memory data);
+        ConstantBufferHandle        createConstantBuffer(uint size, BufferUsage usage, Memory data);
+        ShaderStorageBufferHandle   createShaderStorageBuffer(uint size, BufferUsage usage, Memory data);
+        TextureHandle               createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data);
+        TextureHandle               createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, std::vector<Memory>& data);
+        TextureHandle               createBufferTexture(TextureBufferHandle hbuffer, TextureFormat format, uint offset = 0, uint size = 0);
+        FrameBufferHandle           createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
+        FrameBufferHandle           createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
+        ProgramHandle               createProgram();
+        ShaderHandle                createShader(ShaderStage stage, const std::string& source);
+        FenceHandle                 createFence();
         
         void                linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders);
 
         void                updateVertexBuffer(VertexBufferHandle handle, Memory data, uint offset);
         void                updateIndexBuffer(IndexBufferHandle handle, Memory data, uint offset);
         void                updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint offset);
+        void                updateShaderStorageBuffer(ShaderStorageBufferHandle handle, Memory data, uint offset);
         void                updateTextureBuffer(TextureBufferHandle handle, Memory data, uint offset);
 
         void                deleteVertexLayout(VertexLayoutHandle handle);
         void                deleteVertexBuffer(VertexBufferHandle handle);
         void                deleteIndexBuffer(IndexBufferHandle handle);
         void                deleteConstantBuffer(ConstantBufferHandle handle);
+        void                deleteShaderStorageBuffer(ShaderStorageBufferHandle handle);
         void                deleteFrameBuffer(FrameBufferHandle handle);
         void                deleteProgram(ProgramHandle handle);
         void                deleteShader(ShaderHandle handle);
@@ -458,6 +490,7 @@ namespace gfx {
         HandleGenerator<FrameBufferHandle> frame_buffer_handle_;
         HandleGenerator<TextureBufferHandle> texture_buffer_handle_;
         HandleGenerator<FenceHandle> fence_handle_;
+        HandleGenerator<ShaderStorageBufferHandle> shader_storage_buffer_handle_;
 
         HashMap<IndexBufferHandle, IndexBufferType> index_buffer_types_;
 

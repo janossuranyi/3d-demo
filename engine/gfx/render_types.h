@@ -23,7 +23,9 @@ namespace gfx {
     struct FrameBufferTag {};
     struct ConstantBufferTag {};
     struct FenceTag {};
+    struct ShaderStorageBufferTag {};
 
+    using ShaderStorageBufferHandle = Handle< ShaderStorageBufferTag, -1>;
     using TextureBufferHandle = Handle<TextureBufferTag, -1>;
     using VertexLayoutHandle = Handle<VertexLayoutTag, -1>;
     using ConstantBufferHandle = Handle<ConstantBufferTag, -1>;
