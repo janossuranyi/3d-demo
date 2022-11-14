@@ -21,7 +21,7 @@ namespace gfx {
 		GL_CHECK(
 			glBindBuffer(target, buffer));
 		if (data.data())
-			GL_CHECK(glBufferData(target, GLsizeiptr(data.size()), data.data(), _usage));
+			GL_CHECK(glBufferData(target, data.size(), data.data(), _usage));
 		else
 			GL_CHECK(glBufferData(target, GLsizeiptr(size), nullptr, _usage));
 
