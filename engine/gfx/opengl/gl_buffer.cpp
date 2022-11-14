@@ -1,9 +1,70 @@
+#include <GL/glew.h>
 #include "gfx/opengl/gl_context.h"
 #include "gfx/opengl/gl_helper.h"
 
 #include "logger.h"
 
+#define USE_MAP_BUFFER 0
+
 namespace gfx {
+
+	GLuint gfx::OpenGLRenderContext::create_buffer_real(GLenum target, BufferUsage usage, uint size, const Memory& data, uint& actualSize)
+	{
+		GLuint buffer = static_cast<GLuint>(0xffff);
+		const GLenum _usage = MapBufferUsage(usage);
+
+		GL_CHECK(glGenBuffers(1, &buffer));
+		assert(buffer != 0xffff);
+
+		const uint32_t _size = data.data() ? data.size() : size;
+
+		GL_CHECK(
+			glBindBuffer(target, buffer));
+		if (data.data())
+			GL_CHECK(glBufferData(target, GLsizeiptr(data.size()), data.data(), _usage));
+		else
+			GL_CHECK(glBufferData(target, GLsizeiptr(size), nullptr, _usage));
+
+		actualSize = _size;
+		return buffer;
+	}
+
+	void OpenGLRenderContext::update_buffer_real(GLenum target, GLuint buffer, uint offset, uint size, const Memory& data)
+	{
+		const GLsizeiptr size_ = size > 0 ? GLsizeiptr(size) : data.size();
+#if USE_MAP_BUFFER		
+		void* mem = nullptr;
+		if ((ext_.ARB_direct_state_access || gl_version_450_))
+		{
+			GL_CHECK(mem = glMapNamedBufferRange(buffer, offset, size_, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT));
+			if (mem)
+			{
+				std::memcpy(mem, data.data(), size_);
+				GL_CHECK(glUnmapNamedBuffer(buffer));
+			}
+		}
+		else
+		{
+			glBindBuffer(target, buffer);
+			GL_CHECK(mem = glMapBufferRange(target, offset, size_, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT));
+			if (mem)
+			{
+				std::memcpy(mem, data.data(), size_);
+				GL_CHECK(glUnmapBuffer(target));
+			}
+		}
+#else
+		if (ext_.ARB_direct_state_access || gl_version_450_)
+		{
+			GL_CHECK(glNamedBufferSubData(buffer, GLintptr(offset), GLsizeiptr(size_), data.data()));
+		}
+		else
+		{
+			GL_CHECK(glBindBuffer(target, buffer));
+			GL_CHECK(glBufferSubData(target, GLintptr(offset), GLsizeiptr(size_), data.data()));
+		}
+#endif
+	}
 
 	void gfx::OpenGLRenderContext::operator()(const cmd::CreateShaderStorageBuffer& cmd)
 	{
@@ -13,20 +74,8 @@ namespace gfx {
 
 		assert(cmd.size < gl_max_shader_storage_block_size_ && cmd.data.size() < gl_max_shader_storage_block_size_);
 
-		GLuint buffer = static_cast<GLuint>(0xffff);
-		const GLenum _usage = MapBufferUsage(cmd.usage);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-		assert(buffer != 0xffff);
-
-		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
-
-		GL_CHECK(
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer));
-		if (cmd.data.data())
-			GL_CHECK(glBufferData(GL_SHADER_STORAGE_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
-		else
-			GL_CHECK(glBufferData(GL_SHADER_STORAGE_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
+		uint _size = cmd.size;
+		const GLuint buffer = create_buffer_real(GL_SHADER_STORAGE_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
 
 		shader_buffer_map_.emplace(cmd.handle, ShaderBufferData{ buffer, _size, cmd.usage });
 
@@ -42,9 +91,9 @@ namespace gfx {
 			return;
 
 		const auto& data = result->second;
-		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
-		GL_CHECK(glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.buffer));
-		GL_CHECK(glBufferSubData(GL_SHADER_STORAGE_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
+
+		update_buffer_real(GL_SHADER_STORAGE_BUFFER, data.buffer, cmd.offset, cmd.size, cmd.data);
+
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteShaderStorageBuffer& cmd)
@@ -68,20 +117,8 @@ namespace gfx {
 		if (vertex_buffer_map_.count(cmd.handle) > 0)
 			return;
 
-		GLuint buffer = static_cast<GLuint>(0xffff);
-		const GLenum _usage = MapBufferUsage(cmd.usage);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-		assert(buffer != 0xffff);
-
-		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
-
-		GL_CHECK(
-			glBindBuffer(GL_ARRAY_BUFFER, buffer));
-		if (cmd.data.data())
-			GL_CHECK(glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
-		else
-			GL_CHECK(glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
+		uint _size = cmd.size;
+		const GLuint buffer = create_buffer_real(GL_ARRAY_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
 
 		vertex_buffer_map_.emplace(cmd.handle, VertexBufferData{ buffer, _size, cmd.usage });
 	}
@@ -91,21 +128,8 @@ namespace gfx {
 		if (texture_buffer_map_.count(cmd.handle) > 0)
 			return;
 
-		GLuint buffer = static_cast<GLuint>(0xffff);
-		const GLenum _usage = MapBufferUsage(cmd.usage);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-
-		assert(buffer != 0xffff);
-
-		const uint _size = cmd.data.data() ? cmd.data.size() : cmd.size;
-
-		GL_CHECK(
-			glBindBuffer(GL_TEXTURE_BUFFER, buffer));
-		if (cmd.data.data())
-			GL_CHECK(glBufferData(GL_TEXTURE_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
-		else
-			GL_CHECK(glBufferData(GL_TEXTURE_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
+		uint _size = cmd.size;
+		const GLuint buffer = create_buffer_real(GL_TEXTURE_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
 
 		texture_buffer_map_.emplace(cmd.handle, TextureBufferData{ buffer, _size, cmd.usage });
 	}
@@ -120,9 +144,7 @@ namespace gfx {
 			return;
 
 		const auto& data = result->second;
-		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
-		GL_CHECK(glBindBuffer(GL_TEXTURE_BUFFER, data.buffer));
-		GL_CHECK(glBufferSubData(GL_TEXTURE_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
+		update_buffer_real(GL_TEXTURE_BUFFER, data.buffer, cmd.offset, cmd.size, cmd.data);
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::UpdateVertexBuffer& cmd)
@@ -135,26 +157,7 @@ namespace gfx {
 			return;
 
 		const auto& data = result->second;
-		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
-
-		char* mem{};
-		if (gl_version_450_)
-		{
-			mem = reinterpret_cast<char*>(glMapNamedBuffer(data.buffer, GL_WRITE_ONLY)); GLC();
-			if (mem) {
-				std::memcpy(mem + cmd.offset, cmd.data.data(), size);
-				GL_CHECK(glUnmapNamedBuffer(data.buffer));
-			}
-		}
-		else
-		{
-			GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, data.buffer));
-			mem = reinterpret_cast<char*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)); GLC();
-			if (mem) {
-				std::memcpy(mem + cmd.offset, cmd.data.data(), size);
-				GL_CHECK(glUnmapBuffer(GL_ARRAY_BUFFER));
-			}
-		}
+		update_buffer_real(GL_ARRAY_BUFFER, data.buffer, cmd.offset, cmd.size, cmd.data);
 		//GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
 	}
 
@@ -196,19 +199,8 @@ namespace gfx {
 		if (result != index_buffer_map_.end())
 			return;
 
-		GLuint buffer = static_cast<GLuint>(0xffff);
-		const GLenum _usage = MapBufferUsage(cmd.usage);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-		assert(buffer != 0xffff);
-
-		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
-
-		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer));
-		if (cmd.data.data())
-			GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
-		else
-			GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
+		uint _size = cmd.size;
+		const GLuint buffer = create_buffer_real(GL_ELEMENT_ARRAY_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
 
 		index_buffer_map_.emplace(cmd.handle, IndexBufferData{ buffer, _size, cmd.usage, cmd.type });
 
@@ -220,11 +212,12 @@ namespace gfx {
 			return;
 
 		const auto result = index_buffer_map_.find(cmd.handle);
-		const auto& data = result->second;
-		const GLsizeiptr size = data.size > 0 ? GLsizeiptr(data.size) : cmd.data.size();
-		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.buffer));
-		GL_CHECK(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
 
+		if (result != std::end(index_buffer_map_))
+		{
+			const auto& data = result->second;
+			update_buffer_real(GL_ELEMENT_ARRAY_BUFFER, data.buffer, cmd.offset, 0, cmd.data);
+		}
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteIndexBuffer& cmd)
@@ -246,19 +239,8 @@ namespace gfx {
 
 		assert(cmd.size < gl_max_uniform_block_size_ && cmd.data.size() < gl_max_uniform_block_size_);
 
-		GLuint buffer = static_cast<GLuint>(0xffff);
-		const GLenum _usage = MapBufferUsage(cmd.usage);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-		assert(buffer != 0xffff);
-
-		const uint32_t _size = cmd.data.data() ? cmd.data.size() : cmd.size;
-
-		GL_CHECK(glBindBuffer(GL_UNIFORM_BUFFER, buffer));
-		if (cmd.data.data())
-			GL_CHECK(glBufferData(GL_UNIFORM_BUFFER, GLsizeiptr(cmd.data.size()), cmd.data.data(), _usage));
-		else
-			GL_CHECK(glBufferData(GL_UNIFORM_BUFFER, GLsizeiptr(cmd.size), nullptr, _usage));
+		uint _size = cmd.size;
+		const GLuint buffer = create_buffer_real(GL_UNIFORM_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
 
 		constant_buffer_map_.emplace(cmd.handle, ConstantBufferData{ buffer, _size, cmd.usage });
 	}
@@ -268,14 +250,12 @@ namespace gfx {
 		if (cmd.data.data() == nullptr)
 			return;
 
-		const auto& result = constant_buffer_map_.find(cmd.handle);
+		const auto result = constant_buffer_map_.find(cmd.handle);
 		if (result == constant_buffer_map_.end())
 			return;
 
 		const auto& data = result->second;
-		const GLsizeiptr size = cmd.size > 0 ? GLsizeiptr(cmd.size) : cmd.data.size();
-		GL_CHECK(glBindBuffer(GL_UNIFORM_BUFFER, data.buffer));
-		GL_CHECK(glBufferSubData(GL_UNIFORM_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
+		update_buffer_real(GL_UNIFORM_BUFFER, data.buffer, cmd.offset, cmd.size, cmd.data);
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteConstantBuffer& cmd)

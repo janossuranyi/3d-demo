@@ -87,31 +87,31 @@ EngineTestEffect::~EngineTestEffect()
 
 bool EngineTestEffect::Init()
 {
-	gfx::Renderer* renderer = ctx::Context::default()->hwr();
+	gfx::Renderer* hwr = ctx::Context::default()->hwr();
 	gfx::ShaderManager* sm = ctx::Context::default()->shaderManager();
 
-	if (!renderer->init(gfx::RendererType::OpenGL, 1440, 900, "test", 1))
+	if (!hwr->init(gfx::RendererType::OpenGL, 1440, 900, "test", 1))
 	{
 		return false;
 	}
 
-	vtx_cache.start(renderer, 64 * 1024 * 1024, 128 * 1024);
+	vtx_cache.start(hwr, 64 * 1024 * 1024, 128 * 1024);
 
 	//sm->setVersionString("#version 450 core\n");
 
-	glm::ivec2 win_size = renderer->getFramebufferSize();
+	glm::ivec2 win_size = hwr->getFramebufferSize();
 	
 	texDyn =
-		renderer->createTexture2D(512, 512, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
+		hwr->createTexture2D(512, 512, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
 	depth_attachment =
-		renderer->createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::D24S8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
+		hwr->createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::D24S8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
     color_attachment = 
-        renderer->createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
+        hwr->createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
     fb = 
-        renderer->createFrameBuffer(std::vector<gfx::TextureHandle>{color_attachment}, depth_attachment);
+        hwr->createFrameBuffer(std::vector<gfx::TextureHandle>{color_attachment}, depth_attachment);
 
 
-	tmp = renderer->createVertexBuffer(256, gfx::BufferUsage::Static, gfx::Memory(Vector<float>{0.5f, 0.0f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f}));
+	tmp = hwr->createVertexBuffer(256, gfx::BufferUsage::Static, gfx::Memory(Vector<float>{0.5f, 0.0f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f}));
 
 
 	const std::vector<std::string> textures_faces = {
@@ -130,7 +130,7 @@ bool EngineTestEffect::Init()
 		for (const auto& side : textures_faces)
 		{
 			auto fname = ResourceManager::get_resource(side);
-			uint8_t* image = stbi_load(fname.c_str(), &x, &y, &n, 4);
+			stbi_uc* image = stbi_load(fname.c_str(), &x, &y, &n, STBI_rgb_alpha);
 			if (img_x == 0)
 			{
 				img_x = x;
@@ -145,7 +145,11 @@ bool EngineTestEffect::Init()
 		}
 
 		skybox =
-			renderer->createTextureCubemap(img_x, img_y, gfx::TextureFormat::RGBA8_COMPRESSED, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, true, false, sky_images);
+			hwr->createTextureCubemap(img_x, img_y, 
+				gfx::TextureFormat::RGBA8,
+				gfx::TextureWrap::ClampToEdge,
+				gfx::TextureFilter::LinearLinear,
+				gfx::TextureFilter::Linear, true, true, sky_images);
 	}
 
 	{
@@ -250,7 +254,7 @@ bool EngineTestEffect::Init()
 		.add(gfx::AttributeName::TexCoord2, gfx::AttributeType::UInt,	1, false,	4,					true, 1, 1)
 		.end();
 
-	layout_handle = renderer->createVertexLayout(layout);
+	layout_handle = hwr->createVertexLayout(layout);
 	layout.setHandle(layout_handle);
 
 	Vector<vec4> tbData;
@@ -258,8 +262,8 @@ bool EngineTestEffect::Init()
 	{
 		tbData.emplace_back((float)i / 256.0f);
 	}
-	tb = renderer->createTextureBuffer(256 * sizeof(vec4), gfx::BufferUsage::Dynamic, gfx::Memory(tbData));
-	bt = renderer->createBufferTexture(tb, gfx::TextureFormat::RGBA32F);
+	tb = hwr->createTextureBuffer(256 * sizeof(vec4), gfx::BufferUsage::Dynamic, gfx::Memory(tbData));
+	bt = hwr->createBufferTexture(tb, gfx::TextureFormat::RGBA32F);
 
     return true;
 }

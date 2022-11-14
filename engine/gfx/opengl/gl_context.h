@@ -228,6 +228,9 @@ namespace gfx {
 			bool ARB_direct_state_access{};
 			bool EXT_direct_state_access{};
 		} ext_;
+
+		GLuint create_buffer_real(GLenum target, BufferUsage usage, uint size, const Memory& data, uint& actualSize);
+		void update_buffer_real(GLenum target, GLuint buffer, uint offset, uint size, const Memory& data);
 	};
 
 }

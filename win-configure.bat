@@ -1,7 +1,8 @@
-set SDL2DIR=d:\lib\SDL2-2.0.22
+@set SDL2DIR=d:\lib\SDL2-2.0.22
 
-del /Q /S /F build
-del /Q /S /F /AHS build
+rd /S /Q build
+pause
+
 md build
 cd build
 cmake -L ..
