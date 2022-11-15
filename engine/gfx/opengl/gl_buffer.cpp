@@ -16,14 +16,16 @@ namespace gfx {
 		GL_CHECK(glGenBuffers(1, &buffer));
 		assert(buffer != 0xffff);
 
-		const uint32_t _size = data.data() ? data.size() : size;
-
-		GL_CHECK(
-			glBindBuffer(target, buffer));
-		if (data.data())
-			GL_CHECK(glBufferData(target, data.size(), data.data(), _usage));
+		const GLsizeiptr _size = data.data() ? data.size() : size;
+		if (ext_.ARB_direct_state_access || gl_version_450_)
+		{
+			glNamedBufferData(buffer, _size, data.data(), _usage);
+		}
 		else
-			GL_CHECK(glBufferData(target, GLsizeiptr(size), nullptr, _usage));
+		{
+			GL_CHECK(glBindBuffer(target, buffer));
+			GL_CHECK(glBufferData(target, _size, data.data(), _usage));
+		}
 
 		actualSize = _size;
 		return buffer;

@@ -1,14 +1,14 @@
 #include "version.inc.glsl"
 
 in INTERFACE {
-	vec2 TexCoord;
+	vec2 uv;
 } In;
 
-out vec4 fso_Color;
+out vec4 FragColor;
 
-uniform sampler2D samp0;
-uniform float g_offset;
-uniform int g_kernel;
+uniform sampler2D g_tInput;
+uniform float g_fOffset;
+uniform int g_iKernel;
 
 #define KERNEL_BLUR 0
 #define KERNEL_BOTTOM_SOBEL 1
@@ -84,29 +84,28 @@ vec3 GammaIEC(vec3 c)
 void main() {
 
 	vec2 offsets[9] = vec2[](
-		vec2(-g_offset, g_offset), // top-left
-		vec2(0.0f, g_offset), // top-center
-		vec2(g_offset, g_offset), // top-right
-		vec2(-g_offset, 0.0f),   // center-left
+		vec2(-g_fOffset, g_fOffset), // top-left
+		vec2(0.0f, g_fOffset), // top-center
+		vec2(g_fOffset, g_fOffset), // top-right
+		vec2(-g_fOffset, 0.0f),   // center-left
 		vec2(0.0f, 0.0f),   // center-center
-		vec2(g_offset, 0.0f),   // center-right
-		vec2(-g_offset, -g_offset), // bottom-left
-		vec2(0.0f, -g_offset), // bottom-center
-		vec2(g_offset, -g_offset)  // bottom-right
+		vec2(g_fOffset, 0.0f),   // center-right
+		vec2(-g_fOffset, -g_fOffset), // bottom-left
+		vec2(0.0f, -g_fOffset), // bottom-center
+		vec2(g_fOffset, -g_fOffset)  // bottom-right
 	);
 
 	vec3 sampleTex[9];
 	for (int i = 0; i < 9; i++)
 	{
-		sampleTex[i] = vec3(texture(samp0, In.TexCoord.st + offsets[i]));
+		sampleTex[i] = vec3(texture(g_tInput, In.uv + offsets[i]));
 	}
 
 	vec3 col = vec3(0.0);
 	for (int i = 0; i < 9; i++)
 	{
-		//col += sampleTex[i] * g_kernel[i];
-		col += sampleTex[i] * kernels[g_kernel][i];
+		col += sampleTex[i] * kernels[g_iKernel][i];
 	}
 
-	fso_Color = vec4(GammaIEC(col), 1.0);
+	FragColor = vec4(GammaIEC(col), 1.0);
 }

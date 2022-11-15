@@ -49,15 +49,6 @@ static float UNIT_BOX_POSITIONS[] = {
 	 1.0f, -1.0f,  1.0f
 };
 
-static const float UNIT_RECT_WITH_ST[6 * 4] = {
-	-1.0f, 1.0,/**/0.0f, 1.0f,
-	-1.0f,-1.0f,/**/0.0f,0.0f,
-	1.0f,-1.0f,/**/1.0f,0.0f,
-	1.0f,1.0f,/**/1.0f,1.0f,
-	-1.0f,1.0f,/**/0.0f,1.0f,
-	1.0f,-1.0f,/**/1.0f,0.0f
-};
-
 #define KERNEL_BLUR 0
 #define KERNEL_BOTTOM_SOBEL 1
 #define KERNEL_IDENTITY 2
@@ -70,16 +61,15 @@ static const float UNIT_RECT_WITH_ST[6 * 4] = {
 
 EngineTestEffect::~EngineTestEffect()
 {
-	gfx::Renderer* renderer = ctx::Context::default()->hwr();
-	renderer->deleteProgram(prgPoints);
-	renderer->deleteProgram(prgPP);
-	renderer->deleteProgram(prgSkybox);
-	renderer->deleteFrameBuffer(fb);
+	gfx::Renderer* hwr = ctx::Context::default()->hwr();
+	hwr->deleteProgram(prgPoints);
+	hwr->deleteProgram(prgPP);
+	hwr->deleteProgram(prgSkybox);
+	hwr->deleteFrameBuffer(fb);
 	
-	renderer->deleteVertexBuffer(vb_points);
-	renderer->deleteVertexBuffer(vb_pp);
-	renderer->deleteVertexBuffer(vb_skybox);
-	renderer->frame();
+	hwr->deleteVertexBuffer(vb_points);
+	hwr->deleteVertexBuffer(vb_skybox);
+	hwr->frame();
 //	renderer.waitForFrameEnd();
 }
 
@@ -181,23 +171,6 @@ bool EngineTestEffect::Init()
 	}
 
 	{
-		std::vector<DrawVert> buffer(6);
-		float r[4]{ 0.f,0.f,0.f,1.f };
-
-		for (uint i = 0; i < 6; ++i)
-		{
-			r[0] = UNIT_RECT_WITH_ST[i * 4 + 0];
-			r[1] = UNIT_RECT_WITH_ST[i * 4 + 1];
-			buffer[i].set_position(r);
-			r[0] = UNIT_RECT_WITH_ST[i * 4 + 2];
-			r[1] = UNIT_RECT_WITH_ST[i * 4 + 3];
-			buffer[i].set_texcoord(r);
-		}
-
-		vc_pp = vtx_cache.allocStaticVertex(gfx::Memory(buffer));
-		//		vb_pp = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
-	}
-	{
 		const size_t vert_count = (sizeof(UNIT_BOX_POSITIONS) / sizeof(float) / 3);
 		std::vector<DrawVert> buffer(vert_count);
 
@@ -219,7 +192,7 @@ bool EngineTestEffect::Init()
 	prgComp = sm->createProgram(gfx::ComputeProgram{ "Compute01",
 		"shaders/test_compute2.cs.glsl" , {{"LOCAL_SIZE_X", "8"},{"LOCAL_SIZE_Y","8"}} });
 		prgViewTex	= sm->createProgram(gfx::RenderProgram{ "Rect",
-			"shaders/test_compute2.vs.glsl",
+			"shaders/fullscreen_rect.vs.glsl",
 			"shaders/test_compute2.fs.glsl",{} });
 		prgPoints	= sm->createProgram(gfx::RenderProgram{ "Draw_Points",
 			"shaders/draw_point2.vs.glsl",
@@ -228,11 +201,14 @@ bool EngineTestEffect::Init()
 			"shaders/skybox2.vs.glsl",
 			"shaders/skybox2.fs.glsl" ,{} });
 		prgPP		= sm->createProgram(gfx::RenderProgram{ "Kernel_Filter",
-			"shaders/kernel2.vs.glsl",
+			"shaders/fullscreen_rect.vs.glsl",
 			"shaders/kernel2.fs.glsl" ,{} });
 		prgDepth	= sm->createProgram(gfx::RenderProgram{ "DepthViewer",
-			"shaders/view_depthbuf.vs.glsl",
+			"shaders/fullscreen_rect.vs.glsl",
 			"shaders/view_depthbuf.fs.glsl" ,{} });
+		prgGauss	= sm->createProgram(gfx::RenderProgram{ "GaussianBlur",
+			"shaders/fullscreen_rect.vs.glsl",
+			"shaders/gauss_filter.fs.glsl" ,{} });
 
 
 	eyeZ = 1200.0f;
@@ -262,8 +238,8 @@ bool EngineTestEffect::Init()
 	{
 		tbData.emplace_back((float)i / 256.0f);
 	}
-	tb = hwr->createTextureBuffer(256 * sizeof(vec4), gfx::BufferUsage::Dynamic, gfx::Memory(tbData));
-	bt = hwr->createBufferTexture(tb, gfx::TextureFormat::RGBA32F);
+	texBuf = hwr->createTextureBuffer(256 * sizeof(vec4), gfx::BufferUsage::Dynamic, gfx::Memory(tbData));
+	bufTex = hwr->createBufferTexture(texBuf, gfx::TextureFormat::RGBA32F);
 
     return true;
 }
@@ -349,40 +325,22 @@ bool EngineTestEffect::HandleEvent(const SDL_Event* ev, float time)
 
 bool EngineTestEffect::Render()
 {
-	gfx::Renderer* renderer = ctx::Context::default()->hwr();
+	gfx::Renderer* hwr = ctx::Context::default()->hwr();
 
 	uint16_t pass = 0;
 	gfx::FenceHandle fence;
-
-	{
-		std::vector<DrawVert> buffer(6);
-		float r[4]{ 0.f,0.f,0.f,1.f };
-
-		for (int i = 0; i < 6; ++i)
-		{
-			r[0] = UNIT_RECT_WITH_ST[i * 4 + 0];
-			r[1] = UNIT_RECT_WITH_ST[i * 4 + 1];
-			buffer[i].set_position(r);
-			r[0] = UNIT_RECT_WITH_ST[i * 4 + 2];
-			r[1] = UNIT_RECT_WITH_ST[i * 4 + 3];
-			buffer[i].set_texcoord(r);
-		}
-
-		vc_pp = vtx_cache.allocVertex(gfx::Memory(buffer));
-		//		vb_pp = renderer.createVertexBuffer(bufSize, gfx::BufferUsage::Static, gfx::Memory(buffer));
-	}
 	
 	vtx_cache.frame();
 
-	renderer->beginCompute();
+	hwr->beginCompute();
 	{
 		//fence = renderer.createFence();
-		renderer->setComputeJob(glm::ivec3(512 / 8, 512 / 8, 1), gfx::FenceHandle{});
-		renderer->setImageTexture(0, texDyn, 0, false, 0, gfx::Access::Write, gfx::TextureFormat::RGBA8);
-		renderer->setProgramVar("angle", angle);
-		renderer->setProgramVar("fa", 0.7f);
-		renderer->submit(pass, prgComp);
-		renderer->endCompute();
+		hwr->setComputeJob(glm::ivec3(512 / 8, 512 / 8, 1), gfx::FenceHandle{});
+		hwr->setImageTexture(0, texDyn, 0, false, 0, gfx::Access::Write, gfx::TextureFormat::RGBA8);
+		hwr->setUniform("g_fAngle", angle);
+		hwr->setUniform("g_fFa", 0.7f);
+		hwr->submit(pass, prgComp);
+		hwr->endCompute();
 	}
 
 	glm::mat4 W(1.0f);
@@ -397,19 +355,23 @@ bool EngineTestEffect::Render()
 	uint32_t count, offs;
 	vb_points = vtx_cache.getVertexBuffer<DrawVert>(vc_points, offs, count);
 
-	renderer->setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
-	renderer->setFrameBuffer(pass, fb);
-	renderer->setPrimitiveType(gfx::PrimitiveType::Point);
-	renderer->setRenderState(gfx::GLS_DEPTHFUNC_LESS);
-	renderer->setProgramVar("m_VP", VP);
-	renderer->setProgramVar("m_W", W);
-	renderer->setProgramVar("m_W2", W2);
-	renderer->setVertexDecl(layout);
-	renderer->setInstanceCount(2);
-	renderer->setVertexBuffer(vb_points);
-	renderer->setVertexBuffer(tmp, 1, 0);
+	gfx::UniformMap uniforms1{
+		{"g_mViewProjectionTransform", VP},
+		{"g_mWorldTransform", W},
+		{"g_mWorldTransform2", W2}
+	};
 
-	renderer->submit(pass, prgPoints, count, offs, 0);
+	hwr->setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
+	hwr->setFrameBuffer(pass, fb);
+	hwr->setPrimitiveType(gfx::PrimitiveType::Point);
+	hwr->setRenderState(gfx::GLS_DEPTHFUNC_LESS);
+	hwr->setUniforms(uniforms1);
+	hwr->setVertexDecl(layout);
+	hwr->setInstanceCount(2);
+	hwr->setVertexBuffer(vb_points);
+	hwr->setVertexBuffer(tmp, 1, 0);
+
+	hwr->submit(pass, prgPoints, count, offs, 0);
 
 	W = glm::rotate(glm::mat4(1), glm::radians(rotY), glm::vec3(0, 1, 0));
 	const glm::mat4 sky_view = glm::mat4(glm::mat3(W));
@@ -417,78 +379,77 @@ bool EngineTestEffect::Render()
 	++pass;
 
 	vb_skybox = vtx_cache.getVertexBuffer<DrawVert>(vc_skybox, offs, count);
+	gfx::VertexAttribMap attrs{ {5,2U} };
 
-	renderer->setClearBits(pass, 0);
-	renderer->setFrameBuffer(pass, fb);
-	renderer->setRenderState(gfx::GLS_DEPTHFUNC_LESS|gfx::GLS_DEPTHMASK);
-	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
-	renderer->setVertexDecl(layout);
-	renderer->setVertexAttrib(5, 2U);
-	renderer->setVertexBuffer(vb_skybox);
-	renderer->setProgramVar("m_P", P);
-	renderer->setProgramVar("m_V", sky_view);
-	renderer->setProgramVar("samp0", 0);
-	renderer->setProgramVar("g_vData", 1);
-	renderer->setTexture(skybox, 0);
-	renderer->setTexture(bt, 1);
-	renderer->submit(pass, prgSkybox, count, offs, 0);
+	hwr->setClearBits(pass, 0);
+	hwr->setFrameBuffer(pass, fb);
+	hwr->setRenderState(gfx::GLS_DEPTHFUNC_LESS|gfx::GLS_DEPTHMASK);
+	hwr->setPrimitiveType(gfx::PrimitiveType::Triangles);
+	hwr->setVertexDecl(layout);
+	hwr->setVertexAttribs(attrs);
+	hwr->setVertexBuffer(vb_skybox);
+	hwr->setUniform("m_P", P);
+	hwr->setUniform("m_V", sky_view);
+	hwr->setUniform("samp0", 0);
+	hwr->setUniform("g_vData", 1);
+	hwr->setTexture(skybox, 0);
+	hwr->setTexture(bufTex, 1);
+	hwr->submit(pass, prgSkybox, count, offs, 0);
 
 	++pass;
-	vb_pp = vtx_cache.getVertexBuffer<DrawVert>(vc_pp, offs, count);
 	//renderer.setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
-	renderer->setFrameBuffer(pass, gfx::FrameBufferHandle{0});
-	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
-	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
-	renderer->setTexture(color_attachment);
-	renderer->setVertexBuffer(vb_pp);
-	renderer->setVertexDecl(layout);
-	renderer->setProgramVar("samp0", 0);
-	renderer->setProgramVar("g_offset", pp_offset);
-	renderer->setProgramVar("g_kernel", kernel);
-	renderer->submit(pass, prgPP, count, offs, 0);
+	hwr->setFrameBuffer(pass, gfx::FrameBufferHandle{0});
+	hwr->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
+	hwr->setPrimitiveType(gfx::PrimitiveType::Triangles);
+	hwr->setTexture(color_attachment);
+	hwr->setVertexBuffer(gfx::VertexBufferHandle{});
+	hwr->setVertexDecl(layout);
+	hwr->setUniform("g_tInput", 0);
+	hwr->setUniform("g_fOffset", pp_offset);
+	hwr->setUniform("g_iKernel", kernel);
+	hwr->submit(pass, prgPP, 6, 0, 0);
 
 	++pass;
-	renderer->setClearBits(pass, 0);
-	renderer->setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
-	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
-	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
-	renderer->setVertexDecl(layout);
-	renderer->setTexture(depth_attachment);
-	renderer->setVertexBuffer(vb_pp);
-	renderer->setProgramVar("samp0", 0);
+	hwr->setClearBits(pass, 0);
+	hwr->setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
+	hwr->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
+	hwr->setPrimitiveType(gfx::PrimitiveType::Triangles);
+	hwr->setVertexDecl(layout);
+	hwr->setTexture(depth_attachment);
 	float scale = 0.2f;
 	glm::mat4 _w = glm::translate(glm::mat4(1.0f), glm::vec3( (1.0f - scale), (1.0f - scale), 0.0f));
 	_w = glm::scale(_w, glm::vec3(scale));
-	renderer->setProgramVar("m_W", _w);
-	renderer->setProgramVar("g_far", 1700.0f);
-	renderer->submit(pass, prgDepth, count, offs, 0);
+	hwr->setUniform("g_mWorldTransform", _w);
+	hwr->setUniform("g_fFarPlane", 1700.0f);
+	hwr->setUniform("samp0", 0);
+	hwr->submit(pass, prgDepth, 6, 0, 0);
 
 
 	++pass;
-	renderer->setClearBits(pass, 0);
-	renderer->setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
-	renderer->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
-	renderer->setPrimitiveType(gfx::PrimitiveType::Triangles);
-	renderer->setTexture(texDyn);
-	renderer->setVertexDecl(layout);
-	renderer->setVertexBuffer(vb_pp);
-	renderer->setProgramVar("samp0", 0);
+	hwr->setClearBits(pass, 0);
+	hwr->setFrameBuffer(pass, gfx::FrameBufferHandle{ 0 });
+	hwr->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS | gfx::GLS_DEPTHMASK);
+	hwr->setPrimitiveType(gfx::PrimitiveType::Triangles);
+	hwr->setTexture(texDyn);
+	hwr->setVertexDecl(layout);
+	hwr->setVertexBuffer(gfx::VertexBufferHandle{});
 	scale = 0.2f;
 	_w = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f + scale, -1.0f + scale, 0.0f));
 	_w = glm::scale(_w, glm::vec3(scale));
-	renderer->setProgramVar("m_W", _w);
+	hwr->setUniform("g_mWorldTransform", _w);
+	hwr->setUniform("g_tInput", 0);
 
-	renderer->beginCompute();
+	hwr->beginCompute();
 	{
-		renderer->MemoryBarrier(gfx::barrier::ShaderImageAccess);
-		renderer->submit(pass);
-		renderer->endCompute();
+		hwr->MemoryBarrier(gfx::barrier::ShaderImageAccess);
+		hwr->submit(pass);
+		hwr->endCompute();
 	}
 	
 	//renderer.deleteFence(fence);
-	renderer->submit(pass, prgViewTex, count, offs, 0);
+	hwr->submit(pass, prgViewTex, 6, 0, 0);
 
-	if (!renderer->frame())
+	if (!hwr->frame())
 	{
 		return false;
 	}

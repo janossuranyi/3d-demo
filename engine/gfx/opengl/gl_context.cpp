@@ -361,6 +361,8 @@ namespace gfx {
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_ERROR_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_PORTABILITY_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
 			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 
@@ -497,9 +499,7 @@ namespace gfx {
 					if (item->wait_sync_client)
 					{
 						GLenum result{};
-						GL_CHECK(
-							result = glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, item->wait_timeout)
-						);
+						GL_CHECK(result = glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, item->wait_timeout));
 						if (result == GL_TIMEOUT_EXPIRED)
 						{
 							Warning("glClientWaitSync timeout expired!");
@@ -544,9 +544,7 @@ namespace gfx {
 				}
 			}
 
-			GL_CHECK(
-				glDispatchCompute(item->num_groups_x, item->num_groups_y, item->num_groups_z)
-			);
+			GL_CHECK(glDispatchCompute(item->num_groups_x, item->num_groups_y, item->num_groups_z));
 
 			if (item->fence.isValid())
 			{
@@ -584,9 +582,10 @@ namespace gfx {
 				}
 			}
 
-			uint16_t fb_width, fb_height;
+			ushort fb_width, fb_height;
 
-			if (pass.frame_buffer.internal() > 0) {
+			if (pass.frame_buffer.internal() > 0)
+			{
 				FrameBufferData& fb_data = frame_buffer_map_.at(pass.frame_buffer);
 				fb_width = fb_data.width;
 				fb_height = fb_data.height;
@@ -596,13 +595,14 @@ namespace gfx {
 					active_fb_ = pass.frame_buffer;
 				}
 			}
-			else {
+			else 
+			{
 				fb_width = window_.w;
 				fb_height = window_.h;
 				if (active_fb_.internal() > 0)
 				{
 					GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-					active_fb_ = FrameBufferHandle(0);
+					active_fb_ = FrameBufferHandle{ 0 };
 				}
 			}
 

@@ -6,9 +6,9 @@ layout(location = 0) in vec4 in_Position;
 layout(location = 4) in vec4 in_Color;
 layout(location = 6) in float in_Instance;
 
-uniform mat4 m_W;
-uniform mat4 m_VP;
-uniform mat4 m_W2;
+uniform mat4 g_mWorldTransform;
+uniform mat4 g_mViewProjectionTransform;
+uniform mat4 g_mWorldTransform2;
 
 out INTERFACE {
 	vec4 fragColor;
@@ -21,9 +21,9 @@ void main() {
 
 	//gl_InstanceID
 	
-	mat4 W = (in_Instance < 0.5) ? m_W2 : m_W;
-	//mat4 W = (gl_InstanceID % 2)==0 ? m_W2 : m_W;
+	mat4 W = (in_Instance < 0.5) ? g_mWorldTransform2 : g_mWorldTransform;
+	//mat4 W = (gl_InstanceID % 2)==0 ? g_mWorldTransform2 : g_mWorldTransform;
 
-	gl_Position = m_VP * W * in_Position;
+	gl_Position = g_mViewProjectionTransform * W * in_Position;
 	gl_PointSize = clamp(20 - (gl_Position.z / 50), 1, 20);
 }

@@ -12,8 +12,8 @@ namespace gfx {
 			return;
 		}
 
-		auto& tb = texture_buffer_map_.find(cmd.hbuffer);
-		if (tb == std::end(texture_buffer_map_))
+		auto& texBuf = texture_buffer_map_.find(cmd.hbuffer);
+		if (texBuf == std::end(texture_buffer_map_))
 		{
 			return;
 		}
@@ -24,11 +24,11 @@ namespace gfx {
 		GL_CHECK(glBindTexture(target, texture));
 		auto& texinfo = s_texture_format[static_cast<int>(cmd.format)];
 		if (cmd.size == 0) {
-			glTexBuffer(target, texinfo.internal_format, tb->second.buffer);
+			glTexBuffer(target, texinfo.internal_format, texBuf->second.buffer);
 		}
 		else {
 			assert((cmd.offset & (gl_texture_buffer_offset_alignment_ - 1)) == 0);
-			glTexBufferRange(target, texinfo.internal_format, tb->second.buffer, cmd.offset, cmd.size);
+			glTexBufferRange(target, texinfo.internal_format, texBuf->second.buffer, cmd.offset, cmd.size);
 		}
 
 		texture_map_.emplace(cmd.htexture, TextureData{ texture, target, cmd.format });

@@ -17,16 +17,16 @@ struct EngineTestEffect : public Effect
 	bool HandleEvent(const SDL_Event* ev, float time);
 	bool Render();
 
-	gfx::vtxCacheHandle vc_points, vc_pp, vc_skybox;
+	gfx::vtxCacheHandle vc_points, vc_skybox;
 	gfx::VertexCache vtx_cache;
 
-	gfx::VertexBufferHandle vb_points, vb_pp, vb_skybox;
+	gfx::VertexBufferHandle vb_points, vb_skybox;
 	gfx::VertexBufferHandle tmp;
 	gfx::FrameBufferHandle fb;
-	gfx::TextureBufferHandle tb;
+	gfx::TextureBufferHandle texBuf;
 
 	gfx::TextureHandle color_attachment, depth_attachment;
-	gfx::TextureHandle skybox, texDyn, bt;
+	gfx::TextureHandle skybox, texDyn, bufTex;
 	int kernel{ 0 };
 
 	const int NUMPOINTS = 500000;
@@ -43,6 +43,8 @@ struct EngineTestEffect : public Effect
 	gfx::ProgramHandle prgDepth;
 	gfx::ProgramHandle prgComp;
 	gfx::ProgramHandle prgViewTex;
+	gfx::ProgramHandle prgGauss;
 	gfx::VertexLayoutHandle layout_handle;
+
 };
 

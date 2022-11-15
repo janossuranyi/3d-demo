@@ -28,8 +28,9 @@ namespace gfx {
 		submit_{&frames_[0]},
 		render_{ &frames_[1] }
 	{
-		Info("sizeof(RenderItem)=%d", sizeof(RenderItem));
+		Info(" sizeof(RenderItem)=%d", sizeof(RenderItem));
 		Info("alignof(RenderItem)=%d", alignof(RenderItem));
+		Info(" sizeof(RenderItem.uniforms)=%d", sizeof(RenderItem::uniforms));
 	}
 
 	Renderer::~Renderer()
@@ -476,90 +477,65 @@ namespace gfx {
 		submit_->renderPass(pass).clear_color = value;
 	}
 
-	void Renderer::setProgramVar(const std::string& name, int value)
+	void Renderer::setUniform(const std::string& name, int value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 
-	void Renderer::setProgramVar(const std::string& name, float value)
+	void Renderer::setUniform(const std::string& name, float value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 
-	void Renderer::setProgramVar(const std::string& name, const glm::vec2& value)
+	void Renderer::setUniform(const std::string& name, const glm::vec2& value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 
-	void Renderer::setProgramVar(const std::string& name, const glm::vec3& value)
+	void Renderer::setUniform(const std::string& name, const glm::vec3& value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 
-	void Renderer::setProgramVar(const std::string& name, const glm::vec4& value)
+	void Renderer::setUniform(const std::string& name, const glm::vec4& value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 
-	void Renderer::setProgramVar(const std::string& name, const glm::mat3& value)
+	void Renderer::setUniform(const std::string& name, const glm::mat3& value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 
-	void Renderer::setProgramVar(const std::string& name, const glm::mat4& value)
+	void Renderer::setUniform(const std::string& name, const glm::mat4& value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 
-	void Renderer::setProgramVar(const std::string& name, const std::vector<float>& value)
+	void Renderer::setUniform(const std::string& name, const std::vector<float>& value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 
-	void Renderer::setProgramVar(const std::string& name, const std::vector<glm::vec4>& value)
+	void Renderer::setUniform(const std::string& name, const std::vector<glm::vec4>& value)
 	{
-		setProgramVar(name, UniformData{ value });
+		setUniform(name, UniformData{ value });
 	}
 	void Renderer::setVertexDecl(const VertexDecl& vertDecl)
 	{
 		submit_->active_item.vertexDecl = vertDecl;
 	}
-	void Renderer::setVertexAttrib(ushort index, int value)
+	void gfx::Renderer::setVertexAttribs(VertexAttribMap& attribs)
 	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
+		submit_->active_item.vertexAttribs.merge(attribs);
 	}
-	void Renderer::setVertexAttrib(ushort index, uint value)
+
+	void Renderer::setUniforms(UniformMap& uniforms)
 	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
+		if (compute_active_) submit_->active_compute.uniforms.merge(uniforms);
+		else submit_->active_item.uniforms.merge(uniforms);
 	}
-	void Renderer::setVertexAttrib(ushort index, float value)
-	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
-	}
-	void Renderer::setVertexAttrib(ushort index, vec2 value)
-	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
-	}
-	void Renderer::setVertexAttrib(ushort index, ivec2 value)
-	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
-	}
-	void Renderer::setVertexAttrib(ushort index, vec3 value)
-	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
-	}
-	void Renderer::setVertexAttrib(ushort index, ivec3 value)
-	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
-	}
-	void Renderer::setVertexAttrib(ushort index, vec4 value)
-	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
-	}
-	void Renderer::setVertexAttrib(ushort index, ivec4 value)
-	{
-		submit_->active_item.vertexAttribs.emplace(index, value);
-	}
+
 	void gfx::Renderer::beginCompute()
 	{
 		compute_active_ = true;
@@ -581,7 +557,6 @@ namespace gfx {
 		}
 		else
 		{
-
 			// wait previous render to finnish
 			{
 				std::unique_lock<std::mutex> lck(render_mtx_);
@@ -657,7 +632,7 @@ namespace gfx {
 
 		return render_passes[index];
 	}
-	void Renderer::setProgramVar(const std::string& name, UniformData data)
+	void Renderer::setUniform(const std::string& name, UniformData data)
 	{
 		if(compute_active_) submit_->active_compute.uniforms[name] = data;
 		else submit_->active_item.uniforms[name] = data;

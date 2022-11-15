@@ -1,9 +1,9 @@
 @set SDL2DIR=d:\lib\SDL2-2.0.22
 
-rd /S /Q build
-pause
+REM rd /S /Q build
+REM pause
+REM md build
 
-md build
 cd build
 cmake -L ..
 rem cmake --build . --config Debug

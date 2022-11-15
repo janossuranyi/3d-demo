@@ -1,14 +1,14 @@
 #include "version.inc.glsl"
 
 in INTERFACE {
-	vec2 TexCoord;
+	vec2 uv;
 } In;
 
 out vec4 FS_OUT;
 
-uniform sampler2D samp0;
+uniform sampler2D g_tInput;
 
 void main()
 {
-	FS_OUT = texture(samp0, In.TexCoord);
+	FS_OUT = texture(g_tInput, In.uv);
 }

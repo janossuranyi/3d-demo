@@ -279,6 +279,7 @@ namespace gfx {
     struct VertexBinding {
         VertexBufferHandle handle;
         uint offset;
+
         inline bool operator!=(const VertexBinding& other) const
         {
             return handle != other.handle || offset != other.offset;
@@ -307,8 +308,9 @@ namespace gfx {
 
     
     struct RenderItem {
-        alignas(std::hardware_destructive_interference_size) VertexBuffers vbs;
-        //VertexBufferHandle vb;
+        alignas(std::hardware_destructive_interference_size)
+        Array<VertexBinding, MAX_LAYOUT_BUFFERS> vbs;
+        Array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
         IndexBufferHandle ib;
         uint ib_offset;
         uint vb_offset;
@@ -318,18 +320,18 @@ namespace gfx {
         ProgramHandle program;
         VertexDecl vertexDecl;
         UniformMap uniforms;
-        Array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
         VertexAttribMap vertexAttribs;
 
-        bool scissor = false;
-        ushort scissor_x = 0;
-        ushort scissor_y = 0;
-        ushort scissor_w = 0;
-        ushort scissor_h = 0;
+        bool scissor{ false };
+        ushort scissor_x{ 0 };
+        ushort scissor_y{ 0 };
+        ushort scissor_w{ 0 };
+        ushort scissor_h{ 0 };
 
         StateBits state_bits;
     };
-    //static_assert(alignof(RenderItem) == std::hardware_destructive_interference_size, "");
+    
+    static_assert(alignof(RenderItem) == std::hardware_destructive_interference_size, "");
 
     struct ConstantBufferBinding {
         ConstantBufferHandle handle;
@@ -436,26 +438,18 @@ namespace gfx {
         void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
         void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
         void                setVertexDecl(const VertexDecl& decl);
-        void                setVertexAttrib(ushort index, int value);
-        void                setVertexAttrib(ushort index, uint value);
-        void                setVertexAttrib(ushort index, float value);
-        void                setVertexAttrib(ushort index, vec2 value);
-        void                setVertexAttrib(ushort index, ivec2 value);
-        void                setVertexAttrib(ushort index, vec3 value);
-        void                setVertexAttrib(ushort index, ivec3 value);
-        void                setVertexAttrib(ushort index, vec4 value);
-        void                setVertexAttrib(ushort index, ivec4 value);
-
-        void                setProgramVar(const std::string& name, int value);
-        void                setProgramVar(const std::string& name, float value);
-        void                setProgramVar(const std::string& name, const glm::vec2& value);
-        void                setProgramVar(const std::string& name, const glm::vec3& value);
-        void                setProgramVar(const std::string& name, const glm::vec4& value);
-        void                setProgramVar(const std::string& name, const glm::mat3& value);
-        void                setProgramVar(const std::string& name, const glm::mat4& value);
-        void                setProgramVar(const std::string& name, const std::vector<float>& value);
-        void                setProgramVar(const std::string& name, const std::vector<glm::vec4>& value);
-        void                setProgramVar(const std::string& name, UniformData data);
+        void                setVertexAttribs(VertexAttribMap& attribs);
+        void                setUniforms(UniformMap& uniforms);
+        void                setUniform(const std::string& name, int value);
+        void                setUniform(const std::string& name, float value);
+        void                setUniform(const std::string& name, const glm::vec2& value);
+        void                setUniform(const std::string& name, const glm::vec3& value);
+        void                setUniform(const std::string& name, const glm::vec4& value);
+        void                setUniform(const std::string& name, const glm::mat3& value);
+        void                setUniform(const std::string& name, const glm::mat4& value);
+        void                setUniform(const std::string& name, const std::vector<float>& value);
+        void                setUniform(const std::string& name, const std::vector<glm::vec4>& value);
+        void                setUniform(const std::string& name, UniformData data);
 
         void                setVertexBuffer(VertexBufferHandle vb, ushort index = 0, uint offset = 0);
         void                submit(uint pass);
