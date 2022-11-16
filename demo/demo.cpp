@@ -46,6 +46,7 @@ void App_EventLoop()
     int sampleCount = 0;
     Uint32 ticks = 0;
     GLsync sync{};
+    uint64_t frame_num{ 0 };
 
     while (running)
     {
@@ -79,7 +80,7 @@ void App_EventLoop()
 
         if (sync) GL_CHECK(glDeleteSync(sync));
 #endif
-        if (!activeEffect->Render())
+        if (!activeEffect->Render(frame_num))
         {
             running = false;
         }
@@ -101,6 +102,7 @@ void App_EventLoop()
 #if 0
         GPU::flipSwapChain();
 #endif
+        ++frame_num;
     }
 }
 

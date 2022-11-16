@@ -20,6 +20,7 @@ namespace gfx {
 	}
 
 	Renderer::Renderer() :
+		framenum_{0},
 		width_{0},
 		height_{0},
 		window_title_{"JS-Engine"},
@@ -28,9 +29,13 @@ namespace gfx {
 		submit_{&frames_[0]},
 		render_{ &frames_[1] }
 	{
+#ifdef _DEBUG
+		Info(" sizeof(ComputeItem)=%d", sizeof(ComputeItem));
 		Info(" sizeof(RenderItem)=%d", sizeof(RenderItem));
+		Info(" sizeof(vbs)=%d", sizeof(RenderItem::vbs));
+		Info(" sizeof(textures)=%d", sizeof(RenderItem::textures));
 		Info("alignof(RenderItem)=%d", alignof(RenderItem));
-		Info(" sizeof(RenderItem.uniforms)=%d", sizeof(RenderItem::uniforms));
+#endif
 	}
 
 	Renderer::~Renderer()
@@ -477,63 +482,19 @@ namespace gfx {
 		submit_->renderPass(pass).clear_color = value;
 	}
 
-	void Renderer::setUniform(const std::string& name, int value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-
-	void Renderer::setUniform(const std::string& name, float value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-
-	void Renderer::setUniform(const std::string& name, const glm::vec2& value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-
-	void Renderer::setUniform(const std::string& name, const glm::vec3& value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-
-	void Renderer::setUniform(const std::string& name, const glm::vec4& value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-
-	void Renderer::setUniform(const std::string& name, const glm::mat3& value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-
-	void Renderer::setUniform(const std::string& name, const glm::mat4& value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-
-	void Renderer::setUniform(const std::string& name, const std::vector<float>& value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-
-	void Renderer::setUniform(const std::string& name, const std::vector<glm::vec4>& value)
-	{
-		setUniform(name, UniformData{ value });
-	}
-	void Renderer::setVertexDecl(const VertexDecl& vertDecl)
+	void Renderer::setVertexDecl(const VertexDecl* vertDecl)
 	{
 		submit_->active_item.vertexDecl = vertDecl;
 	}
-	void gfx::Renderer::setVertexAttribs(VertexAttribMap& attribs)
+	void gfx::Renderer::setVertexAttribs(const VertexAttribMap* attribs)
 	{
-		submit_->active_item.vertexAttribs.merge(attribs);
+		submit_->active_item.vertexAttribs = attribs;
 	}
 
-	void Renderer::setUniforms(UniformMap& uniforms)
+	void Renderer::setUniforms(const UniformMap* uniforms)
 	{
-		if (compute_active_) submit_->active_compute.uniforms.merge(uniforms);
-		else submit_->active_item.uniforms.merge(uniforms);
+		if (compute_active_) submit_->active_compute.pUniforms = uniforms;
+		else submit_->active_item.pUniforms = uniforms;
 	}
 
 	void gfx::Renderer::beginCompute()
@@ -573,6 +534,8 @@ namespace gfx {
 			}
 			render_cond_.notify_all();
 		}
+
+		++framenum_;
 
 		return true;
 	}
@@ -631,11 +594,6 @@ namespace gfx {
 		}
 
 		return render_passes[index];
-	}
-	void Renderer::setUniform(const std::string& name, UniformData data)
-	{
-		if(compute_active_) submit_->active_compute.uniforms[name] = data;
-		else submit_->active_item.uniforms[name] = data;
 	}
 
 	void Renderer::setVertexBuffer(VertexBufferHandle vb, ushort index, uint offset)

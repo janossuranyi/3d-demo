@@ -199,7 +199,7 @@ void LoadModelEffect::blur(int iter, int w, int h, int active_src)
     }
 }
 
-bool LoadModelEffect::Render()
+bool LoadModelEffect::Render(uint64_t frame)
 {
     fb.bind();
 

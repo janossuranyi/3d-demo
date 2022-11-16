@@ -1,6 +1,7 @@
 #pragma once
 #include <cinttypes>
 #include <unordered_map>
+#include <iterator>
 #include <GL/glew.h>
 #include <SDL.h>
 #include "gfx/renderer.h"
@@ -217,7 +218,7 @@ namespace gfx {
 
 		void compute(const RenderPass& pass);
 		void setup_uniforms(ProgramData& program_data, const UniformMap& uniforms);
-		void setup_textures(const TextureBindings& textures);
+		void setup_textures(const TextureBinding* textures, size_t n);
 
 		bool gl_version_430_{};
 		bool gl_version_450_{};
@@ -232,5 +233,4 @@ namespace gfx {
 		GLuint create_buffer_real(GLenum target, BufferUsage usage, uint size, const Memory& data, uint& actualSize);
 		void update_buffer_real(GLenum target, GLuint buffer, uint offset, uint size, const Memory& data);
 	};
-
 }

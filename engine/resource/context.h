@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../common.h"
-#include "../gfx/renderer.h"
-#include "../gfx/shader_manager.h"
+#include "common.h"
+#include "gfx/renderer.h"
+#include "gfx/shader_manager.h"
 
 namespace ctx {
 

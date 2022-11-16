@@ -15,7 +15,7 @@ struct EngineTestEffect : public Effect
 	bool Init();
 	bool Update(float time);
 	bool HandleEvent(const SDL_Event* ev, float time);
-	bool Render();
+	bool Render(uint64_t frame);
 
 	gfx::vtxCacheHandle vc_points, vc_skybox;
 	gfx::VertexCache vtx_cache;
@@ -46,5 +46,14 @@ struct EngineTestEffect : public Effect
 	gfx::ProgramHandle prgGauss;
 	gfx::VertexLayoutHandle layout_handle;
 
+	struct frameData_t {
+		gfx::UniformMap effect1_vars;
+		gfx::UniformMap effect2_vars;
+		gfx::UniformMap effect3_vars;
+		gfx::UniformMap effect4_vars;
+		gfx::UniformMap effect5_vars;
+		gfx::UniformMap effect6_vars;
+		gfx::VertexAttribMap attrs{ {5,2U} };
+	} perframe_data[2];
 };
 

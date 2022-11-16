@@ -263,7 +263,7 @@ namespace gfx {
         TextureHandle handle;
     };
 
-    using TextureBindings = std::array<TextureBinding, MAX_TEXTURE_SAMPLERS>;
+    //using TextureBindings = Array<TextureBinding, MAX_TEXTURE_SAMPLERS>;
 
     struct ImageBinding {
         TextureHandle handle;
@@ -273,8 +273,6 @@ namespace gfx {
         Access access;
         TextureFormat format;
     };
-
-    using ImageBindings = std::array<ImageBinding, MAX_IMAGE_UNITS>;
 
     struct VertexBinding {
         VertexBufferHandle handle;
@@ -290,9 +288,8 @@ namespace gfx {
         }
     };
 
-    using VertexBuffers = Array<VertexBinding, MAX_LAYOUT_BUFFERS>;
-
     struct ComputeItem {
+        alignas(std::hardware_destructive_interference_size)
         uint16_t num_groups_x;
         uint16_t num_groups_y;
         uint16_t num_groups_z;
@@ -300,9 +297,9 @@ namespace gfx {
         FenceHandle fence;
         bool wait_sync_client{false};
         uint64_t wait_timeout;
-        ImageBindings images;
-        TextureBindings textures;
-        UniformMap uniforms;
+        Array<ImageBinding, MAX_IMAGE_UNITS> images;
+        Array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
+        UniformMap const* pUniforms;
         uint barrier_bits;
     };
 
@@ -318,9 +315,9 @@ namespace gfx {
         uint instance_count{1};
         PrimitiveType primitive_type;
         ProgramHandle program;
-        VertexDecl vertexDecl;
-        UniformMap uniforms;
-        VertexAttribMap vertexAttribs;
+        VertexDecl const* vertexDecl;
+        UniformMap const* pUniforms;
+        VertexAttribMap const* vertexAttribs;
 
         bool scissor{ false };
         ushort scissor_x{ 0 };
@@ -384,6 +381,7 @@ namespace gfx {
 
         bool                        init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
         glm::ivec2                  getFramebufferSize() const;
+        inline uint64               getFrameNum() const { return framenum_; };
 
         VertexLayoutHandle          createVertexLayout(const VertexDecl& decl);
         VertexBufferHandle          createVertexBuffer(uint size, BufferUsage usage, Memory data);
@@ -437,19 +435,9 @@ namespace gfx {
         void                setClearBits(unsigned pass, uint16_t value);
         void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
         void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
-        void                setVertexDecl(const VertexDecl& decl);
-        void                setVertexAttribs(VertexAttribMap& attribs);
-        void                setUniforms(UniformMap& uniforms);
-        void                setUniform(const std::string& name, int value);
-        void                setUniform(const std::string& name, float value);
-        void                setUniform(const std::string& name, const glm::vec2& value);
-        void                setUniform(const std::string& name, const glm::vec3& value);
-        void                setUniform(const std::string& name, const glm::vec4& value);
-        void                setUniform(const std::string& name, const glm::mat3& value);
-        void                setUniform(const std::string& name, const glm::mat4& value);
-        void                setUniform(const std::string& name, const std::vector<float>& value);
-        void                setUniform(const std::string& name, const std::vector<glm::vec4>& value);
-        void                setUniform(const std::string& name, UniformData data);
+        void                setVertexDecl(const VertexDecl* decl);
+        void                setVertexAttribs(const VertexAttribMap* attribs);
+        void                setUniforms(const UniformMap* uniforms);
 
         void                setVertexBuffer(VertexBufferHandle vb, ushort index = 0, uint offset = 0);
         void                submit(uint pass);
@@ -500,6 +488,7 @@ namespace gfx {
         HashMap<FrameBufferHandle, Vector<TextureHandle>> frame_buffer_textures_;
 
         bool compute_active_;
+        uint64 framenum_;
 
         Frame frames_[2];
         Frame* submit_;

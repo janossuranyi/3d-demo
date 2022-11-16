@@ -320,7 +320,7 @@ namespace gfx {
 		for (int ext_ = 0; ext_ < numExts; ++ext_)
 		{
 			const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, ext_);
-			Info("%s", extension);
+			//Info("%s", extension);
 			gl_extensions_.emplace(extension);
 		}
 		const float gl_version = float(atof(version.c_str()));
@@ -430,9 +430,9 @@ namespace gfx {
 		SDL_GL_MakeCurrent(windowHandle_, NULL);
 	}
 
-	void OpenGLRenderContext::setup_textures(const TextureBindings& textures)
+	void OpenGLRenderContext::setup_textures(const TextureBinding* textures, size_t n)
 	{
-		for (uint j = 0; j < textures.size(); ++j)
+		for (auto j = 0; j < n; ++j)
 		{
 			if (textures[j].handle.isValid())
 			{
@@ -526,8 +526,11 @@ namespace gfx {
 				active_program_ = item->program;
 			}
 
-			setup_uniforms(program_data, item->uniforms);
-			setup_textures(item->textures);
+			if (item->pUniforms) {
+				setup_uniforms(program_data, *item->pUniforms);
+			}
+
+			setup_textures(&item->textures[0], item->textures.size());
 
 			assert(item->images.size() <= MAX_IMAGE_UNITS);
 			for (uint k = 0; k < item->images.size(); ++k)
@@ -666,8 +669,11 @@ namespace gfx {
 					active_program_ = item->program;
 				}
 
-				setup_uniforms(program_data, item->uniforms);
-				setup_textures(item->textures);
+				if (item->pUniforms) {
+					setup_uniforms(program_data, *item->pUniforms);
+				}
+
+				setup_textures(&item->textures[0], item->textures.size());
 
 				// Element buffer setup
 				if ((!prev || prev->ib != item->ib) && item->ib.isValid())
@@ -695,11 +701,11 @@ namespace gfx {
 					if (gl_version_430_ || ext_.ARB_vertex_attrib_binding)
 					{
 						/* change layout if needed */
-						if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
+						if (item->vertexDecl && !item->vertexDecl->empty() && active_vertex_layout_ != item->vertexDecl->handle())
 						{
-							active_vertex_decl_ = item->vertexDecl;
-							active_vertex_layout_ = item->vertexDecl.handle();
-							GLuint const vao = vertex_array_map_.at(item->vertexDecl.handle());
+							active_vertex_decl_ = *item->vertexDecl;
+							active_vertex_layout_ = item->vertexDecl->handle();
+							GLuint const vao = vertex_array_map_.at(item->vertexDecl->handle());
 							GL_CHECK(glBindVertexArray(vao));
 							layout_change = true;
 						}
@@ -724,7 +730,7 @@ namespace gfx {
 					}
 					else
 					{
-						active_vertex_decl_ = item->vertexDecl;
+						active_vertex_decl_ = *item->vertexDecl;
 						ushort active_binding = 0xffff;
 						for (uint j = 0; j < active_vertex_decl_.size(); ++j)
 						{
@@ -750,10 +756,13 @@ namespace gfx {
 					}
 				}
 
-				VertexAttribSetter vas;
-				for (const auto& e : item->vertexAttribs)
+				if (item->vertexAttribs)
 				{
-					vas.update(e.first, e.second);
+					VertexAttribSetter vas;
+					for (const auto& e : *item->vertexAttribs)
+					{
+						vas.update(e.first, e.second);
+					}
 				}
 
 				const GLenum mode = MapDrawMode(item->primitive_type);
