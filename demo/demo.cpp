@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <filesystem>
 #include <memory>
+#include <tiny_gltf.h>
 #include "demo.h"
 #include "logger.h"
 
@@ -115,6 +116,27 @@ int main(int argc, char** argv)
 
     rc::ResourceManager::add_resource_path("../assets/shaders");
     rc::ResourceManager::add_resource_path("../assets/textures");
+    rc::ResourceManager::add_resource_path("../assets/models");
+
+    using namespace tinygltf;
+    using namespace std;
+
+    TinyGLTF loader;
+    Model model;
+    string err, warn;
+
+    auto file = rc::ResourceManager::get_resource("models/Steampunk_Dirigible_with_Ship.glb");
+    if (loader.LoadBinaryFromFile(&model, &err, &warn, file))
+    {
+        Info("Version: %s, %s", model.asset.version.c_str(), model.asset.generator.c_str());
+        for (auto& e : model.extensionsRequired) {
+            Info("%s", e.c_str());
+        }
+    }
+
+
+    exit(0);
+
 
     Info("V_Init Start");
 #if 0
