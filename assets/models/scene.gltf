@@ -190,18 +190,18 @@
     "images" : [
         {
             "mimeType" : "image/png",
-            "name" : "base-white-tile_normal-ogl.png",
-            "uri" : "textures/base-white-tile_normal-ogl.png"
+            "name" : "base-white-tile_normal-ogl.png.001",
+            "uri" : "../textures/base-white-tile_normal-ogl.png"
         },
         {
             "mimeType" : "image/png",
-            "name" : "base-white-tile_albedo.png",
-            "uri" : "textures/base-white-tile_albedo.png"
+            "name" : "base-white-tile_albedo.png.001",
+            "uri" : "../textures/base-white-tile_albedo.png"
         },
         {
             "mimeType" : "image/png",
-            "name" : "base-white-tile_metallic-base-white-tile_roughness.png",
-            "uri" : "textures/base-white-tile_metallic-base-white-tile_roughness.png"
+            "name" : "base-white-tile_metallic-base-white-tile_roughness.png.001",
+            "uri" : "../textures/base-white-tile_metallic-base-white-tile_roughness.png"
         }
     ],
     "accessors" : [

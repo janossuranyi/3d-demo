@@ -79,13 +79,12 @@ bool EngineTestEffect::Init()
 {
 	gfx::Renderer* hwr = ctx::Context::default()->hwr();
 	gfx::ShaderManager* sm = ctx::Context::default()->shaderManager();
+	gfx::VertexCache& vtx_cache = *ctx::Context::default()->vertexCache();
 
 	if (!hwr->init(gfx::RendererType::OpenGL, 1440, 900, "test", 1))
 	{
 		return false;
 	}
-
-	vtx_cache.start(hwr, 64 * 1024 * 1024, 128 * 1024);
 
 	//sm->setVersionString("#version 450 core\n");
 
@@ -326,6 +325,7 @@ bool EngineTestEffect::HandleEvent(const SDL_Event* ev, float time)
 bool EngineTestEffect::Render(uint64_t frame)
 {
 	gfx::Renderer* hwr = ctx::Context::default()->hwr();
+	gfx::VertexCache& vtx_cache = *ctx::Context::default()->vertexCache();
 
 	uint16_t pass = 0;
 	gfx::FenceHandle fence;

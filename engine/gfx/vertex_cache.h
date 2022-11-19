@@ -21,8 +21,10 @@ namespace gfx {
 
 		struct geoBufferSet
 		{
+			VertexBufferHandle pb;
 			VertexBufferHandle vb;
 			IndexBufferHandle ib;
+			std::atomic_ulong position_alloced;
 			std::atomic_ulong vertex_alloced;
 			std::atomic_ulong index_alloced;
 			uint vertex_size;
@@ -33,6 +35,7 @@ namespace gfx {
 				ib(),
 				vertex_alloced(0),
 				index_alloced(0),
+				position_alloced(0),
 				vertex_size(0),
 				index_size(0) {}
 
@@ -43,20 +46,24 @@ namespace gfx {
 			}
 		};
 
-		vtxCacheHandle allocStaticVertex(Memory data);
-		vtxCacheHandle allocStaticIndex(Memory data);
-		vtxCacheHandle allocVertex(Memory data);
-		vtxCacheHandle allocIndex(Memory data);
+		void resetStaticBufferSet();
+		vtxCacheHandle allocStaticPosition(Memory& data);
+		vtxCacheHandle allocStaticVertex(Memory& data);
+		vtxCacheHandle allocStaticIndex(Memory& data);
+		vtxCacheHandle allocVertex(Memory& data);
+		vtxCacheHandle allocIndex(Memory& data);
 
-		template<typename T>	
+		template<typename T>
+		VertexBufferHandle getPositionBuffer(vtxCacheHandle handle, uint& offset, uint& size);
+		template<typename T>
 		VertexBufferHandle getVertexBuffer(vtxCacheHandle handle, uint& offset, uint& size);
 		template<typename T>
 		IndexBufferHandle getIndexBuffer(vtxCacheHandle handle, uint& offset, uint& size);
 
 		void frame();
 	private:
-		vtxCacheHandle realVertexAlloc(Memory data, geoBufferSet& bs);
-		vtxCacheHandle realIndexAlloc(Memory data, geoBufferSet& bs);
+		vtxCacheHandle realVertexAlloc(Memory& data, geoBufferSet& bs);
+		vtxCacheHandle realIndexAlloc(Memory& data, geoBufferSet& bs);
 
 		Renderer* renderer_;
 		geoBufferSet static_buffer_set_;
@@ -68,6 +75,15 @@ namespace gfx {
 /*****************************************************/
 /**               IMPLEMENTATION                     */
 /*****************************************************/
+
+	template<typename T>
+	VertexBufferHandle VertexCache::getPositionBuffer(vtxCacheHandle handle, uint& offset, uint& size)
+	{
+		size = (handle & 0xFFFFFFFE) / sizeof(T);
+		offset = (handle >> 31) / sizeof(T);
+
+		return static_buffer_set_.pb;
+	}
 
 	template<typename T>
 	VertexBufferHandle VertexCache::getVertexBuffer(vtxCacheHandle handle, uint& offset, uint& size)

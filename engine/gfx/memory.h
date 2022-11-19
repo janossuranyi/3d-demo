@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <vector>
 #include <memory>
 #include <cinttypes>
@@ -46,11 +47,47 @@ namespace gfx {
         /// <returns>a byte</returns>
         uint8_t operator[](size_t index) const;
 
+        /// Get a T from memory indexed by "index"
+        /// <param name="index">Memory offset</param>
+        /// <returns>a T</returns>
+        template<typename T>
+        T operator[](size_t index) const;
+
+        /// Get a T from memory indexed by "index"
+        /// <param name="index">Memory offset</param>
+        /// <returns>a const T&</returns>
+        template<typename T>
+        const T& operator[](size_t index) const;
+
+        /// Get a T from memory indexed by "index"
+        /// <param name="index">Memory offset</param>
+        /// <returns>a T&</returns>
+        template<typename T>
+        T& operator[](size_t index) const;
+
     private:
         std::shared_ptr<uint8_t> data_;
         size_t size_;
 
     };
+
+    template<typename T>
+    T Memory::operator[](size_t index) const {
+        assert(index < size_);
+        return reinterpret_cast<T*>(data_.get())[index];
+    }
+
+    template<typename T>
+    const T& Memory::operator[](size_t index) const {
+        assert(index < size_);
+        return reinterpret_cast<T*>(data_.get())[index];
+    }
+
+    template<typename T>
+    T& Memory::operator[](size_t index) const {
+        assert(index < size_);
+        return reinterpret_cast<T*>(data_.get())[index];
+    }
 
     template<typename T>
     Memory::Memory(const T* data, size_t size) : Memory(data ? size : 0) {

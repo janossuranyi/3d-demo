@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <memory>
 #include <tiny_gltf.h>
+#include <cmath>
 #include "demo.h"
 #include "logger.h"
 
@@ -109,6 +110,64 @@ void App_EventLoop()
 
 namespace fs = std::filesystem;
 
+void traverse_node(tinygltf::Model const& model, int node, int level = 0)
+{
+    std::string s{};
+    for (int i = 0; i < level; ++i) s += "\t";
+
+    tinygltf::Node const& N = model.nodes[node];
+
+    {
+        Info("--------------------------------------------------------------------------");
+        Info("%s Node %s", s.c_str(), N.name.c_str());
+        if (N.matrix.size())
+        {
+            Info("%s matrix", s.c_str());
+        }
+        if (N.rotation.size())
+        {
+            Info("%s rotation (%f,%f,%f,%f)", s.c_str(), N.rotation[0], N.rotation[1], N.rotation[2], N.rotation[3]);
+        }
+        if (N.scale.size())
+        {
+            Info("%s scale (%f,%f,%f)", s.c_str(), N.scale[0], N.scale[1], N.scale[2]);
+        }
+        if (N.translation.size())
+        {
+            Info("%s translation (%f,%f,%f)", s.c_str(), N.translation[0], N.translation[1], N.translation[2]);
+        }
+    }
+
+    if (N.mesh >= 0)
+    {
+        tinygltf::Mesh const& M = model.meshes[N.mesh];
+        Info("%s Mesh %d %s pr:%d", s.c_str(), N.mesh, M.name.c_str(),M.primitives.size());
+    }
+    else if (N.camera >= 0)
+    {
+        tinygltf::Camera const& C = model.cameras[N.camera];
+        Info("%s Camera %d %s fov:%f", s.c_str(), N.camera, C.name.c_str(), glm::degrees( C.perspective.yfov ));
+    }
+    else if (N.extensions.size())
+    {
+        for (auto const& ext : N.extensions)
+        {
+            Info("%s Ext: %s", s.c_str(), ext.first.c_str());
+            if (ext.first == "KHR_lights_punctual")
+            {
+                int light = ext.second.Get("light").GetNumberAsInt();
+                auto const& L = model.lights[light];
+                Info("%s Light %d Typ:%d", s.c_str(), light, L.type);
+            }
+        }
+    }
+
+    for (int child : model.nodes[node].children)
+    {
+        traverse_node(model, child, level + 1);
+    }
+}
+
 int main(int argc, char** argv)
 {
 
@@ -125,8 +184,8 @@ int main(int argc, char** argv)
     Model model;
     string err, warn;
 
-    auto file = rc::ResourceManager::get_resource("models/Steampunk_Dirigible_with_Ship.glb");
-    if (loader.LoadBinaryFromFile(&model, &err, &warn, file))
+    auto file = rc::ResourceManager::get_resource("models/scene.gltf");
+    if (loader.LoadASCIIFromFile(&model, &err, &warn, file))
     {
         Info("Version: %s, %s", model.asset.version.c_str(), model.asset.generator.c_str());
         for (auto& e : model.extensionsRequired) {
@@ -134,8 +193,12 @@ int main(int argc, char** argv)
         }
     }
 
+    for (int node : model.scenes[model.defaultScene].nodes)
+    {
+        traverse_node(model, node, 0);
+    }
 
-    exit(0);
+    //exit(0);
 
 
     Info("V_Init Start");

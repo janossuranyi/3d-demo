@@ -18,8 +18,6 @@ struct EngineTestEffect : public Effect
 	bool Render(uint64_t frame);
 
 	gfx::vtxCacheHandle vc_points, vc_skybox;
-	gfx::VertexCache vtx_cache;
-
 	gfx::VertexBufferHandle vb_points, vb_skybox;
 	gfx::VertexBufferHandle tmp;
 	gfx::FrameBufferHandle fb;
