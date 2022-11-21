@@ -60,6 +60,7 @@ namespace gfx {
 
     private:
         static ushort getTypeSize(AttributeType type);
+        static VertexDecl default_;
         ushort offset_{};
         VertexLayoutHandle handle_;
         AttributeList attributes_;

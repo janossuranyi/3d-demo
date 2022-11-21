@@ -80,7 +80,22 @@ namespace gfx {
 			shared_render_context_->start_rendering();
 		}
 
+		defaultVertexDecl_.begin()
+			.add(AttributeName::Position, AttributeType::Float, 3, false, 32, true)
+			.add(AttributeName::TexCoord0, AttributeType::Float, 2, false, 32, true)
+			.add(AttributeName::Normal, AttributeType::Float, 3, false, 32, true)
+			.end();
+
+		
+		auto defLayout = createVertexLayout(defaultVertexDecl_);
+		defaultVertexDecl_.setHandle(defLayout);
+
 		return true;
+	}
+
+	VertexDecl const* Renderer::defaultVertexDecl() const
+	{
+		return &defaultVertexDecl_;
 	}
 
 	glm::ivec2 Renderer::getFramebufferSize() const

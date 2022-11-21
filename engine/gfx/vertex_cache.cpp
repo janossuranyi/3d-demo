@@ -1,4 +1,4 @@
-#include "./vertex_cache.h"
+#include "gfx/vertex_cache.h"
 
 namespace gfx {
 	VertexCache::~VertexCache()

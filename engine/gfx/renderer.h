@@ -15,6 +15,14 @@
 
 namespace gfx {
 
+    struct RenderItemDesc {
+        gfx::VertexBufferHandle vb;
+        gfx::IndexBufferHandle ib;
+        uint vb_offset;
+        uint ib_offset;
+        uint elements;
+    };
+
 
     namespace cmd {
 
@@ -263,7 +271,7 @@ namespace gfx {
         TextureHandle handle;
     };
 
-    //using TextureBindings = Array<TextureBinding, MAX_TEXTURE_SAMPLERS>;
+    using TextureBindings = Array<TextureBinding, MAX_TEXTURE_SAMPLERS>;
 
     struct ImageBinding {
         TextureHandle handle;
@@ -447,6 +455,7 @@ namespace gfx {
         bool                frame();
         bool                renderFrame(Frame* frame);
         void                waitForFrameEnd();
+        VertexDecl const*   defaultVertexDecl() const;
 
     private:
         uint16_t width_, height_;
@@ -500,6 +509,8 @@ namespace gfx {
 
         // Renderer.
         UniqePtr<RenderContext> shared_render_context_;
+
+        VertexDecl defaultVertexDecl_;
 
         // Render thread proc.
         void renderThread();

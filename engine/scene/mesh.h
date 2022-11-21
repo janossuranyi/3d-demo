@@ -1,8 +1,11 @@
 #pragma once
 
+#include <memory>
 #include "engine/resource/context.h"
 #include "engine/common.h"
+#include "engine/gfx/draw_vert.h"
 #include "engine/gfx/renderer.h"
+#include "engine/gfx/material.h"
 #include "engine/math/bounds.h"
 
 namespace scene {
@@ -11,36 +14,41 @@ namespace scene {
 	{
 	public:
 		Mesh() = delete;
-		Mesh(ctx::Context* ctx);
+		Mesh(ctx::Context* ctx, bool astatic = true);
 		Mesh(Mesh& other) = delete;
+
+		void setMaterial(const gfx::Material* material);
+		const gfx::Material* material() const;
 
 		void operator=(const Mesh& other) = delete;
 
 		bool create(
 			const vec3* positions,
-			const vec2* uvs,
+			const vec2* texCoords,
 			const vec3* normals,
 			const vec4* tangents,
 			const vec4* colors,
 			const ushort* indices,
+			uint numVerts,
 			uint elements,
 			gfx::PrimitiveType mode);
 
 		const math::BoundingBox& aabb() const;
-		gfx::VertexBufferHandle vb() const;
-		gfx::IndexBufferHandle ib() const;
-		uint baseVertex() const;
-		uint startIndex() const;
-		void render() const;
-	private:
-		math::BoundingBox aabb_{};
-		gfx::VertexBufferHandle vb_{};
-		gfx::IndexBufferHandle ib_{};
-		uint vb_offset_{};
-		uint ib_offset_{};
-		uint elements_{};
-		gfx::PrimitiveType mode_{};
 
+		void render(ushort pass) const;
+
+		const gfx::RenderItemDesc& renderItemDesc() const;
+	private:
+		bool static_{};
+		math::BoundingBox aabb_{};
+		gfx::PrimitiveType mode_{};
+		gfx::vtxCacheHandle vtxc_{};
+		gfx::vtxCacheHandle idxc_{};
+		uint elements_;
+		uint vertices_;
 		ctx::Context* ctx_{};
+		gfx::Material const* material_{};
+		std::unique_ptr<gfx::DrawVert[]> verts_{};
+		std::unique_ptr<ushort[]> idxs_{};
 	};
 }

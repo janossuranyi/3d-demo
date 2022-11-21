@@ -3,6 +3,7 @@
 
 #include <cinttypes>
 #include <algorithm>
+#include "engine/common.h"
 
 #undef _std
 #define _std std::
@@ -34,6 +35,16 @@ typedef unsigned short halfFloat_t;
 #define HF_MANTISSA(x)	( x & 1023 )
 #define HF_EXP(x)		( ( x & 32767 ) >> 10 )
 #define HF_SIGN(x)		( ( x & 32768 ) ? -1 : 1 )
+
+inline uint32_t pack32(uint8_t x, uint8_t y, uint8_t z, uint8_t w)
+{
+	return ((uint)x << 24) | ((uint)y << 16) | ((uint)z << 8) | ((uint)w);
+}
+
+inline vec4 unpackR8G8G8A8(uint packed)
+{
+	return vec4(float((packed >> 24) & 255u), float((packed >> 16) & 255u), float((packed >> 8) & 255u), float(packed & 255u)) / vec4(255.0f);
+}
 
 inline int8_t floatToSnorm8(float v)
 {

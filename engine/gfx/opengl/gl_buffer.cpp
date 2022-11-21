@@ -13,18 +13,19 @@ namespace gfx {
 		GLuint buffer = static_cast<GLuint>(0xffff);
 		const GLenum _usage = MapBufferUsage(usage);
 
-		GL_CHECK(glGenBuffers(1, &buffer));
-		assert(buffer != 0xffff);
 
 		const GLsizeiptr _size = data.data() ? data.size() : size;
 		if (ext_.ARB_direct_state_access || gl_version_450_)
 		{
-			glNamedBufferData(buffer, _size, data.data(), _usage);
+			GL_CHECK(glCreateBuffers(1, &buffer));
+			GL_CHECK(glNamedBufferData(buffer, _size, data.data(), _usage));
 		}
 		else
 		{
+			GL_CHECK(glGenBuffers(1, &buffer));
 			GL_CHECK(glBindBuffer(target, buffer));
 			GL_CHECK(glBufferData(target, _size, data.data(), _usage));
+			GL_CHECK(glBindBuffer(target, 0));
 		}
 
 		actualSize = _size;
@@ -54,6 +55,7 @@ namespace gfx {
 				std::memcpy(mem, data.data(), size_);
 				GL_CHECK(glUnmapBuffer(target));
 			}
+			glBindBuffer(target, 0);
 		}
 #else
 		if (ext_.ARB_direct_state_access || gl_version_450_)
@@ -64,6 +66,7 @@ namespace gfx {
 		{
 			GL_CHECK(glBindBuffer(target, buffer));
 			GL_CHECK(glBufferSubData(target, GLintptr(offset), GLsizeiptr(size_), data.data()));
+			GL_CHECK(glBindBuffer(target, 0));
 		}
 #endif
 	}

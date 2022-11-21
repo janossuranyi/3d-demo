@@ -54,11 +54,11 @@ namespace gfx {
 		vtxCacheHandle allocIndex(Memory& data);
 
 		template<typename T>
-		VertexBufferHandle getPositionBuffer(vtxCacheHandle handle, uint& offset, uint& size);
+		VertexBufferHandle getPositionBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
 		template<typename T>
-		VertexBufferHandle getVertexBuffer(vtxCacheHandle handle, uint& offset, uint& size);
+		VertexBufferHandle getVertexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
 		template<typename T>
-		IndexBufferHandle getIndexBuffer(vtxCacheHandle handle, uint& offset, uint& size);
+		IndexBufferHandle getIndexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
 
 		void frame();
 	private:
@@ -77,7 +77,7 @@ namespace gfx {
 /*****************************************************/
 
 	template<typename T>
-	VertexBufferHandle VertexCache::getPositionBuffer(vtxCacheHandle handle, uint& offset, uint& size)
+	VertexBufferHandle VertexCache::getPositionBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const
 	{
 		size = (handle & 0xFFFFFFFE) / sizeof(T);
 		offset = (handle >> 31) / sizeof(T);
@@ -86,7 +86,7 @@ namespace gfx {
 	}
 
 	template<typename T>
-	VertexBufferHandle VertexCache::getVertexBuffer(vtxCacheHandle handle, uint& offset, uint& size)
+	VertexBufferHandle VertexCache::getVertexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const
 	{
 		bool isStatic = handle & 1;
 		size = (handle & 0xFFFFFFFE) / sizeof(T);
@@ -97,11 +97,11 @@ namespace gfx {
 	}
 
 	template<typename T>
-	IndexBufferHandle VertexCache::getIndexBuffer(vtxCacheHandle handle, uint& offset, uint& size)
+	IndexBufferHandle VertexCache::getIndexBuffer(const vtxCacheHandle handle, uint& byte_offset, uint& size) const
 	{
 		bool isStatic = handle & 1;
 		size = (handle & 0xFFFFFFFE) / sizeof(T);
-		offset = (handle >> 31) / sizeof(T);
+		byte_offset = (handle >> 31);
 
 		if (isStatic) return static_buffer_set_.ib;
 		else return render_->ib;
