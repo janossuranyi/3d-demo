@@ -17,7 +17,7 @@ namespace scene {
 		Mesh() = delete;
 		Mesh(ctx::Context* ctx, bool astatic = true);
 		
-		const math::BoundingBox& aabb() const;
+		math::BoundingBox		aabb() const;
 
 		void					setMaterial(const gfx::Material* material);
 
@@ -36,6 +36,9 @@ namespace scene {
 
 
 		void					render(ushort pass, uint64 frame) const override;
+
+		// Inherited via Renderable
+		virtual Renderable::Type			getType() const override;
 
 	private:
 		bool								static_{};

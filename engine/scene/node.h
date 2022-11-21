@@ -4,20 +4,23 @@
 #include <vector>
 #include "engine/common.h"
 #include "engine/scene/renderable.h"
+#include "engine/gfx/renderer.h"
+#include "engine/math/bounds.h"
 
 namespace scene {
 	class Node
 	{
 	public:
-		Node() = default;
+		Node() = delete;
 
-		Node(const String& name);
+		Node(const String& name, gfx::Renderer* hwr);
 
 		Node(const Node&) = delete;
 		
 		void operator=(const Node&) = delete;
 
 		mat4 worldTransform();
+		const mat4& worldTransformRef();
 
 		void translate(const vec3& v);
 		void rotate(const quat& q);
@@ -29,15 +32,16 @@ namespace scene {
 
 		void addRenderable(Renderable* r);
 
-		void render(ushort pass, uint64 frame);
-
 		Node* parent();
 
-		const Vector<Node*>& children() const;
+		const Vector<Node*>&		children() const;
+		const Vector<Renderable*>&	renderables() const;
+		math::BoundingBox			aabb() const;
+		void needToUpdate();
 
 	private:
 		String					name_;
-		Node*					parent_;
+		Node*					parent_{};
 		Vector<Node*>			children_;
 		Vector<Renderable*>		renderables_;
 
@@ -46,6 +50,8 @@ namespace scene {
 		quat					q_WorldRotation_{1.0f,0.0f,0.0f,0.0f};
 		vec3					v_WorldScale_{1.0f};
 		bool					needs_update_{false};
+		gfx::Renderer*			hwr_{};
+		math::BoundingBox		aabb_{};
 	};
 }
 #endif // !SCENE_NODE_H

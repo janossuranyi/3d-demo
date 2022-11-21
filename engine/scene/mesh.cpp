@@ -48,7 +48,7 @@ namespace scene {
 		return true;
 	}
 
-	const math::BoundingBox& Mesh::aabb() const
+	math::BoundingBox Mesh::aabb() const
 	{
 		return aabb_;
 	}
@@ -85,6 +85,11 @@ namespace scene {
 		hwr.setPrimitiveType(mode_);
 		hwr.setVertexDecl(hwr.defaultVertexDecl());
 		hwr.submit(pass, material_->program, vertex_count, base_vertex, ib_offset);
+	}
+
+	Renderable::Type Mesh::getType() const
+	{
+		return Renderable::Type::Mesh;
 	}
 
 	void Mesh::setMaterial(const gfx::Material* material)

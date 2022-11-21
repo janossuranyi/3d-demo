@@ -156,8 +156,8 @@ void traverse_node(tinygltf::Model const& model, int node, int level = 0)
             if (ext.first == "KHR_lights_punctual")
             {
                 int light = ext.second.Get("light").GetNumberAsInt();
-                auto const& L = model.lights[light];
-                Info("%s Light %d Typ:%d", s.c_str(), light, L.type);
+                auto const& L = model.lights[light];            
+                Info("%s Light %d, Typ:%s", s.c_str(), light, L.type.c_str());
             }
         }
     }
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
         traverse_node(model, node, 0);
     }
 
-    //exit(0);
+    exit(0);
 
 
     Info("V_Init Start");
