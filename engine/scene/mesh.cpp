@@ -22,7 +22,9 @@ namespace scene {
 			if (normals)		verts_[i].setNormal(normals[i]);
 			if (tangents)		verts_[i].setTangent(tangents[i]);
 			if (colors)			verts_[i].setColor(colors[i]);
+			if (positions)		aabb_.merge(positions[i]);
 		}
+
 
 		if (static_) {
 			vtxc_ = vc->allocStaticVertex(gfx::Memory(verts_.get(), numVerts * sizeof(gfx::DrawVert)));
@@ -51,7 +53,7 @@ namespace scene {
 		return aabb_;
 	}
 
-	void Mesh::render(ushort pass) const
+	void Mesh::render(ushort pass, uint64 frame) const
 	{
 		if (!material_ || !vtxc_) return;
 

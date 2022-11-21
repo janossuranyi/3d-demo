@@ -7,20 +7,21 @@
 #include "engine/gfx/renderer.h"
 #include "engine/gfx/material.h"
 #include "engine/math/bounds.h"
+#include "engine/scene/renderable.h"
 
 namespace scene {
 
-	class Mesh
+	class Mesh : public Renderable
 	{
 	public:
 		Mesh() = delete;
 		Mesh(ctx::Context* ctx, bool astatic = true);
-		Mesh(Mesh& other) = delete;
+		
+		const math::BoundingBox& aabb() const;
 
-		void setMaterial(const gfx::Material* material);
-		const gfx::Material* material() const;
+		void					setMaterial(const gfx::Material* material);
 
-		void operator=(const Mesh& other) = delete;
+		const gfx::Material*	material() const;
 
 		bool create(
 			const vec3* positions,
@@ -33,22 +34,20 @@ namespace scene {
 			uint elements,
 			gfx::PrimitiveType mode);
 
-		const math::BoundingBox& aabb() const;
 
-		void render(ushort pass) const;
+		void					render(ushort pass, uint64 frame) const override;
 
-		const gfx::RenderItemDesc& renderItemDesc() const;
 	private:
-		bool static_{};
-		math::BoundingBox aabb_{};
-		gfx::PrimitiveType mode_{};
-		gfx::vtxCacheHandle vtxc_{};
-		gfx::vtxCacheHandle idxc_{};
-		uint elements_;
-		uint vertices_;
-		ctx::Context* ctx_{};
-		gfx::Material const* material_{};
-		std::unique_ptr<gfx::DrawVert[]> verts_{};
-		std::unique_ptr<ushort[]> idxs_{};
+		bool								static_{};
+		math::BoundingBox					aabb_{};
+		gfx::PrimitiveType					mode_{};
+		gfx::vtxCacheHandle					vtxc_{};
+		gfx::vtxCacheHandle					idxc_{};
+		uint								elements_;
+		uint								vertices_;
+		ctx::Context*						ctx_{};
+		gfx::Material const*				material_{};
+		std::unique_ptr<gfx::DrawVert[]>	verts_{};
+		std::unique_ptr<ushort[]>			idxs_{};
 	};
 }
