@@ -24,6 +24,8 @@ namespace scene {
 			}
 
 			for (auto* e : children_) e->needToUpdate();
+
+			needs_update_ = false;
 		}
 
 		return m_WorldTransform_;
@@ -31,7 +33,8 @@ namespace scene {
 
 	const mat4& Node::worldTransformRef()
 	{
-		worldTransform();
+		if (needs_update_) worldTransform();
+
 		return m_WorldTransform_;
 	}
 
