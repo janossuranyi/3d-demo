@@ -198,7 +198,7 @@ int main(int argc, char** argv)
         traverse_node(model, node, 0);
     }
 
-    exit(0);
+    //exit(0);
 
 
     Info("V_Init Start");

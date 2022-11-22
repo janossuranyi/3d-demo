@@ -18,7 +18,8 @@ namespace gfx {
 		if (ext_.ARB_direct_state_access || gl_version_450_)
 		{
 			GL_CHECK(glCreateBuffers(1, &buffer));
-			GL_CHECK(glNamedBufferData(buffer, _size, data.data(), _usage));
+			//GL_CHECK(glNamedBufferData(buffer, _size, data.data(), _usage));
+			GL_CHECK(glNamedBufferStorage(buffer, _size, data.data(), GL_DYNAMIC_STORAGE_BIT));
 		}
 		else
 		{
