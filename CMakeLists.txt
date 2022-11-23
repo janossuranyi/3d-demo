@@ -98,6 +98,8 @@ add_library(glew STATIC
 add_library(stb_image STATIC
   external/stb/stb_image.h
   external/stb/stb_image.c
+  external/stb/stb_image_resize.h
+  external/stb/stb_image_resize.c
 )
 
 add_library(tinygltf STATIC

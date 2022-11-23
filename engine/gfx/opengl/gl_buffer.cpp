@@ -15,18 +15,26 @@ namespace gfx {
 
 
 		const GLsizeiptr _size = data.data() ? data.size() : size;
-		if (ext_.ARB_direct_state_access || gl_version_450_)
+		if (/*ext_.ARB_direct_state_access || */gl_version_440_)
 		{
 			GL_CHECK(glCreateBuffers(1, &buffer));
 			//GL_CHECK(glNamedBufferData(buffer, _size, data.data(), _usage));
-			GL_CHECK(glNamedBufferStorage(buffer, _size, data.data(), GL_DYNAMIC_STORAGE_BIT));
+			GL_CHECK(glNamedBufferStorage(buffer, _size, data.data(), GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT));
 		}
 		else
 		{
-			GL_CHECK(glGenBuffers(1, &buffer));
-			GL_CHECK(glBindBuffer(target, buffer));
-			GL_CHECK(glBufferData(target, _size, data.data(), _usage));
-			GL_CHECK(glBindBuffer(target, 0));
+			if (ext_.ARB_direct_state_access)
+			{
+				GL_CHECK(glCreateBuffers(1, &buffer));
+				GL_CHECK(glNamedBufferData(target, _size, data.data(), _usage));
+			}
+			else
+			{
+				GL_CHECK(glGenBuffers(1, &buffer));
+				GL_CHECK(glBindBuffer(target, buffer));
+				GL_CHECK(glBufferData(target, _size, data.data(), _usage));
+				GL_CHECK(glBindBuffer(target, 0));
+			}
 		}
 
 		actualSize = _size;

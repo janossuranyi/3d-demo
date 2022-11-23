@@ -327,6 +327,7 @@ namespace gfx {
 		glVersion_ = int(gl_version * 100);
 
 		gl_version_430_ = glVersion_ >= 430;
+		gl_version_440_ = glVersion_ >= 440;
 		gl_version_450_ = glVersion_ >= 450;
 
 		if (glVersion_ < 450)

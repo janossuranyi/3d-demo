@@ -221,6 +221,7 @@ namespace gfx {
 		void setup_textures(const TextureBinding* textures, size_t n);
 
 		bool gl_version_430_{};
+		bool gl_version_440_{};
 		bool gl_version_450_{};
 
 		// extension exists cache

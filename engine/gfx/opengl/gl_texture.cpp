@@ -93,10 +93,25 @@ namespace gfx {
 	{
 		GLuint texture;
 		const GLenum target = GL_TEXTURE_CUBE_MAP;
+		const auto& texinfo = s_texture_format[static_cast<size_t>(cmd.format)];
+		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
+		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
+		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
+
 		GL_CHECK(glGenTextures(1, &texture));
 		GL_CHECK(glBindTexture(target, texture));
-		auto& texinfo = s_texture_format[static_cast<size_t>(cmd.format)];
-		for (unsigned int face = 0; face < 6; ++face) {
+
+		const GLsizei levels = static_cast<GLsizei>(std::floorf(std::log2f(static_cast<float>(cmd.width)))) + 1;
+
+		GL_CHECK(glTexStorage2D(target,
+			levels,
+			(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format),
+			cmd.width,
+			cmd.height));
+
+		for (unsigned int face = 0; face < 6; ++face)
+		{
+			/*
 			GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
 				(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format),
 				cmd.width,
@@ -105,10 +120,17 @@ namespace gfx {
 				texinfo.format,
 				texinfo.type,
 				cmd.data[face].data()));
+				*/
+			GL_CHECK(glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+				/*level*/	0,
+				/*xoffset*/	0,
+				/*yoffset*/	0,
+				cmd.width,
+				cmd.height,
+				texinfo.format,
+				texinfo.type,
+				cmd.data[face].data()));
 		}
-		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
-		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
-		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
 
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
