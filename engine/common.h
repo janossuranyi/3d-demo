@@ -32,8 +32,8 @@ template<typename K, typename V>
 using HashMap = std::unordered_map<K, V>;
 template<typename T>
 using Set = std::unordered_set<T>;
-template<typename T, size_t size>
-using Array = std::array<T, size>;
+template<typename T, size_t pixelByteSize>
+using Array = std::array<T, pixelByteSize>;
 template<typename T>
 using UniqePtr = std::unique_ptr<T>;
 template<typename T>

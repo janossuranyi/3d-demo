@@ -17,7 +17,7 @@ namespace gfx {
 		GLenum format;
 		GLenum type;
 		bool supported;
-		ushort size;
+		ushort pixelByteSize;
 	};
 
 	extern TextureFormatInfo s_texture_format[];
@@ -113,31 +113,31 @@ namespace gfx {
 
 		struct ConstantBufferData {
 			GLuint buffer;
-			uint size;
+			uint pixelByteSize;
 			BufferUsage usage;
 		};
 
 		struct VertexBufferData {
 			GLuint buffer;
-			uint size;
+			uint pixelByteSize;
 			BufferUsage usage;
 		};
 
 		struct ShaderBufferData {
 			GLuint buffer;
-			uint size;
+			uint pixelByteSize;
 			BufferUsage usage;
 		};
 
 		struct TextureBufferData {
 			GLuint buffer;
-			uint size;
+			uint pixelByteSize;
 			BufferUsage usage;
 		};
 
 		struct IndexBufferData {
 			GLuint buffer;
-			uint size;
+			uint pixelByteSize;
 			BufferUsage usage;
 			IndexBufferType type;
 		};
@@ -232,7 +232,7 @@ namespace gfx {
 			bool EXT_direct_state_access{};
 		} ext_;
 
-		GLuint create_buffer_real(GLenum target, BufferUsage usage, uint size, const Memory& data, uint& actualSize);
-		void update_buffer_real(GLenum target, GLuint buffer, uint offset, uint size, const Memory& data);
+		GLuint create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory& data, uint& actualSize);
+		void update_buffer_real(GLenum target, GLuint buffer, uint offset, uint pixelByteSize, const Memory& data);
 	};
 }

@@ -8,13 +8,13 @@
 
 namespace gfx {
 
-	GLuint gfx::OpenGLRenderContext::create_buffer_real(GLenum target, BufferUsage usage, uint size, const Memory& data, uint& actualSize)
+	GLuint gfx::OpenGLRenderContext::create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory& data, uint& actualSize)
 	{
 		GLuint buffer = static_cast<GLuint>(0xffff);
 		const GLenum _usage = MapBufferUsage(usage);
 
 
-		const GLsizeiptr _size = data.data() ? data.size() : size;
+		const GLsizeiptr _size = data.data() ? data.size() : pixelByteSize;
 		if (/*ext_.ARB_direct_state_access || */gl_version_440_)
 		{
 			GL_CHECK(glCreateBuffers(1, &buffer));
@@ -41,9 +41,9 @@ namespace gfx {
 		return buffer;
 	}
 
-	void OpenGLRenderContext::update_buffer_real(GLenum target, GLuint buffer, uint offset, uint size, const Memory& data)
+	void OpenGLRenderContext::update_buffer_real(GLenum target, GLuint buffer, uint offset, uint pixelByteSize, const Memory& data)
 	{
-		const GLsizeiptr size_ = size > 0 ? GLsizeiptr(size) : data.size();
+		const GLsizeiptr size_ = pixelByteSize > 0 ? GLsizeiptr(pixelByteSize) : data.size();
 #if USE_MAP_BUFFER		
 		void* mem = nullptr;
 		if ((ext_.ARB_direct_state_access || gl_version_450_))
@@ -86,7 +86,7 @@ namespace gfx {
 		if (shader_buffer_map_.count(cmd.handle) > 0)
 			return;
 
-		assert(cmd.size < gl_max_shader_storage_block_size_ && cmd.data.size() < gl_max_shader_storage_block_size_);
+		assert(cmd.pixelByteSize < gl_max_shader_storage_block_size_ && cmd.data.pixelByteSize() < gl_max_shader_storage_block_size_);
 
 		uint _size = cmd.size;
 		const GLuint buffer = create_buffer_real(GL_SHADER_STORAGE_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
@@ -251,7 +251,7 @@ namespace gfx {
 		if (constant_buffer_map_.count(cmd.handle) > 0)
 			return;
 
-		assert(cmd.size < gl_max_uniform_block_size_ && cmd.data.size() < gl_max_uniform_block_size_);
+		assert(cmd.pixelByteSize < gl_max_uniform_block_size_ && cmd.data.pixelByteSize() < gl_max_uniform_block_size_);
 
 		uint _size = cmd.size;
 		const GLuint buffer = create_buffer_real(GL_UNIFORM_BUFFER, cmd.usage, cmd.size, cmd.data, _size);

@@ -370,7 +370,7 @@ typedef Bool ( * PFNGLXDELETEASSOCIATEDCONTEXTAMDPROC) (GLXContext ctx);
 typedef unsigned int ( * PFNGLXGETCONTEXTGPUIDAMDPROC) (GLXContext ctx);
 typedef GLXContext ( * PFNGLXGETCURRENTASSOCIATEDCONTEXTAMDPROC) (void);
 typedef unsigned int ( * PFNGLXGETGPUIDSAMDPROC) (unsigned int maxCount, unsigned int* ids);
-typedef int ( * PFNGLXGETGPUINFOAMDPROC) (unsigned int id, int property, GLenum dataType, unsigned int size, void* data);
+typedef int ( * PFNGLXGETGPUINFOAMDPROC) (unsigned int id, int property, GLenum dataType, unsigned int pixelByteSize, void* data);
 typedef Bool ( * PFNGLXMAKEASSOCIATEDCONTEXTCURRENTAMDPROC) (GLXContext ctx);
 
 #define glXBlitContextFramebufferAMD GLXEW_GET_FUN(__glewXBlitContextFramebufferAMD)
@@ -955,8 +955,8 @@ typedef int ( * PFNGLXSWAPINTERVALMESAPROC) (unsigned int interval);
 #ifndef GLX_NV_copy_buffer
 #define GLX_NV_copy_buffer 1
 
-typedef void ( * PFNGLXCOPYBUFFERSUBDATANVPROC) (Display* dpy, GLXContext readCtx, GLXContext writeCtx, GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
-typedef void ( * PFNGLXNAMEDCOPYBUFFERSUBDATANVPROC) (Display* dpy, GLXContext readCtx, GLXContext writeCtx, GLuint readBuffer, GLuint writeBuffer, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
+typedef void ( * PFNGLXCOPYBUFFERSUBDATANVPROC) (Display* dpy, GLXContext readCtx, GLXContext writeCtx, GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr pixelByteSize);
+typedef void ( * PFNGLXNAMEDCOPYBUFFERSUBDATANVPROC) (Display* dpy, GLXContext readCtx, GLXContext writeCtx, GLuint readBuffer, GLuint writeBuffer, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr pixelByteSize);
 
 #define glXCopyBufferSubDataNV GLXEW_GET_FUN(__glewXCopyBufferSubDataNV)
 #define glXNamedCopyBufferSubDataNV GLXEW_GET_FUN(__glewXNamedCopyBufferSubDataNV)
@@ -1070,7 +1070,7 @@ typedef Bool ( * PFNGLXRESETFRAMECOUNTNVPROC) (Display* dpy, int screen);
 #ifndef GLX_NV_vertex_array_range
 #define GLX_NV_vertex_array_range 1
 
-typedef void * ( * PFNGLXALLOCATEMEMORYNVPROC) (GLsizei size, GLfloat readFrequency, GLfloat writeFrequency, GLfloat priority);
+typedef void * ( * PFNGLXALLOCATEMEMORYNVPROC) (GLsizei pixelByteSize, GLfloat readFrequency, GLfloat writeFrequency, GLfloat priority);
 typedef void ( * PFNGLXFREEMEMORYNVPROC) (void *pointer);
 
 #define glXAllocateMemoryNV GLXEW_GET_FUN(__glewXAllocateMemoryNV)
@@ -1305,10 +1305,10 @@ typedef struct {
 
 typedef int ( * PFNGLXBINDHYPERPIPESGIXPROC) (Display *dpy, int hpId);
 typedef int ( * PFNGLXDESTROYHYPERPIPECONFIGSGIXPROC) (Display *dpy, int hpId);
-typedef int ( * PFNGLXHYPERPIPEATTRIBSGIXPROC) (Display *dpy, int timeSlice, int attrib, int size, void *attribList);
+typedef int ( * PFNGLXHYPERPIPEATTRIBSGIXPROC) (Display *dpy, int timeSlice, int attrib, int pixelByteSize, void *attribList);
 typedef int ( * PFNGLXHYPERPIPECONFIGSGIXPROC) (Display *dpy, int networkId, int npipes, GLXHyperpipeConfigSGIX *cfg, int *hpId);
-typedef int ( * PFNGLXQUERYHYPERPIPEATTRIBSGIXPROC) (Display *dpy, int timeSlice, int attrib, int size, void *returnAttribList);
-typedef int ( * PFNGLXQUERYHYPERPIPEBESTATTRIBSGIXPROC) (Display *dpy, int timeSlice, int attrib, int size, void *attribList, void *returnAttribList);
+typedef int ( * PFNGLXQUERYHYPERPIPEATTRIBSGIXPROC) (Display *dpy, int timeSlice, int attrib, int pixelByteSize, void *returnAttribList);
+typedef int ( * PFNGLXQUERYHYPERPIPEBESTATTRIBSGIXPROC) (Display *dpy, int timeSlice, int attrib, int pixelByteSize, void *attribList, void *returnAttribList);
 typedef GLXHyperpipeConfigSGIX * ( * PFNGLXQUERYHYPERPIPECONFIGSGIXPROC) (Display *dpy, int hpId, int *npipes);
 typedef GLXHyperpipeNetworkSGIX * ( * PFNGLXQUERYHYPERPIPENETWORKSGIXPROC) (Display *dpy, int *npipes);
 

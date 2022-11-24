@@ -27,17 +27,17 @@ VertexLayout& VertexLayout::begin()
     return *this;
 }
 
-VertexLayout& VertexLayout::with(unsigned int index, unsigned int size, ComponentType type, bool normalized, unsigned int offset, unsigned int stream)
+VertexLayout& VertexLayout::with(unsigned int index, unsigned int pixelByteSize, ComponentType type, bool normalized, unsigned int offset, unsigned int stream)
 {
     glEnableVertexAttribArray(index);
-    glVertexAttribFormat(index, size, GL_castDataType(type), normalized, offset);
+    glVertexAttribFormat(index, pixelByteSize, GL_castDataType(type), normalized, offset);
     glVertexAttribBinding(index, stream);
     ++m_numAttribs;
 
     return *this;
 }
 
-VertexLayout& VertexLayout::with(unsigned int index, unsigned int size, ComponentType type, bool normalized, unsigned int offset, unsigned int stride, GpuBuffer* target)
+VertexLayout& VertexLayout::with(unsigned int index, unsigned int pixelByteSize, ComponentType type, bool normalized, unsigned int offset, unsigned int stride, GpuBuffer* target)
 {
     GL_CHECK(glEnableVertexAttribArray(index));
     if (m_lastBuffer != target)
@@ -45,7 +45,7 @@ VertexLayout& VertexLayout::with(unsigned int index, unsigned int size, Componen
         m_lastBuffer = target;
         GPU::bind(*target);
     }
-    GL_CHECK(glVertexAttribPointer(index, size, GL_castDataType(type), normalized, stride, (const void*)uintptr_t(offset)));
+    GL_CHECK(glVertexAttribPointer(index, pixelByteSize, GL_castDataType(type), normalized, stride, (const void*)uintptr_t(offset)));
     ++m_numAttribs;
 
     return *this;

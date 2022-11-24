@@ -33,22 +33,22 @@ void GpuBuffer::bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stri
 	GL_CHECK(glBindVertexBuffer(stream, mBuffer, offset, stride));
 }
 
-void GpuBuffer::bindIndexed(uint32_t index, uint32_t offset, uint32_t size)
+void GpuBuffer::bindIndexed(uint32_t index, uint32_t offset, uint32_t pixelByteSize)
 {
 	const GLenum target = GL_CastBufferType(mTarget);
-	if (size == 0)
+	if (pixelByteSize == 0)
 	{
 		GL_CHECK(glBindBufferBase(target, index, mBuffer));
 	}
 	else
 	{
-		GL_CHECK(glBindBufferRange(target, index, mBuffer, offset, size));
+		GL_CHECK(glBindBufferRange(target, index, mBuffer, offset, pixelByteSize));
 	}
 }
 
-void GpuBuffer::updateSubData(uint32_t offset, uint32_t size, const void* data)
+void GpuBuffer::updateSubData(uint32_t offset, uint32_t pixelByteSize, const void* data)
 {
-	GL_CHECK(glBufferSubData(GL_CastBufferType(mTarget), GLintptr(offset), GLsizeiptr(size), data));
+	GL_CHECK(glBufferSubData(GL_CastBufferType(mTarget), GLintptr(offset), GLsizeiptr(pixelByteSize), data));
 }
 
 void GpuBuffer::move(GpuBuffer& moved)
@@ -116,7 +116,7 @@ uint8_t* GpuBuffer::mapPeristentWrite()
 	return map((BA_MAP_WRITE | BA_MAP_PERSISTENT | BA_MAP_COHERENT) & mAccess);
 }
 
-bool GpuBuffer::create(uint32_t size, BufferUsage usage, unsigned int accessFlags, const void* bytes)
+bool GpuBuffer::create(uint32_t pixelByteSize, BufferUsage usage, unsigned int accessFlags, const void* bytes)
 {
 	assert(mBuffer == INVALID_BUFFER);
 	assert(mIsReference == false);
@@ -143,18 +143,18 @@ bool GpuBuffer::create(uint32_t size, BufferUsage usage, unsigned int accessFlag
 		break;
 	}
 
-	uint32_t real_size = size;
+	uint32_t real_size = pixelByteSize;
 	if (mTarget == BufferTarget::VERTEX)
 	{
-		real_size = (size + VERTEX_BUFFER_ALIGN) & ~(VERTEX_BUFFER_ALIGN);
+		real_size = (pixelByteSize + VERTEX_BUFFER_ALIGN) & ~(VERTEX_BUFFER_ALIGN);
 	}
 	else if (mTarget == BufferTarget::UNIFORM)
 	{
-		real_size = (size + UNIFORM_BUFFER_ALIGN) & ~(UNIFORM_BUFFER_ALIGN);
+		real_size = (pixelByteSize + UNIFORM_BUFFER_ALIGN) & ~(UNIFORM_BUFFER_ALIGN);
 	}
 	else
 	{
-		real_size = (size + INDEX_BUFFER_ALIGN) & ~(INDEX_BUFFER_ALIGN);
+		real_size = (pixelByteSize + INDEX_BUFFER_ALIGN) & ~(INDEX_BUFFER_ALIGN);
 	}
 
 	GL_CHECK(glBindBuffer(target, mBuffer));
@@ -169,23 +169,23 @@ bool GpuBuffer::create(uint32_t size, BufferUsage usage, unsigned int accessFlag
 
 	if (bytes)
 	{
-		glBufferSubData(target, 0, size, bytes);
+		glBufferSubData(target, 0, pixelByteSize, bytes);
 	}
 
-	mSize = size;
+	mSize = pixelByteSize;
 	mAccess = accessFlags;
 
-	Info("Buffer %d, type: %d allocated, size: %d bytes.", mBuffer, mTarget, size);
+	Info("Buffer %d, type: %d allocated, size: %d bytes.", mBuffer, mTarget, pixelByteSize);
 	
 
 	return glGetError() == GL_NO_ERROR;
 }
 
-void GpuBuffer::reference(uint32_t offset, uint32_t size, GpuBuffer& ref)
+void GpuBuffer::reference(uint32_t offset, uint32_t pixelByteSize, GpuBuffer& ref)
 {
 	assert(mBuffer != INVALID_BUFFER);
 	assert(mIsReference == false);
-	assert((offset + size) < mSize);
+	assert((offset + pixelByteSize) < mSize);
 
 	ref.mAccess = mAccess;
 	ref.mIsReference = true;
@@ -193,7 +193,7 @@ void GpuBuffer::reference(uint32_t offset, uint32_t size, GpuBuffer& ref)
 	ref.mIsMapped = mIsMapped;
 	ref.mMapPtr = mMapPtr;
 	ref.mOffset = offset;
-	ref.mSize = size;
+	ref.mSize = pixelByteSize;
 
 	Info("Buffer %d, type: %d Referenced.", mBuffer, mTarget);
 }

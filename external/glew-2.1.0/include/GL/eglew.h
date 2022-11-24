@@ -2127,8 +2127,8 @@ typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALATTRIBSNVPROC) (EGL
 #define EGL_PENDING_METADATA_NV 0x3328
 
 typedef EGLBoolean  ( * PFNEGLQUERYDISPLAYATTRIBNVPROC) (EGLDisplay  dpy, EGLint  attribute, EGLAttrib * value);
-typedef EGLBoolean  ( * PFNEGLQUERYSTREAMMETADATANVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  name, EGLint  n, EGLint  offset, EGLint  size, void * data);
-typedef EGLBoolean  ( * PFNEGLSETSTREAMMETADATANVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLint  n, EGLint  offset, EGLint  size, const void * data);
+typedef EGLBoolean  ( * PFNEGLQUERYSTREAMMETADATANVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  name, EGLint  n, EGLint  offset, EGLint  pixelByteSize, void * data);
+typedef EGLBoolean  ( * PFNEGLSETSTREAMMETADATANVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLint  n, EGLint  offset, EGLint  pixelByteSize, const void * data);
 
 #define eglQueryDisplayAttribNV EGLEW_GET_FUN(__eglewQueryDisplayAttribNV)
 #define eglQueryStreamMetadataNV EGLEW_GET_FUN(__eglewQueryStreamMetadataNV)

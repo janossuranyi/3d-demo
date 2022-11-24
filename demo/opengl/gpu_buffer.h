@@ -52,9 +52,9 @@ public:
 
 	bool isCreated() const;
 
-	bool create(uint32_t size, BufferUsage usage, unsigned int accesFlags, const void* bytes = NULL);
+	bool create(uint32_t pixelByteSize, BufferUsage usage, unsigned int accesFlags, const void* bytes = NULL);
 
-	void reference(uint32_t offset, uint32_t size, GpuBuffer& ref);
+	void reference(uint32_t offset, uint32_t pixelByteSize, GpuBuffer& ref);
 
 	bool isOwnBuffer() const;
 
@@ -62,9 +62,9 @@ public:
 
 	void bindVertexBuffer(uint32_t stream, uint32_t offset, uint32_t stride) const;
 
-	void bindIndexed(uint32_t index, uint32_t offset = 0, uint32_t size = 0);
+	void bindIndexed(uint32_t index, uint32_t offset = 0, uint32_t pixelByteSize = 0);
 
-	void updateSubData(uint32_t offset, uint32_t size, const void* data);
+	void updateSubData(uint32_t offset, uint32_t pixelByteSize, const void* data);
 private:
 	void		move(GpuBuffer&);
 	GLuint		mBuffer;

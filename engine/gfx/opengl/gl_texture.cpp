@@ -138,14 +138,14 @@ namespace gfx {
 			{
 				uint w = cmd.width;
 				uint h = cmd.height;
-				std::unique_ptr<uint8[]> input_buffer(new uint8[w * h * texinfo.size]);
-				std::memcpy(input_buffer.get(), cmd.data[face].data(), w * h * texinfo.size);
+				std::unique_ptr<uint8[]> input_buffer(new uint8[w * h * texinfo.pixelByteSize]);
+				std::memcpy(input_buffer.get(), cmd.data[face].data(), w * h * texinfo.pixelByteSize);
 
 				for (uint k = 1; k < levels; ++k)
 				{
 					w = std::max(uint(w / 2), 1u);
 					h = std::max(uint(h / 2), 1u);
-					std::unique_ptr<uint8[]> output_buffer(new uint8[w * h * texinfo.size]);
+					std::unique_ptr<uint8[]> output_buffer(new uint8[w * h * texinfo.pixelByteSize]);
 					bool res = false;
 					if (cmd.srgb)
 					{
