@@ -17,6 +17,7 @@ namespace gfx {
 		GLenum format;
 		GLenum type;
 		bool supported;
+		ushort size;
 	};
 
 	extern TextureFormatInfo s_texture_format[];

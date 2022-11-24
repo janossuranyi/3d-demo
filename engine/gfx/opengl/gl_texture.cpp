@@ -1,3 +1,6 @@
+
+#include <algorithm>
+#include "stb_image_resize.h"
 #include "gfx/opengl/gl_context.h"
 #include "gfx/opengl/gl_helper.h"
 
@@ -130,6 +133,45 @@ namespace gfx {
 				texinfo.format,
 				texinfo.type,
 				cmd.data[face].data()));
+
+			if (cmd.mipmap)
+			{
+				uint w = cmd.width;
+				uint h = cmd.height;
+				std::unique_ptr<uint8[]> input_buffer(new uint8[w * h * texinfo.size]);
+				std::memcpy(input_buffer.get(), cmd.data[face].data(), w * h * texinfo.size);
+
+				for (uint k = 1; k < levels; ++k)
+				{
+					w = std::max(uint(w / 2), 1u);
+					h = std::max(uint(h / 2), 1u);
+					std::unique_ptr<uint8[]> output_buffer(new uint8[w * h * texinfo.size]);
+					bool res = false;
+					if (cmd.srgb)
+					{
+						res = stbir_resize_uint8_srgb(input_buffer.get(), w * 2, h * 2, 0, output_buffer.get(), w, h, 0, 4, -1, 0);
+					}
+					else
+					{
+						res = stbir_resize_uint8(input_buffer.get(), w * 2, h * 2, 0, output_buffer.get(), w, h, 0, 4);
+					}
+
+					if (res)
+					{
+						GL_CHECK(glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+							/*level*/	k,
+							/*xoffset*/	0,
+							/*yoffset*/	0,
+							w,
+							h,
+							texinfo.format,
+							texinfo.type,
+							output_buffer.get()));
+					}
+
+					input_buffer = std::move(output_buffer);
+				}
+			}
 		}
 
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));
@@ -137,10 +179,12 @@ namespace gfx {
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_R, wrap));
+#if 0
 		if (cmd.mipmap)
 		{
 			GL_CHECK(glGenerateMipmap(target));
 		}
+#endif
 		GL_CHECK(glBindTexture(target, 0));
 
 		const TextureData t_data{ texture, target };
