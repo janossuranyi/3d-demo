@@ -202,67 +202,67 @@ bool GpuProgram::mapLocationToIndex(const std::string& name, const int index)
 
 void GpuProgram::set(int index, float f) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform1f(_locationBindings[index], f));
 }
 void GpuProgram::set(int index, int n, const float* f) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform1fv(_locationBindings[index], n, f));
 }
 void GpuProgram::set(int index, int i) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform1i(_locationBindings[index], i));
 }
 void GpuProgram::set(int index, bool transpose, const glm::mat4& m) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniformMatrix4fv(_locationBindings[index], 1, GLboolean(transpose), &m[0][0]));
 }
 void GpuProgram::set(int index, bool transpose, const glm::mat3& m) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniformMatrix3fv(_locationBindings[index], 1, GLboolean(transpose), &m[0][0]));
 }
 void GpuProgram::set(int index, bool transpose, int n, const glm::mat4* m) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniformMatrix4fv(_locationBindings[index], n, GLboolean(transpose), reinterpret_cast<const GLfloat*>(m)));
 }
 void GpuProgram::set(int index, bool transpose, int n, const glm::mat3* m) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniformMatrix3fv(_locationBindings[index], n, GLboolean(transpose), reinterpret_cast<const GLfloat*>(m)));
 }
 void GpuProgram::set(int index, const glm::vec2& v) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform2fv(_locationBindings[index], 1, &v[0]));
 }
 void GpuProgram::set(int index, const glm::vec3& v) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform3fv(_locationBindings[index], 1, &v[0]));
 }
 void GpuProgram::set(int index, const glm::vec4& v) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform4fv(_locationBindings[index], 1, &v[0]));
 }
 void GpuProgram::set(int index, int n, const glm::vec2* v) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform2fv(_locationBindings[index], n, reinterpret_cast<const GLfloat*>(v)));
 }
 void GpuProgram::set(int index, int n, const glm::vec3* v) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform3fv(_locationBindings[index], n, reinterpret_cast<const GLfloat*>(v)));
 }
 void GpuProgram::set(int index, int n, const glm::vec4* v) const
 {
-	assert(index < _locationBindings.pixelByteSize());
+	assert(index < _locationBindings.size());
 	GL_CHECK(glUniform4fv(_locationBindings[index], n, reinterpret_cast<const GLfloat*>(v)));
 }
 void GpuProgram::set(const std::string& name, int i) const

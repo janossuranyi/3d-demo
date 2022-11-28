@@ -535,7 +535,7 @@ namespace gfx {
 
 			setup_textures(&item->textures[0], item->textures.size());
 
-			assert(item->images.pixelByteSize() <= MAX_IMAGE_UNITS);
+			assert(item->images.size() <= MAX_IMAGE_UNITS);
 			for (uint k = 0; k < item->images.size(); ++k)
 			{
 				const auto& img = item->images[k];

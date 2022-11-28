@@ -86,7 +86,7 @@ namespace gfx {
 		if (shader_buffer_map_.count(cmd.handle) > 0)
 			return;
 
-		assert(cmd.pixelByteSize < gl_max_shader_storage_block_size_ && cmd.data.pixelByteSize() < gl_max_shader_storage_block_size_);
+		assert(cmd.size < gl_max_shader_storage_block_size_ && cmd.data.size() < gl_max_shader_storage_block_size_);
 
 		uint _size = cmd.size;
 		const GLuint buffer = create_buffer_real(GL_SHADER_STORAGE_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
@@ -251,7 +251,7 @@ namespace gfx {
 		if (constant_buffer_map_.count(cmd.handle) > 0)
 			return;
 
-		assert(cmd.pixelByteSize < gl_max_uniform_block_size_ && cmd.data.pixelByteSize() < gl_max_uniform_block_size_);
+		assert(cmd.size < gl_max_uniform_block_size_ && cmd.data.size() < gl_max_uniform_block_size_);
 
 		uint _size = cmd.size;
 		const GLuint buffer = create_buffer_real(GL_UNIFORM_BUFFER, cmd.usage, cmd.size, cmd.data, _size);

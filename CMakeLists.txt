@@ -107,6 +107,12 @@ add_library(tinygltf STATIC
   external/tinygltf/tiny_gltf.cpp
 )
 
+option(KTX_FEATURE_TESTS "" OFF)
+option(KTX_FEATURE_STATIC_LIBRARY "" ON)
+option(KTX_FEATURE_VULKAN "" OFF)
+# option(KTX_FEATURE_GL_UPLOAD "" OFF)
+
+add_subdirectory(external/ktx)
 
 include_directories(
   ./
@@ -118,6 +124,7 @@ include_directories(
   external/stb/
   external/half/
   external/tinygltf/
+  external/ktx/include/
   ${SDL2_INCLUDE_DIR}
 )
 
@@ -138,6 +145,7 @@ target_link_libraries(demo
   stb_image
   tinygltf
   engine
+  ktx
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}
 )
