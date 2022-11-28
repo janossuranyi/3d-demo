@@ -33,3 +33,6 @@
 
 # build directory
 build
+
+# ktx external lib
+external/ktx
