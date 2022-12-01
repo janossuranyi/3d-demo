@@ -1,0 +1,6 @@
+Metro exodus bump file channels
+
+R: height
+G: roughness
+B: metalness
+A: ambient occlusion
