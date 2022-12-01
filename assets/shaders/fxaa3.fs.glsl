@@ -1,4 +1,4 @@
-#version 450 core
+#version 430 core
 
 in INTERFACE {
 	vec2 uv; ///< UV coordinates.
