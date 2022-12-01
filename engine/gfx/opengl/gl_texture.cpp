@@ -1,4 +1,6 @@
 
+#define KHRONOS_STATIC
+#include <ktx.h>
 #include <algorithm>
 #include "stb_image_resize.h"
 #include "gfx/opengl/gl_context.h"
@@ -37,7 +39,47 @@ namespace gfx {
 		texture_map_.emplace(cmd.htexture, TextureData{ texture, target, cmd.format });
 	}
 
-	void OpenGLRenderContext::operator()(const cmd::CreateTexture1D& cmd) {}
+	void OpenGLRenderContext::operator()(const cmd::CreateTexture1D& cmd)
+	{
+		if (texture_map_.count(cmd.handle))
+		{
+			return;
+		}
+
+		GLuint texture{};
+		GLenum target = GL_TEXTURE_1D;
+
+		GL_CHECK(glGenTextures(1, &texture));
+		GL_CHECK(glBindTexture(target, texture));
+		auto const& texinfo = s_texture_format[static_cast<size_t>(cmd.format)];
+
+		GL_CHECK(glTexStorage1D(target, 0, texinfo.internal_format, cmd.width));
+		if (!cmd.data.empty())
+		{
+			GL_CHECK(glTexSubImage1D(target, 0, 0, cmd.width, texinfo.format, texinfo.type, cmd.data.data()));
+		}
+
+		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
+		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
+		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
+
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
+
+
+		if (cmd.automipmap)
+		{
+			GL_CHECK(glGenerateMipmap(target));
+		}
+
+		GL_CHECK(glBindTexture(target, 0));
+
+		const TextureData t_data{ texture, target, cmd.format };
+		texture_map_.emplace(cmd.handle, t_data);
+
+	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteTexture& cmd)
 	{
@@ -58,20 +100,151 @@ namespace gfx {
 			return;
 		}
 
-		GLuint texture;
-		const GLenum target = GL_TEXTURE_2D;
+		GLuint texture{};
+		GLenum target = GL_TEXTURE_2D;
+
+		uint const levels = cmd.data.levels();
+
 		GL_CHECK(glGenTextures(1, &texture));
 		GL_CHECK(glBindTexture(target, texture));
-		auto& texinfo = s_texture_format[static_cast<int>(cmd.format)];
+		auto& texinfo = s_texture_format[static_cast<size_t>(cmd.data.format())];
 
-		GL_CHECK(glTexImage2D(target, 0,
-			(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format),
-			cmd.width,
-			cmd.height,
-			0,
-			texinfo.format,
-			texinfo.type,
-			cmd.data.data()));
+		GL_CHECK(glTexStorage2D(target, levels,
+			(cmd.data.srgb() ? texinfo.internal_format_srgb : texinfo.internal_format),
+			cmd.data[0].width,
+			cmd.data[0].height));
+
+		for (uint l = 0; l < levels; ++l)
+		{
+			Image const& I = cmd.data[l];
+			if (I.data.empty()) continue;
+
+			GL_CHECK(glTexSubImage2D(target, l, 0, 0, I.width, I.height, texinfo.format, texinfo.type, I.data.data()));
+		}
+
+		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
+		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);		
+		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
+
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
+
+
+		if (cmd.automipmap)
+		{
+			GL_CHECK(glGenerateMipmap(target));
+		}
+
+		GL_CHECK(glBindTexture(target, 0));
+
+		const TextureData t_data{ texture, target, cmd.data.format()};
+		texture_map_.emplace(cmd.handle, t_data);
+	}
+
+	GLenum OpenGLRenderContext::KTX_load_texture(const cmd::CreateTexture& cmd, ktxTexture* kTexture, GLuint& texture)
+	{
+		KTX_error_code result{};
+		if (ktxTexture_NeedsTranscoding(kTexture))
+		{
+			ktx_texture_transcode_fmt_e tf;
+
+			switch (cmd.transcode_quality) {
+			case 0:
+				tf = KTX_TTF_BC1_OR_3;
+				break;
+			case 1:
+				tf = KTX_TTF_BC7_RGBA; //BPTC
+				break;
+			case 2:
+				tf = KTX_TTF_ETC;
+				break;
+			default:
+				tf = KTX_TTF_RGBA32;
+			}
+
+			result = ktxTexture2_TranscodeBasis((ktxTexture2*)kTexture, tf, 0);
+
+			// Then use VkUpload or GLUpload to create a texture object on the GPU.
+		}
+
+		GLenum target{};
+		GLenum glerror{};
+		result = ktxTexture_GLUpload(kTexture, &texture, &target, &glerror);
+		ktxTexture_Destroy(kTexture);
+
+		if (result != KTX_SUCCESS || glerror != GL_NO_ERROR)
+		{
+			Error("Error creating KTX texture [%d]", cmd.handle);
+			//GL_CHECK(glDeleteTextures(1, &texture));
+		}
+		return target;
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::CreateTexture& cmd)
+	{
+		if (texture_map_.count(cmd.handle))
+		{
+			return;
+		}
+
+		GLuint texture{};
+		GLenum target = GL_TEXTURE_2D;
+
+		ktxTexture* kTexture{};
+		KTX_error_code result{};
+
+		const bool srgb = (cmd.flags & 1) == 1;
+		const bool automipmap = (cmd.flags & 2) == 2;
+		const bool compress = (cmd.flags & 4) == 4;
+
+		result = ktxTexture_CreateFromNamedFile(cmd.path.c_str(), KTX_TEXTURE_CREATE_NO_FLAGS, &kTexture);
+		if (result == KTX_SUCCESS)
+		{
+			target = KTX_load_texture(cmd, kTexture, texture);
+			if (!target) return;
+		}
+		else
+		{
+			// load with stb_image
+			ImageSet S;
+			S.fromFile(cmd.path, srgb);
+			if (S.empty())
+			{
+				Error("Cant load image %s", cmd.path.c_str());
+				return;
+			}
+			if (automipmap)
+			{
+				S.generateMipmaps();
+			}
+			if (S.shape() == TextureShape::D1)
+			{
+				target = GL_TEXTURE_1D;
+			}
+
+			GL_CHECK(glGenTextures(1, &texture));
+			GL_CHECK(glBindTexture(target, texture));
+			const auto& texinfo = s_texture_format[static_cast<size_t>(S.format())];
+			const auto& compinfo = compress ? s_texture_format[static_cast<size_t>(TextureFormat::RGBA8_COMPRESSED)] : texinfo;
+
+			for (int k = 0; k < S.levels(); ++k)
+			{
+				if (target == GL_TEXTURE_1D)
+				{
+					GL_CHECK(glTexImage1D(target, k,
+						(srgb ? compinfo.internal_format_srgb : compinfo.internal_format),
+						S[k].width, 0, texinfo.format, texinfo.type, S[k].data.data()));
+				}
+				else
+				{
+					GL_CHECK(glTexImage2D(target, k,
+						(srgb ? compinfo.internal_format_srgb : compinfo.internal_format),
+						S[k].width, S[k].height, 0, texinfo.format, texinfo.type, S[k].data.data()));
+				}
+			}
+		}
 
 		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
 		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
@@ -81,22 +254,23 @@ namespace gfx {
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
-
-		if (cmd.mipmap)
-		{
-			GL_CHECK(glGenerateMipmap(target));
-		}
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_R, wrap));
 		GL_CHECK(glBindTexture(target, 0));
 
-		const TextureData t_data{ texture, target, cmd.format };
+		const TextureData t_data{ texture, target, TextureFormat::RGBA8 };
+
 		texture_map_.emplace(cmd.handle, t_data);
+
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateTextureCubeMap& cmd)
 	{
+		if (!cmd.data.size()) return;
+
 		GLuint texture;
 		const GLenum target = GL_TEXTURE_CUBE_MAP;
-		const auto& texinfo = s_texture_format[static_cast<size_t>(cmd.format)];
+		const auto& texinfo = s_texture_format[static_cast<size_t>(cmd.data[0].format())];
+		const auto& compinfo = cmd.compress ? s_texture_format[static_cast<size_t>(TextureFormat::RGBA8_COMPRESSED)] : texinfo;
 		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
 		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
 		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
@@ -104,72 +278,25 @@ namespace gfx {
 		GL_CHECK(glGenTextures(1, &texture));
 		GL_CHECK(glBindTexture(target, texture));
 
-		const GLsizei levels = static_cast<GLsizei>(std::floorf(std::log2f(static_cast<float>(cmd.width)))) + 1;
-
-		GL_CHECK(glTexStorage2D(target,
-			levels,
-			(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format),
-			cmd.width,
-			cmd.height));
-
-		for (unsigned int face = 0; face < 6; ++face)
+		// Create an empty cube map
+		if (cmd.data.size() < 6)
 		{
-			/*
-			GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
-				(cmd.srgb ? texinfo.internal_format_srgb : texinfo.internal_format),
-				cmd.width,
-				cmd.height,
-				0,
-				texinfo.format,
-				texinfo.type,
-				cmd.data[face].data()));
-				*/
-			GL_CHECK(glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
-				/*level*/	0,
-				/*xoffset*/	0,
-				/*yoffset*/	0,
-				cmd.width,
-				cmd.height,
-				texinfo.format,
-				texinfo.type,
-				cmd.data[face].data()));
-
-			if (cmd.mipmap)
+			const auto& S = cmd.data[0];
+			const auto& I = S[0];
+			GL_CHECK(glTexStorage2D(target, 1, (S.srgb() ? texinfo.internal_format_srgb : texinfo.internal_format), I.width, I.height));
+		}
+		else
+		{
+			// upload texture faces
+			for (int f = 0; f < 6; ++f)
 			{
-				uint w = cmd.width;
-				uint h = cmd.height;
-				std::unique_ptr<uint8[]> input_buffer(new uint8[w * h * texinfo.pixelByteSize]);
-				std::memcpy(input_buffer.get(), cmd.data[face].data(), w * h * texinfo.pixelByteSize);
-
-				for (uint k = 1; k < levels; ++k)
+				const auto& S = cmd.data[f];
+				for (int k = 0; k < S.levels(); ++k)
 				{
-					w = std::max(uint(w / 2), 1u);
-					h = std::max(uint(h / 2), 1u);
-					std::unique_ptr<uint8[]> output_buffer(new uint8[w * h * texinfo.pixelByteSize]);
-					bool res = false;
-					if (cmd.srgb)
-					{
-						res = stbir_resize_uint8_srgb(input_buffer.get(), w * 2, h * 2, 0, output_buffer.get(), w, h, 0, 4, -1, 0);
-					}
-					else
-					{
-						res = stbir_resize_uint8(input_buffer.get(), w * 2, h * 2, 0, output_buffer.get(), w, h, 0, 4);
-					}
-
-					if (res)
-					{
-						GL_CHECK(glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
-							/*level*/	k,
-							/*xoffset*/	0,
-							/*yoffset*/	0,
-							w,
-							h,
-							texinfo.format,
-							texinfo.type,
-							output_buffer.get()));
-					}
-
-					input_buffer = std::move(output_buffer);
+					const auto& I = S[k];
+					GL_CHECK(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + f, k,
+						(S.srgb() ? compinfo.internal_format_srgb : compinfo.internal_format),
+						I.width, I.height, 0, texinfo.format, texinfo.type, I.data.data()));
 				}
 			}
 		}
@@ -179,12 +306,7 @@ namespace gfx {
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_R, wrap));
-#if 0
-		if (cmd.mipmap)
-		{
-			GL_CHECK(glGenerateMipmap(target));
-		}
-#endif
+
 		GL_CHECK(glBindTexture(target, 0));
 
 		const TextureData t_data{ texture, target };

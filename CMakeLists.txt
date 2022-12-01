@@ -10,6 +10,8 @@ find_package(SDL2 REQUIRED)
 
 add_definitions(
   -DGLEW_STATIC
+  -DKHRONOS_STATIC
+  -DSUPPORT_SOFTWARE_ETC_UNPACK=1
 )
 
 # specify the C++ standard
@@ -109,8 +111,8 @@ add_library(tinygltf STATIC
 
 option(KTX_FEATURE_TESTS "" OFF)
 option(KTX_FEATURE_STATIC_LIBRARY "" ON)
-option(KTX_FEATURE_VULKAN "" OFF)
-# option(KTX_FEATURE_GL_UPLOAD "" OFF)
+option(KTX_FEATURE_VULKAN "" ON)
+option(KTX_FEATURE_GL_UPLOAD "" ON)
 
 add_subdirectory(external/ktx)
 

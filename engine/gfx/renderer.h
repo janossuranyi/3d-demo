@@ -6,6 +6,7 @@
 #include "gfx/memory.h"
 #include "gfx/vertex.h"
 #include "gfx/render_types.h"
+#include "gfx/image.h"
 
 #define MAX_TEXTURE_SAMPLERS 8
 #define MAX_UNIFORM_BUFFERS 8
@@ -167,32 +168,39 @@ namespace gfx {
             uint16_t width;
             TextureFormat format;
             TextureWrap wrap;
-            TextureFilter filter;
+            TextureFilter min_filter;
+            TextureFilter mag_filter;
             Memory data;
+            bool automipmap;
         };
 
         struct CreateTexture2D {
             TextureHandle handle;
-            uint16_t width, height;
-            TextureFormat format;
             TextureWrap wrap;
             TextureFilter min_filter;
             TextureFilter mag_filter;
-            bool srgb;
-            bool mipmap;
-            Memory data;
+            ImageSet data;
+            bool automipmap;
         };
 
         struct CreateTextureCubeMap {
             TextureHandle handle;
-            uint16_t width, height;
-            TextureFormat format;
             TextureWrap wrap;
             TextureFilter min_filter;
             TextureFilter mag_filter;
-            bool srgb;
-            bool mipmap;
-            Vector<Memory> data;
+            Vector<ImageSet> data;
+            bool compress;
+        };
+
+        // flags: 0: srgb, 1: automipmap, 2: compress
+        struct CreateTexture {
+            TextureHandle handle;
+            TextureWrap wrap;
+            TextureFilter min_filter;
+            TextureFilter mag_filter;
+            ushort transcode_quality;
+            String path;
+            ushort flags;
         };
 
         struct DeleteTexture {
@@ -242,6 +250,7 @@ namespace gfx {
         cmd::CreateTexture1D,
         cmd::CreateTexture2D,
         cmd::CreateTextureCubeMap,
+        cmd::CreateTexture,
         cmd::UpdateConstantBuffer,
         cmd::UpdateIndexBuffer,
         cmd::UpdateVertexBuffer,
@@ -391,14 +400,15 @@ namespace gfx {
         glm::ivec2                  getFramebufferSize() const;
         inline uint64               getFrameNum() const { return framenum_; };
 
-        VertexLayoutHandle          createVertexLayout(const VertexDecl& decl);
+        VertexLayoutHandle          createVertexLayout(VertexDecl& decl);
         VertexBufferHandle          createVertexBuffer(uint size, BufferUsage usage, Memory data);
         TextureBufferHandle         createTextureBuffer(uint size, BufferUsage usage, Memory data);
         IndexBufferHandle           createIndexBuffer(uint size, BufferUsage usage, Memory data);
         ConstantBufferHandle        createConstantBuffer(uint size, BufferUsage usage, Memory data);
         ShaderStorageBufferHandle   createShaderStorageBuffer(uint size, BufferUsage usage, Memory data);
-        TextureHandle               createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data);
-        TextureHandle               createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, std::vector<Memory>& data);
+        TextureHandle               createTexture2D(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, ImageSet& data);
+        TextureHandle               createTexture(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, String const& apath, bool srgb, bool auto_mipmap = false, bool compress = true, ushort aQuality = 1);
+        TextureHandle               createTextureCubemap(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, Vector<ImageSet>& data, bool compress = false);
         TextureHandle               createBufferTexture(TextureBufferHandle hbuffer, TextureFormat format, uint offset = 0, uint size = 0);
         FrameBufferHandle           createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
         FrameBufferHandle           createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);

@@ -25,6 +25,8 @@ struct EngineTestEffect : public Effect
 
 	gfx::TextureHandle color_attachment, depth_attachment;
 	gfx::TextureHandle skybox, texDyn, bufTex;
+	gfx::TextureHandle compr2d;
+
 	int kernel{ 0 };
 
 	const int NUMPOINTS = 500000;

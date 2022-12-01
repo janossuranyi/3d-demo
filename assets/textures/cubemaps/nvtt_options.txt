@@ -1,0 +1,84 @@
+NVIDIA Texture Tools Exporter 2021.2.0
+Usage: nvtt_export [OPTIONS] [input-file]
+
+Positionals:
+  input-file TEXT             Input file to read
+
+Options:
+  -h,--help                   Print this help message and exit
+  -o,--output,--output-file TEXT
+                              Output file to save
+  -b,--batch,--batch-file TEXT
+                              Runs a series of arguments from a batch file (ignores all other flags)
+  -f,--format INT:{a8->0,astc-ldr-10x10->1,astc-ldr-10x5->2,astc-ldr-10x6->3,astc-ldr-10x8->4,astc-ldr-12x10->5,astc-ldr-12x12->6,astc-ldr-4x4->7,astc-ldr-5x4->8,astc-ldr-5x5->9,astc-ldr-6x5->10,astc-ldr-6x6->11,astc-ldr-8x5->12,astc-ldr-8x6->13,astc-ldr-8x8->14,bc1->15,bc1a->16,bc2->17,bc3->18,bc3n->19,bc4->20,bc5->21,bc6->22,bc7->23,bgr8->24,bgra8->25,bgrx8->26,etc1s-rgb->36,etc1s-rgba->35,l8->27,r16f->28,r32f->29,rg16f->30,rg32f->31,rgba16f->32,rgba32f->33,uastc->34}
+                              When converting to DDS, the DXGI format to convert to (default: bc7). For most RGBA images, try using BC7. For three-channel HDR images, try using BC6H. BC4 and BC5 are good for one-channel (red) and two-channel (red, green) images, respectively. ASTC images will be stored uncompressed on many desktop GPUs, but are good for non-HDR RGBA images on Tegra GPUs.
+  -t,--texture-type ENUM:{2d->0,cubemap->1}
+                              Specifies that the input image should be read as a 2D texture (2d) or converted to a cube map from an image (default: 2d)
+  -q,--quality ENUM:{fastest->0,highest->3,normal->1,production->2}
+                              Sets the quality vs. speed of the texture compressor, from fastest to normal to production to highest (default: normal). Note that values of and above "production" can be very slow.
+  --no-cuda{false}            Disables CUDA-accelerated compression. (This will usually make things slower. Default: uses CUDA.)
+[Option Group: Mipmap Options]
+  Options:
+    --mips,--no-mips{false}     Enable or disable mipmap generation (default: true)
+    --mip-filter INT:{box->0,kaiser->1,triangle->2}
+                                Mipmapping filter - box is the lowest-quality filter, while kaiser is the highest-quality filter. (default: box)
+    --mip-filter-width FLOAT    Sets the width of the downsampling filter (default: none)
+    --mip-gamma-correct,--no-mip-gamma-correct{false}
+                                Use linear space while downsampling (this is usually good! default: true)
+    --mip-pre-alpha,--no-mip-pre-alpha{false}
+                                Use correct alpha handling for mipmapping (default: true)
+    --mip-extract-from-atlas    Load mipmaps from an atlas where mip 0 is in the top-left and subsequent mips are to its right. Use this with --num-mips-in-atlas and --no-mips to specify custom mipmaps (default: false)
+    --num-mips-in-atlas INT     The number of mips in the atlas (default: 1)
+[Option Group: Image Processing Options]
+  Options:
+    --to-grayscale              Converts the image to grayscale (default: false)
+    --weight-r FLOAT            Multiplier for the red channel (default: 1.)
+    --weight-g FLOAT            Multiplier for the green channel (default: 1.)
+    --weight-b FLOAT            Multiplier for the blue channel (default: 1.)
+    --weight-a FLOAT            Multiplier for the alpha channel (default: 1.)
+    --bias-r FLOAT              Amount to add to the red channel (default: 0.)
+    --bias-g FLOAT              Amount to add to the green channel (default: 0.)
+    --bias-b FLOAT              Amount to add to the blue channel (default: 0.)
+    --bias-a FLOAT              Amount to add to the alpha channel (default: 0.)
+    --wrap-to-output-range      Wrap out-of-range colors back around into the input range (default: false)
+    --border-color FLOAT ...    Sets the color of the pixels on the border of the image to the specified RGBA color (default: none)
+    --zero-alpha-border         Sets the alpha channel of the pixels on the border of the image to 0 (default: false)
+    --alpha-threshold INT       Threshold to use for alpha testing (0-255, default: 127)
+    --cutout-alpha              Applies an alpha cutout effect to the image, making pixels with alpha value greater than --alpha-threshold fully opaque and all others fully transparent (default: false)
+    --scale-alpha               Scales the alpha channel of higher mipmaps to preserve the opacity of cutout alpha textures. Uses --alpha-threshold as its cutoff value (default: false)
+    --cutout-alpha-dither       Dither the alpha channel of a cutout alpha image (default: false)
+    --save-flip-y               Flip the image vertically when saving (default: false)
+    --read-flip-y               Flip the image vertically when reading DDS files (default: false)
+    --export-pre-alpha          Exports the image using premultiplied alpha instead of uncorrelated alpha, i.e. (r*a, g*a, b*a, a) instead of (r, g, b, a). See the GUI for more info (default: false)
+    --dx10,--dxt10,--dds10      When writing DDS files, use the DXT10 header. (Otherwise uses DXT9 if possible.)
+    --super-res INT             Apply AI super-resolution to upscale the image by a factor on Turing+ GPUs. (values: 2, 4).
+    --zcmp INT                  When writing KTX2 files, apply Zstandard supercompression to the encoded image. Higher values compress better but are slower; values above 20 should be used with caution. 5 is a good default.
+    --uastc-rdo-lambda FLOAT    Lambda factor to use with UASTC's Rate-Distortion Optimization. Higher values make the resulting file smaller after supercompression, but reduce image quality. 0 is the same as no RDO. (default: 10.0)
+    --no-etc1s-rdo{false}       Turns off Rate-Distortion Optimization for the ETC1S compressor. RDO parameters depend on the compression quality. (default: RDO enabled)
+[Option Group: Normal Map Options]
+  Options:
+    --to-normal,--to-normal-ts  Generates a height map and converts the image to a tangent-space normal map (see Normal Map Options below) (default: false)
+    --to-normal-os              Generates a height map and converts the image to an object-space normal map (see Normal Map Options below) (default: false)
+    --normal-filter ENUM:{3x3->1,4sample->0,5x5->2,7x7->3,9x9->4,dudv->5}
+                                Derivative filter to use for normal mapping.
+    --wrap,--clamp{false}       Use the WRAP or CLAMP wrapping mode when calculating normals (default: wrap)
+    --normal-invert-x           Invert the x (red) coordinates of normals (default: false)
+    --normal-invert-y           Invert the y (green) coordinates of normals (default: false)
+    --normal-min-z FLOAT        Set the minimum level for the height map before scaling (0-1) (default: 0.)
+    --normal-scale FLOAT        Scale the height map, making normals less flat (default: 1.)
+    --height ENUM:{alpha->0,average->1,blue->4,green->3,max->5,red->2,screen->6}
+                                How to generate the height map from the image. Average takes the average of the first three channels, max takes the max of the first three channels, and screen computes 1-((1-r)*(1-g)*(1-b)) (default: average)
+    --normal-alpha ENUM:{height->1,set-to-1->2,unchanged->0}
+                                How to compute the alpha channel of the normal map (default: unchanged)
+    --normalize,--slope-space{false}
+                                Normalizes slope-space normals, or leaves them in slope-space form 0.5 + 0.5*(-dh/dx, -dh/dy, 1) (default: normalize)
+[Option Group: Object-Space Normal Mapped Cube Map Options]
+  These options specify the coordinate system when the command line includes both --to-normal-os and --texture-type cubemap.
+  Options:
+    --forward ENUM:{+x->0,+y->2,+z->4,-x->1,-y->3,-z->5}
+                                The coordinates of the forward direction (default: -z)
+    --up ENUM:{+x->0,+y->2,+z->4,-x->1,-y->3,-z->5}
+                                The coordinates of the upwards direction (default: +y)
+    --right ENUM:{+x->0,+y->2,+z->4,-x->1,-y->3,-z->5}
+                                The coordinates of the rightward direction (default: +x)
+

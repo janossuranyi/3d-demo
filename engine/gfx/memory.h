@@ -38,6 +38,10 @@ namespace gfx {
         /// <returns>bytes allocated</returns>
         size_t size() const;
 
+        /// Returns true if memory not contains any data
+        /// <returns>true/false</returns>
+        bool empty() const;
+
         /// Returns a pointer to the buffer data
         /// <returns>pointer</returns>
         uint8_t* data() const;

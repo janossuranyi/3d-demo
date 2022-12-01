@@ -7,6 +7,8 @@
 #include "gfx/renderer.h"
 #include "gfx/render_context.h"
 
+struct ktxTexture;
+
 namespace gfx {
 
 
@@ -78,6 +80,7 @@ namespace gfx {
 		void operator()(const cmd::DeleteProgram& cmd);
 		void operator()(const cmd::CreateTexture1D& cmd);
 		void operator()(const cmd::CreateTexture2D& cmd);
+		void operator()(const cmd::CreateTexture& cmd);
 		void operator()(const cmd::CreateTextureCubeMap& cmd);
 		void operator()(const cmd::DeleteTexture& cmd);
 		void operator()(const cmd::CreateFramebuffer& cmd);
@@ -232,7 +235,9 @@ namespace gfx {
 			bool EXT_direct_state_access{};
 		} ext_;
 
+		Vector<GLint> compressedFormats_;
 		GLuint create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory& data, uint& actualSize);
 		void update_buffer_real(GLenum target, GLuint buffer, uint offset, uint pixelByteSize, const Memory& data);
+		GLenum KTX_load_texture(const cmd::CreateTexture& cmd, ktxTexture* kTexture, GLuint& texture);
 	};
 }

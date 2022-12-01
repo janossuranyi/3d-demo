@@ -7,7 +7,6 @@
 namespace gfx {
 	struct Image
 	{
-		TextureFormat format;
 		ushort width;
 		ushort height;
 		Memory data;
@@ -18,10 +17,44 @@ namespace gfx {
 	public:
 		ImageSet() = default;
 
+		/// <summary>
+		/// Non copyable ctor
+		/// </summary>
+		/// <param name=""></param>
 		ImageSet(ImageSet&) = delete;
 
-		void operator=(ImageSet&) = delete;
+		/// <summary>
+		/// Default move ctor
+		/// </summary>
+		/// <param name=""></param>
+		ImageSet(ImageSet&&) = default;
 
+		/// <summary>
+		/// Non copyable assign
+		/// </summary>
+		/// <param name=""></param>
+		/// <returns></returns>
+		ImageSet& operator=(ImageSet&) = delete;
+
+		/// <summary>
+		/// Default move assign
+		/// </summary>
+		/// <param name=""></param>
+		/// <returns></returns>
+		ImageSet& operator=(ImageSet&&) = default;
+
+		/// <summary>
+		/// Returns the status of the flip image on load flag
+		/// </summary>
+		/// <returns>true/false</returns>
+		bool flipImage() const;
+
+		/// <summary>
+		/// Sets the status of the flip image on load flag
+		/// </summary>
+		/// <param name="aflip">true=should flip</param>
+		void setFlipImage(bool aflip);
+		
 		/// <summary>
 		/// Returns the number of image levels
 		/// </summary>
@@ -54,6 +87,9 @@ namespace gfx {
 		/// <returns>shape</returns>
 		TextureShape shape() const;
 
+		TextureFormat format() const;
+		bool srgb() const;
+
 		/// <summary>
 		/// Sets the shape of the underlying image set
 		/// </summary>
@@ -61,22 +97,52 @@ namespace gfx {
 		void setShape(TextureShape ashape);
 
 		/// <summary>
+		/// Set the format of the image set
+		/// </summary>
+		/// <param name="aformat">The texture format</param>
+		void setFormat(TextureFormat aformat);
+
+		/// <summary>
 		/// Creates an ImageSet object with attempt to load the specified image file
 		/// </summary>
 		/// <param name="afilename">Specifies the filename to load</param>
 		/// <returns>Ref to an ImageSet object. If file cannot be load then the ImageSet remains empty</returns>
-		static ImageSet& fromFile(String const& afilename);
+		ImageSet& fromFile(String const& afilename, bool asrgb = true);
 
 		/// <summary>
-		/// Creates an ImageSet object with attempt to load the specified KTX1/2 image file
+		/// Creates an ImageSet object with attempt to load the specified image files
 		/// </summary>
-		/// <param name="afilename">Specifies the filename to load</param>
+		/// <param name="afilename">Specifies the filenames to load</param>
 		/// <returns>Ref to an ImageSet object. If file cannot be load then the ImageSet remains empty</returns>
-		static ImageSet& fromKtxFile(String const& afilename);
+		static Vector<ImageSet> fromFiles(Vector<String> const& afilenames, bool asrgb = true, bool automipmaps = false);
+
+		/// <summary>
+		/// Initializes a level of image set with the specified parameters
+		/// </summary>
+		/// <param name="alevel">level of detail</param>
+		/// <param name="awidth">width of the image</param>
+		/// <param name="aheight">height of the image</param>
+		/// <param name="aformat">pixel format</param>
+		/// <param name="asrgb">is SRGB</param>
+		/// <param name="adata">raw data</param>
+		/// <returns></returns>
+		ImageSet& set(ushort alevel, ushort awidth, ushort aheight, TextureFormat aformat, bool asrgb, Memory& adata);
+
+		static ImageSet create(ushort awidth, ushort aheight, TextureFormat aformat, bool asrgb, Memory& adata);
+
+		static ImageSet create(ushort awidth, ushort aheight, TextureFormat aformat);
+
+		void generateMipmaps();
+
 	private:
 		TextureShape shape_{};
-		uint levels_{};
 		Vector<Image> images_{};
+		TextureFormat format_{};
+		bool srgb_{};
+		bool alpha_{};
+		bool flip_image_{};
 	};
+
+	using CubemapImageSet = Array<ImageSet, 6>;
 }
 #endif // !GFX_IMAGE_H

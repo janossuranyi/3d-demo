@@ -14,6 +14,8 @@
 #include "gpu_utils.h"
 #include "window.h"
 
+#include "engine/gfx/image.h"
+
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
 #define FULLSCREEN false

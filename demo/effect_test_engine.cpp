@@ -89,57 +89,41 @@ bool EngineTestEffect::Init()
 	//sm->setVersionString("#version 450 core\n");
 
 	glm::ivec2 win_size = hwr->getFramebufferSize();
-	
+
 	texDyn =
-		hwr->createTexture2D(512, 512, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
+		hwr->createTexture2D(gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear,
+			gfx::ImageSet::create(512, 512, gfx::TextureFormat::RGBA8));
 	depth_attachment =
-		hwr->createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::D24S8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
-    color_attachment = 
-        hwr->createTexture2D(win_size.x, win_size.y, gfx::TextureFormat::RGBA8, gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, false, false, gfx::Memory());
+		hwr->createTexture2D(gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear,
+			gfx::ImageSet::create(win_size.x, win_size.y, gfx::TextureFormat::D24S8));
+	color_attachment =
+		hwr->createTexture2D(gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear,
+			gfx::ImageSet::create(win_size.x, win_size.y, gfx::TextureFormat::RGBA8));
     fb = 
         hwr->createFrameBuffer(std::vector<gfx::TextureHandle>{color_attachment}, depth_attachment);
 
 
 	tmp = hwr->createVertexBuffer(256, gfx::BufferUsage::Static, gfx::Memory(Vector<float>{0.5f, 0.0f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f}));
 
-
-	const std::vector<std::string> textures_faces = {
-	"textures/skybox/right.jpg",
-	"textures/skybox/left.jpg",
-	"textures/skybox/top.jpg",
-	"textures/skybox/bottom.jpg",
-	"textures/skybox/front.jpg",
-	"textures/skybox/back.jpg"
+	Vector<String> const skybox_set{
+		rc::ResourceManager::get_resource("textures/cubemaps/skybox/right.jpg"),
+		rc::ResourceManager::get_resource("textures/cubemaps/skybox/left.jpg"),
+		rc::ResourceManager::get_resource("textures/cubemaps/skybox/top.jpg"),
+		rc::ResourceManager::get_resource("textures/cubemaps/skybox/bottom.jpg"),
+		rc::ResourceManager::get_resource("textures/cubemaps/skybox/front.jpg"),
+		rc::ResourceManager::get_resource("textures/cubemaps/skybox/back.jpg")
 	};
 
-	{
-		std::vector<gfx::Memory> sky_images;
-		int x, y, n, img_x = 0, img_y = 0;
-		stbi_set_flip_vertically_on_load(false);
-		for (const auto& side : textures_faces)
-		{
-			auto fname = ResourceManager::get_resource(side);
-			stbi_uc* image = stbi_load(fname.c_str(), &x, &y, &n, STBI_rgb_alpha);
-			if (img_x == 0)
-			{
-				img_x = x;
-				img_y = y;
-			}
-			else if (img_x != x || img_y != y)
-			{
-				Warning("Cube faces size not equal");
-			}
-			sky_images.emplace_back(image, x * y * 4);
-			stbi_image_free(image);
-		}
+//	auto cube_images = gfx::ImageSet::fromFiles(skybox_set);
 
-		skybox =
-			hwr->createTextureCubemap(img_x, img_y, 
-				gfx::TextureFormat::RGBA8,
-				gfx::TextureWrap::ClampToEdge,
-				gfx::TextureFilter::LinearLinear,
-				gfx::TextureFilter::Linear, true, true, sky_images);
-	}
+	skybox = hwr->createTexture(gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::LinearLinear, gfx::TextureFilter::Linear,
+		rc::ResourceManager::get_resource("textures/cubemaps/skybox.ktx2"), true, false, true, 1);
+
+//	Vector<gfx::ImageSet> test; 
+//	test.push_back(std::move(gfx::ImageSet::create(512, 512, gfx::TextureFormat::RGBA8)));
+
+//	skybox = hwr->createTextureCubemap(gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, cube_images, true);
+	
 
 	{
 		const size_t bufSize = sizeof(DrawVert) * NUMPOINTS;
@@ -230,7 +214,6 @@ bool EngineTestEffect::Init()
 		.end();
 
 	layout_handle = hwr->createVertexLayout(layout);
-	layout.setHandle(layout_handle);
 
 	Vector<vec4> tbData;
 	for (uint i = 0; i < 256; ++i)

@@ -87,8 +87,7 @@ namespace gfx {
 			.end();
 
 		
-		auto defLayout = createVertexLayout(defaultVertexDecl_);
-		defaultVertexDecl_.setHandle(defLayout);
+		createVertexLayout(defaultVertexDecl_);
 
 		return true;
 	}
@@ -103,10 +102,11 @@ namespace gfx {
 		return shared_render_context_->get_window_size();
 	}
 
-	VertexLayoutHandle Renderer::createVertexLayout(const VertexDecl& decl)
+	VertexLayoutHandle Renderer::createVertexLayout(VertexDecl& decl)
 	{
 		const VertexLayoutHandle handle = vertex_layout_handle_.next();
 		submitPreFrameCommand(cmd::CreateVertexLayout{ handle, decl });
+		decl.setHandle(handle);
 
 		return handle;
 	}
@@ -151,28 +151,42 @@ namespace gfx {
 		return handle;
 	}
 
-	TextureHandle Renderer::createTexture2D(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, Memory data)
+	TextureHandle Renderer::createTexture2D(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, ImageSet& data)
 	{
 		const TextureHandle handle = texture_handle_.next();
-		submitPreFrameCommand(cmd::CreateTexture2D{ handle,width,height,format,wrap,minfilter,magfilter,srgb,mipmap,std::move(data) });
 
-		texture_data_[handle] = TextureData{ width,height,format };
+		texture_data_[handle] = TextureData{ data[0].width,data[0].height,data.format()};
+		submitPreFrameCommand(cmd::CreateTexture2D{ handle,wrap,minfilter,magfilter,std::move(data) });
+
 
 		return handle;
 	}
 
-	TextureHandle Renderer::createTextureCubemap(uint16_t width, uint16_t height, TextureFormat format, TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, bool srgb, bool mipmap, std::vector<Memory>& data)
+	TextureHandle Renderer::createTexture(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, String const& apath, bool srgb, bool auto_mipmap, bool compress, ushort aQuality)
 	{
-		if (data.size() != 6)
+		const TextureHandle handle = texture_handle_.next();
+
+		texture_data_[handle] = TextureData{ 0,0,TextureFormat::RGBA8 };
+		const ushort flags = (ushort)((compress << 2) || (auto_mipmap << 1) || srgb);
+		submitPreFrameCommand(cmd::CreateTexture{ handle,wrap,minfilter,magfilter,aQuality,apath,flags });
+
+		return handle;
+	}
+
+	TextureHandle Renderer::createTextureCubemap(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, Vector<ImageSet>& data, bool compress)
+	{
+		if (!data.size())
 		{
-			Warning("Cubemap must contains 6 texture image");
+			Warning("Cubemap must contains 1 texture image");
 			return TextureHandle();
 		}
 
 		const TextureHandle handle = texture_handle_.next();
-		submitPreFrameCommand(cmd::CreateTextureCubeMap{ handle,width,height,format,wrap,minfilter,magfilter,srgb,mipmap,std::move(data)});
+		const ImageSet& l0 = data.at(0);
+		texture_data_[handle] = TextureData{ l0[0].width, l0[0].height, l0.format()};
 
-		texture_data_[handle] = TextureData{ width,height,format };
+		submitPreFrameCommand(cmd::CreateTextureCubeMap{ handle,wrap,minfilter,magfilter,std::move(data),compress });
+
 
 		return handle;
 	}
@@ -188,7 +202,8 @@ namespace gfx {
 	FrameBufferHandle Renderer::createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format)
 	{
 		const FrameBufferHandle handle = frame_buffer_handle_.next();
-		const TextureHandle color = createTexture2D(width, height, format, TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, false, false, Memory());
+		
+		const TextureHandle color = createTexture2D(TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, gfx::ImageSet::create(width,height,format));
 		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height, TextureHandle(), std::vector<TextureHandle>{ color } });
 		frame_buffer_textures_.emplace(handle, std::vector<TextureHandle>{ color });
 

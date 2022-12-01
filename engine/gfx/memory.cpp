@@ -24,6 +24,11 @@ namespace gfx {
 		return size_;
 	}
 
+	bool Memory::empty() const
+	{
+		return size() == 0;
+	}
+
 	uint8_t* Memory::data() const {
 		return data_.get();
 	}

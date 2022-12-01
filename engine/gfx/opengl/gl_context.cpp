@@ -400,6 +400,12 @@ namespace gfx {
 		glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &gl_max_shader_storage_block_size_);
 		glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &gl_max_uniform_block_size_);
 
+		GLint NumFormats = 0; 
+		glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &NumFormats); 
+		compressedFormats_.resize(NumFormats);
+		glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, compressedFormats_.data());
+
+
 		SDL_GL_MakeCurrent(windowHandle_, NULL);
 
 		return true;
