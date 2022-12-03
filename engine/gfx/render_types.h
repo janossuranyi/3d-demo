@@ -39,11 +39,18 @@ namespace gfx {
     using FrameBufferHandle = Handle<FrameBufferTag, -1>;
     using FenceHandle = Handle<FenceTag, -1>;
 
+    // alpha mode
+    enum class AlphaMode { Opaque, Mask, Blend };
+
+    enum class MaterialType {PBR_MetallicRoughness,PBR_SpecularGlossiness};
     // Renderer type
     enum class RendererType { Null, OpenGL };
 
     // Shader stage
     enum class ShaderStage { Vertex, Geometry, Fragment, Compute };
+
+    // Light
+    enum LightType { Directional, Point, Spot };
 
     enum class ClearBits : uint {
         Color = 0x01,
@@ -181,6 +188,13 @@ namespace gfx {
         const uint QueryBuffer = 1 << 9;
     }
 
+    namespace binding {
+        const uint Diffuse = 0;
+        const uint Normal = 1;
+        const uint PBR = 2;
+        const uint Occlusion = 3;
+        const uint Emissive = 4;
+    }
 
     // one/zero is flipped on src/dest so a gl state of 0 is SRC_ONE,DST_ZERO
     static const uint64 GLS_SRCBLEND_ONE = 0 << 0;

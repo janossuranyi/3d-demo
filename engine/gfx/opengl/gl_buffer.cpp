@@ -8,7 +8,7 @@
 
 namespace gfx {
 
-	GLuint gfx::OpenGLRenderContext::create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory& data, uint& actualSize)
+	GLuint gfx::OpenGLRenderContext::create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory data, uint& actualSize)
 	{
 		GLuint buffer = static_cast<GLuint>(0xffff);
 		const GLenum _usage = MapBufferUsage(usage);
@@ -41,7 +41,7 @@ namespace gfx {
 		return buffer;
 	}
 
-	void OpenGLRenderContext::update_buffer_real(GLenum target, GLuint buffer, uint offset, uint pixelByteSize, const Memory& data)
+	void OpenGLRenderContext::update_buffer_real(GLenum target, GLuint buffer, uint offset, uint pixelByteSize, const Memory data)
 	{
 		const GLsizeiptr size_ = pixelByteSize > 0 ? GLsizeiptr(pixelByteSize) : data.size();
 #if USE_MAP_BUFFER		

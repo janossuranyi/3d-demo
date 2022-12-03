@@ -46,14 +46,12 @@ struct EngineTestEffect : public Effect
 	gfx::ProgramHandle prgGauss;
 	gfx::VertexLayoutHandle layout_handle;
 
-	struct frameData_t {
-		gfx::UniformMap effect1_vars;
-		gfx::UniformMap effect2_vars;
-		gfx::UniformMap effect3_vars;
-		gfx::UniformMap effect4_vars;
-		gfx::UniformMap effect5_vars;
-		gfx::UniformMap effect6_vars;
-		gfx::VertexAttribMap attrs{ {5,2U} };
-	} perframe_data[2];
+	gfx::UniformMap effect1_vars;
+	gfx::UniformMap effect2_vars;
+	gfx::UniformMap effect3_vars;
+	gfx::UniformMap effect4_vars;
+	gfx::UniformMap effect5_vars;
+	gfx::UniformMap effect6_vars;
+	gfx::VertexAttribMap attrs{ {5,2U} };
 };
 

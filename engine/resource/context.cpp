@@ -34,10 +34,16 @@ namespace ctx {
         return vc_.get();
     }
 
+    gfx::TextureManager* Context::textureManager()
+    {
+        return tm_.get();
+    }
+
     Context::Context()
     {
         hwr_.reset(new gfx::Renderer());
         sm_.reset(new gfx::ShaderManager(hwr_.get()));
+        tm_.reset(new gfx::TextureManager(hwr_.get()));
         vc_.reset(new gfx::VertexCache());
         vc_->start(hwr_.get(), STATIC_SIZE, FRAME_SIZE);
     }

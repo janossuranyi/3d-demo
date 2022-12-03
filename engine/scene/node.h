@@ -2,6 +2,7 @@
 #define SCENE_NODE_H
 
 #include <vector>
+#include <functional>
 #include "engine/common.h"
 #include "engine/scene/renderable.h"
 #include "engine/gfx/renderer.h"
@@ -17,7 +18,7 @@ namespace scene {
 
 		Node(const Node&) = delete;
 		
-		void operator=(const Node&) = delete;
+		Node& operator=(const Node&) = delete;
 
 		mat4 worldTransform();
 		const mat4& worldTransformRef();
@@ -31,6 +32,8 @@ namespace scene {
 		vec3 scaleing() const;
 
 		void addRenderable(Renderable* r);
+
+		void addChild(Node* node);
 
 		Node* parent();
 
@@ -49,7 +52,7 @@ namespace scene {
 		vec3					v_WorldPosition_{0.0f};
 		quat					q_WorldRotation_{1.0f,0.0f,0.0f,0.0f};
 		vec3					v_WorldScale_{1.0f};
-		bool					needs_update_{false};
+		bool					need_to_update_{false};
 		gfx::Renderer*			hwr_{};
 		math::BoundingBox		aabb_{};
 	};

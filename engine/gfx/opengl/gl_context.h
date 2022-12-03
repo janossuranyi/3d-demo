@@ -236,8 +236,8 @@ namespace gfx {
 		} ext_;
 
 		Vector<GLint> compressedFormats_;
-		GLuint create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory& data, uint& actualSize);
-		void update_buffer_real(GLenum target, GLuint buffer, uint offset, uint pixelByteSize, const Memory& data);
+		GLuint create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory data, uint& actualSize);
+		void update_buffer_real(GLenum target, GLuint buffer, uint offset, uint pixelByteSize, const Memory data);
 		GLenum KTX_load_texture(const cmd::CreateTexture& cmd, ktxTexture* kTexture, GLuint& texture);
 	};
 }

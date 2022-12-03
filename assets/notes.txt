@@ -4,3 +4,8 @@ R: height
 G: roughness
 B: metalness
 A: ambient occlusion
+
+
+The textures for metalness and roughness properties are packed together in a single texture called metallicRoughnessTexture.
+Its green channel contains roughness values and its blue channel contains metalness values. 
+This texture MUST be encoded with linear transfer function and MAY use more than 8 bits per channel.

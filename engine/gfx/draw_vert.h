@@ -59,7 +59,7 @@ namespace gfx {
 			floatToUnorm8((T.x + 1.0f) / 2.0f),
 			floatToUnorm8((T.y + 1.0f) / 2.0f),
 			floatToUnorm8((T.z + 1.0f) / 2.0f),
-			floatToUnorm8((T.w + 1.0f) / 2.0f)
+			floatToUnorm8(std::clamp(T.w, 0.0f, 1.0f))
 		));
 	}
 	inline void DrawVert::setColor(const vec4& C)

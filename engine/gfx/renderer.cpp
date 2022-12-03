@@ -512,19 +512,19 @@ namespace gfx {
 		submit_->renderPass(pass).clear_color = value;
 	}
 
-	void Renderer::setVertexDecl(const VertexDecl* vertDecl)
+	void Renderer::setVertexDecl(const VertexDecl& vertDecl)
 	{
 		submit_->active_item.vertexDecl = vertDecl;
 	}
-	void gfx::Renderer::setVertexAttribs(const VertexAttribMap* attribs)
+	void gfx::Renderer::setVertexAttribs(const VertexAttribMap& attribs)
 	{
 		submit_->active_item.vertexAttribs = attribs;
 	}
 
-	void Renderer::setUniforms(const UniformMap* uniforms)
+	void Renderer::setUniforms(UniformMap& uniforms)
 	{
-		if (compute_active_) submit_->active_compute.pUniforms = uniforms;
-		else submit_->active_item.pUniforms = uniforms;
+		if (compute_active_) submit_->active_compute.uniforms = std::move(uniforms);
+		else submit_->active_item.uniforms = std::move(uniforms);
 	}
 
 	void gfx::Renderer::beginCompute()

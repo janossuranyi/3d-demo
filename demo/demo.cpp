@@ -7,8 +7,8 @@
 #include "demo.h"
 #include "logger.h"
 
-#include "effect_model_loading.h"
 #include "effect_test_engine.h"
+#include "effect_bump.h"
 #include "gpu.h"
 #include "gpu_types.h"
 #include "gpu_utils.h"
@@ -20,21 +20,6 @@
 #define SCREEN_HEIGHT 900
 #define FULLSCREEN false
 
-bool V_Init(int w, int h, int multisample, bool fullscreen);
-void V_Shutdown();
-
-
-static bool V_Init(int w, int h, int multisample, bool fullscreen)
-{
-    Window window{ w,h,24,32,8,multisample,8,8,8,8,fullscreen};
-
-    return GPU::setup(window, "3d-demo");
-}
-
-static void V_Shutdown()
-{
-    GPU::close();
-}
 
 void App_EventLoop()
 {
@@ -42,14 +27,13 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<EngineTestEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<BumpEffect>();
 
     if (!activeEffect->Init())
         return;
 
     int sampleCount = 0;
     Uint32 ticks = 0;
-    GLsync sync{};
     uint64_t frame_num{ 0 };
 
     while (running)
@@ -79,22 +63,10 @@ void App_EventLoop()
 
 
         Uint32 tick1 = SDL_GetTicks();
-#if 0
-        GL_FLUSH_ERRORS();
-
-        if (sync) GL_CHECK(glDeleteSync(sync));
-#endif
         if (!activeEffect->Render(frame_num))
         {
             running = false;
         }
-#if 0
-        GL_CHECK(sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
-
-        //glFinish();
-
-        GL_CHECK(glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, ~GLuint64(0)));
-#endif
         Uint32 tick2 = SDL_GetTicks();
         ticks += tick2 - tick1;
         if (++sampleCount > 2000)
@@ -103,9 +75,6 @@ void App_EventLoop()
             sampleCount = 0;
             ticks = 0;
         }
-#if 0
-        GPU::flipSwapChain();
-#endif
         ++frame_num;
     }
 }
@@ -204,19 +173,16 @@ int main(int argc, char** argv)
 
 
     Info("V_Init Start");
-#if 0
-    if (V_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 0, FULLSCREEN))
+
+    gfx::Renderer* hwr = ctx::Context::default()->hwr();
+
+    if (!hwr->init(gfx::RendererType::OpenGL, 1440, 900, "test", 1))
     {
-        Info("V_Init Done");
-
-
-        App_EventLoop();
+        return false;
     }
 
-    Info("V_Shutdown...");
-    V_Shutdown();
-#endif
     App_EventLoop();
+
 	Info("Program terminated");
 	return 0;
 }

@@ -535,8 +535,8 @@ namespace gfx {
 				active_program_ = item->program;
 			}
 
-			if (item->pUniforms) {
-				setup_uniforms(program_data, *item->pUniforms);
+			if ( ! item->uniforms.empty() ) {
+				setup_uniforms(program_data, item->uniforms);
 			}
 
 			setup_textures(&item->textures[0], item->textures.size());
@@ -678,11 +678,11 @@ namespace gfx {
 					active_program_ = item->program;
 				}
 
-				if (item->pUniforms) {
-					setup_uniforms(program_data, *item->pUniforms);
+				if ( ! item->uniforms.empty() ) {
+					setup_uniforms(program_data, item->uniforms);
 				}
 
-				setup_textures(&item->textures[0], item->textures.size());
+				setup_textures(item->textures.data(), item->textures.size());
 
 				// Element buffer setup
 				if ((!prev || prev->ib != item->ib) && item->ib.isValid())
@@ -710,11 +710,11 @@ namespace gfx {
 					if (gl_version_430_ || ext_.ARB_vertex_attrib_binding)
 					{
 						/* change layout if needed */
-						if (item->vertexDecl && !item->vertexDecl->empty() && active_vertex_layout_ != item->vertexDecl->handle())
+						if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
 						{
-							active_vertex_decl_ = *item->vertexDecl;
-							active_vertex_layout_ = item->vertexDecl->handle();
-							GLuint const vao = vertex_array_map_.at(item->vertexDecl->handle());
+							active_vertex_decl_ = item->vertexDecl;
+							active_vertex_layout_ = item->vertexDecl.handle();
+							GLuint const vao = vertex_array_map_.at(item->vertexDecl.handle());
 							GL_CHECK(glBindVertexArray(vao));
 							layout_change = true;
 						}
@@ -739,7 +739,7 @@ namespace gfx {
 					}
 					else
 					{
-						active_vertex_decl_ = *item->vertexDecl;
+						active_vertex_decl_ = item->vertexDecl;
 						ushort active_binding = 0xffff;
 						for (uint j = 0; j < active_vertex_decl_.size(); ++j)
 						{
@@ -765,10 +765,10 @@ namespace gfx {
 					}
 				}
 
-				if (item->vertexAttribs)
+				if (!item->vertexAttribs.empty())
 				{
 					VertexAttribSetter vas;
-					for (const auto& e : *item->vertexAttribs)
+					for (const auto& e : item->vertexAttribs)
 					{
 						vas.update(e.first, e.second);
 					}

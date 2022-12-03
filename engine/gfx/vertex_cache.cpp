@@ -46,7 +46,7 @@ namespace gfx {
 		static_buffer_set_.vertex_alloced.store(0, std::memory_order_relaxed);
 	}
 
-	vtxCacheHandle VertexCache::allocStaticPosition(Memory& data)
+	vtxCacheHandle VertexCache::allocStaticPosition(Memory data)
 	{
 		const size_t bytes = data.size();
 
@@ -63,24 +63,24 @@ namespace gfx {
 		return (offs << 31) | (bytes & 0xFFFFFFFF);
 	}
 
-	vtxCacheHandle VertexCache::allocStaticVertex(Memory& data)
+	vtxCacheHandle VertexCache::allocStaticVertex(Memory data)
 	{
 		const auto h = realVertexAlloc(data, static_buffer_set_);
 		return h | 1ULL;
 	}
 
-	vtxCacheHandle VertexCache::allocStaticIndex(Memory& data)
+	vtxCacheHandle VertexCache::allocStaticIndex(Memory data)
 	{
 		const auto h = realIndexAlloc(data, static_buffer_set_);
 		return h | 1ULL;
 	}
 
-	vtxCacheHandle VertexCache::allocVertex(Memory& data)
+	vtxCacheHandle VertexCache::allocVertex(Memory data)
 	{
 		return realVertexAlloc(data, *submit_);
 	}
 
-	vtxCacheHandle VertexCache::allocIndex(Memory& data)
+	vtxCacheHandle VertexCache::allocIndex(Memory data)
 	{
 		return realIndexAlloc(data, *submit_);
 	}
@@ -92,7 +92,7 @@ namespace gfx {
 		submit_->vertex_alloced.store(0, std::memory_order_relaxed);
 	}
 
-	vtxCacheHandle VertexCache::realVertexAlloc(Memory& data, geoBufferSet& bs)
+	vtxCacheHandle VertexCache::realVertexAlloc(Memory data, geoBufferSet& bs)
 	{
 		const size_t bytes = data.size();
 
@@ -109,11 +109,11 @@ namespace gfx {
 		return (offs << 31) | (bytes & 0xFFFFFFFF);
 	}
 
-	vtxCacheHandle VertexCache::realIndexAlloc(Memory& data, geoBufferSet& bs)
+	vtxCacheHandle VertexCache::realIndexAlloc(Memory data, geoBufferSet& bs)
 	{
 		const size_t bytes = data.size();
 
-		assert((bytes & 15) == 0);
+		//assert((bytes & 15) == 0);
 
 		if (bytes + bs.index_alloced > bs.index_size)
 		{

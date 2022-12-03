@@ -5,6 +5,7 @@
 #include "gfx/renderer.h"
 #include "gfx/shader_manager.h"
 #include "gfx/vertex_cache.h"
+#include "gfx/texture_manager.h"
 
 namespace ctx {
 
@@ -18,12 +19,15 @@ namespace ctx {
 		gfx::Renderer* hwr();
 		gfx::ShaderManager* shaderManager();
 		gfx::VertexCache* vertexCache();
+		gfx::TextureManager* textureManager();
+
 		~Context() = default;
 	private:
 		Context();
 		std::unique_ptr<gfx::Renderer> hwr_;
 		std::unique_ptr<gfx::ShaderManager> sm_;
 		std::unique_ptr<gfx::VertexCache> vc_;
+		std::unique_ptr<gfx::TextureManager> tm_;
 		static std::unique_ptr<Context> instance_;
 		static std::atomic_bool ready_;
 	};

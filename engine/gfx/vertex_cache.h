@@ -47,11 +47,11 @@ namespace gfx {
 		};
 
 		void resetStaticBufferSet();
-		vtxCacheHandle allocStaticPosition(Memory& data);
-		vtxCacheHandle allocStaticVertex(Memory& data);
-		vtxCacheHandle allocStaticIndex(Memory& data);
-		vtxCacheHandle allocVertex(Memory& data);
-		vtxCacheHandle allocIndex(Memory& data);
+		vtxCacheHandle allocStaticPosition(Memory data);
+		vtxCacheHandle allocStaticVertex(Memory data);
+		vtxCacheHandle allocStaticIndex(Memory data);
+		vtxCacheHandle allocVertex(Memory data);
+		vtxCacheHandle allocIndex(Memory data);
 
 		template<typename T>
 		VertexBufferHandle getPositionBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
@@ -62,8 +62,8 @@ namespace gfx {
 
 		void frame();
 	private:
-		vtxCacheHandle realVertexAlloc(Memory& data, geoBufferSet& bs);
-		vtxCacheHandle realIndexAlloc(Memory& data, geoBufferSet& bs);
+		vtxCacheHandle realVertexAlloc(Memory data, geoBufferSet& bs);
+		vtxCacheHandle realIndexAlloc(Memory data, geoBufferSet& bs);
 
 		Renderer* renderer_;
 		geoBufferSet static_buffer_set_;

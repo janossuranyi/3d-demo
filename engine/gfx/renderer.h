@@ -316,7 +316,7 @@ namespace gfx {
         uint64_t wait_timeout;
         Array<ImageBinding, MAX_IMAGE_UNITS> images;
         Array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
-        UniformMap const* pUniforms;
+        UniformMap uniforms;
         uint barrier_bits;
     };
 
@@ -332,9 +332,9 @@ namespace gfx {
         uint instance_count{1};
         PrimitiveType primitive_type;
         ProgramHandle program;
-        VertexDecl const* vertexDecl;
-        UniformMap const* pUniforms;
-        VertexAttribMap const* vertexAttribs;
+        VertexDecl vertexDecl;
+        UniformMap uniforms;
+        VertexAttribMap vertexAttribs;
 
         bool scissor{ false };
         ushort scissor_x{ 0 };
@@ -453,9 +453,9 @@ namespace gfx {
         void                setClearBits(unsigned pass, uint16_t value);
         void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
         void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
-        void                setVertexDecl(const VertexDecl* decl);
-        void                setVertexAttribs(const VertexAttribMap* attribs);
-        void                setUniforms(const UniformMap* uniforms);
+        void                setVertexDecl(const VertexDecl& decl);
+        void                setVertexAttribs(const VertexAttribMap& attribs);
+        void                setUniforms(UniformMap& uniforms);
 
         void                setVertexBuffer(VertexBufferHandle vb, ushort index = 0, uint offset = 0);
         void                submit(uint pass);

@@ -28,7 +28,7 @@ namespace scene {
 
 		if (static_) {
 			vtxc_ = vc->allocStaticVertex(gfx::Memory(verts_.get(), numVerts * sizeof(gfx::DrawVert)));
-			verts_.reset(nullptr);
+			verts_.reset();
 		}
 
 		if (elements && static_) {
@@ -78,13 +78,15 @@ namespace scene {
 			vertex_count = vertices_;
 		}
 
+		hwr.setVertexDecl(*hwr.defaultVertexDecl());
+		/*
 		for (uint i = 0; i < material_->textures.size(); ++i)
 		{
 			hwr.setTexture(material_->textures[i].handle, i);
 		}
 		hwr.setPrimitiveType(mode_);
-		hwr.setVertexDecl(hwr.defaultVertexDecl());
-		hwr.submit(pass, material_->program, vertex_count, base_vertex, ib_offset);
+		hwr.submit(pass, material_->shader, vertex_count, base_vertex, ib_offset);
+		*/
 	}
 
 	Renderable::Type Mesh::getType() const

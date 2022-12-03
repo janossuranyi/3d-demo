@@ -83,9 +83,12 @@ namespace gfx {
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteTexture& cmd)
 	{
-		auto& t_data = texture_map_.at(cmd.handle);
-		GL_CHECK(glDeleteTextures(1, &t_data.texture));
-		texture_map_.erase(cmd.handle);
+		auto t_data = texture_map_.find(cmd.handle);
+		if (t_data != std::end(texture_map_))
+		{
+			GL_CHECK(glDeleteTextures(1, &t_data->second.texture));
+			texture_map_.erase(cmd.handle);
+		}
 
 #ifdef _DEBUG
 		Info("Texture %d deleted", cmd.handle);
@@ -198,11 +201,13 @@ namespace gfx {
 		const bool srgb = (cmd.flags & 1) == 1;
 		const bool automipmap = (cmd.flags & 2) == 2;
 		const bool compress = (cmd.flags & 4) == 4;
+		uint levels = 1;
 
 		result = ktxTexture_CreateFromNamedFile(cmd.path.c_str(), KTX_TEXTURE_CREATE_NO_FLAGS, &kTexture);
 		if (result == KTX_SUCCESS)
 		{
 			target = KTX_load_texture(cmd, kTexture, texture);
+			levels = kTexture->numLevels;
 			if (!target) return;
 		}
 		else
@@ -229,6 +234,7 @@ namespace gfx {
 			const auto& texinfo = s_texture_format[static_cast<size_t>(S.format())];
 			const auto& compinfo = compress ? s_texture_format[static_cast<size_t>(TextureFormat::RGBA8_COMPRESSED)] : texinfo;
 
+			levels = S.levels();
 			for (int k = 0; k < S.levels(); ++k)
 			{
 				if (target == GL_TEXTURE_1D)
@@ -246,8 +252,17 @@ namespace gfx {
 			}
 		}
 
-		const GLenum wrap = s_texture_wrap_map.at(cmd.wrap);
-		const GLenum min_filter = s_texture_filter_map.at(cmd.min_filter);
+		TextureWrap t_wrap = cmd.wrap;
+		if (target == GL_TEXTURE_CUBE_MAP) {
+			t_wrap = TextureWrap::ClampToEdge;
+		}
+		TextureFilter m_filter = cmd.min_filter;
+		if (levels == 1) {
+			m_filter = TextureFilter::Linear;
+		}
+
+		const GLenum wrap = s_texture_wrap_map.at(t_wrap);
+		const GLenum min_filter = s_texture_filter_map.at(m_filter);
 		const GLenum mag_filter = s_texture_filter_map.at(cmd.mag_filter);
 
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter));

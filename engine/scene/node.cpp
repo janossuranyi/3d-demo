@@ -12,7 +12,7 @@ namespace scene {
 
 	mat4 Node::worldTransform()
 	{
-		if (needs_update_)
+		if (need_to_update_)
 		{
 			m_WorldTransform_ = glm::translate(mat4(1.0f), v_WorldPosition_);
 			m_WorldTransform_ *= mat4(q_WorldRotation_);
@@ -25,7 +25,7 @@ namespace scene {
 
 			for (auto* e : children_) e->needToUpdate();
 
-			needs_update_ = false;
+			need_to_update_ = false;
 		}
 
 		return m_WorldTransform_;
@@ -33,7 +33,7 @@ namespace scene {
 
 	const mat4& Node::worldTransformRef()
 	{
-		if (needs_update_) worldTransform();
+		if (need_to_update_) worldTransform();
 
 		return m_WorldTransform_;
 	}
@@ -41,19 +41,19 @@ namespace scene {
 	void Node::translate(const vec3& v)
 	{
 		v_WorldPosition_ = v;
-		needs_update_ = true;
+		need_to_update_ = true;
 	}
 
 	void Node::rotate(const quat& q)
 	{
 		q_WorldRotation_ = q;
-		needs_update_ = true;
+		need_to_update_ = true;
 	}
 
 	void Node::scale(const vec3& s)
 	{
 		v_WorldScale_ = s;
-		needs_update_ = true;
+		need_to_update_ = true;
 	}
 
 	quat Node::rotation() const
@@ -72,9 +72,22 @@ namespace scene {
 	}
 
 	void Node::addRenderable(Renderable* r)
-	{
+	{		
+		for (auto p : renderables_)
+		{
+			if (p == r) return;
+		}
+
 		renderables_.push_back(r);
 		aabb_.merge(r->aabb());
+	}
+
+	void Node::addChild(Node* node)
+	{
+		if (node->parent()) return;
+
+		node->parent_ = this;
+		children_.push_back(node);
 	}
 
 	Node* Node::parent()
@@ -99,7 +112,7 @@ namespace scene {
 
 	void Node::needToUpdate()
 	{
-		needs_update_ = true;
+		need_to_update_ = true;
 	}
 
 }

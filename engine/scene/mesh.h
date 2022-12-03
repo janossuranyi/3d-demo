@@ -50,7 +50,7 @@ namespace scene {
 		uint								vertices_;
 		ctx::Context*						ctx_{};
 		gfx::Material const*				material_{};
-		std::unique_ptr<gfx::DrawVert[]>	verts_{};
-		std::unique_ptr<ushort[]>			idxs_{};
+		std::shared_ptr<gfx::DrawVert[]>	verts_{};
+		std::shared_ptr<ushort[]>			idxs_{};
 	};
 }
