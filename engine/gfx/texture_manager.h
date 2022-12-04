@@ -18,7 +18,7 @@ namespace gfx {
 
 		TextureHandle operator[](const String& id) const;
 		TextureHandle get(const String& id) const;
-		TextureHandle createFromResource(const String& id, bool srgb = true);
+		TextureHandle createFromResource(const String& id, bool srgb = true, bool compressed = true);
 		bool exists(const String& id) const;
 		bool remove(const String& id);
 	private:

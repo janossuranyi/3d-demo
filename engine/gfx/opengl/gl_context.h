@@ -116,31 +116,31 @@ namespace gfx {
 
 		struct ConstantBufferData {
 			GLuint buffer;
-			uint pixelByteSize;
+			uint size;
 			BufferUsage usage;
 		};
 
 		struct VertexBufferData {
 			GLuint buffer;
-			uint pixelByteSize;
+			uint size;
 			BufferUsage usage;
 		};
 
 		struct ShaderBufferData {
 			GLuint buffer;
-			uint pixelByteSize;
+			uint size;
 			BufferUsage usage;
 		};
 
 		struct TextureBufferData {
 			GLuint buffer;
-			uint pixelByteSize;
+			uint size;
 			BufferUsage usage;
 		};
 
 		struct IndexBufferData {
 			GLuint buffer;
-			uint pixelByteSize;
+			uint size;
 			BufferUsage usage;
 			IndexBufferType type;
 		};

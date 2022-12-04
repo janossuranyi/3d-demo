@@ -36,6 +36,8 @@ void App_EventLoop()
     Uint32 ticks = 0;
     uint64_t frame_num{ 0 };
 
+    gfx::Renderer* hwr = ctx::Context::default()->hwr();
+
     while (running)
     {
         float now = float(SDL_GetTicks());
@@ -67,6 +69,9 @@ void App_EventLoop()
         {
             running = false;
         }
+
+        hwr->frame();
+
         Uint32 tick2 = SDL_GetTicks();
         ticks += tick2 - tick1;
         if (++sampleCount > 2000)

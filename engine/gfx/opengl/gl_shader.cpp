@@ -42,7 +42,7 @@ namespace gfx {
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteShader& cmd)
 	{
-		auto result = shader_map_.find(cmd.handle);
+		auto& result = shader_map_.find(cmd.handle);
 		GL_CHECK(glDeleteShader(result->second.shader));
 		shader_map_.erase(cmd.handle);
 

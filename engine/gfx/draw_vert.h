@@ -50,7 +50,8 @@ namespace gfx {
 		in_NTC.x = glm::uintBitsToFloat(pack32(
 			floatToUnorm8((N.x + 1.0f) / 2.0f),
 			floatToUnorm8((N.y + 1.0f) / 2.0f),
-			floatToUnorm8((N.z + 1.0f) / 2.0f), 0
+			floatToUnorm8((N.z + 1.0f) / 2.0f),
+			0
 		));
 	}
 	inline void DrawVert::setTangent(const vec4& T)
@@ -59,7 +60,7 @@ namespace gfx {
 			floatToUnorm8((T.x + 1.0f) / 2.0f),
 			floatToUnorm8((T.y + 1.0f) / 2.0f),
 			floatToUnorm8((T.z + 1.0f) / 2.0f),
-			floatToUnorm8(std::clamp(T.w, 0.0f, 1.0f))
+			floatToUnorm8((T.w + 1.0f) / 2.0f)
 		));
 	}
 	inline void DrawVert::setColor(const vec4& C)
@@ -75,19 +76,22 @@ namespace gfx {
 	{
 		vec4 tmp = unpackR8G8G8A8(glm::floatBitsToUint(in_NTC.x));
 
-		return vec3(tmp);
+		return vec3(tmp.z, tmp.y, tmp.x);
 	}
 	inline vec4 DrawVert::tangent() const
 	{
 		const vec4 a = unpackR8G8G8A8(glm::floatBitsToUint(in_NTC.y));
-		const vec3 b = (vec3(a) * 2.0f) - vec3(1.0f);
-		const float w = (std::floorf((a.w * 255.100006103515625f) / 128.0f) * 2.0f) - 1.0f;
+		const vec4 x = vec4(a.w, a.z, a.y, a.x);
+		const vec3 b = (vec3(x) * 2.0f) - vec3(1.0f);
+		const float w = (std::floorf((x.w * 255.100006103515625f) / 128.0f) * 2.0f) - 1.0f;
 
 		return vec4(b, w);
 	}
 	inline vec4 DrawVert::color() const
 	{
-		return unpackR8G8G8A8(glm::floatBitsToUint(in_NTC.z));
+		const vec4 a = unpackR8G8G8A8(glm::floatBitsToUint(in_NTC.z));
+
+		return vec4(a.w, a.z, a.y, a.x);
 	}
 	inline vec3 DrawVert::position() const
 	{

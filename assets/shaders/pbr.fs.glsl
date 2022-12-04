@@ -1,6 +1,11 @@
 #include "version.inc.glsl"
 
+const float PI = 3.14159265359;
+
+const float kLightRadius = 5;
+
 float saturate(float a) { return clamp(a, 0.0, 1.0); }
+vec3 saturate(vec3 a) { return clamp(a, 0.0, 1.0); }
 float dot2 ( vec2 a, vec2 b ) { return dot( a, b ); }
 float asfloat ( uint x ) { return uintBitsToFloat( x ); }
 float asfloat ( int x ) { return intBitsToFloat( x ); }
@@ -21,12 +26,35 @@ ivec4 asint ( vec4 x ) { return floatBitsToInt( x ); }
 float fmax3 ( float f1, float f2, float f3 ) { return max( f1, max( f2, f3 ) ); }
 float fmin3 ( float f1, float f2, float f3 ) { return min( f1, min( f2, f3 ) ); }
 
-vec3 fresnelSchlick_1(float cosTheta, vec3 F0)
-{
-    return F0 + (1.0 - F0) * pow(saturate(1.0 - cosTheta), 5.0);
-}  
+float SRGBlinear ( float value ) { if ( value <= 0.04045 ) {
+		return ( value / 12.92 );
+	} else {
+		return pow( ( value / 1.055 ) + 0.0521327, 2.4 );
+	}
+}
+vec3 SRGBlinear ( vec3 sRGB ) {
+	vec3 outLinear;
+	outLinear.r = SRGBlinear( sRGB.r );
+	outLinear.g = SRGBlinear( sRGB.g );
+	outLinear.b = SRGBlinear( sRGB.b );
+	return outLinear;
+}
+vec4 SRGBlinear ( vec4 sRGBA ) {
+	vec4 outLinear = vec4( SRGBlinear( sRGBA.rgb ), 1 );
+	outLinear.a = SRGBlinear( sRGBA.a );
+	return outLinear;
+}
+float DeGamma ( float value ) {
+	return SRGBlinear( value );
+}
+vec4 DeGamma ( vec4 color ) {
+	return SRGBlinear( color );
+}
+vec3 DeGamma ( vec3 color ) {
+	return SRGBlinear( color );
+}
 
-vec3 light_radiance(float d, float r, vec3 c, float cutoff)
+float light_attenuation(float d, float r, float cutoff)
 {
     float denom = d/r + 1;
     float attenuation = 1.0 / (denom * denom);
@@ -34,7 +62,7 @@ vec3 light_radiance(float d, float r, vec3 c, float cutoff)
     attenuation = (attenuation - cutoff) / (1 - cutoff);
     attenuation = max(attenuation, 0);
 
-    return c * attenuation;
+    return attenuation;
 }
 
 vec3 tonemap(vec3 c)
@@ -50,12 +78,19 @@ float ApproxPow ( float fBase, float fPower ) {
 	return asfloat( uint( fPower * float( asuint( fBase ) ) - ( fPower - 1 ) * 127 * ( 1 << 23 ) ) );
 }
 
-vec3 fresnelSchlick ( vec3 f0, float costheta ) {
+
+
+vec3 fresnelSchlick1(vec3 F0, float cosTheta) {
+    return F0 + (1.0 - F0) * pow(saturate(1.0 - cosTheta), 5.0);
+}  
+
+
+vec3 fresnelSchlick( vec3 f0, float costheta ) {
 	const float baked_spec_occl = saturate( 50.0 * dot( f0, vec3( 0.3333 ) ) );
 	return saturate( f0 + ( baked_spec_occl - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 ) );
 }
 
-vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out F ) {
+vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 F ) {
 	const vec3 H = normalize( V + L );
 	float m = roughness;
 	m *= m;
@@ -68,7 +103,22 @@ vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out F ) {
 	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
     F = fresnelSchlick( f0, dot( L, H ) );
+    //F = fresnelSchlick( f0, dot( H, V ) );
+
 	return F * spec;
+}
+
+float GammaIEC(float c)
+{
+    return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055;
+}
+
+vec3 GammaIEC(vec3 c)
+{
+    return vec3(
+        GammaIEC(c.r),
+        GammaIEC(c.g),
+        GammaIEC(c.b));
 }
 
 struct light_t {
@@ -76,95 +126,98 @@ struct light_t {
     vec3 color;    
 };
 
-struct lightingInput_t
-{
-    vec3 albedo;
-    vec3 specular;
-    float roughness;
-    float metalness;
-    vec3 normal;
-    vec3 normalTS;
-    vec3 view;
-    vec3 position;
-    vec2 texCoord;
-    vec4 fragCoord;
-    vec3 out_color;
-    mat3 invTS;
-
-};
-
 uniform sampler2D samp_basecolor;
 uniform sampler2D samp_normal;
 uniform sampler2D samp_pbr;
 
-uniform light_t g_lights[1];
 
 in INTERFACE {
-    vec4 normal;
-    vec4 tangent;
-    vec4 position;
-    vec4 texcoord;
-    vec4 view;
-    vec4 color;
+   vec3 FragPos;
+   vec2 TexCoords;
+   vec3 TangentViewPos;
+   vec3 TangentFragPos;
+   vec3 TangentNormal;
+   vec3 TangentLightPos;
+   vec4 Color;
+   vec3 tangent;
 } In;
 
 out vec4 FragColor;
 
+uniform light_t g_lights[1];
+
+const float kContrastFactor = 259.0/255.0;
+
+float contrastFactor(float C)
+{
+    C = min(max(C, -1.0), 1.0);
+    return (kContrastFactor * (C + 1.0)) / (kContrastFactor - C);
+}
+
+float contrast(float c, float f)
+{
+    return saturate((c - 0.5) * contrastFactor(f) + 0.5);
+}
+
+vec3 contrast(vec3 c, float f)
+{
+    return saturate((c - 0.5) * contrastFactor(f) + 0.5);
+}
 void main()
 {
-    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0));
 
-    inputs.texCoord = In.texcoord.xy;
-    inputs.fragCoord = gl_FragCoord;
-    inputs.position = In.position;
+    vec3 Cd, N;
+    vec4 Cs;
+
+    Cd = texture(samp_basecolor, In.TexCoords).rgb;
+    Cs = texture(samp_pbr, In.TexCoords);
+
+    N = texture(samp_normal, In.TexCoords).rgb;
+    //N = GammaIEC(N);
+    N.y = 1.0 - N.y;
+    N = normalize(N * 2.0 - 1.0);  // this normal is in tangent space
+
+    vec3 V = normalize(In.TangentViewPos - In.TangentFragPos);
+
+    vec3 finalColor = vec3(0.0);
+
+    vec3 ambient = vec3(0.03) * Cd * Cs.a;
+
+    float roughness = Cs.g;
+    float metalness = Cs.b;
+
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, Cd, metalness);
+
+    float clip_max = 1.0/255.0;
+
+    for(int i = 0; i < g_lights.length(); ++i)
     {
-        vec3 inNormal = normalize(In.normal.xyz);
-        vec3 inTangent = normalize(In.tangent.xyz);
-        vec3 derivedBitangent = normalize( cross( inNormal, inTangent ) * In.tangent.w );
-        inputs.invTS = transpose(mat3(inTangent,derivedBitangent,inNormal));        
-    }
-    inputs.view = normalize( -In.view.xyz );
-    inputs.normal = normalize(texture(samp_normal, inputs.texCoord).rgb * 2.0 - 1.0);
-    inputs.normalTS = inputs.invTS * inputs.normal;    
-    inputs.albedo = texture(samp_basecolor, inputs.texCoord).rgb;
-    {
-        vec4 inMR = texture(samp_pbr, inputs.texCoord);
-        inputs.roughness = inMR.g;
-        inputs.metalness = inMR.b;        
+        light_t light = g_lights[i];
+
+        vec3 lightPos = In.TangentLightPos;
+
+        vec3 L = lightPos - In.TangentFragPos;
+        
+        float distance = length(L);
+        L /= distance;
+
+        float attenuation = light_attenuation(distance, 1.2, clip_max);
+        if (attenuation == 0.0) continue;
+
+        vec3 F = vec3(1.0);
+        vec3 spec = specBRDF(N, V, L, F0, roughness, F);
+        vec3 kD = vec3(1.0) - F;
+        kD *= 1.0 - metalness;
+
+        float NdotL = max( dot( N, L ), 0.0 );
+        finalColor += (kD * Cd + spec) * attenuation * light.color * NdotL;
     }
 
-    for(int lightIdx = 0; lightIdx < g_lights.length(); ++lightIdx)
-    {
-        light_t light = g_lights[lightIdx];
+    vec3 color = tonemap(finalColor + ambient);
 
-        float clip_min = 1.0 / 255.0;
-        vec3 light_position = light.pos;
-        {
-            vec3 light_vector = ( light_position - inputs.position );
-            float NdotL = saturate( dot( inputs.normal, light_vector ) );
-            if (NdotL < clip_min) continue;
-        }
-        float light_attenuation;
-        {
-            float D = distance(light_position, inputs.position);
-            light_attenuation = D*D;
-            if (light_attenuation < clip_min / 256.0) continue;
-        }
-        vec3 light_color = light.color * light_attenuation;
-        vec3 light_color_final = light_color;
-        {
-            vec3 light_vector = normalitze( light_position - inputs.position);
-            float NdotL = saturate( dot( inputs.normal, light_vector ) );
-            vec3 F0 = mix(vec3(0.04), inputs.albedo, inputs.metalness);
-            vec3 F = vec3(0);
-            vec3 spec = specBRDF(inputs.normal, inputs.view, light_vector, F0, inputs.roughness, F);
-            vec3 Kd = vec3(1.0) - F;
-            Kd *= 1.0 - inputs.metalness;
-            inputs.out_color += (Kd * inputs.albedo / PI + spec) * light_color_final * NdotL;
-        }
-    }
-    vec3 color = tonemap(inputs.out_color);
-    color = pow(color, vec3(1.0/2.2)); 
+    color = GammaIEC(color);
 
     FragColor = vec4(color, 1.0);
 }
+

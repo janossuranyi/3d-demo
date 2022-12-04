@@ -31,12 +31,12 @@ namespace gfx {
 		return TextureHandle();
 	}
 
-	TextureHandle TextureManager::createFromResource(const String& id, bool srgb)
+	TextureHandle TextureManager::createFromResource(const String& id, bool srgb, bool compressed)
 	{
 		if (exists(id)) return texture_map_[id];
 
-		auto res = R_->createTexture(gfx::TextureWrap::Repeat, gfx::TextureFilter::LinearLinear, gfx::TextureFilter::Linear,
-			rc::ResourceManager::get_resource(id), srgb, false, true, 1);
+		auto res = R_->createTexture(gfx::TextureWrap::Repeat, gfx::TextureFilter::NearestLinear, gfx::TextureFilter::Linear,
+			rc::ResourceManager::get_resource(id), srgb, true, compressed, 1);
 
 		texture_map_.emplace(id, res);
 

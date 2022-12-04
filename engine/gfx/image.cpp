@@ -146,7 +146,7 @@ namespace gfx {
 			bool res = false;
 			if (srgb_)
 			{
-				res = stbir_resize_uint8_srgb(input_buffer.get(), w * 2, h * 2, 0, output_buffer.get(), w, h, 0, 4, (alpha_ ? 4 : -1), 0);
+				res = stbir_resize_uint8_srgb(input_buffer.get(), w * 2, h * 2, 0, output_buffer.get(), w, h, 0, 4, (alpha_ ? 3 : -1), 0);
 			}
 			else
 			{

@@ -684,14 +684,6 @@ namespace gfx {
 
 				setup_textures(item->textures.data(), item->textures.size());
 
-				// Element buffer setup
-				if ((!prev || prev->ib != item->ib) && item->ib.isValid())
-				{
-					const auto& ib = index_buffer_map_.at(item->ib);
-					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
-					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
-				}
-
 				bool vb_change = false;
 
 				
@@ -765,6 +757,14 @@ namespace gfx {
 					}
 				}
 
+				// Element buffer setup
+				if ((!prev || prev->ib != item->ib) && item->ib.isValid())
+				{
+					const auto& ib = index_buffer_map_.at(item->ib);
+					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
+					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+				}
+
 				if (!item->vertexAttribs.empty())
 				{
 					VertexAttribSetter vas;
@@ -778,7 +778,8 @@ namespace gfx {
 				const GLsizei count = item->vertex_count;
 				if (item->ib.isValid())
 				{
-					const GLuint base_vertex = item->vb_offset;
+					const GLuint base_vertex = item->vb_offset;					
+					
 					GL_CHECK(glDrawElementsInstancedBaseVertex(
 						mode,
 						count,

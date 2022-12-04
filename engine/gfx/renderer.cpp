@@ -167,7 +167,7 @@ namespace gfx {
 		const TextureHandle handle = texture_handle_.next();
 
 		texture_data_[handle] = TextureData{ 0,0,TextureFormat::RGBA8 };
-		const ushort flags = (ushort)((compress << 2) || (auto_mipmap << 1) || srgb);
+		const ushort flags = (ushort)((compress << 2) | (auto_mipmap << 1) | srgb);
 		submitPreFrameCommand(cmd::CreateTexture{ handle,wrap,minfilter,magfilter,aQuality,apath,flags });
 
 		return handle;

@@ -38,7 +38,7 @@ typedef unsigned short halfFloat_t;
 
 inline uint32_t pack32(uint8_t x, uint8_t y, uint8_t z, uint8_t w)
 {
-	return ((uint)x << 24) | ((uint)y << 16) | ((uint)z << 8) | ((uint)w);
+	return ((uint)w << 24) | ((uint)z << 16) | ((uint)y << 8) | ((uint)x);
 }
 
 inline vec4 unpackR8G8G8A8(uint packed)

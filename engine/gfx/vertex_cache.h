@@ -89,8 +89,8 @@ namespace gfx {
 	VertexBufferHandle VertexCache::getVertexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const
 	{
 		bool isStatic = handle & 1;
-		size = (handle & 0xFFFFFFFE) / sizeof(T);
-		offset = (handle >> 31) / sizeof(T);
+		size = uint((handle & 0xFFFFFFFE) / sizeof(T));
+		offset = uint((handle >> 31) / sizeof(T));
 
 		if (isStatic) return static_buffer_set_.vb;
 		else return render_->vb;
@@ -100,8 +100,8 @@ namespace gfx {
 	IndexBufferHandle VertexCache::getIndexBuffer(const vtxCacheHandle handle, uint& byte_offset, uint& size) const
 	{
 		bool isStatic = handle & 1;
-		size = (handle & 0xFFFFFFFE) / sizeof(T);
-		byte_offset = (handle >> 31);
+		size = uint((handle & 0xFFFFFFFE) / sizeof(T));
+		byte_offset = uint(handle >> 31);
 
 		if (isStatic) return static_buffer_set_.ib;
 		else return render_->ib;
