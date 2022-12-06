@@ -18,11 +18,11 @@ bool BumpEffect::Init()
 
     bool no_srgb = false;
 
-    String base_name = "floor_beton_cap";
+    String base_name = "crashed_plane_04_wrinkle";
 
-    diffuse_ = tm->createFromResource("textures/test/" + base_name + ".tga");
-    normal_ = tm->createFromResource("textures/test/" + base_name + "_nm.tga", no_srgb);
-    bump_ = tm->createFromResource("textures/test/" + base_name + "_bump.tga", no_srgb);
+    diffuse_ = tm->createFromResource("textures/test/" + base_name + ".tga", true, false);
+    normal_ = tm->createFromResource("textures/test/" + base_name + "_nm.tga", no_srgb, false);
+    bump_ = tm->createFromResource("textures/test/" + base_name + "_bump.tga", no_srgb, false);
 
 
     using namespace tinygltf;
@@ -142,8 +142,8 @@ bool BumpEffect::HandleEvent(const SDL_Event* ev, float time)
         if (k == SDLK_n) lpos_.z -= m;
 
         if (k == SDLK_r) lpos_ = vec3(0);
-        if (k == SDLK_KP_PLUS) lpower_ += .1f;
-        if (k == SDLK_KP_MINUS) lpower_ -= .1f;
+        if (k == SDLK_KP_PLUS) lpower_ += .5f;
+        if (k == SDLK_KP_MINUS) lpower_ -= .5f;
 
         lpower_ = std::max(lpower_, 0.0f);
 

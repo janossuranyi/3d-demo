@@ -123,6 +123,50 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
+vec3 specBRDF_doom ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 F ) {
+	const vec3 H = normalize( V + L );
+	float m = roughness;
+	m *= m;
+	m *= m;
+	float m2 = m * m;
+	float NdotH = saturate( dot( N, H ) );
+	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
+	spec = m2 / ( spec * spec + 1e-8 );
+	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
+	spec /= ( 4.0 * Gv * Gl + 1e-8 );
+    F = fresnelSchlick( dot( L, H ), f0 );
+	return F * spec;
+}
+
+vec3 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float r, out vec3 Fout)
+{
+    vec3 H = normalize(V + L);
+    float HdotV  = max(dot(H, V), 0.0);
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotV  = max(dot(N, V), 0.0);
+    float NdotL  = max(dot(N, L), 0.0);
+
+    // DistributionGGX
+    float a = r;
+    a *= a;
+    a *= a;
+    float denom = (NdotH * NdotH) * (a - 1.0) + 1.0;
+    float NDF = a / (PI * denom * denom);
+
+    // GeometrySmith
+    a = (r + 1.0);
+    float k   = (r*r) / 8.0;
+    float Gv  = NdotV / (NdotV * (1.0 - k) + k);
+    float Gl  = NdotL / (NdotL * (1.0 - k) + k);
+    float spec = (NDF * Gv * Gl) / (4.0 * NdotL * NdotL + 0.0001);
+
+    vec3 F = fresnelSchlick(HdotV, F0);
+
+    Fout = F;
+    return F * spec;
+}
+
 float GammaIEC(float c)
 {
     return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055;
@@ -196,7 +240,7 @@ void main()
 
     vec3 finalColor = vec3(0.0);
 
-    vec3 ambient = vec3(0.03) * Cd * Cs.a;
+    vec3 ambient = vec3(0.03) * Cd;
 
     float roughness = Cs.g;
     float metalness = Cs.b;
@@ -217,23 +261,16 @@ void main()
         float distance = length(L);
         L /= distance;
 
-        vec3 H = normalize(V + L);
         float attenuation = light_attenuation(distance, 1.2, clip_max);
         if (attenuation == 0.0) continue;
 
-        // vec3 spec = specBRDF(N, V, L, F0, roughness, F);
-        // cook-torrance brdf
-        float NDF = DistributionGGX(N, H, roughness);        
-        float G   = GeometrySmith(N, V, L, roughness);      
-        vec3 F    = fresnelSchlick2(max(dot(H, V), 0.0), F0);
+        vec3 F ;
+
+        float NdotL       = max( dot( N, L ), 0.0 );
+        vec3 spec         = specBRDF(N,V,L,F0,roughness,F);
 
         vec3 kD = vec3(1.0) - F;
         kD *= 1.0 - metalness;
-
-        float NdotL       = max( dot( N, L ), 0.0 );
-        vec3 numerator    = NDF * G * F;
-        float denominator = 4.0 * NdotL * NdotL + 0.0001;
-        vec3 spec         = numerator / denominator;
 
         finalColor += (kD * Cd / PI + spec) * attenuation * light.color * NdotL;
     }
