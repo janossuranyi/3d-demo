@@ -95,7 +95,7 @@ bool BumpEffect::Init()
     rot_ = vec3(0, 0, 0);
 
     lpos_ = vec3(0.0f, 2.0f, 0.0f);
-    lpower_ = 6.0f;
+    lpower_ = 1.0f;
 
     SDL_SetRelativeMouseMode(SDL_TRUE);
     cam_.MouseSensitivity = 0.1;

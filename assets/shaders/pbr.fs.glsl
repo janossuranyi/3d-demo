@@ -139,13 +139,13 @@ vec3 specBRDF_doom ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 
 	return F * spec;
 }
 
-vec3 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float r, out vec3 Fout)
+vec4 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float r)
 {
-    vec3 H = normalize(V + L);
-    float HdotV  = max(dot(H, V), 0.0);
-    float NdotH  = max(dot(N, H), 0.0);
-    float NdotV  = max(dot(N, V), 0.0);
-    float NdotL  = max(dot(N, L), 0.0);
+    const vec3 H = normalize(V + L);
+    const float HdotV  = max(dot(H, V), 0.0);
+    const float NdotH  = max(dot(N, H), 0.0);
+    const float NdotV  = max(dot(N, V), 0.0);
+    const float NdotL  = max(dot(N, L), 0.0);
 
     // DistributionGGX
     float a = r;
@@ -163,8 +163,7 @@ vec3 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float r, out vec3 Fout)
 
     vec3 F = fresnelSchlick(HdotV, F0);
 
-    Fout = F;
-    return F * spec;
+    return vec4(F, spec);
 }
 
 float GammaIEC(float c)
@@ -261,18 +260,18 @@ void main()
         float distance = length(L);
         L /= distance;
 
-        float attenuation = light_attenuation(distance, 1.2, clip_max);
+        float attenuation = light_attenuation(distance, 5, clip_max);
         if (attenuation == 0.0) continue;
 
         vec3 F ;
 
         float NdotL       = max( dot( N, L ), 0.0 );
-        vec3 spec         = specBRDF(N,V,L,F0,roughness,F);
+        vec4 spec         = specBRDF(N,V,L,F0,roughness);
+        F                 = spec.xyz;
+        vec3 kD           = vec3(1.0) - F;
+        kD               *= 1.0 - metalness;
 
-        vec3 kD = vec3(1.0) - F;
-        kD *= 1.0 - metalness;
-
-        finalColor += (kD * Cd / PI + spec) * attenuation * light.color * NdotL;
+        finalColor += (kD * Cd / PI + F * spec.w) * attenuation * light.color * NdotL;
     }
 
     vec3 color = tonemap(finalColor + ambient);

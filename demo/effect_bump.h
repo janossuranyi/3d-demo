@@ -31,7 +31,7 @@ private:
 	vec2 yawPitch_;
 	vec3 rot_;
 	vec3 lpos_;
-	float lpower_{ 20.f };
+	float lpower_{};
 	float vZ_;
 
 	scene::Camera cam_{ vec3(0,1,2) };
