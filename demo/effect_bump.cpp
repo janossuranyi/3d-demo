@@ -18,7 +18,7 @@ bool BumpEffect::Init()
 
     bool no_srgb = false;
 
-    String base_name = "crashed_plane_04_wrinkle";
+    String base_name = "floor_beton_cap";
 
     diffuse_ = tm->createFromResource("textures/test/" + base_name + ".tga");
     normal_ = tm->createFromResource("textures/test/" + base_name + "_nm.tga", no_srgb);
