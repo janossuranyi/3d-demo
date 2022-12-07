@@ -178,7 +178,7 @@ void main()
         {
             vec3 light_vector = inputs.invTS * normalize( light_position - inputs.position );
             float NdotL = saturate( dot( inputs.normal, light_vector ) );
-            if (NdotL < clip_min) continue;
+            //if (NdotL < clip_min) continue;
         }
         float light_attenuation;
         {

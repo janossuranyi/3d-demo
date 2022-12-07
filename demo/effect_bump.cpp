@@ -92,8 +92,8 @@ bool BumpEffect::Init()
 
     shader_ = sm->createProgram(gfx::RenderProgram{ 
         "pbrMetallicRoughness",
-        "shaders/pbr.vs.glsl",
-        "shaders/pbr.fs.glsl","",{} });
+        "shaders/pbr2.vs.glsl",
+        "shaders/pbr2.fs.glsl","",{} });
 
     rot_ = vec3(0, 0, 0);
 
