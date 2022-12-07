@@ -18,7 +18,7 @@ bool BumpEffect::Init()
 
     bool no_srgb = false;
 
-    String base_name = "crashed_plane_04_wrinkle";
+    String base_name = "floor_beton_cap";
 
     diffuse_ = tm->createFromResource("textures/test/" + base_name + ".tga", true, false);
     normal_ = tm->createFromResource("textures/test/" + base_name + "_nm.tga", no_srgb, false);
@@ -90,7 +90,10 @@ bool BumpEffect::Init()
         }
     }
 
-    shader_ = sm->createProgram(gfx::RenderProgram{ "pbrMetallicRoughness","shaders/pbr.vs.glsl","shaders/pbr.fs.glsl","",{} });
+    shader_ = sm->createProgram(gfx::RenderProgram{ 
+        "pbrMetallicRoughness",
+        "shaders/pbr.vs.glsl",
+        "shaders/pbr.fs.glsl","",{} });
 
     rot_ = vec3(0, 0, 0);
 
@@ -189,7 +192,9 @@ bool BumpEffect::Render(uint64_t frame)
     uniforms_["g_mNormalTransform"] = N;
     uniforms_["g_vViewPosition"] = vec4(cam_.Position, 1.0);
     uniforms_["g_lights[0].pos"] = lightPos;
+    uniforms_["g_lights[1].pos"] = lightPos + vec3(2,0,2);
     uniforms_["g_lights[0].color"] = lightColor;
+    uniforms_["g_lights[1].color"] = vec3(0.8, 0.2, 0.2) * lpower_;
     uniforms_["samp_basecolor"] = 0;
     uniforms_["samp_normal"] = 1;
     uniforms_["samp_pbr"] = 2;

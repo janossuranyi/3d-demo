@@ -25,7 +25,7 @@ out INTERFACE {
    vec3 TangentViewPos;
    vec3 TangentFragPos;
    vec3 TangentNormal;
-   vec3 TangentLightPos;
+   vec3 TangentLightPos[2];
    vec4 Color;
    vec3 tangent;
 } Out;
@@ -35,7 +35,7 @@ struct light_t {
     vec3 color;    
 };
 
-uniform light_t g_lights[1];
+uniform light_t g_lights[2];
 
 void main()
 {
@@ -66,7 +66,10 @@ void main()
     Out.TangentViewPos = TBN * g_vViewPosition.xyz;
     Out.TangentFragPos = TBN * Out.FragPos;
     Out.TangentNormal = TBN * localNormal.xyz;
-    Out.TangentLightPos = TBN * g_lights[0].pos;
+    for(int k=0; k<g_lights.length();++k)
+    {
+        Out.TangentLightPos[k] = TBN * g_lights[k].pos;
+    }
     Out.Color = vtxCol;
 
     Out.tangent = localTangent.xyz;

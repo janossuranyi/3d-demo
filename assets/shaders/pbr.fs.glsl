@@ -135,7 +135,7 @@ vec3 specBRDF_doom ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 
 	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
 	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-    F = fresnelSchlick( dot( L, H ), f0 );
+    F = fresnelSchlick2( dot( L, H ), f0 );
 	return F * spec;
 }
 
@@ -195,14 +195,14 @@ in INTERFACE {
    vec3 TangentViewPos;
    vec3 TangentFragPos;
    vec3 TangentNormal;
-   vec3 TangentLightPos;
+   vec3 TangentLightPos[2];
    vec4 Color;
    vec3 tangent;
 } In;
 
 out vec4 FragColor;
 
-uniform light_t g_lights[1];
+uniform light_t g_lights[2];
 
 const float kContrastFactor = 259.0/255.0;
 
@@ -227,12 +227,13 @@ void main()
     vec3 Cd, N;
     vec4 Cs;
 
-    Cd = texture(samp_basecolor, In.TexCoords).rgb;
+    Cd = texture(samp_basecolor, In.TexCoords).xyz;
     Cs = texture(samp_pbr, In.TexCoords);
 
-    N = texture(samp_normal, In.TexCoords).rgb;
+    N = texture(samp_normal, In.TexCoords).xyz;    
     //N = GammaIEC(N);
     N.y = 1.0 - N.y;
+
     N = normalize(N * 2.0 - 1.0);  // this normal is in tangent space
 
     vec3 V = normalize(In.TangentViewPos - In.TangentFragPos);
@@ -253,28 +254,26 @@ void main()
     {
         light_t light = g_lights[i];
 
-        vec3 lightPos = In.TangentLightPos;
+        vec3 lightPos = In.TangentLightPos[i];
 
         vec3 L = lightPos - In.TangentFragPos;
         
         float distance = length(L);
         L /= distance;
 
-        float attenuation = light_attenuation(distance, 5, clip_max);
+        float attenuation = light_attenuation(distance, 2, clip_max);
         if (attenuation == 0.0) continue;
-
-        vec3 F ;
 
         float NdotL       = max( dot( N, L ), 0.0 );
         vec4 spec         = specBRDF(N,V,L,F0,roughness);
-        F                 = spec.xyz;
+        vec3 F            = spec.xyz;
         vec3 kD           = vec3(1.0) - F;
         kD               *= 1.0 - metalness;
 
         finalColor += (kD * Cd / PI + F * spec.w) * attenuation * light.color * NdotL;
     }
 
-    vec3 color = tonemap(finalColor + ambient);
+    vec3 color = tonemap(finalColor);
 
     color = GammaIEC(color);
 
