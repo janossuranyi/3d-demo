@@ -125,7 +125,7 @@ uniform sampler2D samp_normal;
 uniform sampler2D samp_pbr;
 uniform vec4 g_vViewPosition;
 
-uniform light_t g_lights[1];
+uniform light_t g_lights[2];
 
 in INTERFACE {
     vec4 normal;
