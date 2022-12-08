@@ -24,7 +24,6 @@ out INTERFACE {
     vec4 tangent;
     vec4 position;
     vec4 texcoord;
-    vec4 fragPos;
     vec4 color;
 } Out;
 
@@ -39,13 +38,13 @@ void main()
         localNormal = normalize( unpackR8G8B8A8( asuint( in_PackedInputs.x ) ).wzyx * 2.0 - 1.0 );
         vec4 unpacked_tangent = unpackR8G8B8A8( asuint( in_PackedInputs.y ) ).wzyx;
         localTangent.xyz = normalize( unpacked_tangent.xyz * 2.0 - 1.0 );
+        localTangent.xyz = normalize( localTangent.xyz - dot( localTangent.xyz, localNormal.xyz ) * localNormal.xyz );
         localTangent.w = floor( unpacked_tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
 		vtxCol = unpackR8G8B8A8( asuint( in_PackedInputs.z ) ).wzyx;
     };
 
     gl_Position = g_mWorldViewProjection * localPosition ;
 
-    Out.fragPos   = g_mWorldTransform * localPosition;
     Out.normal    = vec4(g_mNormalTransform * localNormal.xyz, 0.0);
     Out.tangent   = vec4(g_mNormalTransform * localTangent.xyz, localTangent.w);
     Out.position  = vec4(g_mNormalTransform * localPosition.xyz, 1.0) - g_vViewPosition;

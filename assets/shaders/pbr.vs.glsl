@@ -35,6 +35,7 @@ struct light_t {
     vec3 color;    
 };
 
+
 uniform light_t g_lights[2];
 
 void main()

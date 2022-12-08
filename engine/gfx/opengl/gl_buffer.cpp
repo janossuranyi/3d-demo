@@ -8,18 +8,23 @@
 
 namespace gfx {
 
-	GLuint gfx::OpenGLRenderContext::create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory data, uint& actualSize)
+	GLuint OpenGLRenderContext::create_buffer_real(GLenum target, BufferUsage usage, uint size, const Memory data, uint& actualSize)
 	{
 		GLuint buffer = static_cast<GLuint>(0xffff);
 		const GLenum _usage = MapBufferUsage(usage);
 
 
-		const GLsizeiptr _size = data.data() ? data.size() : pixelByteSize;
+		const GLsizeiptr _size = std::max(data.size(), size_t(size));
+
 		if (/*ext_.ARB_direct_state_access || */gl_version_440_)
 		{
 			GL_CHECK(glCreateBuffers(1, &buffer));
 			//GL_CHECK(glNamedBufferData(buffer, _size, data.data(), _usage));
-			GL_CHECK(glNamedBufferStorage(buffer, _size, data.data(), GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT));
+			GL_CHECK(glNamedBufferStorage(buffer, _size, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT));
+			if (!data.empty())
+			{
+				GL_CHECK(glNamedBufferSubData(buffer, 0, data.size(), data.data()));
+			}
 		}
 		else
 		{
@@ -80,7 +85,7 @@ namespace gfx {
 #endif
 	}
 
-	void gfx::OpenGLRenderContext::operator()(const cmd::CreateShaderStorageBuffer& cmd)
+	void OpenGLRenderContext::operator()(const cmd::CreateShaderStorageBuffer& cmd)
 	{
 
 		if (shader_buffer_map_.count(cmd.handle) > 0)

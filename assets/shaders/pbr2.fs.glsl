@@ -148,9 +148,22 @@ vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 F ) {
 	return F * spec;
 }
 
+float GammaIEC(float c)
+{
+    return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055;
+}
+
+vec3 GammaIEC(vec3 c)
+{
+    return vec3(
+        GammaIEC(c.r),
+        GammaIEC(c.g),
+        GammaIEC(c.b));
+}
+
 struct light_t {
-    vec3 pos;
-    vec3 color;    
+    vec4 pos;
+    vec4 color;    
 };
 
 struct lightingInput_t
@@ -172,17 +185,20 @@ struct lightingInput_t
 uniform sampler2D samp_basecolor;
 uniform sampler2D samp_normal;
 uniform sampler2D samp_pbr;
-uniform vec3 g_vLightOffset;
-uniform int g_iNumlights;
-uniform float g_fLightPower = 1.0;
-uniform light_t g_lights[32];
+uniform vec3    g_vLightOffset;
+uniform int     g_iNumlights;
+uniform float   g_fLightPower;
+
+layout(std140, binding = 0) uniform LightInfoBlock
+{   
+    light_t g_lights[];
+};
 
 in INTERFACE {
     vec4 normal;
     vec4 tangent;
     vec4 position;
     vec4 texcoord;
-    vec4 fragPos;
     vec4 color;
 } In;
 
@@ -222,17 +238,18 @@ void main()
     inputs.normal = GetWorldSpaceNormal( inputs.normal, inputs.invTS, isFrontFacing );
 
     vec3 ambient = vec3(0.01) * inputs.albedo;
+    inputs.out_color = vec3(0.0);
 
     for(int lightIdx = 0; lightIdx < g_iNumlights; ++lightIdx)
     {
         light_t light = g_lights[lightIdx];
 
         float clip_min = 1.0 / 255.0;
-        vec3 light_position = light.pos + g_vLightOffset;
+        vec3 light_position = light.pos.xyz + g_vLightOffset;
         {
             vec3 light_vector = normalize( light_position - inputs.position );
             float NdotL = saturate( dot( inputs.normal, light_vector ) );
-            if (NdotL < clip_min) continue;
+            if (NdotL < 0) continue;
         }
         float light_attenuation = 0.0;
         {
@@ -241,21 +258,21 @@ void main()
             light_attenuation = 1.0 / (denom * denom);
             if (light_attenuation < clip_min / 256.0) continue;
         }
-        vec3 light_color = max(light.color * g_fLightPower, 0.0) * light_attenuation;
+        vec3 light_color = max(light.color.xyz * g_fLightPower, 0.0) * light_attenuation;
         vec3 light_color_final = light_color;
         {
-            vec3 light_vector = normalize( light_position - inputs.position);
+            vec3 light_vector = normalize( light_position - inputs.position );
             float NdotL = saturate( dot( inputs.normal, light_vector ) );
-            vec3 F0 = mix(vec3(0.04), inputs.albedo, inputs.metalness);
+            vec3 F0 = mix( vec3(0.04), inputs.albedo, inputs.metalness );
             vec3 F = vec3(0);
-            vec3 spec = specBRDF2(inputs.normal, inputs.view, light_vector, F0, inputs.roughness, F);
+            vec3 spec = specBRDF2( inputs.normal, inputs.view, light_vector, F0, inputs.roughness, F );
             vec3 Kd = vec3(1.0) - F;
             Kd *= 1.0 - inputs.metalness;
             inputs.out_color += (Kd * inputs.albedo / PI + spec) * light_color_final * NdotL;
         }
     }
     vec3 color = tonemap(inputs.out_color + ambient);
-    color = pow(color, vec3(1.0/2.2)); 
+    color = GammaIEC(color) ;
 
     FragColor = vec4(color, 1.0);
 }

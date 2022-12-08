@@ -20,8 +20,13 @@ public:
 	~BumpEffect();
 
 	struct Light {
-		vec3 pos;
-		vec3 color;
+		vec4 pos;
+		vec4 color;
+	};
+
+	struct LightInfoBlock
+	{
+		Light	g_lights[256];
 	};
 
 private:
@@ -32,11 +37,14 @@ private:
 	gfx::UniformMap uniforms_;
 	gfx::vtxCacheHandle vcache;
 	gfx::vtxCacheHandle icache;
+	gfx::ConstantBufferHandle lightInfoBuffer_;
 
 	vec2 yawPitch_;
 	vec3 rot_;
 	vec3 lpos_{0};
-	Array<Light, 8> lights_;
+
+	int numLights_{ 0 };
+	LightInfoBlock lightInfo_{};
 
 	float lpower_{};
 	float vZ_;

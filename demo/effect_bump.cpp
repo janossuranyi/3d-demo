@@ -97,14 +97,16 @@ bool BumpEffect::Init()
 
     rot_ = vec3(0, 0, 0);
 
+    numLights_ = 6;
     float radius = 3.0f;
-    float step = 360.0f / lights_.size();
+    float step = 360.0f / numLights_;
     float angle = 0.0f;
-    vec3 colors[4]{ vec3(1,1,1),vec3(1,1,0),vec3(0,1,1),vec3(1,0,1) };
+    vec4 colors[4]{ vec4(1,1,1,1),vec4(1,1,0,1),vec4(0,1,1,1),vec4(1,0,1,1) };
 
-    for (int i = 0; i < lights_.size(); ++i)
+    for (int i = 0; i < numLights_; ++i)
     {
-        Light& L = lights_[i];
+        Light& L = lightInfo_.g_lights[i];
+        L.pos.w = 1.0f;
         L.pos.y = 2.0f;
         L.pos.x = glm::sin(glm::radians(angle)) * radius;
         L.pos.z = glm::cos(glm::radians(angle)) * radius;
@@ -112,6 +114,11 @@ bool BumpEffect::Init()
         angle += step;
     }
 
+    lightInfoBuffer_ = hwr->createConstantBuffer(
+        sizeof(LightInfoBlock),
+        gfx::BufferUsage::Dynamic,
+        gfx::Memory(&lightInfo_.g_lights[0], sizeof(Light) * numLights_));
+    
     SDL_SetRelativeMouseMode(SDL_TRUE);
     cam_.MouseSensitivity = 0.1;
 
@@ -194,32 +201,24 @@ bool BumpEffect::Render(uint64_t frame)
 
     P = glm::perspective(45.0f, screenSize.x / screenSize.y, 0.1f, 100.0f);
     N = glm::transpose(glm::inverse(mat3(W)));
+    //N = mat3(W);
 
     WVP = P * V * W;
-    vec3 lightPos = lpos_;
     vec3 lightColor = vec3(1.0f) * lpower_;
 
     uniforms_["g_mWorldViewProjection"] = WVP;
-    uniforms_["g_mWorldTransform"] = W;
-    uniforms_["g_mNormalTransform"] = N;
-    uniforms_["g_vViewPosition"] = vec4(cam_.Position, 1.0);
-    char buf_[255];
-
-    uniforms_["g_iNumlights"] = int(lights_.size());
-    for (int l = 0; l < lights_.size(); ++l)
-    {
-        snprintf(buf_, 255, "%d", l);
-        uniforms_["g_lights["+String(buf_)+"].pos"] = lights_[l].pos;
-        uniforms_["g_lights["+String(buf_)+"].color"] = lights_[l].color;
-    }
-    uniforms_["g_fLightPower"] = lpower_;
+    uniforms_["g_mWorldTransform"]      = W;
+    uniforms_["g_mNormalTransform"]     = N;
+    uniforms_["g_vViewPosition"]        = vec4(cam_.Position, 1.0);
+    uniforms_["g_iNumlights"] = int(numLights_);
+    uniforms_["g_fLightPower"]  = lpower_;
     uniforms_["g_vLightOffset"] = lpos_;
     uniforms_["samp_basecolor"] = 0;
-    uniforms_["samp_normal"] = 1;
-    uniforms_["samp_pbr"] = 2;
+    uniforms_["samp_normal"]    = 1;
+    uniforms_["samp_pbr"]       = 2;
 
     hwr->setClearBits(0, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
-    hwr->setClearColor(0, vec4(0.1f, 0.1f, 0.1f, 1));
+    hwr->setClearColor(0, vec4(0.4f, 0.4f, 0.4f, 1));
     hwr->setFrameBuffer(0, gfx::FrameBufferHandle{ 0 });
 
     hwr->setRenderState(gfx::GLS_DEPTHFUNC_LESS);
@@ -232,12 +231,13 @@ bool BumpEffect::Render(uint64_t frame)
     hwr->setTexture(bump_, 2);
     hwr->setUniforms(uniforms_);
 
+    hwr->setConstBuffer(0, 0, lightInfoBuffer_);
     hwr->submit(0, shader_, isize, voffset, ioffset*2);
 
-    for (int l = 0; l < lights_.size(); ++l)
+    for (int l = 0; l < numLights_; ++l)
     {
 
-        W = glm::translate(mat4(1.0), lights_[l].pos + lpos_);
+        W = glm::translate(mat4(1.0), vec3(lightInfo_.g_lights[l].pos) + lpos_);
         W = glm::scale(W, vec3(0.2));
         N = glm::transpose(glm::inverse(mat3(W)));
         WVP = P * V * W;
@@ -246,8 +246,6 @@ bool BumpEffect::Render(uint64_t frame)
         uniforms_["g_mWorldTransform"] = W;
         uniforms_["g_mNormalTransform"] = N;
         uniforms_["g_vViewPosition"] = vec4(cam_.Position, 1.0);
-        uniforms_["g_lights[0].pos"] = lights_[l].pos;
-        uniforms_["g_lights[0].color"] = vec3(1);
         uniforms_["g_fLightPower"] = lpower_;
         uniforms_["g_iNumlights"] = 1;
         uniforms_["g_vLightOffset"] = lpos_;
@@ -266,6 +264,7 @@ bool BumpEffect::Render(uint64_t frame)
         hwr->setTexture(bump_, 2);
         hwr->setUniforms(uniforms_);
 
+        hwr->setConstBuffer(1, 0, lightInfoBuffer_);
         hwr->setClearBits(1, 0);
         hwr->setFrameBuffer(1, gfx::FrameBufferHandle{ 0 });
 
