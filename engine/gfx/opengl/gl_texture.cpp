@@ -133,7 +133,7 @@ namespace gfx {
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
-
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY, 16));
 
 		if (cmd.automipmap)
 		{
@@ -270,6 +270,7 @@ namespace gfx {
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_R, wrap));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY, 16));
 		GL_CHECK(glBindTexture(target, 0));
 
 		const TextureData t_data{ texture, target, TextureFormat::RGBA8 };

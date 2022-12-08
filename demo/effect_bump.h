@@ -19,6 +19,11 @@ public:
 
 	~BumpEffect();
 
+	struct Light {
+		vec3 pos;
+		vec3 color;
+	};
+
 private:
 	gfx::TextureHandle diffuse_;
 	gfx::TextureHandle normal_;
@@ -30,7 +35,9 @@ private:
 
 	vec2 yawPitch_;
 	vec3 rot_;
-	vec3 lpos_;
+	vec3 lpos_{0};
+	Array<Light, 8> lights_;
+
 	float lpower_{};
 	float vZ_;
 

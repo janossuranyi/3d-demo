@@ -36,7 +36,7 @@ namespace gfx {
 		if (exists(id)) return texture_map_[id];
 
 		auto res = R_->createTexture(gfx::TextureWrap::Repeat, gfx::TextureFilter::LinearLinear, gfx::TextureFilter::Linear,
-			rc::ResourceManager::get_resource(id), srgb, true, compressed, 1);
+			rc::ResourceManager::get_resource(id), srgb, /*automip*/true, compressed, 1);
 
 		texture_map_.emplace(id, res);
 

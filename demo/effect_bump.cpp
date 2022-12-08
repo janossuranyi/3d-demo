@@ -97,8 +97,20 @@ bool BumpEffect::Init()
 
     rot_ = vec3(0, 0, 0);
 
-    lpos_ = vec3(0.0f, 2.0f, 0.0f);
-    lpower_ = 1.0f;
+    float radius = 3.0f;
+    float step = 360.0f / lights_.size();
+    float angle = 0.0f;
+    vec3 colors[4]{ vec3(1,1,1),vec3(1,1,0),vec3(0,1,1),vec3(1,0,1) };
+
+    for (int i = 0; i < lights_.size(); ++i)
+    {
+        Light& L = lights_[i];
+        L.pos.y = 2.0f;
+        L.pos.x = glm::sin(glm::radians(angle)) * radius;
+        L.pos.z = glm::cos(glm::radians(angle)) * radius;
+        L.color = colors[i % 4];
+        angle += step;
+    }
 
     SDL_SetRelativeMouseMode(SDL_TRUE);
     cam_.MouseSensitivity = 0.1;
@@ -191,10 +203,17 @@ bool BumpEffect::Render(uint64_t frame)
     uniforms_["g_mWorldTransform"] = W;
     uniforms_["g_mNormalTransform"] = N;
     uniforms_["g_vViewPosition"] = vec4(cam_.Position, 1.0);
-    uniforms_["g_lights[0].pos"] = lightPos;
-    uniforms_["g_lights[1].pos"] = lightPos + vec3(2,0,2);
-    uniforms_["g_lights[0].color"] = lightColor;
-    uniforms_["g_lights[1].color"] = vec3(0.8, 0.2, 0.2) * lpower_;
+    char buf_[255];
+
+    uniforms_["g_iNumlights"] = int(lights_.size());
+    for (int l = 0; l < lights_.size(); ++l)
+    {
+        snprintf(buf_, 255, "%d", l);
+        uniforms_["g_lights["+String(buf_)+"].pos"] = lights_[l].pos;
+        uniforms_["g_lights["+String(buf_)+"].color"] = lights_[l].color;
+    }
+    uniforms_["g_fLightPower"] = lpower_;
+    uniforms_["g_vLightOffset"] = lpos_;
     uniforms_["samp_basecolor"] = 0;
     uniforms_["samp_normal"] = 1;
     uniforms_["samp_pbr"] = 2;
@@ -215,36 +234,43 @@ bool BumpEffect::Render(uint64_t frame)
 
     hwr->submit(0, shader_, isize, voffset, ioffset*2);
 
-    W = glm::translate(mat4(1.0), lightPos);
-    W = glm::scale(W, vec3(0.2));
-    N = glm::transpose(glm::inverse(mat3(W)));
-    WVP = P * V * W;
+    for (int l = 0; l < lights_.size(); ++l)
+    {
 
-    uniforms_["g_mWorldViewProjection"] = WVP;
-    uniforms_["g_mWorldTransform"] = W;
-    uniforms_["g_mNormalTransform"] = N;
-    uniforms_["g_vViewPosition"] = vec4(cam_.Position,1.0);
-    uniforms_["g_lights[0].pos"] = lightPos;
-    uniforms_["g_lights[0].color"] = lightColor;
-    uniforms_["samp_basecolor"] = 0;
-    uniforms_["samp_normal"] = 1;
-    uniforms_["samp_pbr"] = 2;
+        W = glm::translate(mat4(1.0), lights_[l].pos + lpos_);
+        W = glm::scale(W, vec3(0.2));
+        N = glm::transpose(glm::inverse(mat3(W)));
+        WVP = P * V * W;
 
-    hwr->setRenderState(gfx::GLS_DEPTHFUNC_LESS);
-    hwr->setVertexBuffer(vb);
-    hwr->setIndexBuffer(ib);
-    hwr->setPrimitiveType(gfx::PrimitiveType::Triangles);
-    hwr->setVertexDecl(*hwr->defaultVertexDecl());
-    hwr->setTexture(diffuse_, 0);
-    hwr->setTexture(normal_, 1);
-    hwr->setTexture(bump_, 2);
-    hwr->setUniforms(uniforms_);
+        uniforms_["g_mWorldViewProjection"] = WVP;
+        uniforms_["g_mWorldTransform"] = W;
+        uniforms_["g_mNormalTransform"] = N;
+        uniforms_["g_vViewPosition"] = vec4(cam_.Position, 1.0);
+        uniforms_["g_lights[0].pos"] = lights_[l].pos;
+        uniforms_["g_lights[0].color"] = vec3(1);
+        uniforms_["g_fLightPower"] = lpower_;
+        uniforms_["g_iNumlights"] = 1;
+        uniforms_["g_vLightOffset"] = lpos_;
+        uniforms_["samp_basecolor"] = 0;
+        uniforms_["samp_normal"] = 1;
+        uniforms_["samp_pbr"] = 2;
 
-    hwr->setClearBits(1, 0);
-    hwr->setFrameBuffer(1, gfx::FrameBufferHandle{ 0 });
 
-    hwr->submit(1, shader_, isize, voffset, ioffset * 2);
+        hwr->setRenderState(gfx::GLS_DEPTHFUNC_LESS);
+        hwr->setVertexBuffer(vb);
+        hwr->setIndexBuffer(ib);
+        hwr->setPrimitiveType(gfx::PrimitiveType::Triangles);
+        hwr->setVertexDecl(*hwr->defaultVertexDecl());
+        hwr->setTexture(diffuse_, 0);
+        hwr->setTexture(normal_, 1);
+        hwr->setTexture(bump_, 2);
+        hwr->setUniforms(uniforms_);
 
+        hwr->setClearBits(1, 0);
+        hwr->setFrameBuffer(1, gfx::FrameBufferHandle{ 0 });
+
+        hwr->submit(1, shader_, isize, voffset, ioffset * 2);
+    }
 
     return true;
 }

@@ -83,6 +83,25 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 	return saturate( f0 + ( baked_spec_occl - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 ) );
 }
 */
+
+vec3 ReconstructNormal( vec3 normalTS, bool isFrontFacing ) {
+	vec3 N = normalize(normalTS.xyz * 2.0 - 1.0);
+    /*
+	N.z = sqrt( saturate( 1 - N.x * N.x - N.y * N.y ) );
+    */
+	if ( isFrontFacing == false ) {
+		N.z = -N.z;
+	}
+	return N;
+}
+vec3 TransformNormal( vec3 normal, mat3x3 mat ) {
+	return normalize( vec3( dot( normal.xyz, mat[0].xyz), dot( normal.xyz, mat[1].xyz), dot( normal.xyz, mat[2].xyz) ) );
+}
+vec3 GetWorldSpaceNormal ( vec3 normalTS, mat3x3 invTS, bool isFrontFacing ) {
+	const vec3 N = ReconstructNormal( normalTS.xyz, isFrontFacing );
+	return TransformNormal( N, invTS );
+}
+
 vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 F ) {
 	const vec3 H = normalize( V + L );
 	float m = roughness;
@@ -118,21 +137,23 @@ struct lightingInput_t
     vec4 fragCoord;
     vec3 out_color;
     mat3 invTS;
+    vec3 fragPos;
 };
 
 uniform sampler2D samp_basecolor;
 uniform sampler2D samp_normal;
 uniform sampler2D samp_pbr;
-uniform vec4 g_vViewPosition;
-
-uniform light_t g_lights[2];
+uniform vec3 g_vLightOffset;
+uniform int g_iNumlights;
+uniform float g_fLightPower = 1.0;
+uniform light_t g_lights[32];
 
 in INTERFACE {
     vec4 normal;
     vec4 tangent;
     vec4 position;
     vec4 texcoord;
-    vec4 viewpos;
+    vec4 fragPos;
     vec4 color;
 } In;
 
@@ -142,52 +163,59 @@ const float PI = 3.14159265359;
 
 void main()
 {
-    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0));
+    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0),vec3(0));
 
     inputs.texCoord = In.texcoord.xy;
     inputs.fragCoord = gl_FragCoord;
     inputs.position = In.position.xyz;
+    inputs.fragPos = In.fragPos.xyz;
+
     {
         vec3 inNormal = normalize(In.normal.xyz);
         vec3 inTangent = normalize(In.tangent.xyz);
         vec3 derivedBitangent = normalize( cross( inNormal, inTangent ) * In.tangent.w );
         inputs.invTS = transpose(mat3(inTangent,derivedBitangent,inNormal));        
     }
-    vec3 view = inputs.position - In.viewpos.xyz;
-    inputs.view = normalize( -view );
+    inputs.view = normalize( -In.position.xyz);
 
-    vec3 normal = ( texture(samp_normal, inputs.texCoord).rgb );
-    normal.y = 1.0-normal.y;
-    inputs.normal = normalize(normal * 2.0 - 1.0);
-    inputs.normalTS = inputs.invTS * inputs.normal;
-    inputs.albedo = ( texture(samp_basecolor, inputs.texCoord).rgb );
     {
-        vec4 inMR = ( texture(samp_pbr, inputs.texCoord) );
+        vec3 normal = texture(samp_normal, inputs.texCoord).xyz;
+        normal.y = 1.0-normal.y;
+        inputs.normal = normal;
+    }
+
+    inputs.albedo = texture(samp_basecolor, inputs.texCoord).rgb;
+    {
+        vec4 inMR = texture(samp_pbr, inputs.texCoord);
         inputs.roughness = inMR.g;
         inputs.metalness = inMR.b;        
     }
 
-    vec3 ambient = vec3(0.001);
+    bool isFrontFacing = true;
+    inputs.normalTS = ReconstructNormal( inputs.normal.xyz, isFrontFacing );
+    inputs.normal = GetWorldSpaceNormal( inputs.normal, inputs.invTS, isFrontFacing );
 
-    for(int lightIdx = 0; lightIdx < g_lights.length(); ++lightIdx)
+    vec3 ambient = vec3(0.01) * inputs.albedo;
+
+    for(int lightIdx = 0; lightIdx < g_iNumlights; ++lightIdx)
     {
         light_t light = g_lights[lightIdx];
 
         float clip_min = 1.0 / 255.0;
-        vec3 light_position = inputs.invTS * light.pos;
+        vec3 light_position = light.pos + g_vLightOffset;
         {
             vec3 light_vector = inputs.invTS * normalize( light_position - inputs.position );
             float NdotL = saturate( dot( inputs.normal, light_vector ) );
             //if (NdotL < clip_min) continue;
         }
-        float light_attenuation;
+        float light_attenuation = 0.0;
         {
-            float d = distance(light_position, inputs.position) + 0.00001;
-            float denom = d/5.0 + 1;
+            float d = distance(light_position, inputs.fragPos.xyz) + 0.00001;
+            float denom = d/2.0 + 1;
             light_attenuation = 1.0 / (denom * denom);
             if (light_attenuation < clip_min / 256.0) continue;
         }
-        vec3 light_color = max(light.color,0.0) * light_attenuation;
+        vec3 light_color = max(light.color * g_fLightPower, 0.0) * light_attenuation;
         vec3 light_color_final = light_color;
         {
             vec3 light_vector = normalize( light_position - inputs.position);

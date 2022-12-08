@@ -24,7 +24,7 @@ out INTERFACE {
     vec4 tangent;
     vec4 position;
     vec4 texcoord;
-    vec4 viewpos;
+    vec4 fragPos;
     vec4 color;
 } Out;
 
@@ -45,11 +45,10 @@ void main()
 
     gl_Position = g_mWorldViewProjection * localPosition ;
 
-    vec4 FragPos = g_mWorldTransform * localPosition;
+    Out.fragPos   = g_mWorldTransform * localPosition;
     Out.normal    = vec4(g_mNormalTransform * localNormal.xyz, 0.0);
     Out.tangent   = vec4(g_mNormalTransform * localTangent.xyz, localTangent.w);
-    Out.position  = vec4(g_mNormalTransform * FragPos.xyz, 1.0);
-    Out.viewpos   = vec4(g_mNormalTransform * g_vViewPosition.xyz, 1.0);
+    Out.position  = vec4(g_mNormalTransform * localPosition.xyz, 1.0) - g_vViewPosition;
     Out.texcoord  = in_TexCoord.xyxy;
     Out.color     = vtxCol;
 }
