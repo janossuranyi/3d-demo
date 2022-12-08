@@ -157,8 +157,8 @@ bool BumpEffect::HandleEvent(const SDL_Event* ev, float time)
         if (k == SDLK_n) lpos_.z -= m;
 
         if (k == SDLK_r) lpos_ = vec3(0);
-        if (k == SDLK_KP_PLUS) lpower_ += .5f;
-        if (k == SDLK_KP_MINUS) lpower_ -= .5f;
+        if (k == SDLK_KP_PLUS) lpower_ += .2f;
+        if (k == SDLK_KP_MINUS) lpower_ -= .2f;
 
         lpower_ = std::max(lpower_, 0.0f);
 

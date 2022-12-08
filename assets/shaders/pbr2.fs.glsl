@@ -1,5 +1,7 @@
 #include "version.inc.glsl"
 
+const float PI = 3.14159265359;
+
 float saturate(float a) { return clamp(a, 0.0, 1.0); }
 float dot2 ( vec2 a, vec2 b ) { return dot( a, b ); }
 float asfloat ( uint x ) { return uintBitsToFloat( x ); }
@@ -96,11 +98,38 @@ vec3 ReconstructNormal( vec3 normalTS, bool isFrontFacing ) {
 }
 vec3 TransformNormal( vec3 normal, mat3x3 mat ) {
 	//return normalize( vec3( dot( normal.xyz, mat[0].xyz), dot( normal.xyz, mat[1].xyz), dot( normal.xyz, mat[2].xyz) ) );
-    return normalize(mat * normal);
+    return normalize(normal * mat);
 }
 vec3 GetWorldSpaceNormal ( vec3 normalTS, mat3x3 invTS, bool isFrontFacing ) {
 	const vec3 N = ReconstructNormal( normalTS.xyz, isFrontFacing );
 	return TransformNormal( N, invTS );
+}
+
+vec3 specBRDF2(vec3 N, vec3 V, vec3 L, vec3 F0, float r, out vec3 F)
+{
+    const vec3 H = normalize(V + L);
+    const float HdotV  = max(dot(H, V), 0.0);
+    const float NdotH  = max(dot(N, H), 0.0);
+    const float NdotV  = max(dot(N, V), 0.0);
+    const float NdotL  = max(dot(N, L), 0.0);
+
+    // DistributionGGX
+    float a = r;
+    a *= a;
+    a *= a;
+    float denom = (NdotH * NdotH) * (a - 1.0) + 1.0;
+    float NDF = a / (PI * denom * denom);
+
+    // GeometrySmith
+    a = (r + 1.0);
+    float k   = (r*r) / 8.0;
+    float Gv  = NdotV / (NdotV * (1.0 - k) + k);
+    float Gl  = NdotL / (NdotL * (1.0 - k) + k);
+    float spec = (NDF * Gv * Gl) / (4.0 * NdotL * NdotL + 0.0001);
+
+    F = fresnelSchlick(F0, HdotV);
+
+    return F * spec;
 }
 
 vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 F ) {
@@ -160,8 +189,6 @@ in INTERFACE {
 
 out vec4 FragColor;
 
-const float PI = 3.14159265359;
-
 void main()
 {
     lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0),vec3(0));
@@ -205,9 +232,9 @@ void main()
         float clip_min = 1.0 / 255.0;
         vec3 light_position = light.pos + g_vLightOffset;
         {
-            vec3 light_vector = inputs.invTS * normalize( light_position - inputs.position );
+            vec3 light_vector = normalize( light_position - inputs.position );
             float NdotL = saturate( dot( inputs.normal, light_vector ) );
-            //if (NdotL < clip_min) continue;
+            if (NdotL < clip_min) continue;
         }
         float light_attenuation = 0.0;
         {
@@ -223,7 +250,7 @@ void main()
             float NdotL = saturate( dot( inputs.normal, light_vector ) );
             vec3 F0 = mix(vec3(0.04), inputs.albedo, inputs.metalness);
             vec3 F = vec3(0);
-            vec3 spec = specBRDF(inputs.normal, inputs.view, light_vector, F0, inputs.roughness, F);
+            vec3 spec = specBRDF2(inputs.normal, inputs.view, light_vector, F0, inputs.roughness, F);
             vec3 Kd = vec3(1.0) - F;
             Kd *= 1.0 - inputs.metalness;
             inputs.out_color += (Kd * inputs.albedo / PI + spec) * light_color_final * NdotL;
