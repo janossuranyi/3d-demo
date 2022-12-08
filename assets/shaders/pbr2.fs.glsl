@@ -95,7 +95,8 @@ vec3 ReconstructNormal( vec3 normalTS, bool isFrontFacing ) {
 	return N;
 }
 vec3 TransformNormal( vec3 normal, mat3x3 mat ) {
-	return normalize( vec3( dot( normal.xyz, mat[0].xyz), dot( normal.xyz, mat[1].xyz), dot( normal.xyz, mat[2].xyz) ) );
+	//return normalize( vec3( dot( normal.xyz, mat[0].xyz), dot( normal.xyz, mat[1].xyz), dot( normal.xyz, mat[2].xyz) ) );
+    return normalize(mat * normal);
 }
 vec3 GetWorldSpaceNormal ( vec3 normalTS, mat3x3 invTS, bool isFrontFacing ) {
 	const vec3 N = ReconstructNormal( normalTS.xyz, isFrontFacing );
