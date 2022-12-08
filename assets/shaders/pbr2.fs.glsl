@@ -167,7 +167,6 @@ struct lightingInput_t
     vec4 fragCoord;
     vec3 out_color;
     mat3 invTS;
-    vec3 fragPos;
 };
 
 uniform sampler2D samp_basecolor;
@@ -191,12 +190,11 @@ out vec4 FragColor;
 
 void main()
 {
-    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0),vec3(0));
+    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0));
 
     inputs.texCoord = In.texcoord.xy;
     inputs.fragCoord = gl_FragCoord;
     inputs.position = In.position.xyz;
-    inputs.fragPos = In.fragPos.xyz;
 
     {
         vec3 inNormal = normalize(In.normal.xyz);
@@ -204,7 +202,7 @@ void main()
         vec3 derivedBitangent = normalize( cross( inNormal, inTangent ) * In.tangent.w );
         inputs.invTS = transpose(mat3(inTangent,derivedBitangent,inNormal));        
     }
-    inputs.view = normalize( -In.position.xyz);
+    inputs.view = normalize( -inputs.position );
 
     {
         vec3 normal = texture(samp_normal, inputs.texCoord).xyz;
@@ -238,7 +236,7 @@ void main()
         }
         float light_attenuation = 0.0;
         {
-            float d = distance(light_position, inputs.fragPos.xyz) + 0.00001;
+            float d = distance(light_position, inputs.position) + 0.00001;
             float denom = d/2.0 + 1;
             light_attenuation = 1.0 / (denom * denom);
             if (light_attenuation < clip_min / 256.0) continue;
@@ -259,5 +257,5 @@ void main()
     vec3 color = tonemap(inputs.out_color + ambient);
     color = pow(color, vec3(1.0/2.2)); 
 
-    FragColor = vec4(color.xyz, 1.0);
+    FragColor = vec4(color, 1.0);
 }
