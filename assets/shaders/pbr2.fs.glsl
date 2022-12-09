@@ -172,6 +172,7 @@ struct lightingInput_t
     vec3 specular;
     float roughness;
     float metalness;
+    float occlusion;
     vec3 normal;
     vec3 normalTS;
     vec3 view;
@@ -191,7 +192,7 @@ uniform float   g_fLightPower;
 
 layout(std140, binding = 0) uniform LightInfoBlock
 {   
-    light_t g_lights[];
+    light_t g_lights[256];
 };
 
 in INTERFACE {
@@ -206,7 +207,7 @@ out vec4 FragColor;
 
 void main()
 {
-    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0));
+    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0));
 
     inputs.texCoord = In.texcoord.xy;
     inputs.fragCoord = gl_FragCoord;
@@ -223,21 +224,22 @@ void main()
     {
         vec3 normal = texture(samp_normal, inputs.texCoord).xyz;
         normal.y = 1.0-normal.y;
-        inputs.normal = normal;
+        inputs.normal = normal;        
     }
 
     inputs.albedo = texture(samp_basecolor, inputs.texCoord).rgb;
     {
         vec4 inMR = texture(samp_pbr, inputs.texCoord);
-        inputs.roughness = inMR.g;
-        inputs.metalness = inMR.b;        
+        inputs.roughness = 1.0 - inMR.g ;
+        inputs.metalness = inMR.b;
+        inputs.occlusion = inMR.a;
     }
 
     bool isFrontFacing = true;
     inputs.normalTS = ReconstructNormal( inputs.normal.xyz, isFrontFacing );
     inputs.normal = GetWorldSpaceNormal( inputs.normal, inputs.invTS, isFrontFacing );
 
-    vec3 ambient = vec3(0.01) * inputs.albedo;
+    vec3 ambient = vec3(0.001) * inputs.albedo * inputs.occlusion;
     inputs.out_color = vec3(0.0);
 
     for(int lightIdx = 0; lightIdx < g_iNumlights; ++lightIdx)
@@ -265,7 +267,7 @@ void main()
             float NdotL = saturate( dot( inputs.normal, light_vector ) );
             vec3 F0 = mix( vec3(0.04), inputs.albedo, inputs.metalness );
             vec3 F = vec3(0);
-            vec3 spec = specBRDF2( inputs.normal, inputs.view, light_vector, F0, inputs.roughness, F );
+            vec3 spec = specBRDF( inputs.normal, inputs.view, light_vector, F0, inputs.roughness, F );
             vec3 Kd = vec3(1.0) - F;
             Kd *= 1.0 - inputs.metalness;
             inputs.out_color += (Kd * inputs.albedo / PI + spec) * light_color_final * NdotL;

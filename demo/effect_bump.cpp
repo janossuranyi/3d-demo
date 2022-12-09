@@ -18,8 +18,11 @@ bool BumpEffect::Init()
 
     bool no_srgb = false;
 
+    //String base_name = "crashed_plane_01_slvr";
+    //String base_name = "crashed_plane_04_wrinkle";
     String base_name = "floor_beton_cap";
-
+    //String base_name = "listwa";
+    
     diffuse_ = tm->createFromResource("textures/test/" + base_name + ".tga", true, false);
     normal_ = tm->createFromResource("textures/test/" + base_name + "_nm.tga", no_srgb, false);
     bump_ = tm->createFromResource("textures/test/" + base_name + "_bump.tga", no_srgb, false);
@@ -97,20 +100,20 @@ bool BumpEffect::Init()
 
     rot_ = vec3(0, 0, 0);
 
-    numLights_ = 6;
+    numLights_ = 1;
     float radius = 3.0f;
     float step = 360.0f / numLights_;
     float angle = 0.0f;
-    vec4 colors[4]{ vec4(1,1,1,1),vec4(1,1,0,1),vec4(0,1,1,1),vec4(1,0,1,1) };
+    vec4 colors[4]{ vec4(1,1,1,1),vec4(1,0.6f,0,1),vec4(0,1,1,0.6f),vec4(0.5f,0,0.4f,1) };
 
     for (int i = 0; i < numLights_; ++i)
     {
         Light& L = lightInfo_.g_lights[i];
         L.pos.w = 1.0f;
         L.pos.y = 2.0f;
-        L.pos.x = glm::sin(glm::radians(angle)) * radius;
-        L.pos.z = glm::cos(glm::radians(angle)) * radius;
-        L.color = colors[i % 4];
+        L.pos.x = 0.0f; // glm::sin(glm::radians(angle))* radius;
+        L.pos.z = 0.0f; // glm::cos(glm::radians(angle)) * radius;
+        L.color = vec4(1, 1, 1, 1);
         angle += step;
     }
 
@@ -164,8 +167,8 @@ bool BumpEffect::HandleEvent(const SDL_Event* ev, float time)
         if (k == SDLK_n) lpos_.z -= m;
 
         if (k == SDLK_r) lpos_ = vec3(0);
-        if (k == SDLK_KP_PLUS) lpower_ += .2f;
-        if (k == SDLK_KP_MINUS) lpower_ -= .2f;
+        if (k == SDLK_KP_PLUS) lpower_ += .01f;
+        if (k == SDLK_KP_MINUS) lpower_ -= .01f;
 
         lpower_ = std::max(lpower_, 0.0f);
 
