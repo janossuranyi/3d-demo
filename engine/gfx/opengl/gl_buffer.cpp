@@ -31,13 +31,15 @@ namespace gfx {
 			if (ext_.ARB_direct_state_access)
 			{
 				GL_CHECK(glCreateBuffers(1, &buffer));
-				GL_CHECK(glNamedBufferData(target, _size, data.data(), _usage));
+				GL_CHECK(glNamedBufferData(target, _size, nullptr, _usage));
+				if (!data.empty()) GL_CHECK(glNamedBufferSubData(buffer, 0, data.size(), data.data()));
 			}
 			else
 			{
 				GL_CHECK(glGenBuffers(1, &buffer));
 				GL_CHECK(glBindBuffer(target, buffer));
-				GL_CHECK(glBufferData(target, _size, data.data(), _usage));
+				GL_CHECK(glBufferData(target, _size, nullptr, _usage));
+				if (!data.empty()) GL_CHECK(glBufferSubData(target, 0, data.size(), data.data()));
 				GL_CHECK(glBindBuffer(target, 0));
 			}
 		}

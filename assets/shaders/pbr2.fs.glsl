@@ -105,36 +105,17 @@ vec3 GetWorldSpaceNormal ( vec3 normalTS, mat3x3 invTS, bool isFrontFacing ) {
 	return TransformNormal( N, invTS );
 }
 
-vec3 specBRDF2(vec3 N, vec3 V, vec3 L, vec3 F0, float r, out vec3 F)
+vec4 specBRDF2(vec3 N, vec3 V, vec3 L, vec3 F0, float smoothness)
 {
-    const vec3 H = normalize(V + L);
-    const float HdotV  = max(dot(H, V), 0.0);
-    const float NdotH  = max(dot(N, H), 0.0);
-    const float NdotV  = max(dot(N, V), 0.0);
-    const float NdotL  = max(dot(N, L), 0.0);
-
-    // DistributionGGX
-    float a = r;
-    a *= a;
-    a *= a;
-    float denom = (NdotH * NdotH) * (a - 1.0) + 1.0;
-    float NDF = a / (PI * denom * denom);
-
-    // GeometrySmith
-    a = (r + 1.0);
-    float k   = (r*r) / 8.0;
-    float Gv  = NdotV / (NdotV * (1.0 - k) + k);
-    float Gl  = NdotL / (NdotL * (1.0 - k) + k);
-    float spec = (NDF * Gv * Gl) / (4.0 * NdotL * NdotL + 0.0001);
-
-    F = fresnelSchlick(F0, HdotV);
-
-    return F * spec;
+    vec4 F;
+    
+    return F;
 }
 
-vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 F ) {
+vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness ) {
 	const vec3 H = normalize( V + L );
-	float m = roughness;
+
+	float m = ( 1 - smoothness * 0.8 );
 	m *= m;
 	m *= m;
 	float m2 = m * m;
@@ -144,8 +125,13 @@ vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 F ) {
 	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
 	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-    F = fresnelSchlick( f0, dot( L, H ) );
-	return F * spec;
+
+    vec4 F;
+    F.xyz = fresnelSchlick( f0, dot( L, H ) );
+//    F.xyz = fresnelSchlick( f0, dot( H, V ) );
+    F.w = spec;
+	
+    return F;
 }
 
 float GammaIEC(float c)
@@ -170,7 +156,7 @@ struct lightingInput_t
 {
     vec3 albedo;
     vec3 specular;
-    float roughness;
+    float smoothness;
     float metalness;
     float occlusion;
     vec3 normal;
@@ -223,15 +209,15 @@ void main()
 
     {
         vec3 normal = texture(samp_normal, inputs.texCoord).xyz;
-        normal.y = 1.0-normal.y;
+        normal.y = 1.0 - normal.y;
         inputs.normal = normal;        
     }
 
     inputs.albedo = texture(samp_basecolor, inputs.texCoord).rgb;
     {
         vec4 inMR = texture(samp_pbr, inputs.texCoord);
-        inputs.roughness = 1.0 - inMR.g ;
-        inputs.metalness = inMR.b;
+        inputs.smoothness = inMR.g;
+        inputs.metalness = inMR.r;
         inputs.occlusion = inMR.a;
     }
 
@@ -240,6 +226,8 @@ void main()
     inputs.normal = GetWorldSpaceNormal( inputs.normal, inputs.invTS, isFrontFacing );
 
     vec3 ambient = vec3(0.001) * inputs.albedo * inputs.occlusion;
+    vec3 tmp;
+
     inputs.out_color = vec3(0.0);
 
     for(int lightIdx = 0; lightIdx < g_iNumlights; ++lightIdx)
@@ -256,7 +244,7 @@ void main()
         float light_attenuation = 0.0;
         {
             float d = distance(light_position, inputs.position) + 0.00001;
-            float denom = d/2.0 + 1;
+            float denom = d + 1.0;
             light_attenuation = 1.0 / (denom * denom);
             if (light_attenuation < clip_min / 256.0) continue;
         }
@@ -266,15 +254,14 @@ void main()
             vec3 light_vector = normalize( light_position - inputs.position );
             float NdotL = saturate( dot( inputs.normal, light_vector ) );
             vec3 F0 = mix( vec3(0.04), inputs.albedo, inputs.metalness );
-            vec3 F = vec3(0);
-            vec3 spec = specBRDF( inputs.normal, inputs.view, light_vector, F0, inputs.roughness, F );
-            vec3 Kd = vec3(1.0) - F;
+            vec4 spec = specBRDF2( inputs.normal, inputs.view, light_vector, F0, inputs.smoothness );
+            vec3 Kd = vec3(1.0) - spec.xyz;
             Kd *= 1.0 - inputs.metalness;
-            inputs.out_color += (Kd * inputs.albedo / PI + spec) * light_color_final * NdotL;
+            inputs.out_color += (Kd * inputs.albedo / PI + spec.xyz * spec.w) * light_color_final * NdotL;
         }
     }
     vec3 color = tonemap(inputs.out_color + ambient);
-    color = GammaIEC(color) ;
+    color = GammaIEC( color ) ;
 
     FragColor = vec4(color, 1.0);
 }

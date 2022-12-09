@@ -18,14 +18,18 @@ bool BumpEffect::Init()
 
     bool no_srgb = false;
 
-    //String base_name = "crashed_plane_01_slvr";
-    //String base_name = "crashed_plane_04_wrinkle";
-    String base_name = "floor_beton_cap";
-    //String base_name = "listwa";
+    String base_name[] = {
+        "crashed_plane_01_slvr",
+        "crashed_plane_04_wrinkle",
+        "floor_beton_cap",
+        "listwa",
+        "base-white-tile"
+    };
     
-    diffuse_ = tm->createFromResource("textures/test/" + base_name + ".tga", true, false);
-    normal_ = tm->createFromResource("textures/test/" + base_name + "_nm.tga", no_srgb, false);
-    bump_ = tm->createFromResource("textures/test/" + base_name + "_bump.tga", no_srgb, false);
+    int bn = 2;
+    diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".tga", true, false);
+    normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.tga", no_srgb, false);
+    bump_ = tm->createFromResource("textures/test/" + base_name[bn] + "_bump.tga", no_srgb, false);
 
 
     using namespace tinygltf;
@@ -99,21 +103,21 @@ bool BumpEffect::Init()
         "shaders/pbr2.fs.glsl","",{} });
 
     rot_ = vec3(0, 0, 0);
-
-    numLights_ = 1;
+    lpower_ = 0.3f;
+    numLights_ = 3;
     float radius = 3.0f;
     float step = 360.0f / numLights_;
     float angle = 0.0f;
-    vec4 colors[4]{ vec4(1,1,1,1),vec4(1,0.6f,0,1),vec4(0,1,1,0.6f),vec4(0.5f,0,0.4f,1) };
+    vec4 colors[]{ vec4(1),vec4(1),vec4(1,0.5f,0,1) };
 
     for (int i = 0; i < numLights_; ++i)
     {
         Light& L = lightInfo_.g_lights[i];
         L.pos.w = 1.0f;
         L.pos.y = 2.0f;
-        L.pos.x = 0.0f; // glm::sin(glm::radians(angle))* radius;
-        L.pos.z = 0.0f; // glm::cos(glm::radians(angle)) * radius;
-        L.color = vec4(1, 1, 1, 1);
+        L.pos.x = glm::sin(glm::radians(angle))* radius;
+        L.pos.z = glm::cos(glm::radians(angle)) * radius;
+        L.color = colors[i];
         angle += step;
     }
 
@@ -167,8 +171,8 @@ bool BumpEffect::HandleEvent(const SDL_Event* ev, float time)
         if (k == SDLK_n) lpos_.z -= m;
 
         if (k == SDLK_r) lpos_ = vec3(0);
-        if (k == SDLK_KP_PLUS) lpower_ += .01f;
-        if (k == SDLK_KP_MINUS) lpower_ -= .01f;
+        if (k == SDLK_KP_PLUS) lpower_ += time * .1f;
+        if (k == SDLK_KP_MINUS) lpower_ -= time * .1f;
 
         lpower_ = std::max(lpower_, 0.0f);
 

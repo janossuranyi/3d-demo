@@ -156,7 +156,7 @@ vec4 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float r)
 
     // GeometrySmith
     a = (r + 1.0);
-    float k   = (r*r) / 8.0;
+    float k   = (a*a) / 8.0;
     float Gv  = NdotV / (NdotV * (1.0 - k) + k);
     float Gl  = NdotL / (NdotL * (1.0 - k) + k);
     float spec = (NDF * Gv * Gl) / (4.0 * NdotL * NdotL + 0.0001);
