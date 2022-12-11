@@ -204,7 +204,7 @@ namespace gfx {
 		const FrameBufferHandle handle = frame_buffer_handle_.next();
 		
 		const TextureHandle color = createTexture2D(TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, gfx::ImageSet::create(width,height,format));
-		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height,TextureHandle(), std::vector<FramebufferTexture>{ {color,0,0} } });
+		submitPreFrameCommand(cmd::CreateOrUpdateFramebuffer{ handle,width,height,TextureHandle(), std::vector<FramebufferTexture>{ {color,0,0} } });
 		frame_buffer_textures_.emplace(handle, std::vector<FramebufferTexture>{ {color, 0, 0} });
 
 		return handle;
@@ -231,7 +231,7 @@ namespace gfx {
 		}
 		
 		FrameBufferHandle handle = frame_buffer_handle_.next();
-		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,w,h,depth_texture,textures });
+		submitPreFrameCommand(cmd::CreateOrUpdateFramebuffer{ handle,w,h,depth_texture,textures });
 		if (depth_texture.isValid())
 		{
 			textures.push_back({ depth_texture,0,0 });

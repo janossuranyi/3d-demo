@@ -3,20 +3,26 @@
 #include "logger.h"
 
 namespace gfx {
-	void OpenGLRenderContext::operator()(const cmd::CreateFramebuffer& cmd)
+	void OpenGLRenderContext::operator()(const cmd::CreateOrUpdateFramebuffer& cmd)
 	{
-		if (frame_buffer_map_.count(cmd.handle) > 0)
-			return;
 
-		FrameBufferData fb_data;
+		FrameBufferData fb_data{};
+
+		if (frame_buffer_map_.count(cmd.handle) > 0)
+		{
+			fb_data = frame_buffer_map_.at(cmd.handle);
+		}
+		else
+		{
+			GL_CHECK(glGenFramebuffers(1, &fb_data.frame_buffer));
+		}
+
+		ushort old_width = fb_data.width, old_height = fb_data.height;
 
 		fb_data.width = cmd.width;
 		fb_data.height = cmd.height;
 
-		GL_CHECK(
-			glGenFramebuffers(1, &fb_data.frame_buffer));
-		GL_CHECK(
-			glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
 		std::vector<GLenum> draw_buffers;
 		int attachment{ 0 };
 		for (auto& fb_texture : cmd.textures)
@@ -34,14 +40,12 @@ namespace gfx {
 			{
 				target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + fb_texture.face;
 			}
-			GL_CHECK(
-				glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), target, gl_texture->second.texture, fb_texture.level));
+			GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), target, gl_texture->second.texture, fb_texture.level));
 		}
 
 		if ( ! cmd.textures.empty() )
 		{
-			GL_CHECK(
-				glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
+			GL_CHECK( glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()) );
 		}
 
 		if (cmd.depth_stencil_texture.isValid())
@@ -71,11 +75,13 @@ namespace gfx {
 					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
 			}
 		}
-		else
+		else if (old_height != fb_data.height || old_width != fb_data.width)
 		{
-			// Create depth buffer.
-			GL_CHECK(
-				glGenRenderbuffers(1, &fb_data.depth_render_buffer));
+			if (!fb_data.depth_render_buffer)
+			{
+				// Create depth buffer.
+				GL_CHECK( glGenRenderbuffers(1, &fb_data.depth_render_buffer) );
+			}
 			GL_CHECK(
 				glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
 			GL_CHECK(

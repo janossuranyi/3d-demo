@@ -322,6 +322,7 @@ namespace gfx {
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap));
 		GL_CHECK(glTexParameteri(target, GL_TEXTURE_WRAP_R, wrap));
+		GL_CHECK(glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY, 16));
 
 		GL_CHECK(glBindTexture(target, 0));
 
