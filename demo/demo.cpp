@@ -15,6 +15,7 @@
 #include "window.h"
 
 #include "engine/gfx/image.h"
+#include "engine/gfx/material.h"
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -174,7 +175,15 @@ int main(int argc, char** argv)
         traverse_node(model, node, 0);
     }
 
-    //exit(0);
+    Info("alignof(MRMaterial) = %d", alignof(gfx::MRMaterial));
+
+    gfx::MRMaterial mr{};
+    mr.params.alphaCutoff = 0.5f;
+    mr.params.baseColorFactor = vec4(0.1f, 0.2f, 0.3f, 1.0f);
+    mr.params.metallicFactor = 0.0f;
+    mr.params.roughnessFactor = 0.4f;
+    Info("p0 = %f", mr.params._v[0].x);
+    exit(0);
 
 
     Info("V_Init Start");
