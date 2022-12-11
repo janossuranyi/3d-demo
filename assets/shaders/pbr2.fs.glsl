@@ -1,8 +1,12 @@
 #include "version.inc.glsl"
 
 const float PI = 3.14159265359;
+const float inv_PI = 1.0 / PI;
 
 float saturate(float a) { return clamp(a, 0.0, 1.0); }
+vec3 saturate(vec3 a) { return clamp(a, 0.0, 1.0); }
+vec4 saturate(vec4 a) { return clamp(a, 0.0, 1.0); }
+
 float dot2 ( vec2 a, vec2 b ) { return dot( a, b ); }
 float asfloat ( uint x ) { return uintBitsToFloat( x ); }
 float asfloat ( int x ) { return intBitsToFloat( x ); }
@@ -88,9 +92,9 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 
 vec3 ReconstructNormal( vec3 normalTS, bool isFrontFacing ) {
 	vec3 N = normalize(normalTS.xyz * 2.0 - 1.0);
-    /*
+    
 	N.z = sqrt( saturate( 1 - N.x * N.x - N.y * N.y ) );
-    */
+    
 	if ( isFrontFacing == false ) {
 		N.z = -N.z;
 	}
@@ -105,33 +109,62 @@ vec3 GetWorldSpaceNormal ( vec3 normalTS, mat3x3 invTS, bool isFrontFacing ) {
 	return TransformNormal( N, invTS );
 }
 
-vec4 specBRDF2(vec3 N, vec3 V, vec3 L, vec3 F0, float smoothness)
+float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
-    vec4 F;
-    
-    return F;
+    float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+	
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+	
+    return num / denom;
 }
 
-vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness ) {
-	const vec3 H = normalize( V + L );
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return NdotV / denom;
+}
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
+}
 
-	float m = ( 1 - smoothness * 0.8 );
-	m *= m;
+vec4 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness)
+{
+	const vec3 H = normalize( V + L );
+    // cook-torrance brdf
+
+	float m = roughness;
 	m *= m;
 	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
+
+    // DistributionGGX
 	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
-	spec = m2 / ( spec * spec + 1e-8 );
+	spec = m2 / ( PI * spec * spec + 1e-8 );  // <-- NDF
+
+    // GeometrySmith
+    // float r = 1.0 + roughness;
+    // float k = (r*r) / 8.0;
+    // GeometrySchlickGGX
 	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
 	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
 
-    vec4 F;
-    F.xyz = fresnelSchlick( f0, dot( L, H ) );
-//    F.xyz = fresnelSchlick( f0, dot( H, V ) );
-    F.w = spec;
-	
-    return F;
+    vec3 F = fresnelSchlick( F0, dot( H, V ) );
+    return vec4(F, spec);
 }
 
 float GammaIEC(float c)
@@ -156,7 +189,7 @@ struct lightingInput_t
 {
     vec3 albedo;
     vec3 specular;
-    float smoothness;
+    float roughness;
     float metalness;
     float occlusion;
     vec3 normal;
@@ -216,8 +249,8 @@ void main()
     inputs.albedo = texture(samp_basecolor, inputs.texCoord).rgb;
     {
         vec4 inMR = texture(samp_pbr, inputs.texCoord);
-        inputs.smoothness = inMR.g;
-        inputs.metalness = inMR.r;
+        inputs.roughness = inMR.g;
+        inputs.metalness = inMR.b;
         inputs.occlusion = inMR.a;
     }
 
@@ -226,7 +259,7 @@ void main()
     inputs.normal = GetWorldSpaceNormal( inputs.normal, inputs.invTS, isFrontFacing );
 
     vec3 ambient = vec3(0.001) * inputs.albedo * inputs.occlusion;
-    vec3 tmp;
+    vec4 tmp;
 
     inputs.out_color = vec3(0.0);
 
@@ -234,33 +267,33 @@ void main()
     {
         light_t light = g_lights[lightIdx];
 
+        float NdotL;
         float clip_min = 1.0 / 255.0;
         vec3 light_position = light.pos.xyz + g_vLightOffset;
-        {
-            vec3 light_vector = normalize( light_position - inputs.position );
-            float NdotL = saturate( dot( inputs.normal, light_vector ) );
-            if (NdotL < 0) continue;
-        }
+        vec3 light_vector = normalize( light_position - inputs.position );
+        NdotL = saturate( dot( inputs.normal, light_vector ) );
+        if (NdotL < 0) continue;
+        
         float light_attenuation = 0.0;
         {
             float d = distance(light_position, inputs.position) + 0.00001;
-            float denom = d + 1.0;
-            light_attenuation = 1.0 / (denom * denom);
+            light_attenuation = light_radiance(d, 2, clip_min);
             if (light_attenuation < clip_min / 256.0) continue;
         }
         vec3 light_color = max(light.color.xyz * g_fLightPower, 0.0) * light_attenuation;
         vec3 light_color_final = light_color;
         {
-            vec3 light_vector = normalize( light_position - inputs.position );
-            float NdotL = saturate( dot( inputs.normal, light_vector ) );
             vec3 F0 = mix( vec3(0.04), inputs.albedo, inputs.metalness );
-            vec4 spec = specBRDF2( inputs.normal, inputs.view, light_vector, F0, inputs.smoothness );
+            /*====================================================================================*/
+            vec4 spec = specBRDF( inputs.normal, inputs.view, light_vector, F0, inputs.roughness );
+            /*====================================================================================*/
             vec3 Kd = vec3(1.0) - spec.xyz;
             Kd *= 1.0 - inputs.metalness;
-            inputs.out_color += (Kd * inputs.albedo / PI + spec.xyz * spec.w) * light_color_final * NdotL;
+            inputs.out_color += (Kd * inputs.albedo * inv_PI + spec.xyz * spec.w) * light_color_final * NdotL;
         }
     }
-    vec3 color = tonemap(inputs.out_color + ambient);
+
+    vec3 color = tonemap( inputs.out_color + ambient );
     color = GammaIEC( color ) ;
 
     FragColor = vec4(color, 1.0);

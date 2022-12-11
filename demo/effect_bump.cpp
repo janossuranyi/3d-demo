@@ -19,17 +19,21 @@ bool BumpEffect::Init()
     bool no_srgb = false;
 
     String base_name[] = {
-        "crashed_plane_01_slvr",
-        "crashed_plane_04_wrinkle",
-        "floor_beton_cap",
-        "listwa",
-        "base-white-tile"
+        "ScratchedGold01_2048",
+        "PaintedMetal02_2048",
+        "HerringboneMarbleTiles01_2048",
+        "WoodenPlanks01_2048"
     };
     
-    int bn = 2;
+    int bn = 3;
+/*
     diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".tga", true, false);
     normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.tga", no_srgb, false);
     bump_ = tm->createFromResource("textures/test/" + base_name[bn] + "_bump.tga", no_srgb, false);
+*/
+    diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".png", true, false);
+    normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.png", no_srgb, false);
+    bump_ = tm->createFromResource("textures/test/" + base_name[bn] + "_bump.png", no_srgb, false);
 
 
     using namespace tinygltf;
@@ -104,7 +108,7 @@ bool BumpEffect::Init()
 
     rot_ = vec3(0, 0, 0);
     lpower_ = 0.3f;
-    numLights_ = 3;
+    numLights_ = 3  ;
     float radius = 3.0f;
     float step = 360.0f / numLights_;
     float angle = 0.0f;
@@ -156,12 +160,13 @@ bool BumpEffect::HandleEvent(const SDL_Event* ev, float time)
         if (k == SDLK_a) cam_.ProcessKeyboard(scene::LEFT, t);
         if (k == SDLK_d) cam_.ProcessKeyboard(scene::RIGHT, t);
 
-        if (k == SDLK_1) rot_.x -= 2.f;
-        if (k == SDLK_2) rot_.x += 2.f;
-        if (k == SDLK_3) rot_.y -= 2.f;
-        if (k == SDLK_4) rot_.y += 2.f;
-        if (k == SDLK_5) rot_.z -= 2.f;
-        if (k == SDLK_6) rot_.z += 2.f;
+        const float rotSpeed = .5f;
+        if (k == SDLK_1) rot_.x -= rotSpeed;
+        if (k == SDLK_2) rot_.x += rotSpeed;
+        if (k == SDLK_3) rot_.y -= rotSpeed;
+        if (k == SDLK_4) rot_.y += rotSpeed;
+        if (k == SDLK_5) rot_.z -= rotSpeed;
+        if (k == SDLK_6) rot_.z += rotSpeed;
 
         if (k == SDLK_y) lpos_.x += m;
         if (k == SDLK_x) lpos_.x -= m;
@@ -171,13 +176,10 @@ bool BumpEffect::HandleEvent(const SDL_Event* ev, float time)
         if (k == SDLK_n) lpos_.z -= m;
 
         if (k == SDLK_r) lpos_ = vec3(0);
-        if (k == SDLK_KP_PLUS) lpower_ += time * .1f;
-        if (k == SDLK_KP_MINUS) lpower_ -= time * .1f;
-
+        if (k == SDLK_KP_PLUS) lpower_ += time * .01f;
+        if (k == SDLK_KP_MINUS) lpower_ -= time * .01f;
+        if (k == SDLK_k) geoKoefFlag_ = 1 - geoKoefFlag_;
         lpower_ = std::max(lpower_, 0.0f);
-
-        Info("light pos{% .2f,% .2f,% .2f}", lpos_.x, lpos_.y, lpos_.z);
-        Info("Zpos{%.2f}, lpower{%.2f}", vZ_, lpower_);
     }
     return true;
 }

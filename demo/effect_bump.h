@@ -44,6 +44,7 @@ private:
 	vec3 lpos_{0};
 
 	int numLights_{ 0 };
+	int geoKoefFlag_{ 0 };
 	LightInfoBlock lightInfo_{};
 
 	float lpower_{};
