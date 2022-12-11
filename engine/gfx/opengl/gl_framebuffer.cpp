@@ -21,15 +21,28 @@ namespace gfx {
 		int attachment{ 0 };
 		for (auto& fb_texture : cmd.textures)
 		{
-			const auto& gl_texture = texture_map_.find(fb_texture);
+			const auto& gl_texture = texture_map_.find(fb_texture.handle);
 			assert(gl_texture != texture_map_.end());
 
 			draw_buffers.emplace_back(GL_COLOR_ATTACHMENT0 + attachment++);
+			GLuint target{};
+			if (gl_texture->second.target == GL_TEXTURE_2D)
+			{
+				target = GL_TEXTURE_2D;
+			}
+			else if (gl_texture->second.target == GL_TEXTURE_CUBE_MAP)
+			{
+				target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + fb_texture.face;
+			}
 			GL_CHECK(
-				glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), GL_TEXTURE_2D, gl_texture->second.texture, 0));
+				glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), target, gl_texture->second.texture, fb_texture.level));
 		}
-		GL_CHECK(
-			glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
+
+		if ( ! cmd.textures.empty() )
+		{
+			GL_CHECK(
+				glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
+		}
 
 		if (cmd.depth_stencil_texture.isValid())
 		{

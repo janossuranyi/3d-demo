@@ -249,6 +249,7 @@ void main()
     inputs.albedo = texture(samp_basecolor, inputs.texCoord).rgb;
     {
         vec4 inMR = texture(samp_pbr, inputs.texCoord);
+        //vec3 gc = pow( inMR.xyz, vec3(1.0/2.2) );
         inputs.roughness = inMR.g;
         inputs.metalness = inMR.b;
         inputs.occlusion = inMR.a;

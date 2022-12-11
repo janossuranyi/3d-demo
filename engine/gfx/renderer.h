@@ -24,6 +24,11 @@ namespace gfx {
         uint elements;
     };
 
+    struct FramebufferTexture {
+        TextureHandle handle;
+        ushort level;
+        ushort face;
+    };
 
     namespace cmd {
 
@@ -211,7 +216,7 @@ namespace gfx {
             FrameBufferHandle handle;
             uint16 width, height;
             TextureHandle depth_stencil_texture;
-            Vector<TextureHandle> textures;
+            Vector<FramebufferTexture> textures;
         };
 
         struct DeleteFramebuffer {
@@ -411,7 +416,7 @@ namespace gfx {
         TextureHandle               createTextureCubemap(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, Vector<ImageSet>& data, bool compress = false);
         TextureHandle               createBufferTexture(TextureBufferHandle hbuffer, TextureFormat format, uint offset = 0, uint size = 0);
         FrameBufferHandle           createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
-        FrameBufferHandle           createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture);
+        FrameBufferHandle           createFrameBuffer(std::vector<FramebufferTexture>& textures, TextureHandle depth_texture);
         ProgramHandle               createProgram();
         ShaderHandle                createShader(ShaderStage stage, const std::string& source);
         FenceHandle                 createFence();
@@ -504,7 +509,7 @@ namespace gfx {
         HashMap<TextureHandle, TextureData> texture_data_;
 
         // Framebuffers.
-        HashMap<FrameBufferHandle, Vector<TextureHandle>> frame_buffer_textures_;
+        HashMap<FrameBufferHandle, Vector<FramebufferTexture>> frame_buffer_textures_;
 
         bool compute_active_;
         uint64 framenum_;

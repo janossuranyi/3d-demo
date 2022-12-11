@@ -1,5 +1,5 @@
 
-#define KHRONOS_STATIC
+//#define KHRONOS_STATIC
 #include <ktx.h>
 #include <algorithm>
 #include "stb_image_resize.h"

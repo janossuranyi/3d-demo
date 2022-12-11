@@ -109,7 +109,7 @@ bool EngineTestEffect::Init()
 		hwr->createTexture2D(gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear,
 			gfx::ImageSet::create(win_size.x, win_size.y, gfx::TextureFormat::RGBA8));
     fb = 
-        hwr->createFrameBuffer(std::vector<gfx::TextureHandle>{color_attachment}, depth_attachment);
+		hwr->createFrameBuffer(std::vector<gfx::FramebufferTexture>{ {color_attachment, 0, 0}}, depth_attachment);
 
 
 	tmp = hwr->createVertexBuffer(256, gfx::BufferUsage::Static, gfx::Memory(Vector<float>{0.5f, 0.0f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f}));
@@ -440,11 +440,6 @@ bool EngineTestEffect::Render(uint64_t frame)
 	
 	//renderer.deleteFence(fence);
 	hwr->submit(pass, prgViewTex, 6, 0, 0);
-
-	if (!hwr->frame())
-	{
-		return false;
-	}
 
 	return true;
 }

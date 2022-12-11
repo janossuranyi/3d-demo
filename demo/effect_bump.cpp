@@ -25,15 +25,11 @@ bool BumpEffect::Init()
         "WoodenPlanks01_2048"
     };
     
-    int bn = 3;
-/*
-    diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".tga", true, false);
-    normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.tga", no_srgb, false);
-    bump_ = tm->createFromResource("textures/test/" + base_name[bn] + "_bump.tga", no_srgb, false);
-*/
-    diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".png", true, false);
-    normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.png", no_srgb, false);
-    bump_ = tm->createFromResource("textures/test/" + base_name[bn] + "_bump.png", no_srgb, false);
+    int bn = 0;
+
+    diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".ktx2");
+    normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.ktx2");
+    bump_ = tm->createFromResource("textures/test/" + base_name[bn] + "_bump.ktx2");
 
 
     using namespace tinygltf;

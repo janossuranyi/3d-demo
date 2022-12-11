@@ -204,13 +204,13 @@ namespace gfx {
 		const FrameBufferHandle handle = frame_buffer_handle_.next();
 		
 		const TextureHandle color = createTexture2D(TextureWrap::ClampToEdge, TextureFilter::Linear, TextureFilter::Linear, gfx::ImageSet::create(width,height,format));
-		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height, TextureHandle(), std::vector<TextureHandle>{ color } });
-		frame_buffer_textures_.emplace(handle, std::vector<TextureHandle>{ color });
+		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,width,height,TextureHandle(), std::vector<FramebufferTexture>{ {color,0,0} } });
+		frame_buffer_textures_.emplace(handle, std::vector<FramebufferTexture>{ {color, 0, 0} });
 
 		return handle;
 	}
 
-	FrameBufferHandle Renderer::createFrameBuffer(std::vector<TextureHandle>& textures, TextureHandle depth_texture)
+	FrameBufferHandle Renderer::createFrameBuffer(std::vector<FramebufferTexture>& textures, TextureHandle depth_texture)
 	{
 		if (textures.empty())
 		{
@@ -218,11 +218,11 @@ namespace gfx {
 			return FrameBufferHandle();
 		}
 
-		uint16_t w = texture_data_.at(textures[0]).width, h = texture_data_.at(textures[0]).height;
+		uint16_t w = texture_data_.at(textures[0].handle).width, h = texture_data_.at(textures[0].handle).height;
 
 		for (auto& t : textures)
 		{
-			auto& tdata = texture_data_.at(t);
+			auto& tdata = texture_data_.at(t.handle);
 			if (tdata.width != w || tdata.height != h)
 			{
 				Warning("Framebuffer textures must be same size");
@@ -231,10 +231,10 @@ namespace gfx {
 		}
 		
 		FrameBufferHandle handle = frame_buffer_handle_.next();
-		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,w,h,depth_texture,textures});
+		submitPreFrameCommand(cmd::CreateFramebuffer{ handle,w,h,depth_texture,textures });
 		if (depth_texture.isValid())
 		{
-			textures.push_back(depth_texture);
+			textures.push_back({ depth_texture,0,0 });
 		}
 
 		frame_buffer_textures_.emplace(handle, std::move(textures));
@@ -382,10 +382,10 @@ namespace gfx {
 
 		for (auto& texture_handle : frame_buffer_textures_.at(handle))
 		{
-			submitPostFrameCommand(cmd::DeleteTexture{ texture_handle });
+			submitPostFrameCommand(cmd::DeleteTexture{ texture_handle.handle });
 
-			texture_data_.erase(texture_handle);
-			texture_handle_.release(texture_handle);
+			texture_data_.erase(texture_handle.handle);
+			texture_handle_.release(texture_handle.handle);
 		}
 		frame_buffer_textures_.erase(handle);
 	}
