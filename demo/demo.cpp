@@ -183,7 +183,7 @@ int main(int argc, char** argv)
     mr.params.metallicFactor = 0.0f;
     mr.params.roughnessFactor = 0.4f;
     Info("p0 = %f", mr.params._v[0].x);
-    exit(0);
+    
 
 
     Info("V_Init Start");
