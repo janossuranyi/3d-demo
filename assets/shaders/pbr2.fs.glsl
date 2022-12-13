@@ -167,11 +167,14 @@ vec4 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness)
     return vec4(F, spec);
 }
 
+float Gamma(vec3 c)
+{
+    return pow(c, 1.0/2.2);
+}
 float GammaIEC(float c)
 {
     return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055;
 }
-
 vec3 GammaIEC(vec3 c)
 {
     return vec3(
@@ -226,7 +229,7 @@ out vec4 FragColor;
 
 void main()
 {
-    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0));
+    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0) );
 
     inputs.texCoord = In.texcoord.xy;
     inputs.fragCoord = gl_FragCoord;
@@ -295,7 +298,7 @@ void main()
     }
 
     vec3 color = tonemap( inputs.out_color + ambient );
-    color = GammaIEC( color ) ;
+    color = Gamma( color ) ;
 
     FragColor = vec4(color, 1.0);
 }

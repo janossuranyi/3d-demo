@@ -7,11 +7,19 @@
 
 namespace gfx {
 
-	struct Material {};
+	enum MaterialType : uint {
+		Material_StandardPBR,
+		Material_None
+	};
+
+	struct Material {
+		MaterialType type;
+	};
 
 	// metallic roughness workflow
-	struct MRMaterial
+	struct Material_StandardPBR
 	{
+		MaterialType type;
 		int id;
 		AlphaMode alphaMode;
 		bool doubleSided;
@@ -40,14 +48,6 @@ namespace gfx {
 
 		bool valid() const;
 		inline String shaderId() const { return "PBR_MetallicRoughness"; }
-	};
-
-	// specular glossiness workflow
-	struct SGMaterial
-	{
-		String id;
-		constexpr bool valid() const { return false; };
-		inline String shaderId() const { return "PBR_SpecularGlossiness"; }
 	};
 
 	//using Material = std::variant<MRMaterial, SGMaterial>;

@@ -8,7 +8,7 @@ uint asuint(float x)
 {
     return floatBitsToUint(x);
 }
-vec4 unpackR8G8B8A8(uint value)
+vec4 unpackRGBA8(uint value)
 {
     return vec4(float((value >> uint(24)) & 255u), float((value >> uint(16)) & 255u), float((value >> uint(8)) & 255u), float(value & 255u)) / vec4(255.0);
 }
@@ -34,13 +34,13 @@ void main()
     vec4 localTangent;
     vec4 vtxCol;
     {
-        localPosition = in_Position;
-        localNormal = normalize( unpackR8G8B8A8( asuint( in_PackedInputs.x ) ).wzyx * 2.0 - 1.0 );
-        vec4 unpacked_tangent = unpackR8G8B8A8( asuint( in_PackedInputs.y ) ).wzyx;
-        localTangent.xyz = normalize( unpacked_tangent.xyz * 2.0 - 1.0 );
-        localTangent.xyz = normalize( localTangent.xyz - dot( localTangent.xyz, localNormal.xyz ) * localNormal.xyz );
-        localTangent.w = floor( unpacked_tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
-		vtxCol = unpackR8G8B8A8( asuint( in_PackedInputs.z ) ).wzyx;
+        localPosition           = in_Position;
+        localNormal             = normalize( unpackRGBA8( asuint( in_PackedInputs.x ) ).wzyx * 2.0 - 1.0 );
+        vec4 unpacked_tangent   = unpackRGBA8( asuint( in_PackedInputs.y ) ).wzyx;
+        localTangent.xyz        = normalize( unpacked_tangent.xyz * 2.0 - 1.0 );
+        localTangent.xyz        = normalize( localTangent.xyz - dot( localTangent.xyz, localNormal.xyz ) * localNormal.xyz );
+        localTangent.w          = floor( unpacked_tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
+		vtxCol                  = unpackRGBA8( asuint( in_PackedInputs.z ) ).wzyx;
     };
 
     gl_Position = g_mWorldViewProjection * localPosition ;
