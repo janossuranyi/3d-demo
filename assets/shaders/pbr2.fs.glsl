@@ -167,9 +167,9 @@ vec4 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness)
     return vec4(F, spec);
 }
 
-float Gamma(vec3 c)
+vec3 Gamma(vec3 c)
 {
-    return pow(c, 1.0/2.2);
+    return pow(c, vec3(1.0/2.2));
 }
 float GammaIEC(float c)
 {

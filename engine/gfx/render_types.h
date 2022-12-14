@@ -42,7 +42,6 @@ namespace gfx {
     // alpha mode
     enum class AlphaMode { Opaque, Mask, Blend };
 
-    enum class MaterialType {PBR_MetallicRoughness,PBR_SpecularGlossiness};
     // Renderer type
     enum class RendererType { Null, OpenGL };
 

@@ -1,5 +1,6 @@
 #include "engine/engine.h"
 #include <SDL.h>
+#include <iostream>
 #include <filesystem>
 #include <memory>
 #include <tiny_gltf.h>
@@ -187,5 +188,6 @@ int main(int argc, char** argv)
     App_EventLoop();
 
 	Info("Program terminated");
+
 	return 0;
 }
