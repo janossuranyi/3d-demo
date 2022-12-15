@@ -162,6 +162,8 @@ int main(int argc, char** argv)
     Model model;
     string err, warn;
 
+    Info("sizeof(Model)=%d", sizeof(Model));
+
     auto file = rc::ResourceManager::get_resource("models/scene.gltf");
     if (loader.LoadASCIIFromFile(&model, &err, &warn, file))
     {
@@ -175,6 +177,8 @@ int main(int argc, char** argv)
     {
         traverse_node(model, node, 0);
     }
+
+    exit(0);
 
     Info("V_Init Start");
 
