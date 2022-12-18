@@ -80,8 +80,8 @@ float ApproxPow ( float fBase, float fPower ) {
 }
 
 vec3 fresnelSchlick(vec3 F0, float cosTheta) {
-    return F0 + (1.0 - F0) * pow(saturate(1.0 - cosTheta), 5.0);
-}  
+    return F0 + (1.0 - F0) * ApproxPow(saturate(1.0 - cosTheta), 5.0);
+}
 
 /*
 vec3 fresnelSchlick ( vec3 f0, float costheta ) {
@@ -93,7 +93,7 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 vec3 ReconstructNormal( vec3 normalTS, bool isFrontFacing ) {
 	vec3 N = normalize(normalTS.xyz * 2.0 - 1.0);
     
-	N.z = sqrt( saturate( 1 - N.x * N.x - N.y * N.y ) );
+	// N.z = sqrt( saturate( 1 - N.x * N.x - N.y * N.y ) );
     
 	if ( isFrontFacing == false ) {
 		N.z = -N.z;
@@ -156,22 +156,25 @@ vec4 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness)
 	spec = m2 / ( PI * spec * spec + 1e-8 );  // <-- NDF
 
     // GeometrySmith
-    // float r = 1.0 + roughness;
-    // float k = (r*r) / 8.0;
+    float r = 1.0 + roughness;
+    float k = (r*r) / 8.0;
     // GeometrySchlickGGX
-	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
-	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
+	float Gv = saturate( dot( N, V ) ) * (1.0 - k) + k;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
 
     vec3 F = fresnelSchlick( F0, dot( H, V ) );
     return vec4(F, spec);
 }
 
+vec3 Gamma(vec3 c)
+{
+    return pow(c, vec3(1.0/2.2));
+}
 float GammaIEC(float c)
 {
     return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055;
 }
-
 vec3 GammaIEC(vec3 c)
 {
     return vec3(
@@ -226,7 +229,7 @@ out vec4 FragColor;
 
 void main()
 {
-    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0));
+    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0) );
 
     inputs.texCoord = In.texcoord.xy;
     inputs.fragCoord = gl_FragCoord;
@@ -295,7 +298,7 @@ void main()
     }
 
     vec3 color = tonemap( inputs.out_color + ambient );
-    color = GammaIEC( color ) ;
+    color = Gamma( color ) ;
 
     FragColor = vec4(color, 1.0);
 }

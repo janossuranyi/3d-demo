@@ -1,5 +1,6 @@
 #include "engine/engine.h"
 #include <SDL.h>
+#include <iostream>
 #include <filesystem>
 #include <memory>
 #include <tiny_gltf.h>
@@ -161,6 +162,8 @@ int main(int argc, char** argv)
     Model model;
     string err, warn;
 
+    Info("sizeof(Model)=%d", sizeof(Model));
+
     auto file = rc::ResourceManager::get_resource("models/scene.gltf");
     if (loader.LoadASCIIFromFile(&model, &err, &warn, file))
     {
@@ -188,5 +191,6 @@ int main(int argc, char** argv)
     App_EventLoop();
 
 	Info("Program terminated");
+
 	return 0;
 }
