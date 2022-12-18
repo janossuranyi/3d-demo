@@ -11,6 +11,7 @@ namespace gfx {
 
     using StateBits = uint64;
 
+    struct MaterialTag {};
     struct VertexLayoutTag {};
     struct VertexBufferTag {};
     struct TextureBufferTag {};
@@ -25,6 +26,7 @@ namespace gfx {
     struct FenceTag {};
     struct ShaderStorageBufferTag {};
 
+    using MaterialHandle = Handle<MaterialTag, -1>;
     using ShaderStorageBufferHandle = Handle< ShaderStorageBufferTag, -1>;
     using TextureBufferHandle = Handle<TextureBufferTag, -1>;
     using VertexLayoutHandle = Handle<VertexLayoutTag, -1>;
@@ -42,7 +44,7 @@ namespace gfx {
     // alpha mode
     enum class AlphaMode { Opaque, Mask, Blend };
 
-    enum class MaterialType {PBR_MetallicRoughness,PBR_SpecularGlossiness};
+    enum class MaterialWorkflow { MetallicRoughness, SpecularGlossiness };
     // Renderer type
     enum class RendererType { Null, OpenGL };
 

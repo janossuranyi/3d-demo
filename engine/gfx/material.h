@@ -7,51 +7,26 @@
 
 namespace gfx {
 
-	struct Material {};
-
-	// metallic roughness workflow
-	struct MRMaterial
-	{
-		int id;
-		AlphaMode alphaMode;
-		bool doubleSided;
-
-		/// <summary>
-		/// 0: baseColorTexture
-		/// 1: normal
-		/// 2: metallicRoughnessTexture
-		/// 3: emission
-		/// </summary>
-		Array<TextureBinding, 4> textures;
-		const char* sampler_names[4];
-		/// <summary>
-		/// [0]: r=alphaCutoff g=roughnessFactor, b=metallicFactor, baseColorFactor
-		/// </summary>
-		union {
-			struct {
-				float alphaCutoff;
-				float roughnessFactor;
-				float metallicFactor;
-				float pad0_;
-				vec4 baseColorFactor;
-			};
-			vec4 _v[2];
-		} params;
+	struct Material {
+		MaterialHandle id{};
+		MaterialWorkflow workflow{ MaterialWorkflow::MetallicRoughness };
+		AlphaMode alphaMode{ AlphaMode::Opaque };
+		bool doubleSided{ true };
+		String diffuseTexture;
+		String normalTexture;
+		String bumpTexture;
+		String emissionTexture;
+		float alphaCutoff{ 0.5f };
+		float roughnessScale{ 1.0f };
+		float metallicScale{ 1.0f };
+		vec4 baseColor{ 1.0f };
+		vec3 normalScale{ 1.0f };
+		vec2 uvScale{ 1.0f };
 
 		bool valid() const;
-		inline String shaderId() const { return "PBR_MetallicRoughness"; }
 	};
 
-	// specular glossiness workflow
-	struct SGMaterial
-	{
-		String id;
-		constexpr bool valid() const { return false; };
-		inline String shaderId() const { return "PBR_SpecularGlossiness"; }
-	};
-
-	//using Material = std::variant<MRMaterial, SGMaterial>;
-
+	inline bool Material::valid() const { return id.isValid(); }
 }
 
 #endif // !GFX_MATERIAL_H

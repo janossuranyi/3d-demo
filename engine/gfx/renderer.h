@@ -335,7 +335,7 @@ namespace gfx {
         uint vb_offset;
         uint vertex_count;
         uint instance_count{1};
-        PrimitiveType primitive_type;
+        PrimitiveType primitive_type{ PrimitiveType::Triangles };
         ProgramHandle program;
         VertexDecl vertexDecl;
         UniformMap uniforms;
@@ -347,7 +347,7 @@ namespace gfx {
         ushort scissor_w{ 0 };
         ushort scissor_h{ 0 };
 
-        StateBits state_bits;
+        StateBits state_bits{ 0 };
     };
     
     static_assert(alignof(RenderItem) == std::hardware_destructive_interference_size, "");
