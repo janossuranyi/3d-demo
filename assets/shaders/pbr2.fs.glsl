@@ -262,7 +262,7 @@ void main()
     inputs.normalTS = ReconstructNormal( inputs.normal.xyz, isFrontFacing );
     inputs.normal = GetWorldSpaceNormal( inputs.normal, inputs.invTS, isFrontFacing );
 
-    vec3 ambient = vec3(0.001) * inputs.albedo * inputs.occlusion;
+    vec3 ambient = vec3(0.03) * inputs.albedo * inputs.occlusion;
     vec4 tmp;
 
     inputs.out_color = vec3(0.0);
