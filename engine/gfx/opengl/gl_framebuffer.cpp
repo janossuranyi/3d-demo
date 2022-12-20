@@ -3,21 +3,13 @@
 #include "logger.h"
 
 namespace gfx {
-	void OpenGLRenderContext::operator()(const cmd::CreateOrUpdateFramebuffer& cmd)
+	void OpenGLRenderContext::operator()(const cmd::CreateFramebuffer& cmd)
 	{
+		auto res = frame_buffer_map_.find(cmd.handle);
+		if (res != std::end(frame_buffer_map_)) return;
 
 		FrameBufferData fb_data{};
-
-		if (frame_buffer_map_.count(cmd.handle) > 0)
-		{
-			fb_data = frame_buffer_map_.at(cmd.handle);
-		}
-		else
-		{
-			GL_CHECK(glGenFramebuffers(1, &fb_data.frame_buffer));
-		}
-
-		ushort old_width = fb_data.width, old_height = fb_data.height;
+		GL_CHECK(glGenFramebuffers(1, &fb_data.frame_buffer));
 
 		fb_data.width = cmd.width;
 		fb_data.height = cmd.height;
@@ -28,7 +20,7 @@ namespace gfx {
 		for (auto& fb_texture : cmd.textures)
 		{
 			const auto& gl_texture = texture_map_.find(fb_texture.handle);
-			assert(gl_texture != texture_map_.end());
+			assert(gl_texture != std::end(texture_map_));
 
 			draw_buffers.emplace_back(GL_COLOR_ATTACHMENT0 + attachment++);
 			GLuint target{};
@@ -43,9 +35,9 @@ namespace gfx {
 			GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), target, gl_texture->second.texture, fb_texture.level));
 		}
 
-		if ( ! cmd.textures.empty() )
+		if (!cmd.textures.empty())
 		{
-			GL_CHECK( glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()) );
+			GL_CHECK(glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
 		}
 
 		if (cmd.depth_stencil_texture.isValid())
@@ -54,8 +46,7 @@ namespace gfx {
 			// Stencil only
 			if (depth.format == TextureFormat::D0S8)
 			{
-				GL_CHECK(
-					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
 			}
 			// depth only
 			else if (
@@ -66,43 +57,76 @@ namespace gfx {
 				depth.format == TextureFormat::D32 ||
 				depth.format == TextureFormat::D32F)
 			{
-				GL_CHECK(
-					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
 			}
 			else // depth+stencil
 			{
-				GL_CHECK(
-					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
 			}
 		}
-		else if (old_height != fb_data.height || old_width != fb_data.width)
+		else
 		{
-			if (!fb_data.depth_render_buffer)
-			{
-				// Create depth buffer.
-				GL_CHECK( glGenRenderbuffers(1, &fb_data.depth_render_buffer) );
-			}
-			GL_CHECK(
-				glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
-			GL_CHECK(
-				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
-			GL_CHECK(
-				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
-				fb_data.depth_render_buffer));
+			GL_CHECK(glGenRenderbuffers(1, &fb_data.depth_render_buffer));
+			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
+			GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
+			GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb_data.depth_render_buffer));
 		}
 
 		// Check frame buffer status.
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER); GLC();
-		if (status != GL_FRAMEBUFFER_COMPLETE) {
+		if (status != GL_FRAMEBUFFER_COMPLETE)
+		{
 			Error("[CreateFrameBuffer] The framebuffer is not complete. Status: 0x%x", status);
 		}
 
 		// Unbind.
-		GL_CHECK(
-			glBindFramebuffer(GL_FRAMEBUFFER, 0));
+		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
 		// Add to map.
 		frame_buffer_map_.emplace(cmd.handle, fb_data);
+
+	}
+
+	void OpenGLRenderContext::operator()(const cmd::UpdateFramebuffer& cmd)
+	{
+		auto res = frame_buffer_map_.find(cmd.handle);
+		if (res == std::end(frame_buffer_map_)) return;
+
+		auto& fb_data = res->second;
+		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+
+		if ( ! cmd.textures.empty() )
+		{
+			int attachment{ -1 };
+			for (auto& fb_texture : cmd.textures)
+			{
+				++attachment;
+				if ( ! fb_texture.handle.isValid() ) continue;
+				const auto& gl_texture = texture_map_.find(fb_texture.handle);
+				assert( gl_texture != std::end(texture_map_) );
+
+				GLuint target{};
+				if ( gl_texture->second.target == GL_TEXTURE_2D )
+				{
+					target = GL_TEXTURE_2D;
+				}
+				else if ( gl_texture->second.target == GL_TEXTURE_CUBE_MAP )
+				{
+					target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + fb_texture.face;
+				}
+				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment, target, gl_texture->second.texture, fb_texture.level));
+				fb_data.textures[attachment] = gl_texture->first;
+			}
+		}
+
+		if ((cmd.width > 0 && cmd.width != fb_data.width) || (cmd.height > 0 && cmd.height != fb_data.height) && fb_data.depth_render_buffer)
+		{
+			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
+			GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
+			GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb_data.depth_render_buffer));
+			fb_data.width = cmd.width;
+			fb_data.height = cmd.height;
+		}
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteFramebuffer& cmd)

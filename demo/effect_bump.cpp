@@ -25,7 +25,7 @@ bool BumpEffect::Init()
         "WoodenPlanks01_2048"
     };
     
-    int bn = 0;
+    int bn = 3;
 
     diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".ktx2");
     normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.ktx2");

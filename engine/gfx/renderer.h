@@ -212,10 +212,16 @@ namespace gfx {
             TextureHandle handle;
         };
 
-        struct CreateOrUpdateFramebuffer {
+        struct CreateFramebuffer {
             FrameBufferHandle handle;
             uint16 width, height;
             TextureHandle depth_stencil_texture;
+            Vector<FramebufferTexture> textures;
+        };
+
+        struct UpdateFramebuffer {
+            FrameBufferHandle handle;
+            uint16 width, height;
             Vector<FramebufferTexture> textures;
         };
 
@@ -250,7 +256,7 @@ namespace gfx {
         cmd::CreateIndexBuffer,
         cmd::CreateProgram,
         cmd::LinkProgram,
-        cmd::CreateOrUpdateFramebuffer,
+        cmd::CreateFramebuffer,
         cmd::CreateShader,
         cmd::CreateTexture1D,
         cmd::CreateTexture2D,
@@ -270,6 +276,7 @@ namespace gfx {
         cmd::DeleteFence,
         cmd::CreateTextureBuffer,
         cmd::UpdateTextureBuffer,
+        cmd::UpdateFramebuffer,
         cmd::DeleteTextureBuffer,
         cmd::CreateBufferTexture,
         cmd::CreateShaderStorageBuffer,

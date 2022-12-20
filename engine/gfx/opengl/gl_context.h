@@ -83,7 +83,8 @@ namespace gfx {
 		void operator()(const cmd::CreateTexture& cmd);
 		void operator()(const cmd::CreateTextureCubeMap& cmd);
 		void operator()(const cmd::DeleteTexture& cmd);
-		void operator()(const cmd::CreateOrUpdateFramebuffer& cmd);
+		void operator()(const cmd::CreateFramebuffer& cmd);
+		void operator()(const cmd::UpdateFramebuffer& cmd);
 		void operator()(const cmd::DeleteFramebuffer& cmd);
 		void operator()(const cmd::CreateConstantBuffer& cmd);
 		void operator()(const cmd::UpdateConstantBuffer& cmd);
