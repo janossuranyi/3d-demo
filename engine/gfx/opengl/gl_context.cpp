@@ -332,8 +332,8 @@ namespace gfx {
 
 		if (glVersion_ < 450)
 		{
-			Warning("GL_VERSION < 4.5");
-			//return false;
+			Error("GL_VERSION < 4.5");
+			return false;
 		}
 
 		SDL_version ver;

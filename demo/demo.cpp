@@ -17,6 +17,7 @@
 
 #include "engine/gfx/image.h"
 #include "engine/gfx/material.h"
+#include "engine/resource//allocator.h"
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -148,7 +149,6 @@ void traverse_node(tinygltf::Model const& model, int node, int level = 0)
 
 int main(int argc, char** argv)
 {
-
     rc::FileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
 
     rc::ResourceManager::add_resource_path("../assets/shaders");

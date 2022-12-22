@@ -93,7 +93,7 @@ namespace gfx {
 		if (res == std::end(frame_buffer_map_)) return;
 
 		auto& fb_data = res->second;
-		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+		//GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
 
 		if ( ! cmd.textures.empty() )
 		{
@@ -102,28 +102,19 @@ namespace gfx {
 			{
 				++attachment;
 				if ( ! fb_texture.handle.isValid() ) continue;
-				const auto& gl_texture = texture_map_.find(fb_texture.handle);
+				const auto gl_texture = texture_map_.find(fb_texture.handle);
 				assert( gl_texture != std::end(texture_map_) );
 
-				GLuint target{};
-				if ( gl_texture->second.target == GL_TEXTURE_2D )
-				{
-					target = GL_TEXTURE_2D;
-				}
-				else if ( gl_texture->second.target == GL_TEXTURE_CUBE_MAP )
-				{
-					target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + fb_texture.face;
-				}
-				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment, target, gl_texture->second.texture, fb_texture.level));
+				GL_CHECK(glNamedFramebufferTexture(fb_data.frame_buffer, GL_COLOR_ATTACHMENT0 + attachment, gl_texture->second.texture, fb_texture.level));
 				fb_data.textures[attachment] = gl_texture->first;
 			}
 		}
 
 		if ((cmd.width > 0 && cmd.width != fb_data.width) || (cmd.height > 0 && cmd.height != fb_data.height) && fb_data.depth_render_buffer)
 		{
-			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
-			GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
-			GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb_data.depth_render_buffer));
+			//GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
+			GL_CHECK(glNamedRenderbufferStorage(fb_data.depth_render_buffer, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
+			GL_CHECK(glNamedFramebufferRenderbuffer(fb_data.depth_render_buffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb_data.depth_render_buffer));
 			fb_data.width = cmd.width;
 			fb_data.height = cmd.height;
 		}
