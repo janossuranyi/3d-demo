@@ -366,8 +366,8 @@ namespace gfx {
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_PORTABILITY_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 			
-			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
-			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 
 		}
 #endif
@@ -443,26 +443,11 @@ namespace gfx {
 	{
 		for (auto j = 0; j < n; ++j)
 		{
-			if (textures[j].handle.isValid())
+			if (textures[j].handle.isValid() && active_textures_[j] != textures[j].handle)
 			{
-				if (active_textures_[j] != textures[j].handle)
-				{
-					active_textures_[j] = textures[j].handle;
-					const TextureData& tdata = texture_map_.at(textures[j].handle);
-					if (gl_version_450_ || ext_.ARB_direct_state_access)
-					{
-						GL_CHECK(glBindTextureUnit(j, tdata.texture));
-					}
-					else if (ext_.EXT_direct_state_access)
-					{
-						GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + j, tdata.target, tdata.texture));
-					}
-					else
-					{
-						GL_CHECK(glActiveTexture(GL_TEXTURE0 + j));
-						GL_CHECK(glBindTexture(tdata.target, tdata.texture));
-					}
-				}
+				active_textures_[j] = textures[j].handle;
+				const TextureData& tdata = texture_map_.at(textures[j].handle);
+				GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + j, tdata.target, tdata.texture));
 			}
 		}
 	}
@@ -521,7 +506,7 @@ namespace gfx {
 				}
 				if (item->barrier_bits)
 				{
-					GLbitfield bits = MapBarrierBits(item->barrier_bits);
+					GLbitfield const bits = MapBarrierBits(item->barrier_bits);
 					GL_CHECK(glMemoryBarrier(bits));
 				}
 				continue;
@@ -699,61 +684,32 @@ namespace gfx {
 				bool layout_change = false;
 				if (vb_change)
 				{
-					if (gl_version_430_ || ext_.ARB_vertex_attrib_binding)
-					{
-						/* change layout if needed */
-						if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
-						{
-							active_vertex_decl_ = item->vertexDecl;
-							active_vertex_layout_ = item->vertexDecl.handle();
-							GLuint const vao = vertex_array_map_.at(item->vertexDecl.handle());
-							GL_CHECK(glBindVertexArray(vao));
-							layout_change = true;
-						}
-
-						for (uint j = 0; j < active_vertex_decl_.size(); ++j)
-						{
-							const auto& attr = active_vertex_decl_[j];
-							if (active_vbs_[attr.binding] == item->vbs[attr.binding]) { continue; };
-
-							const auto& binding = item->vbs[attr.binding];
-							if (binding.handle.isValid())
-							{
-								const auto& vb_data = vertex_buffer_map_.at(binding.handle);
-								GL_CHECK(glBindVertexBuffer(attr.binding, vb_data.buffer, binding.offset, attr.stride));
-								if (layout_change)
-								{
-									GL_CHECK(glVertexBindingDivisor(attr.binding, attr.divisor));
-								}
-								active_vbs_[attr.binding] = item->vbs[attr.binding];
-							}
-						}
-					}
-					else
+					/* change layout if needed */
+					if (!item->vertexDecl.empty() && active_vertex_layout_ != item->vertexDecl.handle())
 					{
 						active_vertex_decl_ = item->vertexDecl;
-						ushort active_binding = 0xffff;
-						for (uint j = 0; j < active_vertex_decl_.size(); ++j)
+						active_vertex_layout_ = item->vertexDecl.handle();
+						GLuint const vao = vertex_array_map_.at(item->vertexDecl.handle());
+						GL_CHECK(glBindVertexArray(vao));
+						layout_change = true;
+					}
+
+					for (uint j = 0; j < active_vertex_decl_.size(); ++j)
+					{
+						const auto& attr = active_vertex_decl_[j];
+						if (active_vbs_[attr.binding] == item->vbs[attr.binding]) { continue; };
+
+						const auto& binding = item->vbs[attr.binding];
+						if (binding.handle.isValid())
 						{
-							const auto& attr = active_vertex_decl_[j];
-							if (attr.binding != active_binding)
+							const auto& vb_data = vertex_buffer_map_.at(binding.handle);
+							GL_CHECK(glBindVertexBuffer(attr.binding, vb_data.buffer, binding.offset, attr.stride));
+							if (layout_change)
 							{
-								active_binding = attr.binding;
-								const auto& binding = item->vbs[attr.binding];
-								if (binding.handle.isValid())
-								{
-									const auto& vb_data = vertex_buffer_map_.at(binding.handle);
-									GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vb_data.buffer));
-									active_vbs_[attr.binding] = item->vbs[attr.binding];
-								}
+								GL_CHECK(glVertexBindingDivisor(attr.binding, attr.divisor));
 							}
-							const GLenum type = MapAttribType(attr.type);
-							if (attr.enabled) GL_CHECK(glEnableVertexAttribArray(j));
-							else GL_CHECK(glDisableVertexAttribArray(j));
-							GL_CHECK(glVertexAttribPointer(j, attr.count, type, (attr.normalized ? GL_TRUE : GL_FALSE), attr.stride, reinterpret_cast<void*>(attr.offset)));
-							GL_CHECK(glVertexAttribDivisor(j, attr.divisor));
+							active_vbs_[attr.binding] = item->vbs[attr.binding];
 						}
-						//GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
 					}
 				}
 

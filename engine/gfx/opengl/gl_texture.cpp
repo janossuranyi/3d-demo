@@ -25,15 +25,14 @@ namespace gfx {
 
 		GLuint texture;
 		const GLenum target = GL_TEXTURE_BUFFER;
-		GL_CHECK(glGenTextures(1, &texture));
-		GL_CHECK(glBindTexture(target, texture));
+		GL_CHECK(glCreateTextures(target, 1, &texture));
 		auto& texinfo = s_texture_format[static_cast<int>(cmd.format)];
 		if (cmd.size == 0) {
-			glTexBuffer(target, texinfo.internal_format, texBuf->second.buffer);
+			glTextureBuffer(texture, texinfo.internal_format, texBuf->second.buffer);
 		}
 		else {
 			assert((cmd.offset & (gl_texture_buffer_offset_alignment_ - 1)) == 0);
-			glTexBufferRange(target, texinfo.internal_format, texBuf->second.buffer, cmd.offset, cmd.size);
+			glTextureBufferRange(texture, texinfo.internal_format, texBuf->second.buffer, cmd.offset, cmd.size);
 		}
 
 		texture_map_.emplace(cmd.htexture, TextureData{ texture, target, cmd.format });

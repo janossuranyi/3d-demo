@@ -30,7 +30,7 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<BumpEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<EngineTestEffect>();
 
     if (!activeEffect->Init())
         return;

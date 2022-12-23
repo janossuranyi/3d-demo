@@ -5,7 +5,7 @@
 namespace gfx {
 	void OpenGLRenderContext::operator()(const cmd::DeleteVertexLayout& cmd)
 	{
-		auto& vao = vertex_array_map_.find(cmd.handle);
+		auto vao = vertex_array_map_.find(cmd.handle);
 		if (vao == std::end(vertex_array_map_))
 		{
 			return;
