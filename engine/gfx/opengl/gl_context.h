@@ -63,7 +63,8 @@ namespace gfx {
 		int blue_bits() const override;
 		int depth_bits() const override;
 		int stencil_bits() const override;
-
+		int uniform_offset_aligment() const override;
+		
 		void operator()(const cmd::CreateBufferTexture& cmd);
 		void operator()(const cmd::DeleteVertexLayout& cmd);
 		void operator()(const cmd::CreateVertexLayout& cmd);
@@ -119,6 +120,7 @@ namespace gfx {
 			GLuint buffer;
 			uint size;
 			BufferUsage usage;
+			void* mapped_address;
 		};
 
 		struct VertexBufferData {
@@ -217,6 +219,7 @@ namespace gfx {
 		bool scissor_test_{ false };
 		int active_vertex_attribs_{ 0 };
 		GLuint temp_;
+		GLint gl_uniform_buffer_offset_alignment_;
 		GLint gl_texture_buffer_offset_alignment_;
 		GLint gl_max_shader_storage_block_size_;
 		GLint gl_max_uniform_block_size_;
@@ -225,20 +228,14 @@ namespace gfx {
 		void setup_uniforms(ProgramData& program_data, const UniformMap& uniforms);
 		void setup_textures(const TextureBinding* textures, size_t n);
 
-		bool gl_version_430_{};
-		bool gl_version_440_{};
-		bool gl_version_450_{};
-
-		// extension exists cache
-		struct {
-			bool ARB_vertex_attrib_binding{};
-			bool ARB_direct_state_access{};
-			bool EXT_direct_state_access{};
-		} ext_;
-
 		Vector<GLint> compressedFormats_;
 		GLuint create_buffer_real(GLenum target, BufferUsage usage, uint pixelByteSize, const Memory data, uint& actualSize);
 		void update_buffer_real(GLenum target, GLuint buffer, uint offset, uint pixelByteSize, const Memory data);
 		GLenum KTX_load_texture(const cmd::CreateTexture& cmd, ktxTexture* kTexture, GLuint& texture);
+
+		int max_state_change_{};
+		int max_texture_change_{};
+		int max_program_change_{};
+		int max_vb_change_{};
 	};
 }

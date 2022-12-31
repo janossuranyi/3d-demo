@@ -16,6 +16,11 @@ bool BumpEffect::Init()
     auto vc     = ctx::Context::default()->vertexCache();
     auto sm     = ctx::Context::default()->shaderManager();
 
+    const size_t ubo_aligment = static_cast<unsigned long long>(hwr->getUniformOffsetAligment()) - 1;
+    freqLow_vertexUniforms_offset = (sizeof(freqHigh_vertexUniforms_) + ubo_aligment) & ~ubo_aligment;
+    freqLow_fragmentUniforms_offset = freqLow_vertexUniforms_offset + sizeof(freqLow_vertexUniforms_);
+    freqLow_fragmentUniforms_offset = (freqLow_fragmentUniforms_offset + ubo_aligment) & ~ubo_aligment;
+
     bool no_srgb = false;
 
     String base_name[] = {
@@ -25,7 +30,7 @@ bool BumpEffect::Init()
         "WoodenPlanks01_2048"
     };
     
-    int bn = 3;
+    int bn = 1;
 
     diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".ktx2");
     normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.ktx2");
@@ -125,7 +130,12 @@ bool BumpEffect::Init()
         sizeof(LightInfoBlock),
         gfx::BufferUsage::Dynamic,
         gfx::Memory(&lightInfo_.g_lights[0], sizeof(Light) * numLights_));
-    
+
+    uniforms_ubo_ = hwr->createConstantBuffer(
+        16 * 1024,
+        gfx::BufferUsage::Dynamic,
+        gfx::Memory{});
+
     SDL_SetRelativeMouseMode(SDL_TRUE);
     cam_.MouseSensitivity = 0.1;
 
@@ -190,6 +200,19 @@ bool BumpEffect::Render(uint64_t frame)
     gfx::VertexBufferHandle vb = vc->getVertexBuffer<gfx::DrawVert>(vcache, voffset, vsize);
     gfx::IndexBufferHandle ib = vc->getIndexBuffer<ushort>(icache, ioffset, isize);
 
+    if (firstframe_)
+    {
+        hwr->setConstBuffer(0, 0, lightInfoBuffer_, 0, sizeof(Light)*3);
+        hwr->setConstBuffer(0, 1, uniforms_ubo_, 0, sizeof(freqHigh_vertexUniforms_));
+        hwr->setConstBuffer(0, 2, uniforms_ubo_, freqLow_vertexUniforms_offset, sizeof(freqLow_vertexUniforms_));
+        hwr->setConstBuffer(0, 3, uniforms_ubo_, freqLow_fragmentUniforms_offset, sizeof(freqLow_fragmentUniforms_));
+        uniforms_["samp_basecolor"] = 0;
+        uniforms_["samp_normal"] = 1;
+        uniforms_["samp_pbr"] = 2;
+        firstframe_ = false;
+    }
+
+
     mat4 V(1.0f);
     mat4 W(1.0f);
     mat4 P(1.0f);
@@ -198,29 +221,30 @@ bool BumpEffect::Render(uint64_t frame)
 
     vec2 screenSize = hwr->getFramebufferSize();
 
+    freqLow_vertexUniforms_.vieworigin = vec4(cam_.Position, 1.0);
+    hwr->updateConstantBuffer(0, uniforms_ubo_, gfx::Memory(&freqLow_vertexUniforms_, sizeof(freqLow_vertexUniforms_)), freqLow_vertexUniforms_offset);
+
+    freqLow_fragmentUniforms_.lightpower = vec4(lpower_);
+    freqLow_fragmentUniforms_.lightoffset = vec4(lpos_, 1.0f);
+    freqLow_fragmentUniforms_.numlights.x = float(numLights_);
+    freqLow_fragmentUniforms_.vieworigin = vec4(cam_.Position, 1.0);
+    hwr->updateConstantBuffer(0, uniforms_ubo_, gfx::Memory(&freqLow_fragmentUniforms_, sizeof(freqLow_fragmentUniforms_)), freqLow_fragmentUniforms_offset);
+
     V = cam_.GetViewMatrix();
 
     W = glm::rotate(W, glm::radians(rot_.x), vec3(1, 0, 0));
     W = glm::rotate(W, glm::radians(rot_.y), vec3(0, 1, 0));
     W = glm::rotate(W, glm::radians(rot_.z), vec3(0, 0, 1));
 
-    P = glm::perspective(45.0f, screenSize.x / screenSize.y, 0.1f, 100.0f);
+    P = glm::perspective(glm::radians(75.0f), screenSize.x / screenSize.y, 0.1f, 100.0f);
     N = glm::transpose(glm::inverse(mat3(W)));
     //N = mat3(W);
 
     WVP = P * V * W;
-    vec3 lightColor = vec3(1.0f) * lpower_;
 
-    uniforms_["g_mWorldViewProjection"] = WVP;
-    uniforms_["g_mWorldTransform"]      = W;
-    uniforms_["g_mNormalTransform"]     = N;
-    uniforms_["g_vViewPosition"]        = vec4(cam_.Position, 1.0);
-    uniforms_["g_iNumlights"] = int(numLights_);
-    uniforms_["g_fLightPower"]  = lpower_;
-    uniforms_["g_vLightOffset"] = lpos_;
-    uniforms_["samp_basecolor"] = 0;
-    uniforms_["samp_normal"]    = 1;
-    uniforms_["samp_pbr"]       = 2;
+    freqHigh_vertexUniforms_.mvpmatrix = WVP;
+    freqHigh_vertexUniforms_.normalmatrix = mat4(N);
+    hwr->updateConstantBuffer(uniforms_ubo_, gfx::Memory(&freqHigh_vertexUniforms_, sizeof(freqHigh_vertexUniforms_)), 0);
 
     hwr->setClearBits(0, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
     hwr->setClearColor(0, vec4(0.4f, 0.4f, 0.4f, 1));
@@ -236,7 +260,6 @@ bool BumpEffect::Render(uint64_t frame)
     hwr->setTexture(bump_, 2);
     hwr->setUniforms(uniforms_);
 
-    hwr->setConstBuffer(0, 0, lightInfoBuffer_);
     hwr->submit(0, shader_, isize, voffset, ioffset*2);
 
     for (int l = 0; l < numLights_; ++l)
@@ -247,17 +270,9 @@ bool BumpEffect::Render(uint64_t frame)
         N = glm::transpose(glm::inverse(mat3(W)));
         WVP = P * V * W;
 
-        uniforms_["g_mWorldViewProjection"] = WVP;
-        uniforms_["g_mWorldTransform"] = W;
-        uniforms_["g_mNormalTransform"] = N;
-        uniforms_["g_vViewPosition"] = vec4(cam_.Position, 1.0);
-        uniforms_["g_fLightPower"] = lpower_;
-        uniforms_["g_iNumlights"] = 1;
-        uniforms_["g_vLightOffset"] = lpos_;
-        uniforms_["samp_basecolor"] = 0;
-        uniforms_["samp_normal"] = 1;
-        uniforms_["samp_pbr"] = 2;
-
+        freqHigh_vertexUniforms_.mvpmatrix = WVP;
+        freqHigh_vertexUniforms_.normalmatrix = mat4(N);
+        hwr->updateConstantBuffer(uniforms_ubo_, gfx::Memory(&freqHigh_vertexUniforms_, sizeof(freqHigh_vertexUniforms_)), 0);
 
         hwr->setRenderState(gfx::GLS_DEPTHFUNC_LESS);
         hwr->setVertexBuffer(vb);
@@ -267,9 +282,8 @@ bool BumpEffect::Render(uint64_t frame)
         hwr->setTexture(diffuse_, 0);
         hwr->setTexture(normal_, 1);
         hwr->setTexture(bump_, 2);
-        hwr->setUniforms(uniforms_);
+        //hwr->setUniforms(uniforms_);
 
-        hwr->setConstBuffer(1, 0, lightInfoBuffer_);
         hwr->setClearBits(1, 0);
         hwr->setFrameBuffer(1, gfx::FrameBufferHandle{ 0 });
 

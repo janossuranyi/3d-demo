@@ -9,12 +9,13 @@ namespace gfx {
 		if (res != std::end(frame_buffer_map_)) return;
 
 		FrameBufferData fb_data{};
-		GL_CHECK(glGenFramebuffers(1, &fb_data.frame_buffer));
+		GL_CHECK(glCreateFramebuffers(1, &fb_data.frame_buffer));
 
 		fb_data.width = cmd.width;
 		fb_data.height = cmd.height;
 
-		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+		GLuint fb = fb_data.frame_buffer;
+		//GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
 		std::vector<GLenum> draw_buffers;
 		int attachment{ 0 };
 		for (auto& fb_texture : cmd.textures)
@@ -32,12 +33,17 @@ namespace gfx {
 			{
 				target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + fb_texture.face;
 			}
-			GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, draw_buffers.back(), target, gl_texture->second.texture, fb_texture.level));
+			GL_CHECK(glNamedFramebufferTexture(fb, draw_buffers.back(), gl_texture->second.texture, fb_texture.level));
 		}
 
 		if (!cmd.textures.empty())
 		{
-			GL_CHECK(glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
+			GL_CHECK(glNamedFramebufferDrawBuffers(fb, static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
+		}
+		else
+		{
+			glDrawBuffer(GL_NONE);
+			glReadBuffer(GL_NONE);
 		}
 
 		if (cmd.depth_stencil_texture.isValid())
@@ -46,7 +52,7 @@ namespace gfx {
 			// Stencil only
 			if (depth.format == TextureFormat::D0S8)
 			{
-				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+				GL_CHECK(glNamedFramebufferTexture(fb, GL_STENCIL_ATTACHMENT, depth.texture, 0));
 			}
 			// depth only
 			else if (
@@ -57,11 +63,11 @@ namespace gfx {
 				depth.format == TextureFormat::D32 ||
 				depth.format == TextureFormat::D32F)
 			{
-				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+				GL_CHECK(glNamedFramebufferTexture(fb, GL_DEPTH_ATTACHMENT, depth.texture, 0));
 			}
 			else // depth+stencil
 			{
-				GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth.texture, 0));
+				GL_CHECK(glNamedFramebufferTexture(fb, GL_DEPTH_STENCIL_ATTACHMENT, depth.texture, 0));
 			}
 		}
 		else
@@ -69,18 +75,18 @@ namespace gfx {
 			GL_CHECK(glGenRenderbuffers(1, &fb_data.depth_render_buffer));
 			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, fb_data.depth_render_buffer));
 			GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cmd.width, cmd.height));
-			GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb_data.depth_render_buffer));
+			GL_CHECK(glNamedFramebufferRenderbuffer(fb, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb_data.depth_render_buffer));
 		}
 
 		// Check frame buffer status.
-		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER); GLC();
+		GLenum status = glCheckNamedFramebufferStatus(fb, GL_FRAMEBUFFER); GLC();
 		if (status != GL_FRAMEBUFFER_COMPLETE)
 		{
 			Error("[CreateFrameBuffer] The framebuffer is not complete. Status: 0x%x", status);
 		}
 
 		// Unbind.
-		GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+		// GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
 		// Add to map.
 		frame_buffer_map_.emplace(cmd.handle, fb_data);

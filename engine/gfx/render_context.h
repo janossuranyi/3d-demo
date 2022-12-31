@@ -24,6 +24,7 @@ namespace gfx {
 		virtual int blue_bits() const = 0;
 		virtual int depth_bits() const = 0;
 		virtual int stencil_bits() const = 0;
+		virtual int uniform_offset_aligment() const = 0;
 		
 
 	};

@@ -65,6 +65,7 @@ namespace gfx {
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, mag_filter));
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_T, wrap));
+		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_LOD_BIAS, 0));
 
 
 		if (cmd.automipmap)
@@ -128,7 +129,8 @@ namespace gfx {
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, mag_filter));
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_T, wrap));
-		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_MAX_ANISOTROPY, 16));
+		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_LOD_BIAS, 0));
+		GL_CHECK(glTextureParameterf(texture, GL_TEXTURE_MAX_ANISOTROPY, GLfloat(cmd.max_aniso)));
 
 		if (cmd.automipmap)
 		{
@@ -274,7 +276,8 @@ namespace gfx {
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_T, wrap));
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_R, wrap));
-		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_MAX_ANISOTROPY, 16));
+		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_LOD_BIAS, 0));
+		GL_CHECK(glTextureParameterf(texture, GL_TEXTURE_MAX_ANISOTROPY, GLfloat(cmd.max_aniso)));
 
 		const TextureData t_data{ texture, target, TextureFormat::RGBA8 };
 
@@ -321,7 +324,8 @@ namespace gfx {
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_S, wrap));
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_T, wrap));
 		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_WRAP_R, wrap));
-		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_MAX_ANISOTROPY, 16));
+		GL_CHECK(glTextureParameteri(texture, GL_TEXTURE_LOD_BIAS, 0));
+		GL_CHECK(glTextureParameterf(texture, GL_TEXTURE_MAX_ANISOTROPY, 1.0f));
 
 		const TextureData t_data{ texture, target, cmd.data[0].format() };
 		texture_map_.emplace(cmd.handle, t_data);

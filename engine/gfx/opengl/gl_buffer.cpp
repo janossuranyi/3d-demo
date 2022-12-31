@@ -15,14 +15,12 @@ namespace gfx {
 
 
 		const GLsizeiptr _size = std::max(data.size(), size_t(size));
-
-		assert(ext_.EXT_direct_state_access);
-
-		GL_CHECK(glGenBuffers(1, &buffer));
-		GL_CHECK(glNamedBufferDataEXT(buffer, _size, nullptr, _usage));
+		GL_CHECK(glCreateBuffers(1, &buffer));
+//		GL_CHECK(glNamedBufferData(buffer, _size, nullptr, _usage));
+		GL_CHECK(glNamedBufferStorage(buffer, _size, nullptr, GL_DYNAMIC_STORAGE_BIT|GL_MAP_WRITE_BIT| GL_MAP_PERSISTENT_BIT| GL_MAP_COHERENT_BIT));
 		if (!data.empty())
 		{
-			GL_CHECK(glNamedBufferSubDataEXT(buffer, 0, data.size(), data.data()));
+			GL_CHECK(glNamedBufferSubData(buffer, 0, data.size(), data.data()));
 		}
 		actualSize = _size;
 		return buffer;
@@ -32,7 +30,7 @@ namespace gfx {
 	{
 		const GLsizeiptr size_ = pixelByteSize > 0 ? GLsizeiptr(pixelByteSize) : data.size();
 
-		GL_CHECK(glNamedBufferSubDataEXT(buffer, GLintptr(offset), GLsizeiptr(size_), data.data()));
+		GL_CHECK(glNamedBufferSubData(buffer, GLintptr(offset), GLsizeiptr(size_), data.data()));
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateShaderStorageBuffer& cmd)
@@ -210,8 +208,10 @@ namespace gfx {
 
 		uint _size = cmd.size;
 		const GLuint buffer = create_buffer_real(GL_UNIFORM_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
-
-		constant_buffer_map_.emplace(cmd.handle, ConstantBufferData{ buffer, _size, cmd.usage });
+		
+		void* addr{};
+		//GL_CHECK(addr = glMapNamedBufferRange(buffer, 0, _size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT| GL_MAP_COHERENT_BIT));
+		constant_buffer_map_.emplace(cmd.handle, ConstantBufferData{ buffer, _size, cmd.usage, addr });
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::UpdateConstantBuffer& cmd)
@@ -224,7 +224,14 @@ namespace gfx {
 			return;
 
 		const auto& data = result->second;
-		update_buffer_real(GL_UNIFORM_BUFFER, data.buffer, cmd.offset, cmd.size, cmd.data);
+		if (data.mapped_address)
+		{
+			std::memcpy(reinterpret_cast<char*>( data.mapped_address ) + cmd.offset, cmd.data.data(), cmd.size > 0 ? cmd.size : cmd.data.size());
+		}
+		else
+		{
+			update_buffer_real(GL_UNIFORM_BUFFER, data.buffer, cmd.offset, cmd.size, cmd.data);
+		}
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::DeleteConstantBuffer& cmd)

@@ -38,7 +38,9 @@ private:
 	gfx::vtxCacheHandle vcache;
 	gfx::vtxCacheHandle icache;
 	gfx::ConstantBufferHandle lightInfoBuffer_;
+	gfx::ConstantBufferHandle uniforms_ubo_;
 
+	bool firstframe_{true};
 	vec2 yawPitch_;
 	vec3 rot_;
 	vec3 lpos_{0};
@@ -51,5 +53,24 @@ private:
 	float vZ_;
 
 	scene::Camera cam_{ vec3(0,1,2) };
+
+	struct {
+		mat4 mvpmatrix;
+		mat4 normalmatrix;
+	} freqHigh_vertexUniforms_;
+
+	struct {
+		vec4 vieworigin;
+	} freqLow_vertexUniforms_;
+
+	struct {
+		vec4 lightoffset;
+		vec4 numlights;
+		vec4 lightpower;
+		vec4 vieworigin;
+	} freqLow_fragmentUniforms_;
+
+	size_t freqLow_vertexUniforms_offset{};
+	size_t freqLow_fragmentUniforms_offset{};
 
 };

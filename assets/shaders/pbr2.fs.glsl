@@ -208,14 +208,20 @@ struct lightingInput_t
 uniform sampler2D samp_basecolor;
 uniform sampler2D samp_normal;
 uniform sampler2D samp_pbr;
-uniform vec3    g_vLightOffset;
-uniform int     g_iNumlights;
-uniform float   g_fLightPower;
 
 layout(std140, binding = 0) uniform LightInfoBlock
 {   
-    light_t g_lights[256];
+    light_t g_lights[32];
 };
+
+layout(std140, binding = 3) uniform freqLow_fragmentUniforms_ubo
+{
+    vec4 g_vLightOffset;
+    vec4 g_iNumlights;
+    vec4 g_fLightPower;
+    vec4 g_vViewPosition;
+
+} freqLow_fragmentUniforms;
 
 in INTERFACE {
     vec4 normal;
@@ -233,7 +239,7 @@ void main()
 
     inputs.texCoord = In.texcoord.xy;
     inputs.fragCoord = gl_FragCoord;
-    inputs.position = In.position.xyz;
+    inputs.position = In.position.xyz ;
 
     {
         vec3 inNormal = normalize(In.normal.xyz);
@@ -267,13 +273,13 @@ void main()
 
     inputs.out_color = vec3(0.0);
 
-    for(int lightIdx = 0; lightIdx < g_iNumlights; ++lightIdx)
+    for(int lightIdx = 0; lightIdx < g_lights.length() /*uint(freqLow_fragmentUniforms.g_iNumlights.x)*/; ++lightIdx)
     {
         light_t light = g_lights[lightIdx];
 
         float NdotL;
         float clip_min = 1.0 / 255.0;
-        vec3 light_position = light.pos.xyz + g_vLightOffset;
+        vec3 light_position = light.pos.xyz + freqLow_fragmentUniforms.g_vLightOffset.xyz;
         vec3 light_vector = normalize( light_position - inputs.position );
         NdotL = saturate( dot( inputs.normal, light_vector ) );
         if (NdotL < 0) continue;
@@ -284,7 +290,7 @@ void main()
             light_attenuation = light_radiance(d, 2, clip_min);
             if (light_attenuation < clip_min / 256.0) continue;
         }
-        vec3 light_color = max(light.color.xyz * g_fLightPower, 0.0) * light_attenuation;
+        vec3 light_color = max(light.color.xyz * freqLow_fragmentUniforms.g_fLightPower.xyz, 0.0) * light_attenuation;
         vec3 light_color_final = light_color;
         {
             vec3 F0 = mix( vec3(0.04), inputs.albedo, inputs.metalness );

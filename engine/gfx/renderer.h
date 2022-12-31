@@ -186,6 +186,7 @@ namespace gfx {
             TextureFilter mag_filter;
             ImageSet data;
             bool automipmap;
+            ushort max_aniso;
         };
 
         struct CreateTextureCubeMap {
@@ -206,6 +207,7 @@ namespace gfx {
             ushort transcode_quality;
             String path;
             ushort flags;
+            ushort max_aniso;
         };
 
         struct DeleteTexture {
@@ -296,9 +298,9 @@ namespace gfx {
 
     struct ImageBinding {
         TextureHandle handle;
-        uint16_t level;
+        ushort level;
         bool layered;
-        uint16_t layer;
+        ushort layer;
         Access access;
         TextureFormat format;
     };
@@ -309,7 +311,7 @@ namespace gfx {
 
         inline bool operator!=(const VertexBinding& other) const
         {
-            return handle != other.handle || offset != other.offset;
+            return !operator==(other);
         }
         inline bool operator==(const VertexBinding& other) const
         {
@@ -319,13 +321,13 @@ namespace gfx {
 
     struct ComputeItem {
         alignas(std::hardware_destructive_interference_size)
-        uint16_t num_groups_x;
-        uint16_t num_groups_y;
-        uint16_t num_groups_z;
+        ushort num_groups_x;
+        ushort num_groups_y;
+        ushort num_groups_z;
         ProgramHandle program;
         FenceHandle fence;
         bool wait_sync_client{false};
-        uint64_t wait_timeout;
+        uint64 wait_timeout;
         Array<ImageBinding, MAX_IMAGE_UNITS> images;
         Array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
         UniformMap uniforms;
@@ -355,6 +357,17 @@ namespace gfx {
         ushort scissor_h{ 0 };
 
         StateBits state_bits{ 0 };
+        Vector<cmd::UpdateConstantBuffer> ubo_updates;
+
+        inline bool operator<(const RenderItem& other) const
+        {
+            if (program != other.program)
+            {
+                return program.internal() < other.program.internal();
+            }
+
+            return state_bits < other.state_bits;
+        }
     };
     
     static_assert(alignof(RenderItem) == std::hardware_destructive_interference_size, "");
@@ -384,6 +397,7 @@ namespace gfx {
         std::vector<ComputeItem> compute_items;
         std::array<ConstantBufferBinding, MAX_UNIFORM_BUFFERS> constant_buffers;
         std::array<ShaderStorageBinding, MAX_SHADER_STORAGE_BUFFERS> shader_storage_buffers;
+        Vector<cmd::UpdateConstantBuffer> ubo_updates;
     };
 
     class Renderer;
@@ -411,15 +425,15 @@ namespace gfx {
         bool                        init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
         glm::ivec2                  getFramebufferSize() const;
         inline uint64               getFrameNum() const { return framenum_; };
-
+        int                         getUniformOffsetAligment() const;
         VertexLayoutHandle          createVertexLayout(VertexDecl& decl);
         VertexBufferHandle          createVertexBuffer(uint size, BufferUsage usage, Memory data);
         TextureBufferHandle         createTextureBuffer(uint size, BufferUsage usage, Memory data);
         IndexBufferHandle           createIndexBuffer(uint size, BufferUsage usage, Memory data);
         ConstantBufferHandle        createConstantBuffer(uint size, BufferUsage usage, Memory data);
         ShaderStorageBufferHandle   createShaderStorageBuffer(uint size, BufferUsage usage, Memory data);
-        TextureHandle               createTexture2D(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, ImageSet& data);
-        TextureHandle               createTexture(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, String const& apath, bool srgb, bool auto_mipmap = false, bool compress = true, ushort aQuality = 1);
+        TextureHandle               createTexture2D(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, ImageSet& data, ushort max_iso = 1);
+        TextureHandle               createTexture(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, String const& apath, bool srgb, bool auto_mipmap = false, bool compress = true, ushort aQuality = 1, ushort max_aniso = 1);
         TextureHandle               createTextureCubemap(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, Vector<ImageSet>& data, bool compress = false);
         TextureHandle               createBufferTexture(TextureBufferHandle hbuffer, TextureFormat format, uint offset = 0, uint size = 0);
         FrameBufferHandle           createFrameBuffer(uint16_t width, uint16_t height, TextureFormat format);
@@ -433,6 +447,7 @@ namespace gfx {
         void                updateVertexBuffer(VertexBufferHandle handle, Memory data, uint offset);
         void                updateIndexBuffer(IndexBufferHandle handle, Memory data, uint offset);
         void                updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint offset);
+        void                updateConstantBuffer(ushort pass, ConstantBufferHandle handle, Memory data, uint offset);
         void                updateShaderStorageBuffer(ShaderStorageBufferHandle handle, Memory data, uint offset);
         void                updateTextureBuffer(TextureBufferHandle handle, Memory data, uint offset);
 
@@ -464,7 +479,7 @@ namespace gfx {
         void                setClearColor(unsigned pass, const glm::vec4& value);
         void                setClearBits(unsigned pass, uint16_t value);
         void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
-        void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle);
+        void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle, uint offset = 0, uint size = 0);
         void                setVertexDecl(const VertexDecl& decl);
         void                setVertexAttribs(const VertexAttribMap& attribs);
         void                setUniforms(UniformMap& uniforms);

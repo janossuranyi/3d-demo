@@ -4,6 +4,8 @@
 
 #include "logger.h"
 
+#include <execution>
+
 namespace gfx {
 
 	RenderPass::RenderPass() :
@@ -16,6 +18,9 @@ namespace gfx {
 		clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
 		render_items.clear();
 		compute_items.clear();
+		ubo_updates.clear();
+		constant_buffers.fill(ConstantBufferBinding{});
+		shader_storage_buffers.fill(ShaderStorageBinding{});
 		frame_buffer = FrameBufferHandle::invalid;
 	}
 
@@ -92,6 +97,11 @@ namespace gfx {
 		return true;
 	}
 
+	int Renderer::getUniformOffsetAligment() const
+	{
+		return shared_render_context_->uniform_offset_aligment();
+	}
+
 	VertexDecl const* Renderer::defaultVertexDecl() const
 	{
 		return &defaultVertexDecl_;
@@ -151,24 +161,24 @@ namespace gfx {
 		return handle;
 	}
 
-	TextureHandle Renderer::createTexture2D(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, ImageSet& data)
+	TextureHandle Renderer::createTexture2D(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, ImageSet& data, ushort max_iso)
 	{
 		const TextureHandle handle = texture_handle_.next();
 
 		texture_data_[handle] = TextureData{ data[0].width,data[0].height,data.format()};
-		submitPreFrameCommand(cmd::CreateTexture2D{ handle,wrap,minfilter,magfilter,std::move(data) });
+		submitPreFrameCommand(cmd::CreateTexture2D{ handle,wrap,minfilter,magfilter,std::move(data),false,max_iso });
 
 
 		return handle;
 	}
 
-	TextureHandle Renderer::createTexture(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, String const& apath, bool srgb, bool auto_mipmap, bool compress, ushort aQuality)
+	TextureHandle Renderer::createTexture(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, String const& apath, bool srgb, bool auto_mipmap, bool compress, ushort aQuality, ushort max_aniso)
 	{
 		const TextureHandle handle = texture_handle_.next();
 
 		texture_data_[handle] = TextureData{ 0,0,TextureFormat::RGBA8 };
 		const ushort flags = (ushort)((compress << 2) | (auto_mipmap << 1) | srgb);
-		submitPreFrameCommand(cmd::CreateTexture{ handle,wrap,minfilter,magfilter,aQuality,apath,flags });
+		submitPreFrameCommand(cmd::CreateTexture{ handle,wrap,minfilter,magfilter,aQuality,apath,flags,max_aniso });
 
 		return handle;
 	}
@@ -299,13 +309,24 @@ namespace gfx {
 		submitPreFrameCommand(cmd::UpdateIndexBuffer{ handle,std::move(data),offset });
 	}
 
+	void Renderer::updateConstantBuffer(ushort pass, ConstantBufferHandle handle, Memory data, uint32_t offset)
+	{
+		if (!handle.isValid())
+		{
+			return;
+		}
+		//submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
+		submit_->renderPass(pass).ubo_updates.emplace_back(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
+	}
+
 	void Renderer::updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint32_t offset)
 	{
 		if (!handle.isValid())
 		{
 			return;
 		}
-		submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
+		//submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
+		submit_->active_item.ubo_updates.emplace_back(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
 	}
 
 	void Renderer::updateShaderStorageBuffer(ShaderStorageBufferHandle handle, Memory data, uint offset)
@@ -502,9 +523,9 @@ namespace gfx {
 		submit_->renderPass(pass).frame_buffer = handle;
 	}
 
-	void Renderer::setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle)
+	void Renderer::setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle, uint offset, uint size)
 	{
-		submit_->renderPass(pass).constant_buffers[index] = ConstantBufferBinding{ handle,0,0 };
+		submit_->renderPass(pass).constant_buffers[index] = ConstantBufferBinding{ handle,offset,size };
 	}
 
 	void Renderer::setClearColor(unsigned pass, const glm::vec4& value)
@@ -592,6 +613,7 @@ namespace gfx {
 			render_done_ = true;
 			render_cond_.notify_all();
 
+			// waiting for the next 
 			render_cond_.wait(lck, [this] {return should_terminate_ || render_job_submitted_; });
 
 			render_job_submitted_ = false;
@@ -669,6 +691,15 @@ namespace gfx {
 	{
 		shared_render_context_->process_command_list(frame->commands_pre);
 
+		// sort render items
+		for (auto& pass : frame->render_passes)
+		{
+			if (pass.render_items.size() > 2)
+			{
+				std::sort(std::execution::par, pass.render_items.begin(), pass.render_items.end());
+			}
+		}
+
 		if (!shared_render_context_->frame(frame))
 		{
 			return false;
@@ -676,8 +707,8 @@ namespace gfx {
 
 		shared_render_context_->process_command_list(frame->commands_post);
 
-		frame->active_item = RenderItem();
-		frame->active_compute = ComputeItem();
+		frame->active_item = RenderItem{};
+		frame->active_compute = ComputeItem{};
 		for (auto& pass : frame->render_passes)
 		{
 			pass.clear();

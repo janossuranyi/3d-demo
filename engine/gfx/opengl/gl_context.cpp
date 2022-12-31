@@ -224,6 +224,11 @@ namespace gfx {
 		return window_.stencilBits;
 	}
 
+	int OpenGLRenderContext::uniform_offset_aligment() const
+	{
+		return gl_uniform_buffer_offset_alignment_;
+	}
+
 
 	void OpenGLRenderContext::operator()(const cmd::CreateFence& cmd)
 	{
@@ -310,7 +315,7 @@ namespace gfx {
 
 		Info("Using GLEW %s", glewGetString(GLEW_VERSION));
 
-		SDL_GL_SetSwapInterval(1);
+		SDL_GL_SetSwapInterval(-1);
 
 		std::string renderer = (char*)glGetString(GL_RENDERER);
 		std::string version = (char*)glGetString(GL_VERSION);
@@ -325,10 +330,6 @@ namespace gfx {
 		}
 		const float gl_version = float(atof(version.c_str()));
 		glVersion_ = int(gl_version * 100);
-
-		gl_version_430_ = glVersion_ >= 430;
-		gl_version_440_ = glVersion_ >= 440;
-		gl_version_450_ = glVersion_ >= 450;
 
 		if (glVersion_ < 450)
 		{
@@ -390,12 +391,8 @@ namespace gfx {
 		GL_CHECK(glDisable(GL_SCISSOR_TEST));
 		GL_CHECK(glDepthMask(GL_TRUE));
 		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &gl_max_vertex_attribs_);
-
-
-		ext_.ARB_vertex_attrib_binding = gl_extensions_.count("GL_ARB_vertex_attrib_binding");
-		ext_.ARB_direct_state_access = gl_extensions_.count("GL_ARB_direct_state_access");
-		ext_.EXT_direct_state_access = gl_extensions_.count("GL_EXT_direct_state_access");
-
+		
+		glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &gl_uniform_buffer_offset_alignment_);
 		glGetIntegerv(GL_TEXTURE_BUFFER_OFFSET_ALIGNMENT, &gl_texture_buffer_offset_alignment_);
 		glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &gl_max_shader_storage_block_size_);
 		glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &gl_max_uniform_block_size_);
@@ -556,8 +553,15 @@ namespace gfx {
 
 	bool OpenGLRenderContext::frame(const Frame* frame)
 	{
+		int state_change = 0, prg_change = 0;
+
 		for (auto& pass : frame->render_passes)
 		{
+			for (const auto& e : pass.ubo_updates)
+			{
+				operator()(e);
+			}
+
 			if (!pass.compute_items.empty())
 			{
 				compute(pass);
@@ -574,6 +578,7 @@ namespace gfx {
 					if (cbuf.offset == 0 && cbuf.size == 0) {
 						GL_CHECK(glBindBufferBase(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(cbuf.handle).buffer));
 					} else {
+						assert(0 == (cbuf.offset & (gl_uniform_buffer_offset_alignment_-1)));
 						GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(cbuf.handle).buffer, cbuf.offset, cbuf.size));
 					}
 				}
@@ -642,6 +647,13 @@ namespace gfx {
 					continue;
 				}
 
+				for (const auto& e : item->ubo_updates)
+				{
+					operator()(e);
+				}
+
+				if (item->state_bits ^ state_bits_) ++state_change;
+
 				set_state(item->state_bits, false);
 				if (scissor_test_ != item->scissor)
 				{
@@ -661,6 +673,7 @@ namespace gfx {
 					assert(item->program.isValid());
 					GL_CHECK(glUseProgram(program_data.program));
 					active_program_ = item->program;
+					++prg_change;
 				}
 
 				if ( ! item->uniforms.empty() ) {
@@ -714,11 +727,12 @@ namespace gfx {
 				}
 
 				// Element buffer setup
-				if ((!prev || prev->ib != item->ib) && item->ib.isValid())
+				if (active_ib_ != item->ib && item->ib.isValid())
 				{
 					const auto& ib = index_buffer_map_.at(item->ib);
 					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
 					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+					active_ib_ = item->ib;
 				}
 
 				if (!item->vertexAttribs.empty())
@@ -757,6 +771,9 @@ namespace gfx {
 		}
 
 		SDL_GL_SwapWindow(windowHandle_);
+
+		if (max_state_change_ < state_change)	max_state_change_ = state_change;
+		if (max_program_change_ < prg_change)	max_program_change_ = prg_change;
 
 		return true;
 	}
@@ -841,6 +858,14 @@ namespace gfx {
 		vertex_array_map_.clear();
 
 		destroy_window();
+
+		Info("=============================================");
+		Info("== Statistics                              ==");
+		Info("=============================================");
+		Info("Maximum render state changes:      %d", max_state_change_);
+		Info("Maximum program switches:          %d", max_program_change_);
+		Info("=============================================");
+
 	}
 
 	void OpenGLRenderContext::set_state(uint64_t stateBits, bool force)
