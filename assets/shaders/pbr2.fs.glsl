@@ -141,6 +141,11 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
+vec3 fresnelSchlickRoughness(vec3 F0,float cosTheta, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
 vec4 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness)
 {
 	const vec3 H = normalize( V + L );
@@ -163,7 +168,8 @@ vec4 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness)
 	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
 
-    vec3 F = fresnelSchlick( F0, dot( H, V ) );
+//    vec3 F = fresnelSchlick( F0, dot( H, V ) );
+    vec3 F = fresnelSchlickRoughness( F0, dot( H, V ), roughness );
     return vec4(F, spec);
 }
 
@@ -203,7 +209,7 @@ struct lightingInput_t
     vec4 fragCoord;
     vec3 out_color;
     mat3 invTS;
-    vec3 env;
+    vec3 irradiance;
 };
 
 uniform sampler2D samp_basecolor;
@@ -255,7 +261,6 @@ void main()
     }
 
     inputs.albedo = texture(samp_basecolor, inputs.texCoord).rgb;
-    inputs.env = texture(samp_env, inputs.position).rgb;
 
     {
         vec4 inMR = texture(samp_pbr, inputs.texCoord);
@@ -273,6 +278,7 @@ void main()
     vec4 tmp;
 
     inputs.out_color = vec3(0.0);
+    inputs.irradiance = texture(samp_env, inputs.normal).rgb;
 
     for(int lightIdx = 0; lightIdx < g_lights.length() /*uint(freqLow_fragmentUniforms.g_iNumlights.x)*/; ++lightIdx)
     {
@@ -298,9 +304,12 @@ void main()
             /*====================================================================================*/
             vec4 spec = specBRDF( inputs.normal, inputs.view, light_vector, F0, inputs.roughness );
             /*====================================================================================*/
-            vec3 Kd = vec3(1.0) - spec.xyz;
+            vec3 Kd = vec3(1.0) - spec.xyz;            
             Kd *= 1.0 - inputs.metalness;
-            Kd = mix(inputs.env, Kd, inputs.roughness);
+
+            vec3 diffuse = inputs.irradiance * inputs.albedo;
+            ambient = Kd * diffuse;
+
             inputs.out_color += (Kd * inputs.albedo * inv_PI + spec.xyz * spec.w) * light_color_final * NdotL;
         }
     }    

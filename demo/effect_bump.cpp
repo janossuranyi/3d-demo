@@ -30,7 +30,7 @@ bool BumpEffect::Init()
     diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".ktx2");
     normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.ktx2");
     bump_ = tm->createFromResource("textures/test/" + base_name[bn] + "_bump.ktx2");
-    skybox_ = tm->createFromResource("textures/cubemaps/skybox.ktx2");
+    skybox_ = tm->createFromResource("textures/cubemaps/yokohama3.ktx2");
 
     using namespace tinygltf;
     Model model;
