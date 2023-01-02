@@ -11,6 +11,8 @@ namespace gfx {
 
     using StateBits = uint64;
 
+    struct Rect2D { uvec2 offset; uvec2 size; };
+
     struct MaterialTag {};
     struct VertexLayoutTag {};
     struct VertexBufferTag {};

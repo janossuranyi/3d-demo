@@ -13,16 +13,19 @@ vec4 unpackRGBA8(uint value)
     return vec4(float((value >> uint(24)) & 255u), float((value >> uint(16)) & 255u), float((value >> uint(8)) & 255u), float(value & 255u)) / vec4(255.0);
 }
 
-layout(binding = 1, std140) uniform freqHigh_vertexUniforms_ubo
-{
-    mat4 mvpmatrix;
-    mat4 normalmatrix;
-} freqHigh_vertexUniforms;
+float dot4 ( vec4 a, vec4 b ) { return dot( a, b ); }
 
-layout(binding = 2, std140) uniform freqLow_vertexUniforms_ubo
-{
-	vec4 vieworigin;
-} freqLow_vertexUniforms;
+#define MVP_X 0
+#define MVP_Y 1
+#define MVP_Z 2
+#define MVP_W 3
+#define N_X 4
+#define N_Y 5
+#define N_Z 6
+uniform vec4 _va_freqHigh[7];
+
+#define VIEW_ORIGIN 0
+uniform vec4 _va_freqLow[1];
 
 out INTERFACE {
     vec4 normal;
@@ -48,13 +51,27 @@ void main()
 		vtxCol                  = unpackRGBA8( asuint( in_PackedInputs.z ) ).wzyx;
     };
 
-    gl_Position = freqHigh_vertexUniforms.mvpmatrix * localPosition;
+   // memoryBarrier();
 
-    mat3 mNormalTransform = mat3(freqHigh_vertexUniforms.normalmatrix);
+    mat4 mvpmatrix = mat4(
+        _va_freqHigh[ MVP_X ],
+        _va_freqHigh[ MVP_Y ],
+        _va_freqHigh[ MVP_Z ],
+        _va_freqHigh[ MVP_W ]
+    );
 
-    Out.normal    = vec4(mNormalTransform * localNormal.xyz, 0.0);
-    Out.tangent   = vec4(mNormalTransform * localTangent.xyz, localTangent.w);
-    Out.position  = vec4(mNormalTransform * localPosition.xyz, 1.0) - freqLow_vertexUniforms.vieworigin;
+    gl_Position = mvpmatrix * localPosition;
+
+//    mat3 normalmatrix = mat3(normal_mtx);
+    mat3 normalmatrix = mat3(
+        _va_freqHigh[ N_X ].xyz,
+        _va_freqHigh[ N_Y ].xyz,
+        _va_freqHigh[ N_Z ].xyz
+    );
+
+    Out.normal    = vec4(normalmatrix * localNormal.xyz, 0.0);
+    Out.tangent   = vec4(normalmatrix * localTangent.xyz, localTangent.w);
+    Out.position  = vec4(normalmatrix * localPosition.xyz, 1.0) - _va_freqLow[ VIEW_ORIGIN ];
     Out.texcoord  = in_TexCoord.xyxy;
     Out.color     = vtxCol;
 }

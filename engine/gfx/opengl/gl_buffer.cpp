@@ -30,7 +30,16 @@ namespace gfx {
 	{
 		const GLsizeiptr size_ = pixelByteSize > 0 ? GLsizeiptr(pixelByteSize) : data.size();
 
-		GL_CHECK(glNamedBufferSubData(buffer, GLintptr(offset), GLsizeiptr(size_), data.data()));
+		void* ptr{};
+		GL_CHECK(ptr = glMapNamedBufferRange(buffer, offset, size_, GL_MAP_WRITE_BIT));
+		if (ptr)
+		{
+			std::memcpy(ptr, data.data(), size_);
+			GL_CHECK(glUnmapNamedBuffer(buffer));
+		}
+		else {
+			GL_CHECK(glNamedBufferSubData(buffer, GLintptr(offset), GLsizeiptr(size_), data.data()));
+		}
 	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateShaderStorageBuffer& cmd)
@@ -210,7 +219,7 @@ namespace gfx {
 		const GLuint buffer = create_buffer_real(GL_UNIFORM_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
 		
 		void* addr{};
-		//GL_CHECK(addr = glMapNamedBufferRange(buffer, 0, _size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT| GL_MAP_COHERENT_BIT));
+		GL_CHECK(addr = glMapNamedBufferRange(buffer, 0, _size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT| GL_MAP_COHERENT_BIT));
 		constant_buffer_map_.emplace(cmd.handle, ConstantBufferData{ buffer, _size, cmd.usage, addr });
 	}
 
@@ -220,13 +229,14 @@ namespace gfx {
 			return;
 
 		const auto result = constant_buffer_map_.find(cmd.handle);
-		if (result == constant_buffer_map_.end())
+		if (result == std::end(constant_buffer_map_))
 			return;
 
 		const auto& data = result->second;
 		if (data.mapped_address)
 		{
 			std::memcpy(reinterpret_cast<char*>( data.mapped_address ) + cmd.offset, cmd.data.data(), cmd.size > 0 ? cmd.size : cmd.data.size());
+			//GL_CHECK(glFlushMappedNamedBufferRange(data.buffer, cmd.offset, cmd.size > 0 ? cmd.size : cmd.data.size()));
 		}
 		else
 		{

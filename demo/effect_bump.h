@@ -5,6 +5,14 @@
 #include "engine/gfx/vertex_cache.h"
 #include "engine/scene/camera.h"
 
+template<typename T> 
+void toVec4vec(Vector<vec4>& v, T data)
+{
+	v.clear();
+	v.resize(sizeof(T) / sizeof(vec4));
+	std::memcpy(v.data(), &data, sizeof(T));
+}
+
 class BumpEffect : public Effect
 {
 public:
@@ -38,7 +46,7 @@ private:
 	gfx::vtxCacheHandle vcache;
 	gfx::vtxCacheHandle icache;
 	gfx::ConstantBufferHandle lightInfoBuffer_;
-	gfx::ConstantBufferHandle uniforms_ubo_;
+	gfx::TextureHandle skybox_;
 
 	bool firstframe_{true};
 	vec2 yawPitch_;
@@ -56,7 +64,7 @@ private:
 
 	struct {
 		mat4 mvpmatrix;
-		mat4 normalmatrix;
+		mat3x4 normalmatrix;
 	} freqHigh_vertexUniforms_;
 
 	struct {
@@ -69,8 +77,5 @@ private:
 		vec4 lightpower;
 		vec4 vieworigin;
 	} freqLow_fragmentUniforms_;
-
-	size_t freqLow_vertexUniforms_offset{};
-	size_t freqLow_fragmentUniforms_offset{};
 
 };

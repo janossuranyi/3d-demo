@@ -203,25 +203,24 @@ struct lightingInput_t
     vec4 fragCoord;
     vec3 out_color;
     mat3 invTS;
+    vec3 env;
 };
 
 uniform sampler2D samp_basecolor;
 uniform sampler2D samp_normal;
 uniform sampler2D samp_pbr;
+uniform samplerCube samp_env;
 
 layout(std140, binding = 0) uniform LightInfoBlock
 {   
     light_t g_lights[32];
 };
 
-layout(std140, binding = 3) uniform freqLow_fragmentUniforms_ubo
-{
-    vec4 g_vLightOffset;
-    vec4 g_iNumlights;
-    vec4 g_fLightPower;
-    vec4 g_vViewPosition;
-
-} freqLow_fragmentUniforms;
+#define freqLow_lightoffset 0
+#define freqLow_numlights 1
+#define freqLow_lightpower 2
+#define freqLow_vieworigin 3
+uniform vec4 _fa_freqLow[4];
 
 in INTERFACE {
     vec4 normal;
@@ -235,7 +234,7 @@ out vec4 FragColor;
 
 void main()
 {
-    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0) );
+    lightingInput_t inputs = lightingInput_t( vec3(0),vec3(0),0,0,0,vec3(0),vec3(0),vec3(0),vec3(0),vec2(0),vec4(0),vec3(0),mat3(1.0),vec3(0) );
 
     inputs.texCoord = In.texcoord.xy;
     inputs.fragCoord = gl_FragCoord;
@@ -256,6 +255,8 @@ void main()
     }
 
     inputs.albedo = texture(samp_basecolor, inputs.texCoord).rgb;
+    inputs.env = texture(samp_env, inputs.position).rgb;
+
     {
         vec4 inMR = texture(samp_pbr, inputs.texCoord);
         //vec3 gc = pow( inMR.xyz, vec3(1.0/2.2) );
@@ -279,7 +280,7 @@ void main()
 
         float NdotL;
         float clip_min = 1.0 / 255.0;
-        vec3 light_position = light.pos.xyz + freqLow_fragmentUniforms.g_vLightOffset.xyz;
+        vec3 light_position = light.pos.xyz + _fa_freqLow[freqLow_lightoffset].xyz;
         vec3 light_vector = normalize( light_position - inputs.position );
         NdotL = saturate( dot( inputs.normal, light_vector ) );
         if (NdotL < 0) continue;
@@ -290,7 +291,7 @@ void main()
             light_attenuation = light_radiance(d, 2, clip_min);
             if (light_attenuation < clip_min / 256.0) continue;
         }
-        vec3 light_color = max(light.color.xyz * freqLow_fragmentUniforms.g_fLightPower.xyz, 0.0) * light_attenuation;
+        vec3 light_color = max(light.color.xyz * _fa_freqLow[freqLow_lightpower].xyz, 0.0) * light_attenuation;
         vec3 light_color_final = light_color;
         {
             vec3 F0 = mix( vec3(0.04), inputs.albedo, inputs.metalness );
@@ -299,11 +300,12 @@ void main()
             /*====================================================================================*/
             vec3 Kd = vec3(1.0) - spec.xyz;
             Kd *= 1.0 - inputs.metalness;
+            Kd = mix(inputs.env, Kd, inputs.roughness);
             inputs.out_color += (Kd * inputs.albedo * inv_PI + spec.xyz * spec.w) * light_color_final * NdotL;
         }
-    }
-
+    }    
     vec3 color = tonemap( inputs.out_color + ambient );
+
     color = Gamma( color ) ;
 
     FragColor = vec4(color, 1.0);

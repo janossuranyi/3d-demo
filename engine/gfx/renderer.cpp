@@ -9,6 +9,7 @@
 namespace gfx {
 
 	RenderPass::RenderPass() :
+		render_area{},
 		clear_color{ 0.0f,0.0f,0.0f,1.0f },
 		clear_bits{ GLS_CLEAR_COLOR | GLS_CLEAR_DEPTH },
 		frame_buffer{ FrameBufferHandle::invalid } {
@@ -18,9 +19,6 @@ namespace gfx {
 		clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
 		render_items.clear();
 		compute_items.clear();
-		ubo_updates.clear();
-		constant_buffers.fill(ConstantBufferBinding{});
-		shader_storage_buffers.fill(ShaderStorageBinding{});
 		frame_buffer = FrameBufferHandle::invalid;
 	}
 
@@ -309,26 +307,6 @@ namespace gfx {
 		submitPreFrameCommand(cmd::UpdateIndexBuffer{ handle,std::move(data),offset });
 	}
 
-	void Renderer::updateConstantBuffer(ushort pass, ConstantBufferHandle handle, Memory data, uint32_t offset)
-	{
-		if (!handle.isValid())
-		{
-			return;
-		}
-		//submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
-		submit_->renderPass(pass).ubo_updates.emplace_back(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
-	}
-
-	void Renderer::updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint32_t offset)
-	{
-		if (!handle.isValid())
-		{
-			return;
-		}
-		//submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
-		submit_->active_item.ubo_updates.emplace_back(cmd::UpdateConstantBuffer{ handle,std::move(data),offset,0 });
-	}
-
 	void Renderer::updateShaderStorageBuffer(ShaderStorageBufferHandle handle, Memory data, uint offset)
 	{
 		if (!handle.isValid())
@@ -523,9 +501,21 @@ namespace gfx {
 		submit_->renderPass(pass).frame_buffer = handle;
 	}
 
-	void Renderer::setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle, uint offset, uint size)
+	void Renderer::setConstBuffer(uint16_t index, ConstantBufferHandle handle, uint offset, uint size)
 	{
-		submit_->renderPass(pass).constant_buffers[index] = ConstantBufferBinding{ handle,offset,size };
+		if (compute_active_)
+		{
+
+		}
+		else
+		{
+			submit_->active_item.constant_buffers[index] = ConstantBufferBinding{ handle,offset,size };
+		}
+	}
+
+	void Renderer::setViewport(unsigned pass, ushort x, ushort y, ushort width, ushort height)
+	{
+		submit_->renderPass(pass).render_area = Rect2D{ {x,y},{width,height} };
 	}
 
 	void Renderer::setClearColor(unsigned pass, const glm::vec4& value)

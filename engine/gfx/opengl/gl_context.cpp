@@ -557,11 +557,6 @@ namespace gfx {
 
 		for (auto& pass : frame->render_passes)
 		{
-			for (const auto& e : pass.ubo_updates)
-			{
-				operator()(e);
-			}
-
 			if (!pass.compute_items.empty())
 			{
 				compute(pass);
@@ -569,20 +564,6 @@ namespace gfx {
 
 			if (pass.render_items.empty() || !pass.frame_buffer.isValid())
 				continue;
-
-			for (int i = 0; i < pass.constant_buffers.size(); ++i)
-			{
-				if (pass.constant_buffers[i].handle.isValid())
-				{
-					const auto& cbuf = pass.constant_buffers[i];
-					if (cbuf.offset == 0 && cbuf.size == 0) {
-						GL_CHECK(glBindBufferBase(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(cbuf.handle).buffer));
-					} else {
-						assert(0 == (cbuf.offset & (gl_uniform_buffer_offset_alignment_-1)));
-						GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(cbuf.handle).buffer, cbuf.offset, cbuf.size));
-					}
-				}
-			}
 
 			ushort fb_width, fb_height;
 
@@ -610,6 +591,8 @@ namespace gfx {
 
 			(void)fb_width;
 			(void)fb_height;
+
+			GL_CHECK(glViewport(pass.render_area.offset.x, pass.render_area.offset.y, pass.render_area.size.x, pass.render_area.size.y));
 
 			GLbitfield clear_bits = 0;
 			if (pass.clear_bits & GLS_CLEAR_COLOR) {
@@ -650,6 +633,21 @@ namespace gfx {
 				for (const auto& e : item->ubo_updates)
 				{
 					operator()(e);
+				}
+
+				for (int i = 0; i < item->constant_buffers.size(); ++i)
+				{
+					if (item->constant_buffers[i].handle.isValid())
+					{
+						const auto& cbuf = item->constant_buffers[i];
+						if (cbuf.offset == 0 && cbuf.size == 0) {
+							GL_CHECK(glBindBufferBase(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(cbuf.handle).buffer));
+						}
+						else {
+							assert(0 == (cbuf.offset & (gl_uniform_buffer_offset_alignment_ - 1)));
+							GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, i, constant_buffer_map_.at(cbuf.handle).buffer, cbuf.offset, cbuf.size));
+						}
+					}
 				}
 
 				if (item->state_bits ^ state_bits_) ++state_change;
@@ -746,6 +744,7 @@ namespace gfx {
 
 				const GLenum mode = MapDrawMode(item->primitive_type);
 				const GLsizei count = item->vertex_count;
+
 				if (item->ib.isValid())
 				{
 					const GLuint base_vertex = item->vb_offset;					

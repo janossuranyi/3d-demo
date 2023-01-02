@@ -334,11 +334,17 @@ namespace gfx {
         uint barrier_bits;
     };
 
-    
+    struct ConstantBufferBinding {
+        ConstantBufferHandle handle;
+        uint offset;
+        uint size;
+    };
+
     struct RenderItem {
         alignas(std::hardware_destructive_interference_size)
         Array<VertexBinding, MAX_LAYOUT_BUFFERS> vbs;
         Array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
+        Array<ConstantBufferBinding, MAX_UNIFORM_BUFFERS> constant_buffers;
         IndexBufferHandle ib;
         uint ib_offset;
         uint vb_offset;
@@ -372,11 +378,6 @@ namespace gfx {
     
     static_assert(alignof(RenderItem) == std::hardware_destructive_interference_size, "");
 
-    struct ConstantBufferBinding {
-        ConstantBufferHandle handle;
-        uint offset;
-        uint size;
-    };
 
     struct ShaderStorageBinding {
         ShaderStorageBufferHandle handle;
@@ -389,15 +390,15 @@ namespace gfx {
         RenderPass();
 
         void clear();
-
+        Rect2D render_area;;
         vec4 clear_color;
         ushort clear_bits;
         FrameBufferHandle frame_buffer;
-        std::vector<RenderItem> render_items;
-        std::vector<ComputeItem> compute_items;
-        std::array<ConstantBufferBinding, MAX_UNIFORM_BUFFERS> constant_buffers;
-        std::array<ShaderStorageBinding, MAX_SHADER_STORAGE_BUFFERS> shader_storage_buffers;
-        Vector<cmd::UpdateConstantBuffer> ubo_updates;
+        Vector<RenderItem> render_items;
+        Vector<ComputeItem> compute_items;
+        //Array<ConstantBufferBinding, MAX_UNIFORM_BUFFERS> constant_buffers;
+        //Array<ShaderStorageBinding, MAX_SHADER_STORAGE_BUFFERS> shader_storage_buffers;
+        //Vector<cmd::UpdateConstantBuffer> ubo_updates;
     };
 
     class Renderer;
@@ -447,7 +448,6 @@ namespace gfx {
         void                updateVertexBuffer(VertexBufferHandle handle, Memory data, uint offset);
         void                updateIndexBuffer(IndexBufferHandle handle, Memory data, uint offset);
         void                updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint offset);
-        void                updateConstantBuffer(ushort pass, ConstantBufferHandle handle, Memory data, uint offset);
         void                updateShaderStorageBuffer(ShaderStorageBufferHandle handle, Memory data, uint offset);
         void                updateTextureBuffer(TextureBufferHandle handle, Memory data, uint offset);
 
@@ -476,10 +476,13 @@ namespace gfx {
         void                setPrimitiveType(PrimitiveType type);
         void                setInstanceCount(uint count);
         void                setTexture(TextureHandle handle, uint16_t unit = 0);
+
+        void                setViewport(unsigned pass, ushort x, ushort y, ushort width, ushort height);
         void                setClearColor(unsigned pass, const glm::vec4& value);
         void                setClearBits(unsigned pass, uint16_t value);
         void                setFrameBuffer(unsigned pass, FrameBufferHandle handle);
-        void                setConstBuffer(unsigned pass, uint16_t index, ConstantBufferHandle handle, uint offset = 0, uint size = 0);
+
+        void                setConstBuffer(uint16_t index, ConstantBufferHandle handle, uint offset = 0, uint size = 0);
         void                setVertexDecl(const VertexDecl& decl);
         void                setVertexAttribs(const VertexAttribMap& attribs);
         void                setUniforms(UniformMap& uniforms);
