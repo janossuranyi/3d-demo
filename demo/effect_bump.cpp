@@ -25,12 +25,12 @@ bool BumpEffect::Init()
         "WoodenPlanks01_2048"
     };
     
-    int bn = 1;
+    int bn = 2;
 
     diffuse_ = tm->createFromResource("textures/test/" + base_name[bn] + ".ktx2");
     normal_ = tm->createFromResource("textures/test/" + base_name[bn] + "_nm.ktx2");
     bump_ = tm->createFromResource("textures/test/" + base_name[bn] + "_bump.ktx2");
-    skybox_ = tm->createFromResource("textures/cubemaps/yokohama3.ktx2");
+    skybox_ = tm->createFromResource("textures/cubemaps/skybox.ktx2");
 
     using namespace tinygltf;
     Model model;

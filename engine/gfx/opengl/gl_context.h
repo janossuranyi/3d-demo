@@ -213,7 +213,7 @@ namespace gfx {
 		Array<TextureHandle, MAX_TEXTURE_SAMPLERS> active_textures_{};
 		IndexBufferHandle active_ib_{};
 		ProgramHandle active_program_{};
-		FrameBufferHandle active_fb_{};
+		FrameBufferHandle active_fb_{0};
 		VertexLayoutHandle active_vertex_layout_{};
 
 		bool scissor_test_{ false };

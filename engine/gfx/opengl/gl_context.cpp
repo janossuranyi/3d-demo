@@ -315,7 +315,7 @@ namespace gfx {
 
 		Info("Using GLEW %s", glewGetString(GLEW_VERSION));
 
-		SDL_GL_SetSwapInterval(-1);
+		SDL_GL_SetSwapInterval(1);
 
 		std::string renderer = (char*)glGetString(GL_RENDERER);
 		std::string version = (char*)glGetString(GL_VERSION);
@@ -567,26 +567,20 @@ namespace gfx {
 
 			ushort fb_width, fb_height;
 
-			if (pass.frame_buffer.internal() > 0)
+			if (pass.frame_buffer.internal() > 0 && active_fb_ != pass.frame_buffer)
 			{
 				FrameBufferData& fb_data = frame_buffer_map_.at(pass.frame_buffer);
 				fb_width = fb_data.width;
 				fb_height = fb_data.height;
-				if (active_fb_ != pass.frame_buffer)
-				{
-					GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
-					active_fb_ = pass.frame_buffer;
-				}
+				GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
+				active_fb_ = pass.frame_buffer;
 			}
-			else 
+			else if (active_fb_.internal() != 0)
 			{
+				active_fb_ = FrameBufferHandle{ 0 };
 				fb_width = window_.w;
 				fb_height = window_.h;
-				if (active_fb_.internal() > 0)
-				{
-					GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-					active_fb_ = FrameBufferHandle{ 0 };
-				}
+				GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 			}
 
 			(void)fb_width;

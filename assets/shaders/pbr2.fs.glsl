@@ -141,7 +141,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 fresnelSchlickRoughness(vec3 F0,float cosTheta, float roughness)
+vec3 fresnelSchlickRoughness(vec3 F0, float cosTheta, float roughness)
 {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
@@ -274,7 +274,7 @@ void main()
     inputs.normalTS = ReconstructNormal( inputs.normal.xyz, isFrontFacing );
     inputs.normal = GetWorldSpaceNormal( inputs.normal, inputs.invTS, isFrontFacing );
 
-    vec3 ambient = vec3(0.03) * inputs.albedo * inputs.occlusion;
+    vec3 ambient;
     vec4 tmp;
 
     inputs.out_color = vec3(0.0);
@@ -307,7 +307,7 @@ void main()
             vec3 Kd = vec3(1.0) - spec.xyz;            
             Kd *= 1.0 - inputs.metalness;
 
-            vec3 diffuse = inputs.irradiance * inputs.albedo;
+            vec3 diffuse = inputs.irradiance * inputs.albedo * inputs.occlusion;
             ambient = Kd * diffuse;
 
             inputs.out_color += (Kd * inputs.albedo * inv_PI + spec.xyz * spec.w) * light_color_final * NdotL;
