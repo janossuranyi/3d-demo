@@ -229,6 +229,21 @@ namespace gfx {
 		return gl_uniform_buffer_offset_alignment_;
 	}
 
+	QueryResult OpenGLRenderContext::get_query_result(QueryHandle handle)
+	{
+		QueryResult res{ result::Empty{} };
+
+		std::unique_lock<Mutex> lck(query_result_map_mx_);
+		auto data = query_results_map_.find(handle);
+		if (data != std::end(query_results_map_))
+		{
+			res = data->second;
+			query_results_map_.erase(handle);
+		}
+
+		return res;
+	}
+
 
 	void OpenGLRenderContext::operator()(const cmd::CreateFence& cmd)
 	{
@@ -336,6 +351,13 @@ namespace gfx {
 			Error("GL_VERSION < 4.5");
 			return false;
 		}
+
+		GLint numBinaryFormats;
+		glGetIntegerv(GL_NUM_SHADER_BINARY_FORMATS, &numBinaryFormats);
+		Info("OpenGL shader binary formats (%d)", numBinaryFormats);
+		Vector<GLint> binFormats(numBinaryFormats);
+		glGetIntegerv(GL_SHADER_BINARY_FORMATS, binFormats.data());
+		for (auto x : binFormats) { Info("Binformat: 0x%x", x); }
 
 		SDL_version ver;
 
@@ -575,7 +597,7 @@ namespace gfx {
 				GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb_data.frame_buffer));
 				active_fb_ = pass.frame_buffer;
 			}
-			else if (active_fb_.internal() != 0)
+			else if (pass.frame_buffer.isValid() && active_fb_ != pass.frame_buffer)	// default fb
 			{
 				active_fb_ = FrameBufferHandle{ 0 };
 				fb_width = window_.w;
@@ -586,7 +608,9 @@ namespace gfx {
 			(void)fb_width;
 			(void)fb_height;
 
-			GL_CHECK(glViewport(pass.render_area.offset.x, pass.render_area.offset.y, pass.render_area.size.x, pass.render_area.size.y));
+			if (pass.isRenderAreaValid()) {
+				GL_CHECK(glViewport(pass.render_area.offset.x, pass.render_area.offset.y, pass.render_area.size.x, pass.render_area.size.y));
+			}
 
 			GLbitfield clear_bits = 0;
 			if (pass.clear_bits & GLS_CLEAR_COLOR) {
@@ -622,11 +646,6 @@ namespace gfx {
 				if (item->program == ProgramHandle::invalid)
 				{
 					continue;
-				}
-
-				for (const auto& e : item->ubo_updates)
-				{
-					operator()(e);
 				}
 
 				for (int i = 0; i < item->constant_buffers.size(); ++i)

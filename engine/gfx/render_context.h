@@ -25,7 +25,7 @@ namespace gfx {
 		virtual int depth_bits() const = 0;
 		virtual int stencil_bits() const = 0;
 		virtual int uniform_offset_aligment() const = 0;
-		
+		virtual QueryResult get_query_result(QueryHandle handle) = 0;
 
 	};
 } /* namespace gfx */

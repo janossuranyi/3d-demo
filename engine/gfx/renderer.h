@@ -248,7 +248,31 @@ namespace gfx {
         struct MemoryBarrier {
             uint barrier_bits;
         };
+
+        /*********************************************
+         ** Query commands
+         *********************************************/
+
+        struct QueryMappedBufferAddresses {
+            QueryHandle handle;
+            Vector<VertexBufferHandle> vertexBufferHandles;
+            Vector<IndexBufferHandle> indexBufferHandles;
+            Vector<ConstantBufferHandle> constantBufferHandles;
+            Vector<ShaderStorageBufferHandle> ssBufferHandles;
+        };
     }
+
+    namespace result {
+        struct Empty {};
+        struct QueryMappedBufferAddresses {
+            Vector<uint8*> vertexBufferAddresses;
+            Vector<uint8*> indexBufferAddresses;
+            Vector<uint8*> constantBufferAddresses;
+            Vector<uint8*> ssBufferAddresses;
+        };
+    }
+
+    using QueryResult = std::variant<result::Empty, result::QueryMappedBufferAddresses>;
 
     using RenderCommand = std::variant<
         cmd::CreateVertexLayout,
@@ -283,7 +307,8 @@ namespace gfx {
         cmd::CreateBufferTexture,
         cmd::CreateShaderStorageBuffer,
         cmd::UpdateShaderStorageBuffer,
-        cmd::DeleteShaderStorageBuffer>;
+        cmd::DeleteShaderStorageBuffer,
+        cmd::QueryMappedBufferAddresses>;
 
     using VertexAttribData = std::variant<int, uint, float, ivec2, ivec3, ivec4, vec2, vec3, vec4>;
     using UniformData = std::variant<int, float,ivec2, ivec3, ivec4, vec2, vec3, vec4, mat3, mat4, Vector<float>, Vector<vec4>>;
@@ -363,8 +388,6 @@ namespace gfx {
         ushort scissor_h{ 0 };
 
         StateBits state_bits{ 0 };
-        Vector<cmd::UpdateConstantBuffer> ubo_updates;
-
         inline bool operator<(const RenderItem& other) const
         {
             if (program != other.program)
@@ -396,9 +419,8 @@ namespace gfx {
         FrameBufferHandle frame_buffer;
         Vector<RenderItem> render_items;
         Vector<ComputeItem> compute_items;
-        //Array<ConstantBufferBinding, MAX_UNIFORM_BUFFERS> constant_buffers;
-        //Array<ShaderStorageBinding, MAX_SHADER_STORAGE_BUFFERS> shader_storage_buffers;
-        //Vector<cmd::UpdateConstantBuffer> ubo_updates;
+
+        bool isRenderAreaValid() const;
     };
 
     class Renderer;
@@ -496,7 +518,9 @@ namespace gfx {
         bool                renderFrame(Frame* frame);
         void                waitForFrameEnd();
         VertexDecl const*   defaultVertexDecl() const;
+        QueryResult         getQueryResult(QueryHandle handle);
 
+        QueryHandle         getMappedBufferAddress(int cbCount, const ConstantBufferHandle* handles);
     private:
         uint16_t width_, height_;
         std::string window_title_;
@@ -522,6 +546,7 @@ namespace gfx {
         HandleGenerator<TextureBufferHandle> texture_buffer_handle_;
         HandleGenerator<FenceHandle> fence_handle_;
         HandleGenerator<ShaderStorageBufferHandle> shader_storage_buffer_handle_;
+        HandleGenerator<QueryHandle> query_handle_;
 
         HashMap<IndexBufferHandle, IndexBufferType> index_buffer_types_;
 

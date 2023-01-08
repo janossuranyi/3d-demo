@@ -47,8 +47,12 @@ private:
 	gfx::vtxCacheHandle icache;
 	gfx::ConstantBufferHandle lightInfoBuffer_;
 	gfx::TextureHandle skybox_;
+	gfx::QueryHandle query_mapped_addresses_;
+
+	uint8* bufaddr_;
 
 	bool firstframe_{true};
+
 	vec2 yawPitch_;
 	vec3 rot_;
 	vec3 lpos_{0};

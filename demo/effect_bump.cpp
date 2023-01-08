@@ -95,6 +95,7 @@ bool BumpEffect::Init()
             vcache = vc->allocStaticVertex(gfx::Memory(verts));
             icache = vc->allocStaticIndex(gfx::Memory(pI, indexCount * 2));
         }
+
     }
 
     shader_ = sm->createProgram(gfx::RenderProgram{ 
@@ -182,12 +183,10 @@ bool BumpEffect::HandleEvent(const SDL_Event* ev, float time)
 
 bool BumpEffect::Render(uint64_t frame)
 {    
-
-    Vector<vec4> univec;
-
     auto hwr = ctx::Context::default()->hwr();
     auto vc = ctx::Context::default()->vertexCache();
 
+    Vector<vec4> univec;
     uint voffset, vsize;
     uint ioffset, isize;
     gfx::VertexBufferHandle vb = vc->getVertexBuffer<gfx::DrawVert>(vcache, voffset, vsize);
@@ -199,8 +198,6 @@ bool BumpEffect::Render(uint64_t frame)
     uniforms_["samp_normal"] = 1;
     uniforms_["samp_pbr"] = 2;
     uniforms_["samp_env"] = 3;
-    firstframe_ = false;
-
 
     mat4 V(1.0f);
     mat4 W(1.0f);

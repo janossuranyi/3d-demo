@@ -22,6 +22,11 @@ namespace gfx {
 		frame_buffer = FrameBufferHandle::invalid;
 	}
 
+	bool RenderPass::isRenderAreaValid() const
+	{
+		return render_area.size.x > 0 && render_area.size.y > 0 && render_area.size.x < render_area.offset.x&& render_area.size.y < render_area.offset.y;
+	}
+
 	Renderer::Renderer() :
 		framenum_{0},
 		width_{0},
@@ -103,6 +108,26 @@ namespace gfx {
 	VertexDecl const* Renderer::defaultVertexDecl() const
 	{
 		return &defaultVertexDecl_;
+	}
+
+	QueryResult Renderer::getQueryResult(QueryHandle handle)
+	{
+		return shared_render_context_->get_query_result(handle);
+	}
+
+	QueryHandle Renderer::getMappedBufferAddress(int cbCount, const ConstantBufferHandle* handles)
+	{
+		QueryHandle res{};
+
+		if (cbCount <= 0) return res;
+		res = query_handle_.next();
+
+		cmd::QueryMappedBufferAddresses cmd{};
+		cmd.constantBufferHandles.assign(handles, handles + cbCount);
+		cmd.handle = res;
+		submitPostFrameCommand(cmd);
+
+		return res;
 	}
 
 	glm::ivec2 Renderer::getFramebufferSize() const
@@ -305,6 +330,15 @@ namespace gfx {
 			return;
 		}
 		submitPreFrameCommand(cmd::UpdateIndexBuffer{ handle,std::move(data),offset });
+	}
+
+	void Renderer::updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint offset)
+	{
+		if (!handle.isValid())
+		{
+			return;
+		}
+		submitPreFrameCommand(cmd::UpdateConstantBuffer{ handle,data,offset,0 });
 	}
 
 	void Renderer::updateShaderStorageBuffer(ShaderStorageBufferHandle handle, Memory data, uint offset)

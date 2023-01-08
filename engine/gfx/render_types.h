@@ -27,7 +27,9 @@ namespace gfx {
     struct ConstantBufferTag {};
     struct FenceTag {};
     struct ShaderStorageBufferTag {};
+    struct QueryTag {};
 
+    using QueryHandle = Handle<QueryTag, -1>;
     using MaterialHandle = Handle<MaterialTag, -1>;
     using ShaderStorageBufferHandle = Handle< ShaderStorageBufferTag, -1>;
     using TextureBufferHandle = Handle<TextureBufferTag, -1>;

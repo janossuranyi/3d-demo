@@ -64,7 +64,8 @@ namespace gfx {
 		int depth_bits() const override;
 		int stencil_bits() const override;
 		int uniform_offset_aligment() const override;
-		
+		QueryResult get_query_result(QueryHandle handle) override;
+
 		void operator()(const cmd::CreateBufferTexture& cmd);
 		void operator()(const cmd::DeleteVertexLayout& cmd);
 		void operator()(const cmd::CreateVertexLayout& cmd);
@@ -98,6 +99,7 @@ namespace gfx {
 		void operator()(const cmd::CreateShaderStorageBuffer& cmd);
 		void operator()(const cmd::UpdateShaderStorageBuffer& cmd);
 		void operator()(const cmd::DeleteShaderStorageBuffer& cmd);
+		void operator()(const cmd::QueryMappedBufferAddresses& cmd);
 
 		template <typename T> void operator()(const T& c) {
 			static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
@@ -195,6 +197,10 @@ namespace gfx {
 		HashMap<IndexBufferHandle, IndexBufferData> index_buffer_map_;
 		HashMap<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
 		HashMap<VertexLayoutHandle, GLuint> vertex_array_map_;
+		HashMap<QueryHandle, QueryResult> query_results_map_;
+
+		Mutex query_result_map_mx_{};
+
 
 		Set<String> gl_extensions_;
 

@@ -88,6 +88,19 @@ namespace gfx {
 #endif
 	}
 
+	void OpenGLRenderContext::operator()(const cmd::QueryMappedBufferAddresses& cmd)
+	{
+		result::QueryMappedBufferAddresses res;
+		for (const auto& e : cmd.constantBufferHandles) {
+			const auto data = constant_buffer_map_.find(e);
+			if (data == std::end(constant_buffer_map_)) continue;
+			res.constantBufferAddresses.push_back(reinterpret_cast<uint8*>( data->second.mapped_address ));
+		}
+
+		std::unique_lock<Mutex>(query_result_map_mx_);
+		query_results_map_.emplace(cmd.handle, res);
+	}
+
 	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
 	{
 		if (vertex_buffer_map_.count(cmd.handle) > 0)
