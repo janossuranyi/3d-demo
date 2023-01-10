@@ -30,7 +30,7 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<BumpEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<EngineTestEffect>();
 
     if (!activeEffect->Init())
         return;
@@ -149,6 +149,8 @@ void traverse_node(tinygltf::Model const& model, int node, int level = 0)
 
 int main(int argc, char** argv)
 {
+    Info("sizeof(RenderCommand) = %d", sizeof(gfx::RenderCommand));
+
     rc::FileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
 
     rc::ResourceManager::add_resource_path("../assets/shaders");
