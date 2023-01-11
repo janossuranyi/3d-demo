@@ -273,4 +273,54 @@ namespace gfx {
 
 	}
 
+	void gfx::OpenGLRenderContext::operator()(const cmd::CreateBuffer& cmd)
+	{
+		auto find = buffer_data_map_.find(cmd.handle);
+
+		// buffer exists
+		if (find != std::end(buffer_data_map_)) return;
+
+		BufferData bufferData{};
+
+		GLbitfield flags{};
+		{
+			if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_READ_BIT)			flags |= GL_MAP_READ_BIT;
+			if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_WRITE_BIT)		flags |= GL_MAP_WRITE_BIT;
+			if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_COHERENT_BIT)		flags |= GL_MAP_COHERENT_BIT;
+			if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_PERSISTENT_BIT)	flags |= GL_MAP_PERSISTENT_BIT;
+			if (cmd.flags & CREATE_BUFFER_STORAGE_DYNAMIC_BIT)			flags |= GL_DYNAMIC_STORAGE_BIT;
+		}
+
+		const GLsizeiptr _size = std::max(cmd.data.size(), size_t(cmd.size));
+
+		GL_CHECK(glCreateBuffers(1, &bufferData.buffer));
+		GL_CHECK(glNamedBufferStorage(bufferData.buffer, _size, nullptr, flags));
+		if (!cmd.data.empty()) {
+			GL_CHECK(glNamedBufferSubData(bufferData.buffer, cmd.bufferOffset, cmd.data.size(), cmd.data.data()));
+		}
+
+		if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_PERSISTENT_BIT) {
+			GL_CHECK(bufferData.mapptr = glMapNamedBufferRange(bufferData.buffer, 0, _size, flags));
+		}
+		bufferData.size = _size;
+		switch (cmd.target) {
+		case BufferTarget::Vertex:
+			bufferData.target = GL_ARRAY_BUFFER;
+			break;
+		case BufferTarget::Index:
+			bufferData.target = GL_ELEMENT_ARRAY_BUFFER;
+			break;
+		case BufferTarget::Texture:
+			bufferData.target = GL_TEXTURE_BUFFER;
+			break;
+		case BufferTarget::Uniform:
+			bufferData.target = GL_UNIFORM_BUFFER;
+			break;
+		case BufferTarget::ShaderStorage:
+			bufferData.target = GL_SHADER_STORAGE_BUFFER;
+			break;
+		}
+
+		buffer_data_map_.emplace(bufferData);
+	}
 }

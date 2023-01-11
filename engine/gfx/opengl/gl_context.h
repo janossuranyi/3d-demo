@@ -66,6 +66,7 @@ namespace gfx {
 		int uniform_offset_aligment() const override;
 		QueryResult get_query_result(QueryHandle handle) override;
 
+		void operator()(const cmd::CreateBuffer& cmd);
 		void operator()(const cmd::CreateBufferTexture& cmd);
 		void operator()(const cmd::DeleteVertexLayout& cmd);
 		void operator()(const cmd::CreateVertexLayout& cmd);
@@ -116,6 +117,13 @@ namespace gfx {
 
 			int w;
 			int h;
+		};
+
+		struct BufferData {
+			GLuint buffer;
+			GLenum target;
+			uint size;
+			void* mapptr;
 		};
 
 		struct ConstantBufferData {
@@ -198,6 +206,7 @@ namespace gfx {
 		HashMap<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
 		HashMap<VertexLayoutHandle, GLuint> vertex_array_map_;
 		HashMap<QueryHandle, QueryResult> query_results_map_;
+		HashMap<BufferHandle, BufferData> buffer_data_map_;
 
 		Mutex query_result_map_mx_{};
 

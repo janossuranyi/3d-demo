@@ -59,6 +59,16 @@ namespace gfx {
 		}
 	}
 
+	Result Renderer::createBuffer(const CreateBufferInfo& createInfo, BufferHandle& handle)
+	{
+		switch (createInfo.target) {
+		case BufferTarget::Vertex:
+			auto id = createVertexBuffer(createInfo.size, createInfo.usage, createInfo.data);
+			handle = BufferHandle(id.internal());
+			return RESULT_SUCCESS;
+		}
+	}
+
 	bool Renderer::init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread) {
 
 		if (type != RendererType::OpenGL) {

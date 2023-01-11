@@ -16,9 +16,19 @@
 
 namespace gfx {
 
+    struct CreateBufferInfo {
+        BufferTarget target;
+        StorageFlags flags;
+        TextureHandle texture;
+        TextureFormat format;
+        uint size;
+        uint bufferOffset;
+        Memory data;
+    };
+
     struct RenderItemDesc {
-        gfx::VertexBufferHandle vb;
-        gfx::IndexBufferHandle ib;
+        VertexBufferHandle vb;
+        IndexBufferHandle ib;
         uint vb_offset;
         uint ib_offset;
         uint elements;
@@ -31,6 +41,15 @@ namespace gfx {
     };
 
     namespace cmd {
+
+        struct CreateBuffer {
+            BufferHandle handle;
+            BufferTarget target;
+            StorageFlags flags;
+            uint size;
+            uint bufferOffset;
+            Memory data;
+        };
 
         struct CreateBufferTexture {
             TextureBufferHandle hbuffer;
@@ -275,6 +294,7 @@ namespace gfx {
     using QueryResult = std::variant<result::Empty, result::QueryMappedBufferAddresses>;
 
     using RenderCommand = std::variant<
+        cmd::CreateBuffer,
         cmd::CreateVertexLayout,
         cmd::DeleteVertexLayout,
         cmd::CreateConstantBuffer,
@@ -444,7 +464,7 @@ namespace gfx {
     public:
         Renderer();
         ~Renderer();
-
+        Result                      createBuffer(const CreateBufferInfo& createInfo, BufferHandle& handle);
         bool                        init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread);
         glm::ivec2                  getFramebufferSize() const;
         inline uint64               getFrameNum() const { return framenum_; };

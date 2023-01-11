@@ -11,8 +11,21 @@ namespace gfx {
 
     using StateBits = uint64;
 
+    using StorageFlags = uint32_t;
+    enum eStorageFlags :uint32_t {
+        CREATE_BUFFER_STORAGE_MAP_READ_BIT = 1,
+        CREATE_BUFFER_STORAGE_MAP_WRITE_BIT = 2,
+        CREATE_BUFFER_STORAGE_MAP_PERSISTENT_BIT = 4,
+        CREATE_BUFFER_STORAGE_MAP_COHERENT_BIT = 8,
+        CREATE_BUFFER_STORAGE_DYNAMIC_BIT = 16,
+    };
+
+    using Result = uint32_t;
+    enum eResult { RESULT_SUCCESS = 0, RESULT_FAILED = 255 };
+
     struct Rect2D { uvec2 offset; uvec2 size; };
 
+    struct BufferTag {};
     struct MaterialTag {};
     struct VertexLayoutTag {};
     struct VertexBufferTag {};
@@ -29,9 +42,10 @@ namespace gfx {
     struct ShaderStorageBufferTag {};
     struct QueryTag {};
 
+    using BufferHandle = Handle<BufferTag, -1>;
     using QueryHandle = Handle<QueryTag, -1>;
     using MaterialHandle = Handle<MaterialTag, -1>;
-    using ShaderStorageBufferHandle = Handle< ShaderStorageBufferTag, -1>;
+    using ShaderStorageBufferHandle = Handle<ShaderStorageBufferTag, -1>;
     using TextureBufferHandle = Handle<TextureBufferTag, -1>;
     using VertexLayoutHandle = Handle<VertexLayoutTag, -1>;
     using ConstantBufferHandle = Handle<ConstantBufferTag, -1>;
@@ -44,6 +58,8 @@ namespace gfx {
     using TextureHandle = Handle<TextureTag, -1>;
     using FrameBufferHandle = Handle<FrameBufferTag, -1>;
     using FenceHandle = Handle<FenceTag, -1>;
+
+    enum class BufferTarget { Vertex, Index, Texture, Uniform, ShaderStorage };
 
     // alpha mode
     enum class AlphaMode { Opaque, Mask, Blend };
