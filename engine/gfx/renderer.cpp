@@ -24,7 +24,7 @@ namespace gfx {
 
 	bool RenderPass::isRenderAreaValid() const
 	{
-		return render_area.size.x > 0 && render_area.size.y > 0 && render_area.size.x < render_area.offset.x&& render_area.size.y < render_area.offset.y;
+		return render_area.extent.x > 0 && render_area.extent.y > 0 && render_area.extent.x < render_area.position.x&& render_area.extent.y < render_area.position.y;
 	}
 
 	Renderer::Renderer() :
@@ -61,12 +61,18 @@ namespace gfx {
 
 	Result Renderer::createBuffer(const CreateBufferInfo& createInfo, BufferHandle& handle)
 	{
-		switch (createInfo.target) {
-		case BufferTarget::Vertex:
-			auto id = createVertexBuffer(createInfo.size, createInfo.usage, createInfo.data);
-			handle = BufferHandle(id.internal());
-			return RESULT_SUCCESS;
-		}
+		cmd::CreateBuffer cmd{};
+		cmd.flags = createInfo.flags;
+		cmd.data = createInfo.data;
+		cmd.size = createInfo.size;
+		cmd.target = createInfo.target;
+		cmd.handle = buffer_handle_.next();
+
+		submitPreFrameCommand(cmd);
+
+		handle = cmd.handle;
+
+		return RESULT_SUCCESS;
 	}
 
 	bool Renderer::init(RendererType type, uint16_t width, uint16_t height, const std::string& title, bool use_thread) {
@@ -120,26 +126,6 @@ namespace gfx {
 		return &defaultVertexDecl_;
 	}
 
-	QueryResult Renderer::getQueryResult(QueryHandle handle)
-	{
-		return shared_render_context_->get_query_result(handle);
-	}
-
-	QueryHandle Renderer::getMappedBufferAddress(int cbCount, const ConstantBufferHandle* handles)
-	{
-		QueryHandle res{};
-
-		if (cbCount <= 0) return res;
-		res = query_handle_.next();
-
-		cmd::QueryMappedBufferAddresses cmd{};
-		cmd.constantBufferHandles.assign(handles, handles + cbCount);
-		cmd.handle = res;
-		submitPostFrameCommand(cmd);
-
-		return res;
-	}
-
 	glm::ivec2 Renderer::getFramebufferSize() const
 	{
 		return shared_render_context_->get_window_size();
@@ -154,6 +140,23 @@ namespace gfx {
 		return handle;
 	}
 
+	BufferHandle Renderer::createVertexBuffer(uint size,  Memory data)
+	{
+		CreateBufferInfo info{};
+		info.data = std::move(data);
+		info.flags = eStorageFlags::DYNAMIC_BIT | eStorageFlags::MAP_WRITE_BIT;
+		info.size = size;
+		info.target = BufferTarget::Vertex;
+
+		BufferHandle h{};
+		if (createBuffer(info, h) == RESULT_SUCCESS) {
+			return h;
+		}
+		else {
+			return BufferHandle{};
+		}
+	}
+
 	TextureBufferHandle Renderer::createTextureBuffer(uint size, BufferUsage usage, Memory data)
 	{
 		const TextureBufferHandle handle = texture_buffer_handle_.next();
@@ -162,20 +165,21 @@ namespace gfx {
 		return handle;
 	}
 
-	VertexBufferHandle Renderer::createVertexBuffer(uint32_t size, BufferUsage usage, Memory data)
+	BufferHandle Renderer::createIndexBuffer(uint size, Memory data)
 	{
-		const VertexBufferHandle handle = vertex_buffer_handle_.next();
-		submitPreFrameCommand(cmd::CreateVertexBuffer{ handle, std::move(data), size, usage });
+		CreateBufferInfo info{};
+		info.data = std::move(data);
+		info.flags = eStorageFlags::DYNAMIC_BIT | eStorageFlags::MAP_WRITE_BIT;
+		info.size = size;
+		info.target = BufferTarget::Index;
 
-		return handle;
-	}
-
-	IndexBufferHandle Renderer::createIndexBuffer(uint32_t size, BufferUsage usage, Memory data)
-	{
-		const IndexBufferHandle handle = index_buffer_handle_.next();
-		submitPreFrameCommand(cmd::CreateIndexBuffer{ handle, std::move(data), size, usage });
-
-		return handle;
+		BufferHandle h{};
+		if (createBuffer(info, h) == RESULT_SUCCESS) {
+			return h;
+		}
+		else {
+			return BufferHandle{};
+		}
 	}
 
 	ShaderStorageBufferHandle gfx::Renderer::createShaderStorageBuffer(uint size, BufferUsage usage, Memory data)
@@ -324,22 +328,13 @@ namespace gfx {
 		submitPreFrameCommand(cmd::LinkProgram{ handle, shaders });
 	}
 
-	void Renderer::updateVertexBuffer(VertexBufferHandle handle, Memory data, uint32_t offset)
+	void Renderer::updateBuffer(BufferHandle handle, Memory data, uint offset)
 	{
-		if (!handle.isValid())
-		{
-			return;
-		}
-		submitPreFrameCommand(cmd::UpdateVertexBuffer{ handle,std::move(data),offset,0 });
-	}
-
-	void Renderer::updateIndexBuffer(IndexBufferHandle handle, Memory data, uint32_t offset)
-	{
-		if (!handle.isValid())
-		{
-			return;
-		}
-		submitPreFrameCommand(cmd::UpdateIndexBuffer{ handle,std::move(data),offset });
+		cmd::UpdateBuffer cmd{};
+		cmd.data = data;
+		cmd.handle = handle;
+		cmd.offset = offset;
+		submitPreFrameCommand(cmd);
 	}
 
 	void Renderer::updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint offset)
@@ -378,22 +373,13 @@ namespace gfx {
 		submitPostFrameCommand(cmd::DeleteVertexLayout{ handle });
 	}
 
-	void Renderer::deleteVertexBuffer(VertexBufferHandle handle)
+	void Renderer::deleteBuffer(BufferHandle handle)
 	{
 		if (!handle.isValid())
 		{
 			return;
 		}
-		submitPostFrameCommand(cmd::DeleteVertexBuffer{ handle });
-	}
-
-	void Renderer::deleteIndexBuffer(IndexBufferHandle handle)
-	{
-		if (!handle.isValid())
-		{
-			return;
-		}
-		submitPostFrameCommand(cmd::DeleteIndexBuffer{ handle });
+		submitPostFrameCommand(cmd::DeleteBuffer{ handle });
 	}
 
 	void Renderer::deleteConstantBuffer(ConstantBufferHandle handle)
@@ -514,7 +500,7 @@ namespace gfx {
 		submit_->active_item.scissor_h = h;
 	}
 
-	void Renderer::setIndexBuffer(IndexBufferHandle handle)
+	void Renderer::setIndexBuffer(BufferHandle handle)
 	{
 		submit_->active_item.ib = handle;
 		submit_->active_item.ib_offset = 0;
@@ -682,7 +668,7 @@ namespace gfx {
 		return render_passes[index];
 	}
 
-	void Renderer::setVertexBuffer(VertexBufferHandle vb, ushort index, uint offset)
+	void Renderer::setVertexBuffer(BufferHandle vb, ushort index, uint offset)
 	{
 		submit_->active_item.vbs[index] = VertexBinding{ vb,offset };
 	}
@@ -697,9 +683,9 @@ namespace gfx {
 	}
 	void Renderer::submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count)
 	{
-		submit(pass, program, vertex_count, 0, 0);
+		submit(pass, program, vertex_count, 0, 0, IndexBufferType::U16);
 	}
-	void Renderer::submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset)
+	void Renderer::submit(uint32_t pass, ProgramHandle program, uint32_t vertex_count, uint32_t vb_offset, uint32_t ib_offset, IndexBufferType idxType)
 	{
 		if (!compute_active_)
 		{
@@ -708,6 +694,7 @@ namespace gfx {
 			item.vertex_count = vertex_count;
 			item.ib_offset = ib_offset;
 			item.vb_offset = vb_offset;
+			item.indexType = idxType;
 			submit_->renderPass(pass).render_items.emplace_back(std::move(item));
 			item = RenderItem();
 		}

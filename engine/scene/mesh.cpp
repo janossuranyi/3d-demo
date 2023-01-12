@@ -63,13 +63,13 @@ namespace scene {
 		uint vertex_count = 0;
 		uint base_vertex{}, vb_size{};
 		uint ib_offset{}, idx_count{};
-		gfx::VertexBufferHandle vb = vc.getVertexBuffer<gfx::DrawVert>(vtxc_, base_vertex, vb_size);
+		gfx::BufferHandle vb = vc.getVertexBuffer<gfx::DrawVert>(vtxc_, base_vertex, vb_size);
 
 		hwr.setVertexBuffer(vb);
 
 		if (elements_)
 		{
-			gfx::IndexBufferHandle ib = vc.getIndexBuffer<ushort>(idxc_, ib_offset, idx_count);
+			gfx::BufferHandle ib = vc.getIndexBuffer<ushort>(idxc_, ib_offset, idx_count);
 			hwr.setIndexBuffer(ib);
 			vertex_count = elements_;
 		}

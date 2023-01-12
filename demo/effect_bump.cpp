@@ -189,8 +189,8 @@ bool BumpEffect::Render(uint64_t frame)
     Vector<vec4> univec;
     uint voffset, vsize;
     uint ioffset, isize;
-    gfx::VertexBufferHandle vb = vc->getVertexBuffer<gfx::DrawVert>(vcache, voffset, vsize);
-    gfx::IndexBufferHandle ib = vc->getIndexBuffer<ushort>(icache, ioffset, isize);
+    gfx::BufferHandle vb = vc->getVertexBuffer<gfx::DrawVert>(vcache, voffset, vsize);
+    gfx::BufferHandle ib = vc->getIndexBuffer<ushort>(icache, ioffset, isize);
 
     hwr->setConstBuffer(0, lightInfoBuffer_, 0, sizeof(Light)*3);
 
@@ -252,7 +252,7 @@ bool BumpEffect::Render(uint64_t frame)
     hwr->setTexture(skybox_, 3);
     hwr->setUniforms(uniforms_);
 
-    hwr->submit(0, shader_, isize, voffset, ioffset*2);
+    hwr->submit(0, shader_, isize, voffset, ioffset*2, gfx::IndexBufferType::U16);
 
     hwr->setViewport(1, 0, 0, screenSize.x, screenSize.y);
 
@@ -283,7 +283,7 @@ bool BumpEffect::Render(uint64_t frame)
         hwr->setClearBits(1, 0);
         hwr->setFrameBuffer(1, gfx::FrameBufferHandle{ 0 });
 
-        hwr->submit(1, shader_, isize, voffset, ioffset * 2);
+        hwr->submit(1, shader_, isize, voffset, ioffset * 2, gfx::IndexBufferType::U16);
     }
 
     return true;

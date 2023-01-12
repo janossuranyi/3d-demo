@@ -229,21 +229,16 @@ namespace gfx {
 		return gl_uniform_buffer_offset_alignment_;
 	}
 
-	QueryResult OpenGLRenderContext::get_query_result(QueryHandle handle)
-	{
-		QueryResult res{ result::Empty{} };
+	void* OpenGLRenderContext::get_mapped_address(BufferHandle handle) {
 
-		std::unique_lock<Mutex> lck(query_result_map_mx_);
-		auto data = query_results_map_.find(handle);
-		if (data != std::end(query_results_map_))
-		{
-			res = data->second;
-			query_results_map_.erase(handle);
+		std::lock_guard<Mutex> lck(buffer_data_mutex_);
+		auto result = buffer_data_map_.find(handle);
+		if (result != std::end(buffer_data_map_)) {
+			return result->second.mapptr;
 		}
 
-		return res;
+		return nullptr;
 	}
-
 
 	void OpenGLRenderContext::operator()(const cmd::CreateFence& cmd)
 	{
@@ -609,7 +604,7 @@ namespace gfx {
 			(void)fb_height;
 
 			if (pass.isRenderAreaValid()) {
-				GL_CHECK(glViewport(pass.render_area.offset.x, pass.render_area.offset.y, pass.render_area.size.x, pass.render_area.size.y));
+				GL_CHECK(glViewport(pass.render_area.position.x, pass.render_area.position.y, pass.render_area.extent.x, pass.render_area.extent.y));
 			}
 
 			GLbitfield clear_bits = 0;
@@ -726,7 +721,8 @@ namespace gfx {
 						const auto& binding = item->vbs[attr.binding];
 						if (binding.handle.isValid())
 						{
-							const auto& vb_data = vertex_buffer_map_.at(binding.handle);
+							const auto& vb_data = buffer_data_map_.at(binding.handle);
+							assert(vb_data.target == GL_ARRAY_BUFFER);
 							GL_CHECK(glBindVertexBuffer(attr.binding, vb_data.buffer, binding.offset, attr.stride));
 							if (layout_change)
 							{
@@ -740,9 +736,9 @@ namespace gfx {
 				// Element buffer setup
 				if (active_ib_ != item->ib && item->ib.isValid())
 				{
-					const auto& ib = index_buffer_map_.at(item->ib);
+					const auto& ib = buffer_data_map_.at(item->ib);
 					GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer));
-					active_ib_type_ = ib.type == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+					active_ib_type_ = item->indexType == IndexBufferType::U16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 					active_ib_ = item->ib;
 				}
 
@@ -840,10 +836,10 @@ namespace gfx {
 		GL_CHECK(glBindBuffer(GL_TEXTURE_BUFFER, 0));
 
 		list1.clear();
-		for (auto& r : vertex_buffer_map_) {
+		for (auto& r : buffer_data_map_) {
 			list1.push_back(r.second.buffer);
 		}
-		for (auto& r : index_buffer_map_) {
+		for (auto& r : buffer_data_map_) {
 			list1.push_back(r.second.buffer);
 		}
 		for (auto& r : constant_buffer_map_) {
@@ -862,8 +858,7 @@ namespace gfx {
 		GL_CHECK(glDeleteVertexArrays(GLsizei(list1.size()), list1.data()));
 		
 		frame_buffer_map_.clear();
-		vertex_buffer_map_.clear();
-		index_buffer_map_.clear();
+		buffer_data_map_.clear();
 		texture_map_.clear();
 		shader_map_.clear();
 		program_map_.clear();
@@ -1065,7 +1060,7 @@ namespace gfx {
 		}
 
 		//
-		// polygon offset
+		// polygon position
 		//
 		if (diff & GLS_POLYGON_OFFSET)
 		{

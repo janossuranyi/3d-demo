@@ -88,30 +88,6 @@ namespace gfx {
 #endif
 	}
 
-	void OpenGLRenderContext::operator()(const cmd::QueryMappedBufferAddresses& cmd)
-	{
-		result::QueryMappedBufferAddresses res;
-		for (const auto& e : cmd.constantBufferHandles) {
-			const auto data = constant_buffer_map_.find(e);
-			if (data == std::end(constant_buffer_map_)) continue;
-			res.constantBufferAddresses.push_back(reinterpret_cast<uint8*>( data->second.mapped_address ));
-		}
-
-		std::unique_lock<Mutex>(query_result_map_mx_);
-		query_results_map_.emplace(cmd.handle, res);
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::CreateVertexBuffer& cmd)
-	{
-		if (vertex_buffer_map_.count(cmd.handle) > 0)
-			return;
-
-		uint _size = cmd.size;
-		const GLuint buffer = create_buffer_real(GL_ARRAY_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
-
-		vertex_buffer_map_.emplace(cmd.handle, VertexBufferData{ buffer, _size, cmd.usage });
-	}
-
 	void OpenGLRenderContext::operator()(const cmd::CreateTextureBuffer& cmd)
 	{
 		if (texture_buffer_map_.count(cmd.handle) > 0)
@@ -136,30 +112,31 @@ namespace gfx {
 		update_buffer_real(GL_TEXTURE_BUFFER, data.buffer, cmd.offset, cmd.size, cmd.data);
 	}
 
-	void OpenGLRenderContext::operator()(const cmd::UpdateVertexBuffer& cmd)
+	void OpenGLRenderContext::operator()(const cmd::UpdateBuffer& cmd)
 	{
 		if (cmd.data.data() == nullptr)
 			return;
 
-		const auto result = vertex_buffer_map_.find(cmd.handle);
-		if (result == vertex_buffer_map_.end())
+		const auto result = buffer_data_map_.find(cmd.handle);
+		if (result == buffer_data_map_.end())
 			return;
 
 		const auto& data = result->second;
-		update_buffer_real(GL_ARRAY_BUFFER, data.buffer, cmd.offset, cmd.size, cmd.data);
-		//GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, GLintptr(cmd.offset), size, cmd.data.data()));
+		glNamedBufferSubData(data.buffer, cmd.offset, cmd.data.size(), cmd.data.data());
 	}
 
-	void OpenGLRenderContext::operator()(const cmd::DeleteVertexBuffer& cmd)
+	void OpenGLRenderContext::operator()(const cmd::DeleteBuffer& cmd)
 	{
-		const auto result = vertex_buffer_map_.find(cmd.handle);
-		if (result == vertex_buffer_map_.end())
+		const auto result = buffer_data_map_.find(cmd.handle);
+		if (result == std::end(buffer_data_map_ ))
 			return;
 
 		const auto& data = result->second;
 
 		GL_CHECK(glDeleteBuffers(1, &data.buffer));
-		vertex_buffer_map_.erase(cmd.handle);
+
+		std::lock_guard<Mutex> lck(buffer_data_mutex_);
+		buffer_data_map_.erase(cmd.handle);
 
 #ifdef _DEBUG
 		Info("Vertex buffer %d deleted", cmd.handle);
@@ -182,44 +159,6 @@ namespace gfx {
 #endif
 	}
 
-	void OpenGLRenderContext::operator()(const cmd::CreateIndexBuffer& cmd)
-	{
-		const auto result = index_buffer_map_.find(cmd.handle);
-		if (result != index_buffer_map_.end())
-			return;
-
-		uint _size = cmd.size;
-		const GLuint buffer = create_buffer_real(GL_ELEMENT_ARRAY_BUFFER, cmd.usage, cmd.size, cmd.data, _size);
-
-		index_buffer_map_.emplace(cmd.handle, IndexBufferData{ buffer, _size, cmd.usage, cmd.type });
-
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::UpdateIndexBuffer& cmd)
-	{
-		if (cmd.data.data() == nullptr)
-			return;
-
-		const auto result = index_buffer_map_.find(cmd.handle);
-
-		if (result != std::end(index_buffer_map_))
-		{
-			const auto& data = result->second;
-			update_buffer_real(GL_ELEMENT_ARRAY_BUFFER, data.buffer, cmd.offset, 0, cmd.data);
-		}
-	}
-
-	void OpenGLRenderContext::operator()(const cmd::DeleteIndexBuffer& cmd)
-	{
-		const auto result = index_buffer_map_.find(cmd.handle);
-		GL_CHECK(glDeleteBuffers(1, &result->second.buffer));
-		index_buffer_map_.erase(cmd.handle);
-
-#ifdef _DEBUG
-		Info("Uniform buffer %d deleted", cmd.handle);
-#endif
-
-	}
 
 	void OpenGLRenderContext::operator()(const cmd::CreateConstantBuffer& cmd)
 	{
@@ -249,7 +188,7 @@ namespace gfx {
 		if (data.mapped_address)
 		{
 			std::memcpy(reinterpret_cast<char*>( data.mapped_address ) + cmd.offset, cmd.data.data(), cmd.size > 0 ? cmd.size : cmd.data.size());
-			//GL_CHECK(glFlushMappedNamedBufferRange(data.buffer, cmd.offset, cmd.size > 0 ? cmd.size : cmd.data.size()));
+			//GL_CHECK(glFlushMappedNamedBufferRange(data.buffer, cmd.position, cmd.size > 0 ? cmd.size : cmd.data.size()));
 		}
 		else
 		{
@@ -284,11 +223,11 @@ namespace gfx {
 
 		GLbitfield flags{};
 		{
-			if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_READ_BIT)			flags |= GL_MAP_READ_BIT;
-			if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_WRITE_BIT)		flags |= GL_MAP_WRITE_BIT;
-			if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_COHERENT_BIT)		flags |= GL_MAP_COHERENT_BIT;
-			if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_PERSISTENT_BIT)	flags |= GL_MAP_PERSISTENT_BIT;
-			if (cmd.flags & CREATE_BUFFER_STORAGE_DYNAMIC_BIT)			flags |= GL_DYNAMIC_STORAGE_BIT;
+			if (cmd.flags & eStorageFlags::MAP_READ_BIT)		flags |= GL_MAP_READ_BIT;
+			if (cmd.flags & eStorageFlags::MAP_WRITE_BIT)		flags |= GL_MAP_WRITE_BIT;
+			if (cmd.flags & eStorageFlags::MAP_COHERENT_BIT)	flags |= GL_MAP_COHERENT_BIT;
+			if (cmd.flags & eStorageFlags::MAP_PERSISTENT_BIT)	flags |= GL_MAP_PERSISTENT_BIT;
+			if (cmd.flags & eStorageFlags::DYNAMIC_BIT)			flags |= GL_DYNAMIC_STORAGE_BIT;
 		}
 
 		const GLsizeiptr _size = std::max(cmd.data.size(), size_t(cmd.size));
@@ -299,7 +238,7 @@ namespace gfx {
 			GL_CHECK(glNamedBufferSubData(bufferData.buffer, cmd.bufferOffset, cmd.data.size(), cmd.data.data()));
 		}
 
-		if (cmd.flags & CREATE_BUFFER_STORAGE_MAP_PERSISTENT_BIT) {
+		if (cmd.flags & eStorageFlags::MAP_PERSISTENT_BIT) {
 			GL_CHECK(bufferData.mapptr = glMapNamedBufferRange(bufferData.buffer, 0, _size, flags));
 		}
 		bufferData.size = _size;
@@ -321,6 +260,7 @@ namespace gfx {
 			break;
 		}
 
-		buffer_data_map_.emplace(bufferData);
+		std::unique_lock<Mutex> lck(buffer_data_mutex_);
+		buffer_data_map_.emplace(cmd.handle, bufferData);
 	}
 }

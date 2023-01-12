@@ -11,26 +11,27 @@ namespace gfx {
 
     using StateBits = uint64;
 
-    using StorageFlags = uint32_t;
-    enum eStorageFlags :uint32_t {
-        CREATE_BUFFER_STORAGE_MAP_READ_BIT = 1,
-        CREATE_BUFFER_STORAGE_MAP_WRITE_BIT = 2,
-        CREATE_BUFFER_STORAGE_MAP_PERSISTENT_BIT = 4,
-        CREATE_BUFFER_STORAGE_MAP_COHERENT_BIT = 8,
-        CREATE_BUFFER_STORAGE_DYNAMIC_BIT = 16,
+    using StorageFlags = uint;
+    enum eStorageFlags : uint {
+        MAP_READ_BIT = 1,
+        MAP_WRITE_BIT = 2,
+        MAP_PERSISTENT_BIT = 4,
+        MAP_COHERENT_BIT = 8,
+        DYNAMIC_BIT = 16,
     };
 
-    using Result = uint32_t;
+    using Result = uint;
     enum eResult { RESULT_SUCCESS = 0, RESULT_FAILED = 255 };
 
-    struct Rect2D { uvec2 offset; uvec2 size; };
+    enum class VertexInputRate { Vertex, Instance };
+    struct Rect2D { uvec2 position; uvec2 extent; };
+
+
 
     struct BufferTag {};
     struct MaterialTag {};
     struct VertexLayoutTag {};
-    struct VertexBufferTag {};
     struct TextureBufferTag {};
-    struct IndexBufferTag {};
     struct DynVertexBufferTag {};
     struct DynIndexBufferTag {};
     struct ShaderTag {};
@@ -49,8 +50,6 @@ namespace gfx {
     using TextureBufferHandle = Handle<TextureBufferTag, -1>;
     using VertexLayoutHandle = Handle<VertexLayoutTag, -1>;
     using ConstantBufferHandle = Handle<ConstantBufferTag, -1>;
-    using VertexBufferHandle = Handle<VertexBufferTag, -1>;
-    using IndexBufferHandle = Handle<IndexBufferTag, -1>;
     using DynVertexBufferHandle = Handle<DynVertexBufferTag, -1>;
     using DynIndexBufferHandle = Handle<DynIndexBufferTag, -1>;
     using ShaderHandle = Handle<ShaderTag, -1>;

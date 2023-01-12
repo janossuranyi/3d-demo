@@ -64,18 +64,14 @@ namespace gfx {
 		int depth_bits() const override;
 		int stencil_bits() const override;
 		int uniform_offset_aligment() const override;
-		QueryResult get_query_result(QueryHandle handle) override;
+		void* get_mapped_address(BufferHandle handle) override;
 
 		void operator()(const cmd::CreateBuffer& cmd);
 		void operator()(const cmd::CreateBufferTexture& cmd);
 		void operator()(const cmd::DeleteVertexLayout& cmd);
 		void operator()(const cmd::CreateVertexLayout& cmd);
-		void operator()(const cmd::CreateVertexBuffer& cmd);
-		void operator()(const cmd::UpdateVertexBuffer& cmd);
-		void operator()(const cmd::DeleteVertexBuffer& cmd);
-		void operator()(const cmd::CreateIndexBuffer& cmd);
-		void operator()(const cmd::UpdateIndexBuffer& cmd);
-		void operator()(const cmd::DeleteIndexBuffer& cmd);
+		void operator()(const cmd::UpdateBuffer& cmd);
+		void operator()(const cmd::DeleteBuffer& cmd);
 		void operator()(const cmd::CreateShader& cmd);
 		void operator()(const cmd::DeleteShader& cmd);
 		void operator()(const cmd::CreateProgram& cmd);
@@ -100,7 +96,6 @@ namespace gfx {
 		void operator()(const cmd::CreateShaderStorageBuffer& cmd);
 		void operator()(const cmd::UpdateShaderStorageBuffer& cmd);
 		void operator()(const cmd::DeleteShaderStorageBuffer& cmd);
-		void operator()(const cmd::QueryMappedBufferAddresses& cmd);
 
 		template <typename T> void operator()(const T& c) {
 			static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
@@ -199,14 +194,12 @@ namespace gfx {
 		HashMap<ShaderHandle, ShaderData> shader_map_;
 		HashMap<ProgramHandle, ProgramData> program_map_;
 		HashMap<ConstantBufferHandle, ConstantBufferData> constant_buffer_map_;
-		HashMap<VertexBufferHandle, VertexBufferData> vertex_buffer_map_;
 		HashMap<ShaderStorageBufferHandle, ShaderBufferData> shader_buffer_map_;
 		HashMap<TextureBufferHandle, TextureBufferData> texture_buffer_map_;
-		HashMap<IndexBufferHandle, IndexBufferData> index_buffer_map_;
 		HashMap<FrameBufferHandle, FrameBufferData> frame_buffer_map_;
 		HashMap<VertexLayoutHandle, GLuint> vertex_array_map_;
-		HashMap<QueryHandle, QueryResult> query_results_map_;
 		HashMap<BufferHandle, BufferData> buffer_data_map_;
+		Mutex buffer_data_mutex_;
 
 		Mutex query_result_map_mx_{};
 
@@ -222,11 +215,11 @@ namespace gfx {
 		vec4 active_clear_color_{ 0.0f,0.0f,0.0f,1.0f };
 
 		// cache
-		VertexBufferHandle active_vb_{};
+		BufferHandle active_vb_{};
 		Array<VertexBinding, MAX_LAYOUT_BUFFERS> active_vbs_{};
 		Array<TextureHandle, MAX_IMAGE_UNITS> active_imagetexes_{};
 		Array<TextureHandle, MAX_TEXTURE_SAMPLERS> active_textures_{};
-		IndexBufferHandle active_ib_{};
+		BufferHandle active_ib_{};
 		ProgramHandle active_program_{};
 		FrameBufferHandle active_fb_{0};
 		VertexLayoutHandle active_vertex_layout_{};
@@ -252,5 +245,5 @@ namespace gfx {
 		int max_texture_change_{};
 		int max_program_change_{};
 		int max_vb_change_{};
-	};
+};
 }

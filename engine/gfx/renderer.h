@@ -27,8 +27,8 @@ namespace gfx {
     };
 
     struct RenderItemDesc {
-        VertexBufferHandle vb;
-        IndexBufferHandle ib;
+        BufferHandle vb;
+        BufferHandle ib;
         uint vb_offset;
         uint ib_offset;
         uint elements;
@@ -123,40 +123,14 @@ namespace gfx {
             ConstantBufferHandle handle;
         };
 
-        struct CreateVertexBuffer {
-            VertexBufferHandle handle;
-            Memory data;
-            uint size;
-            BufferUsage usage;
-        };
-
-        struct UpdateVertexBuffer {
-            VertexBufferHandle handle;
-            Memory data;
-            uint offset;
-            uint size;
-        };
-
-        struct DeleteVertexBuffer {
-            VertexBufferHandle handle;
-        };
-
-        struct CreateIndexBuffer {
-            IndexBufferHandle handle;
-            Memory data;
-            uint size;
-            BufferUsage usage;
-            IndexBufferType type;
-        };
-
-        struct UpdateIndexBuffer {
-            IndexBufferHandle handle;
+        struct UpdateBuffer {
+            BufferHandle handle;
             Memory data;
             uint offset;
         };
 
-        struct DeleteIndexBuffer {
-            IndexBufferHandle handle;
+        struct DeleteBuffer {
+            BufferHandle handle;
         };
 
         struct CreateShader {
@@ -267,39 +241,13 @@ namespace gfx {
         struct MemoryBarrier {
             uint barrier_bits;
         };
-
-        /*********************************************
-         ** Query commands
-         *********************************************/
-
-        struct QueryMappedBufferAddresses {
-            QueryHandle handle;
-            Vector<VertexBufferHandle> vertexBufferHandles;
-            Vector<IndexBufferHandle> indexBufferHandles;
-            Vector<ConstantBufferHandle> constantBufferHandles;
-            Vector<ShaderStorageBufferHandle> ssBufferHandles;
-        };
     }
-
-    namespace result {
-        struct Empty {};
-        struct QueryMappedBufferAddresses {
-            Vector<uint8*> vertexBufferAddresses;
-            Vector<uint8*> indexBufferAddresses;
-            Vector<uint8*> constantBufferAddresses;
-            Vector<uint8*> ssBufferAddresses;
-        };
-    }
-
-    using QueryResult = std::variant<result::Empty, result::QueryMappedBufferAddresses>;
 
     using RenderCommand = std::variant<
         cmd::CreateBuffer,
         cmd::CreateVertexLayout,
         cmd::DeleteVertexLayout,
         cmd::CreateConstantBuffer,
-        cmd::CreateVertexBuffer,
-        cmd::CreateIndexBuffer,
         cmd::CreateProgram,
         cmd::LinkProgram,
         cmd::CreateFramebuffer,
@@ -309,15 +257,13 @@ namespace gfx {
         cmd::CreateTextureCubeMap,
         cmd::CreateTexture,
         cmd::UpdateConstantBuffer,
-        cmd::UpdateIndexBuffer,
-        cmd::UpdateVertexBuffer,
+        cmd::UpdateBuffer,
         cmd::DeleteConstantBuffer,
         cmd::DeleteFramebuffer,
-        cmd::DeleteIndexBuffer,
         cmd::DeleteProgram,
         cmd::DeleteShader,
         cmd::DeleteTexture,
-        cmd::DeleteVertexBuffer,
+        cmd::DeleteBuffer,
         cmd::CreateFence,
         cmd::DeleteFence,
         cmd::CreateTextureBuffer,
@@ -327,8 +273,7 @@ namespace gfx {
         cmd::CreateBufferTexture,
         cmd::CreateShaderStorageBuffer,
         cmd::UpdateShaderStorageBuffer,
-        cmd::DeleteShaderStorageBuffer,
-        cmd::QueryMappedBufferAddresses>;
+        cmd::DeleteShaderStorageBuffer>;
 
     using VertexAttribData = std::variant<int, uint, float, ivec2, ivec3, ivec4, vec2, vec3, vec4>;
     using UniformData = std::variant<int, float,ivec2, ivec3, ivec4, vec2, vec3, vec4, mat3, mat4, Vector<float>, Vector<vec4>>;
@@ -351,7 +296,7 @@ namespace gfx {
     };
 
     struct VertexBinding {
-        VertexBufferHandle handle;
+        BufferHandle handle;
         uint offset;
 
         inline bool operator!=(const VertexBinding& other) const
@@ -390,7 +335,7 @@ namespace gfx {
         Array<VertexBinding, MAX_LAYOUT_BUFFERS> vbs;
         Array<TextureBinding, MAX_TEXTURE_SAMPLERS> textures;
         Array<ConstantBufferBinding, MAX_UNIFORM_BUFFERS> constant_buffers;
-        IndexBufferHandle ib;
+        BufferHandle ib;
         uint ib_offset;
         uint vb_offset;
         uint vertex_count;
@@ -400,7 +345,7 @@ namespace gfx {
         VertexDecl vertexDecl;
         UniformMap uniforms;
         VertexAttribMap vertexAttribs;
-
+        IndexBufferType indexType;
         bool scissor{ false };
         ushort scissor_x{ 0 };
         ushort scissor_y{ 0 };
@@ -470,9 +415,9 @@ namespace gfx {
         inline uint64               getFrameNum() const { return framenum_; };
         int                         getUniformOffsetAligment() const;
         VertexLayoutHandle          createVertexLayout(VertexDecl& decl);
-        VertexBufferHandle          createVertexBuffer(uint size, BufferUsage usage, Memory data);
+        BufferHandle                createVertexBuffer(uint size, Memory data);
         TextureBufferHandle         createTextureBuffer(uint size, BufferUsage usage, Memory data);
-        IndexBufferHandle           createIndexBuffer(uint size, BufferUsage usage, Memory data);
+        BufferHandle                createIndexBuffer(uint size, Memory data);
         ConstantBufferHandle        createConstantBuffer(uint size, BufferUsage usage, Memory data);
         ShaderStorageBufferHandle   createShaderStorageBuffer(uint size, BufferUsage usage, Memory data);
         TextureHandle               createTexture2D(TextureWrap wrap, TextureFilter minfilter, TextureFilter magfilter, ImageSet& data, ushort max_iso = 1);
@@ -487,15 +432,13 @@ namespace gfx {
         
         void                linkProgram(ProgramHandle handle, std::vector<ShaderHandle>& shaders);
 
-        void                updateVertexBuffer(VertexBufferHandle handle, Memory data, uint offset);
-        void                updateIndexBuffer(IndexBufferHandle handle, Memory data, uint offset);
+        void                updateBuffer(BufferHandle handle, Memory data, uint offset);
         void                updateConstantBuffer(ConstantBufferHandle handle, Memory data, uint offset);
         void                updateShaderStorageBuffer(ShaderStorageBufferHandle handle, Memory data, uint offset);
         void                updateTextureBuffer(TextureBufferHandle handle, Memory data, uint offset);
 
         void                deleteVertexLayout(VertexLayoutHandle handle);
-        void                deleteVertexBuffer(VertexBufferHandle handle);
-        void                deleteIndexBuffer(IndexBufferHandle handle);
+        void                deleteBuffer(BufferHandle handle);
         void                deleteConstantBuffer(ConstantBufferHandle handle);
         void                deleteShaderStorageBuffer(ShaderStorageBufferHandle handle);
         void                deleteFrameBuffer(FrameBufferHandle handle);
@@ -514,7 +457,7 @@ namespace gfx {
         void                setRenderState(StateBits bits);
         void                setScissorEnable(bool enabled);
         void                setScissor(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-        void                setIndexBuffer(IndexBufferHandle handle);
+        void                setIndexBuffer(BufferHandle handle);
         void                setPrimitiveType(PrimitiveType type);
         void                setInstanceCount(uint count);
         void                setTexture(TextureHandle handle, uint16_t unit = 0);
@@ -529,18 +472,15 @@ namespace gfx {
         void                setVertexAttribs(const VertexAttribMap& attribs);
         void                setUniforms(UniformMap& uniforms);
 
-        void                setVertexBuffer(VertexBufferHandle vb, ushort index = 0, uint offset = 0);
+        void                setVertexBuffer(BufferHandle vb, ushort index = 0, uint offset = 0);
         void                submit(uint pass);
         void                submit(uint pass, ProgramHandle program);
         void                submit(uint pass, ProgramHandle program, uint vertex_count);
-        void                submit(uint pass, ProgramHandle program, uint vertex_count, uint vb_offset, uint ib_offset);
+        void                submit(uint pass, ProgramHandle program, uint vertex_count, uint vb_offset, uint ib_offset, IndexBufferType idxType);
         bool                frame();
         bool                renderFrame(Frame* frame);
         void                waitForFrameEnd();
         VertexDecl const*   defaultVertexDecl() const;
-        QueryResult         getQueryResult(QueryHandle handle);
-
-        QueryHandle         getMappedBufferAddress(int cbCount, const ConstantBufferHandle* handles);
     private:
         uint16_t width_, height_;
         std::string window_title_;
@@ -557,8 +497,7 @@ namespace gfx {
         // Handles.
         HandleGenerator<VertexLayoutHandle> vertex_layout_handle_;
         HandleGenerator<ConstantBufferHandle> constant_buffer_handle_;
-        HandleGenerator<VertexBufferHandle> vertex_buffer_handle_;
-        HandleGenerator<IndexBufferHandle> index_buffer_handle_;
+        HandleGenerator<BufferHandle> buffer_handle_;
         HandleGenerator<ShaderHandle> shader_handle_;
         HandleGenerator<ProgramHandle> program_handle_;
         HandleGenerator<TextureHandle> texture_handle_;
@@ -568,7 +507,7 @@ namespace gfx {
         HandleGenerator<ShaderStorageBufferHandle> shader_storage_buffer_handle_;
         HandleGenerator<QueryHandle> query_handle_;
 
-        HashMap<IndexBufferHandle, IndexBufferType> index_buffer_types_;
+        HashMap<BufferHandle, IndexBufferType> index_buffer_types_;
 
         // Textures.
         struct TextureData {

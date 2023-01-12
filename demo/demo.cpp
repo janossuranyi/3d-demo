@@ -17,7 +17,8 @@
 
 #include "engine/gfx/image.h"
 #include "engine/gfx/material.h"
-#include "engine/resource//allocator.h"
+#include "engine/gfx/draw_vert.h"
+#include "engine/resource/allocator.h"
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -30,7 +31,7 @@ void App_EventLoop()
     bool running = true;
     float prev = float(SDL_GetTicks());
 
-    std::unique_ptr<Effect> activeEffect = std::make_unique<BumpEffect>();
+    std::unique_ptr<Effect> activeEffect = std::make_unique<EngineTestEffect>();
 
     if (!activeEffect->Init())
         return;
@@ -149,8 +150,6 @@ void traverse_node(tinygltf::Model const& model, int node, int level = 0)
 
 int main(int argc, char** argv)
 {
-    Info("sizeof(RenderCommand) = %d", sizeof(gfx::RenderCommand));
-
     rc::FileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
 
     rc::ResourceManager::add_resource_path("../assets/shaders");
@@ -179,7 +178,6 @@ int main(int argc, char** argv)
     {
         traverse_node(model, node, 0);
     }
-
 
     Info("V_Init Start");
 

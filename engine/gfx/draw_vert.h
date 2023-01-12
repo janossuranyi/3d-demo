@@ -25,6 +25,44 @@ namespace gfx {
 		vec4 color() const;
 		vec3 position() const;
 		vec2 texCoord() const;
+
+		static void getBindingsDesc(uint* pVertexInputBindingCount, gfx::VertexInputBindingDescription* pVertexInputBindingDescriptions) {
+
+			*pVertexInputBindingCount = 1;
+			if (pVertexInputBindingDescriptions) {
+				pVertexInputBindingDescriptions[0].binding = 0;
+				pVertexInputBindingDescriptions[0].stride = sizeof(DrawVert);
+				pVertexInputBindingDescriptions[0].inputRate = gfx::VertexInputRate::Vertex;
+			}
+
+		}
+
+		static void getAttribsDesc(uint* pVertexInputAttribCount, gfx::VertexInputAttributeDescription* pVertexInputAttributeDescriptions) {
+
+			*pVertexInputAttribCount = 3;
+			if (pVertexInputAttributeDescriptions) {
+				pVertexInputAttributeDescriptions[0].binding = 0;
+				pVertexInputAttributeDescriptions[0].location = 0;
+				pVertexInputAttributeDescriptions[0].format = gfx::AttributeType::Float;
+				pVertexInputAttributeDescriptions[0].count = 3;
+				pVertexInputAttributeDescriptions[0].normalized = false;
+				pVertexInputAttributeDescriptions[0].offset = offsetof(DrawVert, in_Position);
+				pVertexInputAttributeDescriptions[1].binding = 0;
+				pVertexInputAttributeDescriptions[1].location = 1;
+				pVertexInputAttributeDescriptions[1].format = gfx::AttributeType::Float;
+				pVertexInputAttributeDescriptions[1].count = 2;
+				pVertexInputAttributeDescriptions[1].normalized = false;
+				pVertexInputAttributeDescriptions[1].offset = offsetof(DrawVert, in_TexCoord);
+				pVertexInputAttributeDescriptions[2].binding = 0;
+				pVertexInputAttributeDescriptions[2].location = 2;
+				pVertexInputAttributeDescriptions[2].format = gfx::AttributeType::Float;
+				pVertexInputAttributeDescriptions[2].count = 3;
+				pVertexInputAttributeDescriptions[2].normalized = false;
+				pVertexInputAttributeDescriptions[2].offset = offsetof(DrawVert, in_NTC);
+			}
+
+		}
+
 	};
 
 	static_assert(sizeof(DrawVert) == 32, "DrawVert should be 32 byte");

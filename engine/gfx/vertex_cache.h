@@ -21,9 +21,9 @@ namespace gfx {
 
 		struct geoBufferSet
 		{
-			VertexBufferHandle pb;
-			VertexBufferHandle vb;
-			IndexBufferHandle ib;
+			BufferHandle pb;
+			BufferHandle vb;
+			BufferHandle ib;
 			std::atomic_ulong position_alloced;
 			std::atomic_ulong vertex_alloced;
 			std::atomic_ulong index_alloced;
@@ -54,11 +54,11 @@ namespace gfx {
 		vtxCacheHandle allocIndex(Memory data);
 
 		template<typename T>
-		VertexBufferHandle getPositionBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
+		BufferHandle getPositionBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
 		template<typename T>
-		VertexBufferHandle getVertexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
+		BufferHandle getVertexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
 		template<typename T>
-		IndexBufferHandle getIndexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
+		BufferHandle getIndexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const;
 
 		void frame();
 	private:
@@ -77,7 +77,7 @@ namespace gfx {
 /*****************************************************/
 
 	template<typename T>
-	VertexBufferHandle VertexCache::getPositionBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const
+	BufferHandle VertexCache::getPositionBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const
 	{
 		size = (handle & 0xFFFFFFFE) / sizeof(T);
 		offset = (handle >> 31) / sizeof(T);
@@ -86,7 +86,7 @@ namespace gfx {
 	}
 
 	template<typename T>
-	VertexBufferHandle VertexCache::getVertexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const
+	BufferHandle VertexCache::getVertexBuffer(const vtxCacheHandle handle, uint& offset, uint& size) const
 	{
 		bool isStatic = handle & 1;
 		size = uint((handle & 0xFFFFFFFE) / sizeof(T));
@@ -97,7 +97,7 @@ namespace gfx {
 	}
 
 	template<typename T>
-	IndexBufferHandle VertexCache::getIndexBuffer(const vtxCacheHandle handle, uint& byte_offset, uint& size) const
+	BufferHandle VertexCache::getIndexBuffer(const vtxCacheHandle handle, uint& byte_offset, uint& size) const
 	{
 		bool isStatic = handle & 1;
 		size = uint((handle & 0xFFFFFFFE) / sizeof(T));

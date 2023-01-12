@@ -66,4 +66,25 @@ namespace gfx {
         AttributeList attributes_;
     };
 
+    struct VertexInputBindingDescription {
+        uint binding;
+        uint stride;
+        VertexInputRate inputRate;
+    };
+
+    struct VertexInputAttributeDescription {
+        uint binding;
+        uint location;
+        uint offset;
+        uint count;
+        bool normalized;
+        AttributeType format;
+    };
+
+    struct PipelineVertexInputStateCreateInfo {
+        uint vertexInputBindingDescriptionCount;
+        VertexInputBindingDescription const* pVertexBindingDescriptions;
+        uint vertexInputAttributeDescriptionCount;
+        VertexInputAttributeDescription const* pVertexInputAttributeDescriptions;
+    };
 }

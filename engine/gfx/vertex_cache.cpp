@@ -3,12 +3,12 @@
 namespace gfx {
 	VertexCache::~VertexCache()
 	{
-		renderer_->deleteVertexBuffer(static_buffer_set_.vb);
-		renderer_->deleteIndexBuffer(static_buffer_set_.ib);
+		renderer_->deleteBuffer(static_buffer_set_.vb);
+		renderer_->deleteBuffer(static_buffer_set_.ib);
 		for (int i = 0; i < 2; ++i)
 		{
-			renderer_->deleteVertexBuffer(dynamic_buffer_set_[i].vb);
-			renderer_->deleteIndexBuffer(dynamic_buffer_set_[i].ib);
+			renderer_->deleteBuffer(dynamic_buffer_set_[i].vb);
+			renderer_->deleteBuffer(dynamic_buffer_set_[i].ib);
 		}
 	}
 
@@ -17,9 +17,9 @@ namespace gfx {
 		renderer_ = r;
 		static_buffer_set_.index_size = staticBytes;
 		static_buffer_set_.vertex_size = staticBytes;
-		static_buffer_set_.pb = renderer_->createVertexBuffer(staticBytes, BufferUsage::Static, Memory());
-		static_buffer_set_.vb = renderer_->createVertexBuffer(staticBytes, BufferUsage::Static, Memory());
-		static_buffer_set_.ib = renderer_->createIndexBuffer(staticBytes, BufferUsage::Static, Memory());
+		static_buffer_set_.pb = renderer_->createVertexBuffer(staticBytes, Memory());
+		static_buffer_set_.vb = renderer_->createVertexBuffer(staticBytes, Memory());
+		static_buffer_set_.ib = renderer_->createIndexBuffer(staticBytes, Memory());
 		static_buffer_set_.index_alloced = 0;
 		static_buffer_set_.vertex_alloced = 0;
 		static_buffer_set_.position_alloced = 0;
@@ -28,8 +28,8 @@ namespace gfx {
 		{
 			dynamic_buffer_set_[i].index_size = frameBytes;
 			dynamic_buffer_set_[i].vertex_size = frameBytes;
-			dynamic_buffer_set_[i].vb = renderer_->createVertexBuffer(frameBytes, BufferUsage::Dynamic, Memory());
-			dynamic_buffer_set_[i].ib = renderer_->createIndexBuffer(frameBytes, BufferUsage::Dynamic, Memory());
+			dynamic_buffer_set_[i].vb = renderer_->createVertexBuffer(frameBytes, Memory());
+			dynamic_buffer_set_[i].ib = renderer_->createIndexBuffer(frameBytes, Memory());
 			dynamic_buffer_set_[i].index_alloced = 0;
 			dynamic_buffer_set_[i].vertex_alloced = 0;
 		}
@@ -58,7 +58,7 @@ namespace gfx {
 			return 0ULL;
 		}
 		const size_t offs = static_buffer_set_.position_alloced.fetch_add(bytes, std::memory_order_relaxed);
-		renderer_->updateVertexBuffer(static_buffer_set_.pb, std::move(data), offs);
+		renderer_->updateBuffer(static_buffer_set_.pb, std::move(data), offs);
 
 		return (offs << 31) | (bytes & 0xFFFFFFFF);
 	}
@@ -104,7 +104,7 @@ namespace gfx {
 			return 0ULL;
 		}
 		const size_t offs = bs.vertex_alloced.fetch_add(bytes, std::memory_order_relaxed);
-		renderer_->updateVertexBuffer(bs.vb, std::move(data), offs);
+		renderer_->updateBuffer(bs.vb, std::move(data), offs);
 
 		return (offs << 31) | (bytes & 0xFFFFFFFF);
 	}
@@ -121,7 +121,7 @@ namespace gfx {
 			return 0ULL;
 		}
 		const size_t offs = bs.index_alloced.fetch_add(bytes, std::memory_order_relaxed);
-		renderer_->updateIndexBuffer(bs.ib, std::move(data), offs);
+		renderer_->updateBuffer(bs.ib, std::move(data), offs);
 
 		return (offs << 31) | (bytes & 0xFFFFFFFF);
 	}

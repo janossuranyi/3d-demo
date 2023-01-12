@@ -70,10 +70,10 @@ EngineTestEffect::~EngineTestEffect()
 	hwr->deleteProgram(prgGauss);
 	hwr->deleteProgram(prgViewTex);
 	hwr->deleteFrameBuffer(fb);
-	hwr->deleteVertexBuffer(tmp);
+	hwr->deleteBuffer(tmp);
 
-	hwr->deleteVertexBuffer(vb_points);
-	hwr->deleteVertexBuffer(vb_skybox);
+	hwr->deleteBuffer(vb_points);
+	hwr->deleteBuffer(vb_skybox);
 	hwr->deleteTexture(skybox);
 	hwr->deleteTexture(texDyn);
 	hwr->deleteTexture(depth_attachment);
@@ -112,7 +112,7 @@ bool EngineTestEffect::Init()
 		hwr->createFrameBuffer(std::vector<gfx::FramebufferTexture>{ {color_attachment, 0, 0}}, depth_attachment);
 
 
-	tmp = hwr->createVertexBuffer(256, gfx::BufferUsage::Static, gfx::Memory(Vector<float>{0.5f, 0.0f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f}));
+	tmp = hwr->createVertexBuffer(256, gfx::Memory(Vector<float>{0.5f, 0.0f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f}));
 
 	Vector<String> const skybox_set{
 		rc::ResourceManager::get_resource("textures/cubemaps/skybox/right.jpg"),
@@ -359,7 +359,7 @@ bool EngineTestEffect::Render(uint64_t frame)
 	hwr->setVertexBuffer(vb_points);
 	hwr->setVertexBuffer(tmp, 1, 0);
 
-	hwr->submit(pass, prgPoints, count, offs, 0);
+	hwr->submit(pass, prgPoints, count, offs, 0, gfx::IndexBufferType::U16);
 
 	W = glm::rotate(glm::mat4(1), glm::radians(rotY), glm::vec3(0, 1, 0));
 	const glm::mat4 sky_view = glm::mat4(glm::mat3(W));
@@ -383,7 +383,7 @@ bool EngineTestEffect::Render(uint64_t frame)
 	hwr->setUniforms(effect3_vars);
 	hwr->setTexture(skybox, 0);
 	hwr->setTexture(bufTex, 1);
-	hwr->submit(pass, prgSkybox, count, offs, 0);
+	hwr->submit(pass, prgSkybox, count, offs, 0, gfx::IndexBufferType::U16);
 
 	++pass;
 	//renderer.setClearBits(pass, gfx::GLS_CLEAR_COLOR | gfx::GLS_CLEAR_DEPTH);
@@ -394,10 +394,10 @@ bool EngineTestEffect::Render(uint64_t frame)
 	hwr->setRenderState(gfx::GLS_DEPTHFUNC_ALWAYS|gfx::GLS_DEPTHMASK);
 	hwr->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	hwr->setTexture(color_attachment);
-	hwr->setVertexBuffer(gfx::VertexBufferHandle{});
+	hwr->setVertexBuffer(gfx::BufferHandle{});
 	hwr->setVertexDecl(layout);
 	hwr->setUniforms(effect4_vars);
-	hwr->submit(pass, prgPP, 6, 0, 0);
+	hwr->submit(pass, prgPP, 6, 0, 0, gfx::IndexBufferType::U16);
 
 	++pass;
 	hwr->setClearBits(pass, 0);
@@ -413,7 +413,7 @@ bool EngineTestEffect::Render(uint64_t frame)
 	effect5_vars["g_fFarPlane"] = 1700.0f;
 	effect5_vars["samp0"] = 0;
 	hwr->setUniforms(effect5_vars);
-	hwr->submit(pass, prgDepth, 6, 0, 0);
+	hwr->submit(pass, prgDepth, 6, 0, 0, gfx::IndexBufferType::U16);
 
 
 	++pass;
@@ -423,7 +423,7 @@ bool EngineTestEffect::Render(uint64_t frame)
 	hwr->setPrimitiveType(gfx::PrimitiveType::Triangles);
 	hwr->setTexture(texDyn);
 	hwr->setVertexDecl(layout);
-	hwr->setVertexBuffer(gfx::VertexBufferHandle{});
+	hwr->setVertexBuffer(gfx::BufferHandle{});
 	scale = 0.2f;
 	_w = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f + scale, -1.0f + scale, 0.0f));
 	_w = glm::scale(_w, glm::vec3(scale));
@@ -439,7 +439,7 @@ bool EngineTestEffect::Render(uint64_t frame)
 	}
 	
 	//renderer.deleteFence(fence);
-	hwr->submit(pass, prgViewTex, 6, 0, 0);
+	hwr->submit(pass, prgViewTex, 6, 0, 0, gfx::IndexBufferType::U16);
 
 	return true;
 }
