@@ -673,6 +673,11 @@ namespace gfx {
 		submit_->active_item.vbs[index] = VertexBinding{ vb,offset };
 	}
 
+	void Renderer::setCustomProc(GfxCallback cb)
+	{
+		submit_->active_item.callback = cb;
+	}
+
 	void gfx::Renderer::submit(uint32_t pass)
 	{
 		submit(pass, ProgramHandle());

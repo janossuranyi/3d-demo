@@ -638,6 +638,11 @@ namespace gfx {
 				auto* prev = i < 0 ? &pass.render_items[i - 1] : nullptr;
 				auto* item = &pass.render_items[i];
 
+				if (item->callback) {
+					item->callback();
+					continue;
+				}
+
 				if (item->program == ProgramHandle::invalid)
 				{
 					continue;

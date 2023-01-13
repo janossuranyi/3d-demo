@@ -1,6 +1,7 @@
 #pragma once
 
 #include <new>
+#include <functional>
 #include "common.h"
 #include "gfx/handle.h"
 #include "gfx/memory.h"
@@ -15,6 +16,9 @@
 #define MAX_SHADER_STORAGE_BUFFERS 8
 
 namespace gfx {
+
+
+    using GfxCallback = std::function<void()>;
 
     struct CreateBufferInfo {
         BufferTarget target;
@@ -351,6 +355,7 @@ namespace gfx {
         ushort scissor_y{ 0 };
         ushort scissor_w{ 0 };
         ushort scissor_h{ 0 };
+        GfxCallback callback;
 
         StateBits state_bits{ 0 };
         inline bool operator<(const RenderItem& other) const
@@ -473,6 +478,8 @@ namespace gfx {
         void                setUniforms(UniformMap& uniforms);
 
         void                setVertexBuffer(BufferHandle vb, ushort index = 0, uint offset = 0);
+        void                setCustomProc(GfxCallback cb);
+
         void                submit(uint pass);
         void                submit(uint pass, ProgramHandle program);
         void                submit(uint pass, ProgramHandle program, uint vertex_count);
