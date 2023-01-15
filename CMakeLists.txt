@@ -39,6 +39,14 @@ file(GLOB ENGINE_SCENE_C engine/scene/*.cpp)
 file(GLOB ENGINE_MATH_H engine/math/*.h)
 file(GLOB ENGINE_MATH_C engine/math/*.cpp)
 
+file(GLOB ENGINE2_INCLUDE engine2/include/*.h)
+file(GLOB ENGINE2_SOURCES engine2/src/*.cpp)
+
+set(ENGINE2_FILES
+  ${ENGINE2_INCLUDE}
+  ${ENGINE2_SOURCES}
+)
+
 set(ENGINE_GFX
   ${ENGINE_GFX_H}
   ${ENGINE_GFX_C}
@@ -92,6 +100,10 @@ add_library(engine STATIC
   ${ENGINE_FILES}
 )
 
+add_library(engine2 STATIC
+  ${ENGINE2_FILES}
+)
+
 add_library(glew STATIC
   external/glew-2.1.0/src/glew.c
   external/glew-2.1.0/include/GL/glew.h
@@ -121,6 +133,7 @@ include_directories(
   demo/
   demo/opengl/
   engine/
+  engine2/include/
   external/glew-2.1.0/include/
   external/glm/
   external/stb/
@@ -147,6 +160,7 @@ target_link_libraries(demo
   stb_image
   tinygltf
   engine
+  engine2
   ktx
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}

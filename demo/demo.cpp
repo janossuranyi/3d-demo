@@ -5,6 +5,8 @@
 #include <memory>
 #include <tiny_gltf.h>
 #include <cmath>
+#include <type_traits>
+#include <tuple>
 #include "demo.h"
 #include "logger.h"
 
@@ -19,6 +21,7 @@
 #include "engine/gfx/material.h"
 #include "engine/gfx/draw_vert.h"
 #include "engine/resource/allocator.h"
+#include "JSE.h"
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -147,9 +150,46 @@ void traverse_node(tinygltf::Model const& model, int node, int level = 0)
         traverse_node(model, child, level + 1);
     }
 }
+ 
+class C {
+public:
+
+    C(uint64_t aN) : m_n(aN) {
+        t = JSE_Thread(&C::run_wrapper, "C-Thread", this);
+    }
+
+    uint64_t x() const { return m_x; }
+
+    int join() {
+        return t.join();
+    }
+
+    int run() {
+        for (uint64_t x = 0; x < m_n; ++x) {
+            ++m_x;
+        }
+        return 1;
+    }
+
+private:
+    static int run_wrapper(void* data) {
+        return reinterpret_cast<C*>(data)->run();
+    }
+
+    uint64_t m_x{};
+    uint64_t m_n;
+    JSE_Thread t;
+};
 
 int main(int argc, char** argv)
 {
+ 
+    C c{uint64_t(1e9)};
+    int r = c.join();
+    Info("C.x = %d, r = %d", c.x(), r);
+
+    exit(0);
+
     rc::FileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
 
     rc::ResourceManager::add_resource_path("../assets/shaders");
