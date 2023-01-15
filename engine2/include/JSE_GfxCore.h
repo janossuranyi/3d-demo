@@ -45,6 +45,18 @@ enum class JSE_ShaderStage {
     COMPUTE
 };
 
+/*
+ * RGBA16S
+ * ^   ^ ^
+ * |   | +-- [ ]Unorm
+ * |   |     [F]loat
+ * |   |     [S]norm
+ * |   |     [I]nt
+ * |   |     [U]int
+ * |   +---- Number of bits per component
+ * +-------- Components
+ */
+
 enum class JSE_ImageFormat {
     // Colour formats.
     A8,
