@@ -1,14 +1,14 @@
 #ifndef JSE_CONCURRENT_H
 #define JSE_CONCURRENT_H
 
-class JSE_Mutex : public JSE_NonMovable {
-    friend class JSE_ConditionVariable;
+class JseMutex : public JseNonMovable {
+    friend class JseConditionVariable;
     public:
         /// <summary>
         /// Creates a mutex
         /// </summary>
-        JSE_Mutex();
-        ~JSE_Mutex();
+        JseMutex();
+        ~JseMutex();
 
         /// <summary>
         /// Lock the mutex.
@@ -33,23 +33,23 @@ private:
         SDL_mutex* m_pMutex;
 };
 
-class JSE_LockGuard : public JSE_NonMovable {
+class JseLockGuard : public JseNonMovable {
 public:
-    JSE_LockGuard() = delete;
-    JSE_LockGuard(JSE_Mutex& mutex);
-    ~JSE_LockGuard();
+    JseLockGuard() = delete;
+    JseLockGuard(JseMutex& mutex);
+    ~JseLockGuard();
 private:
-    JSE_Mutex& m_mutex;
+    JseMutex& m_mutex;
 };
 
-class JSE_UniqueLock : public JSE_NonCopyable {
+class JseUniqueLock : public JseNonCopyable {
 public:
-    JSE_UniqueLock() = delete;
-    JSE_UniqueLock(JSE_Mutex& mutex, bool defer_lock = false);
-    void swap(JSE_UniqueLock& other);
+    JseUniqueLock() = delete;
+    JseUniqueLock(JseMutex& mutex, bool defer_lock = false);
+    void swap(JseUniqueLock& other);
     void release();
-    JSE_UniqueLock& operator=(JSE_UniqueLock&& other) noexcept;
-    JSE_Mutex* mutex();
+    JseUniqueLock& operator=(JseUniqueLock&& other) noexcept;
+    JseMutex* mutex();
     explicit operator bool() const noexcept;
     /// <summary>
     /// Lock the mutex.
@@ -70,14 +70,14 @@ public:
     int unlock();
 
 private:
-    JSE_Mutex* m_pMutex;
+    JseMutex* m_pMutex;
 };
 
-class JSE_Semaphore : public JSE_NonMovable {
+class JseSemaphore : public JseNonMovable {
 public:
-    JSE_Semaphore() : JSE_Semaphore(0) {}
-    JSE_Semaphore(uint32_t aInitValue);
-    ~JSE_Semaphore() noexcept;
+    JseSemaphore() : JseSemaphore(0) {}
+    JseSemaphore(uint32_t aInitValue);
+    ~JseSemaphore() noexcept;
     int wait();
     int waitTimeout(uint32_t ms);
     int tryWait();
@@ -86,12 +86,12 @@ private:
     SDL_sem* m_pSem;
 };
 
-class JSE_ConditionVariable : public JSE_NonMovable {
+class JseConditionVariable : public JseNonMovable {
 public:
-    JSE_ConditionVariable();
-    ~JSE_ConditionVariable() noexcept;
-    void wait(JSE_UniqueLock& lck, std::function<bool()> predicate);
-    void wait_for(JSE_UniqueLock& lck, uint32_t ms, std::function<bool()> predicate);
+    JseConditionVariable();
+    ~JseConditionVariable() noexcept;
+    void wait(JseUniqueLock& lck, std::function<bool()> predicate);
+    void wait_for(JseUniqueLock& lck, uint32_t ms, std::function<bool()> predicate);
     void notify_one() noexcept;
     void notify_all() noexcept;
 private:

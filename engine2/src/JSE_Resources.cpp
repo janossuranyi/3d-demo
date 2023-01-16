@@ -1,7 +1,7 @@
 #include "JSE.h"
 
-std::unordered_map<std::string, std::string> JSE_ResourceManager::resource_map_;
-std::set<std::string> JSE_ResourceManager::sources_;
+std::unordered_map<std::string, std::string> JseResourceManager::resource_map_;
+std::set<std::string> JseResourceManager::sources_;
 
 namespace fs = std::filesystem;
 
@@ -21,7 +21,7 @@ static void dir_traversal(const fs::path& start, std::function<void(const fs::pa
     }
 }
 
-bool JSE_ResourceManager::add_resource_path(const std::string& path)
+bool JseResourceManager::add_resource_path(const std::string& path)
 {
     const auto src = fs::absolute(fs::path(path));
     const auto rel = src.filename();
@@ -45,19 +45,19 @@ bool JSE_ResourceManager::add_resource_path(const std::string& path)
     return true;
 }
 
-std::string JSE_ResourceManager::get_text_resource(const std::string& name)
+std::string JseResourceManager::get_text_resource(const std::string& name)
 {
     if (resource_map_.count(name) == 0) return "";
 
     const auto& fn = resource_map_.at(name);
 
     std::string result;
-    FileSystem::read_text_file(fn, result);
+    JseFileSystem::read_text_file(fn, result);
 
     return result;
 }
 
-std::string JSE_ResourceManager::get_text_resource_with_includes(const std::string& name, int depth)
+std::string JseResourceManager::get_text_resource_with_includes(const std::string& name, int depth)
 {
     static const std::regex include_regex("^#include[ ]*\"(.+)\"");
     std::string output;
@@ -96,17 +96,17 @@ std::string JSE_ResourceManager::get_text_resource_with_includes(const std::stri
     return output;
 }
 
-std::vector<unsigned char> JSE_ResourceManager::get_binary_resource(const std::string& name)
+std::vector<unsigned char> JseResourceManager::get_binary_resource(const std::string& name)
 {
     if (resource_map_.count(name) == 0)
         return std::vector<unsigned char>{};
 
     const auto& fn = resource_map_.at(name);
 
-    return FileSystem::read_binary_file(fn);
+    return JseFileSystem::read_binary_file(fn);
 }
 
-std::string JSE_ResourceManager::get_resource(const std::string& name)
+std::string JseResourceManager::get_resource(const std::string& name)
 {
     if (resource_map_.count(name) == 0) return "";
 

@@ -2,32 +2,32 @@
 
 SDL_Window* p_defaultWindow{};
 
-const char* JSE_GetPlatform() {
+const char* JseGetPlatform() {
     return SDL_GetPlatform();
 }
 
-int JSE_GetCPUCacheLineSize() {
+int JseGetCPUCacheLineSize() {
     return SDL_GetCPUCacheLineSize();
 }
 
-int JSE_GetCpuCount() {
+int JseGetCpuCount() {
     return SDL_GetCPUCount();
 }
 
-int JSE_GetSystemRAM() {
+int JseGetSystemRAM() {
     return SDL_GetSystemRAM();
 }
 
-int JSE_MessageBox(uint32_t flags, const char* title, const char* message) {
+int JseMessageBox(uint32_t flags, const char* title, const char* message) {
     Uint32 _flags{};
     switch(flags) {
-        case JSE_MESSAGEBOX_ERROR:
+        case JseMESSAGEBOX_ERROR:
             _flags = SDL_MESSAGEBOX_ERROR;
             break;
-        case JSE_MESSAGEBOX_WARNING:
+        case JseMESSAGEBOX_WARNING:
             _flags = SDL_MESSAGEBOX_WARNING;
             break;
-        case JSE_MESSAGEBOX_INFO:
+        case JseMESSAGEBOX_INFO:
             _flags = SDL_MESSAGEBOX_INFORMATION;
             break;
     }

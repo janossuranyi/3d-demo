@@ -1,16 +1,20 @@
 #include "JSE.h"
 
-JSE_CoreContext g_CoreContext {100};
+JseCoreContext g_CoreContext {100};
 
 
-void JSE_Init(int argc, const char** argv) {
-	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER);
+void JseInit(int argc, char** argv) {
+
+	int err;
+	if ((err = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) < 0)) {
+		Error("ERROR: %s", SDL_GetError());
+	}
 }
 
-void JSE_Shutdown() {
+void JseShutdown() {
 	SDL_Quit();
 }
 
-uint64_t JSE_GetTicks() {
+uint64_t JseGetTicks() {
 	return SDL_GetTicks64();
 }

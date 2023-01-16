@@ -10,25 +10,25 @@
 
 namespace fs = std::filesystem;
 
-fs::path JSE_FileSystem::m_working_dir{ fs::current_path() };
+fs::path JseFileSystem::m_working_dir{ fs::current_path() };
 
-void JSE_FileSystem::set_working_dir(const std::string& p0)
+void JseFileSystem::set_working_dir(const std::string& p0)
 {
 	m_working_dir = fs::path{ p0 };// .make_preferred();
 }
 
-std::string JSE_FileSystem::working_dir()
+std::string JseFileSystem::working_dir()
 {
 	return m_working_dir.generic_string();
 }
 
-std::string JSE_FileSystem::resolve(const std::string& aPath)
+std::string JseFileSystem::resolve(const std::string& aPath)
 {
 	const fs::path p = m_working_dir / aPath;
 	return p.string();
 }
 
-bool JSE_FileSystem::read_text_file(const std::string& fileName, std::string& output)
+bool JseFileSystem::read_text_file(const std::string& fileName, std::string& output)
 {
 
 	std::ifstream ifs(fileName.c_str(), std::ios::in);
@@ -49,12 +49,12 @@ bool JSE_FileSystem::read_text_file(const std::string& fileName, std::string& ou
 	return true;
 }
 
-bool JSE_FileSystem::read_text_file_base(const std::string& filename, std::string& output)
+bool JseFileSystem::read_text_file_base(const std::string& filename, std::string& output)
 {
 	return read_text_file(resolve(filename), output);
 }
 
-std::vector<uint8_t> JSE_FileSystem::read_binary_file(const std::string& filename)
+std::vector<uint8_t> JseFileSystem::read_binary_file(const std::string& filename)
 {
 	std::vector<uint8_t> result;
 
@@ -71,7 +71,7 @@ std::vector<uint8_t> JSE_FileSystem::read_binary_file(const std::string& filenam
 	return result;
 }
 
-std::vector<std::string> JSE_FileSystem::get_directory_entries(const std::string& dirname, bool recursive, const char* filter)
+std::vector<std::string> JseFileSystem::get_directory_entries(const std::string& dirname, bool recursive, const char* filter)
 {
 	std::vector<std::string> result;
 	const fs::path path = fs::absolute(fs::path(dirname));
@@ -126,13 +126,13 @@ std::vector<std::string> JSE_FileSystem::get_directory_entries(const std::string
 	return result;
 }
 
-void JSE_FileSystem::get_directory_entries(const std::string& dirname, const std::function<void(const std::string&)>& fn, const char* filter)
+void JseFileSystem::get_directory_entries(const std::string& dirname, const std::function<void(const std::string&)>& fn, const char* filter)
 {
 	for (auto e : get_directory_entries(dirname, filter)) {
 		fn(e);
 	}
 }
-bool JSE_FileSystem::load_image_base(const std::string& filename, int& w, int& h, int& channels, unsigned char** data)
+bool JseFileSystem::load_image_base(const std::string& filename, int& w, int& h, int& channels, unsigned char** data)
 {
 	std::string abspath = resolve(filename);
 	int _w, _h, _n;
@@ -149,7 +149,7 @@ bool JSE_FileSystem::load_image_base(const std::string& filename, int& w, int& h
 
 	return false;
 }
-void JSE_FileSystem::free_image(void* data)
+void JseFileSystem::free_image(void* data)
 {
 	stbi_image_free(data);
 }

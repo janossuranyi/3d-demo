@@ -1,6 +1,6 @@
 #include "JSE.h"
 
-void* JSE_MemAlloc16(const size_t size)
+void* JseMemAlloc16(const size_t size)
 {
     if (!size)
     {
@@ -17,7 +17,7 @@ void* JSE_MemAlloc16(const size_t size)
 #endif
 }
 
-void JSE_MemFree16(void* p)
+void JseMemFree16(void* p)
 {
     if (p == NULL)
     {
@@ -30,9 +30,9 @@ void JSE_MemFree16(void* p)
 #endif
 }
 
-void* JSE_MemClearedAlloc(const size_t size)
+void* JseMemClearedAlloc(const size_t size)
 {
-    void* mem = JSE_MemAlloc16(size);
+    void* mem = JseMemAlloc16(size);
     memset(mem, 0, size);
 
     return mem;

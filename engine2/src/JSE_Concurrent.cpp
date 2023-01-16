@@ -1,62 +1,62 @@
 #include "JSE.h"
 
-JSE_Mutex::JSE_Mutex()
+JseMutex::JseMutex()
 {
 	m_pMutex = SDL_CreateMutex();
 }
 
-JSE_Mutex::~JSE_Mutex()
+JseMutex::~JseMutex()
 {
 	if (m_pMutex) SDL_DestroyMutex(m_pMutex);
 }
 
-int JSE_Mutex::lock()
+int JseMutex::lock()
 {
 	return SDL_LockMutex(m_pMutex);
 }
 
-int JSE_Mutex::tryLock()
+int JseMutex::tryLock()
 {
 	return SDL_TryLockMutex(m_pMutex);
 }
 
-int JSE_Mutex::unlock()
+int JseMutex::unlock()
 {
 	return SDL_UnlockMutex(m_pMutex);
 }
 
-JSE_Mutex::operator bool() const noexcept
+JseMutex::operator bool() const noexcept
 {
 	return m_pMutex != nullptr;
 }
 
-JSE_LockGuard::JSE_LockGuard(JSE_Mutex& mutex) : m_mutex(mutex)
+JseLockGuard::JseLockGuard(JseMutex& mutex) : m_mutex(mutex)
 {
 	m_mutex.lock();
 }
 
-JSE_LockGuard::~JSE_LockGuard()
+JseLockGuard::~JseLockGuard()
 {
 	m_mutex.unlock();
 }
 
-JSE_UniqueLock::JSE_UniqueLock(JSE_Mutex& mutex, bool defer_lock)
+JseUniqueLock::JseUniqueLock(JseMutex& mutex, bool defer_lock)
 {
 	m_pMutex = &mutex;
 	if (!defer_lock) m_pMutex->lock();
 }
 
-void JSE_UniqueLock::swap(JSE_UniqueLock& other)
+void JseUniqueLock::swap(JseUniqueLock& other)
 {
 	std::swap(m_pMutex, other.m_pMutex);
 }
 
-void JSE_UniqueLock::release()
+void JseUniqueLock::release()
 {
 	m_pMutex = nullptr;
 }
 
-JSE_UniqueLock& JSE_UniqueLock::operator=(JSE_UniqueLock&& other) noexcept
+JseUniqueLock& JseUniqueLock::operator=(JseUniqueLock&& other) noexcept
 {
 	release();
 	swap(other);
@@ -64,17 +64,17 @@ JSE_UniqueLock& JSE_UniqueLock::operator=(JSE_UniqueLock&& other) noexcept
 	return *this;
 }
 
-JSE_Mutex* JSE_UniqueLock::mutex()
+JseMutex* JseUniqueLock::mutex()
 {
 	return m_pMutex;
 }
 
-JSE_UniqueLock::operator bool() const noexcept
+JseUniqueLock::operator bool() const noexcept
 {
 	return m_pMutex != nullptr;
 }
 
-int JSE_UniqueLock::lock()
+int JseUniqueLock::lock()
 {
 	int r = -1;
 	r = m_pMutex->lock();
@@ -82,81 +82,81 @@ int JSE_UniqueLock::lock()
 	return r;
 }
 
-int JSE_UniqueLock::tryLock()
+int JseUniqueLock::tryLock()
 {
 	int r = -1;
 	r = m_pMutex->tryLock();
 	return r;
 }
 
-int JSE_UniqueLock::unlock()
+int JseUniqueLock::unlock()
 {
 	int r = -1;
 	r = m_pMutex->unlock();
 	return r;
 }
 
-JSE_Semaphore::JSE_Semaphore(uint32_t aInitValue)
+JseSemaphore::JseSemaphore(uint32_t aInitValue)
 {
 	m_pSem = SDL_CreateSemaphore(aInitValue);
 }
 
-JSE_Semaphore::~JSE_Semaphore() noexcept
+JseSemaphore::~JseSemaphore() noexcept
 {
 	while(SDL_SemValue(m_pSem) == 0) SDL_SemPost(m_pSem);
 	SDL_DestroySemaphore(m_pSem);
 }
 
-int JSE_Semaphore::wait()
+int JseSemaphore::wait()
 {
 	return SDL_SemWait(m_pSem);
 }
 
-int JSE_Semaphore::waitTimeout(uint32_t ms)
+int JseSemaphore::waitTimeout(uint32_t ms)
 {
 	return SDL_SemWaitTimeout(m_pSem, ms);
 }
 
-int JSE_Semaphore::tryWait()
+int JseSemaphore::tryWait()
 {
 	return SDL_SemTryWait(m_pSem);
 }
 
-void JSE_Semaphore::post()
+void JseSemaphore::post()
 {
 	SDL_SemPost(m_pSem);
 }
 
-JSE_ConditionVariable::JSE_ConditionVariable()
+JseConditionVariable::JseConditionVariable()
 {
 	m_pCond = SDL_CreateCond();
 }
 
-JSE_ConditionVariable::~JSE_ConditionVariable() noexcept
+JseConditionVariable::~JseConditionVariable() noexcept
 {
 	SDL_DestroyCond(m_pCond);
 }
 
-void JSE_ConditionVariable::wait(JSE_UniqueLock& lck, std::function<bool()> predicate)
+void JseConditionVariable::wait(JseUniqueLock& lck, std::function<bool()> predicate)
 {
 	while (!predicate()) {
 		SDL_CondWait(m_pCond, lck.mutex()->m_pMutex);
 	}
 }
 
-void JSE_ConditionVariable::wait_for(JSE_UniqueLock& lck, uint32_t ms, std::function<bool()> predicate)
+void JseConditionVariable::wait_for(JseUniqueLock& lck, uint32_t ms, std::function<bool()> predicate)
 {
 	while (!predicate()) {
 		SDL_CondWaitTimeout(m_pCond, lck.mutex()->m_pMutex, ms);
 	}
 }
 
-void JSE_ConditionVariable::notify_one() noexcept
+void JseConditionVariable::notify_one() noexcept
 {
 	SDL_CondSignal(m_pCond);
 }
 
-void JSE_ConditionVariable::notify_all() noexcept
+void JseConditionVariable::notify_all() noexcept
 {
 	SDL_CondBroadcast(m_pCond);
 }

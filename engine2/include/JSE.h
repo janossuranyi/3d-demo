@@ -8,6 +8,7 @@
 #include <vector>
 #include <unordered_map>
 #include <set>
+#include <unordered_set>
 #include <fstream>
 #include <istream>
 #include <regex>
@@ -29,6 +30,8 @@
 #include "JSE_Concurrent.h"
 #include "JSE_Thread.h"
 #include "JSE_Handle.h"
+#include "JSE_Heap.h"
+#include "JSE_Memory.h"
 #include "JSE_GfxCore.h"
 #include "JSE_GfxRender.h"
 #endif

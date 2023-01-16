@@ -1,7 +1,7 @@
 #ifndef JSE_FILESYSTEM_H
 #define JSE_FILESYSTEM_H
 
-class JSE_FileSystem
+class JseFileSystem
 {
 public:
 	//FileSystem();

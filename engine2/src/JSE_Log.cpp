@@ -1,8 +1,8 @@
 #include "JSE.h"
 
-static JSE_LogWriter gLogWriter("demo.log");
+static JseLogWriter gLogWriter("demo.log");
 
-void JSE_LogWriter::Write(const std::string& msg)
+void JseLogWriter::Write(const std::string& msg)
 {
 	if (!file) ReopenFile();
 	if (file)
@@ -13,26 +13,26 @@ void JSE_LogWriter::Write(const std::string& msg)
 	}
 }
 
-JSE_LogWriter::JSE_LogWriter(const std::string& fileName_)
+JseLogWriter::JseLogWriter(const std::string& fileName_)
 {
 	fileName = fileName_;
 	file = nullptr;
 }
 
-JSE_LogWriter::~JSE_LogWriter()
+JseLogWriter::~JseLogWriter()
 {
 	if (file) {
 		fclose(file);
 	}
 }
 
-void JSE_LogWriter::Clear()
+void JseLogWriter::Clear()
 {
 	ReopenFile();
 	if (file) fflush(file);
 }
 
-void JSE_LogWriter::ReopenFile()
+void JseLogWriter::ReopenFile()
 {
 	if (file) {
 		fclose(file);
@@ -43,7 +43,7 @@ void JSE_LogWriter::ReopenFile()
 	file = fopen(fileName.c_str(), "a");
 }
 
-void JSE_LogWriter::SetFileName(const std::string& fileName_)
+void JseLogWriter::SetFileName(const std::string& fileName_)
 {
 	if (fileName_ == fileName)
 		return;

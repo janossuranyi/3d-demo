@@ -1,21 +1,21 @@
 #ifndef JSE_THREAD_H
 #define JSE_THREAD_H
 
-typedef SDL_ThreadFunction JSE_ThreadFunction;
+typedef SDL_ThreadFunction JseThreadFunction;
 
-class JSE_Thread : public JSE_NonCopyable {
+class JseThread : public JseNonCopyable {
 public:
-	JSE_Thread(JSE_ThreadFunction func, const char* name, void* data);
+	JseThread(JseThreadFunction func, const char* name, void* data);
 
-	JSE_Thread();
+	JseThread();
 
-	JSE_Thread(JSE_Thread&& other) noexcept;
+	JseThread(JseThread&& other) noexcept;
 
-	JSE_Thread& operator=(JSE_Thread&& other) noexcept;
+	JseThread& operator=(JseThread&& other) noexcept;
 
-	~JSE_Thread();
+	~JseThread();
 
-	void swap(JSE_Thread& other);
+	void swap(JseThread& other);
 
 	void detach() noexcept;
 
@@ -35,4 +35,4 @@ private:
 };
 
 
-#endif // !JSE_THREAD_H
+#endif // !JseTHREAD_H

@@ -151,42 +151,57 @@ void traverse_node(tinygltf::Model const& model, int node, int level = 0)
     }
 }
  
-class C {
-public:
+#include "JSE_GfxCoreGL46.h"
 
-    C(uint64_t aN) : m_n(aN) {
-        t = JSE_Thread(&C::run_wrapper, "C-Thread", this);
-    }
-
-    uint64_t x() const { return m_x; }
-
-    int join() {
-        return t.join();
-    }
-
-    int run() {
-        for (uint64_t x = 0; x < m_n; ++x) {
-            ++m_x;
-        }
-        return 1;
-    }
-
-private:
-    static int run_wrapper(void* data) {
-        return reinterpret_cast<C*>(data)->run();
-    }
-
-    uint64_t m_x{};
-    uint64_t m_n;
-    JSE_Thread t;
-};
-
-int main(int argc, char** argv)
+int SDL_main(int argc, char** argv)
 {
- 
-    C c{uint64_t(1e9)};
-    int r = c.join();
-    Info("C.x = %d, r = %d", c.x(), r);
+    JseInit(argc, argv);
+    JseGfxCore* core = new JseGfxCoreGL();
+    core->Init(true);
+
+    JseSurfaceCreateInfo sci{};
+    sci.width = 1440;
+    sci.height = 900;
+    sci.colorBits = 24;
+    sci.depthBits = 24;
+    sci.stencilBits = 8;
+    sci.alphaBits = 8;
+    sci.swapInterval = 1;
+    if (core->CreateSurface(sci) == JseResult::SUCCESS) {
+        Info("Surface created !");
+    }
+    else {
+        exit(1);
+    }
+
+    JseBufferCreateInfo bci{};
+    bci.bufferId = JseBufferID{ 1 };
+    bci.size = 4 * 1024 * 1024;
+    bci.target = JseBufferTarget::UNIFORM_DYNAMIC;
+    bci.storageFlags = JSE_BUFFER_STORAGE_DYNAMIC_BIT;
+    if (core->CreateBuffer(bci) == JseResult::SUCCESS) {
+        Info("Buffer Created");
+    }
+
+    JseMemory mem{ 1024 * 1024 * 2 };
+    JseBufferUpdateInfo bui{};
+    bui.bufferId = JseBufferID{ 1 };
+    bui.offset = 1024;
+    bui.data = mem;
+    if (core->UpdateBuffer(bui) == JseResult::SUCCESS) {
+        Info("Buffer updated");
+    }
+
+    if (core->DestroyBuffer(JseBufferID{ 1 }) == JseResult::SUCCESS) {
+        Info("Buffer deleted");
+    }
+
+    if (core->UpdateBuffer(bui) != JseResult::SUCCESS) {
+        Info("Buffer update failed");
+    }
+
+    core->Shutdown();
+    JseShutdown();
 
     exit(0);
 

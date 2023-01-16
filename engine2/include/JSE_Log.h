@@ -1,11 +1,11 @@
 #ifndef JSE_LOG_H
 #define JSE_LOG_H
 
-class JSE_LogWriter
+class JseLogWriter
 {
 public:
-	JSE_LogWriter(const std::string& pFilename);
-	~JSE_LogWriter();
+	JseLogWriter(const std::string& pFilename);
+	~JseLogWriter();
 
 	void Write(const std::string& pMessage);
 	void SetFileName(const std::string& pFilename);

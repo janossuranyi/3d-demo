@@ -1,33 +1,44 @@
-#ifndef JSE_CORE_H
-#define JSE_CORE_H
+#ifndef JseCORE_H
+#define JseCORE_H
 
 #include <cinttypes>
 
-class JSE_NonCopyable {
-public:
-    JSE_NonCopyable() = default;
-    JSE_NonCopyable(JSE_NonCopyable&) = delete;
-    JSE_NonCopyable& operator=(JSE_NonCopyable&) = delete;
+enum class JseResult {
+	SUCCESS = 0,
+	GENERIC_ERROR = 1,
+	OUT_OF_MEMORY_ERROR = 0x10000,
+	NOT_IMPLEMENTED = 0x10001,
+    ALREADY_EXISTS = 0x10002,
+    NOT_EXISTS = 0x10003,
+    INTERVAL_EXCEEDED = 0x10004,
+	INVALID_SURFACE_DIMENSION = 0x20000
 };
 
-class JSE_NonMovable {
+class JseNonCopyable {
 public:
-    JSE_NonMovable() = default;
-    JSE_NonMovable(JSE_NonCopyable&) = delete;
-    JSE_NonMovable(JSE_NonCopyable&&) = delete;
-    JSE_NonMovable& operator=(JSE_NonMovable&) = delete;
-    JSE_NonMovable& operator=(JSE_NonMovable&&) = delete;
+    JseNonCopyable() = default;
+    JseNonCopyable(JseNonCopyable&) = delete;
+    JseNonCopyable& operator=(JseNonCopyable&) = delete;
+};
+
+class JseNonMovable {
+public:
+    JseNonMovable() = default;
+    JseNonMovable(JseNonCopyable&) = delete;
+    JseNonMovable(JseNonCopyable&&) = delete;
+    JseNonMovable& operator=(JseNonMovable&) = delete;
+    JseNonMovable& operator=(JseNonMovable&&) = delete;
 };
 
 
-extern void JSE_Init(int argc, const char** argv);
-extern void JSE_Shutdown();
-extern uint64_t JSE_GetTicks();
+extern void JseInit(int argc, char** argv);
+extern void JseShutdown();
+extern uint64_t JseGetTicks();
 
-typedef struct JSE_CoreContext {
+typedef struct JseCoreContext {
     int version;    
-} JSE_CoreContext;
+} JseCoreContext;
 
-extern JSE_CoreContext g_CoreContext;
+extern JseCoreContext g_CoreContext;
 
 #endif
