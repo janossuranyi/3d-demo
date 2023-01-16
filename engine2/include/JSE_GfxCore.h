@@ -2,14 +2,20 @@
 #define JSE_GFX_CORE_H
 
 struct JseBufferTag{};
+struct JseSamplerTag {};
 struct JseImageTag{};
 struct JseVertexInputTag{};
 struct JseGraphicsPipelineTag{};
 
 using JseBufferID = JseHandle<JseBufferTag, -1>;
 using JseImageID = JseHandle<JseImageTag, -1>;
+using JseSamplerID = JseHandle<JseSamplerTag, -1>;
 using JseVertexInputID = JseHandle<JseVertexInputTag, -1>;
 using JseGrapicsPipelineID = JseHandle<JseGraphicsPipelineTag, -1>;
+
+struct JseColor4f {
+    float r, g, b, a;
+};
 
 enum JseBufferStorageFlags {
     JSE_BUFFER_STORAGE_PERSISTENT_BIT = 1,
@@ -19,7 +25,8 @@ enum JseBufferStorageFlags {
     JSE_BUFFER_STORAGE_DYNAMIC_BIT = 16
 };
 
-enum class JseFilter { Nearest, Linear, NearestLinear, LinearNearest, LinearLinear };
+enum class JseFilter { NEAREST, LINEAR, NEAREST_MIPMAP_NEAREST, LINEAR_MIPMAP_NEAREST, LINEAR_MIPMAP_LINEAR };
+enum class JseImageTiling { REPEAT, CLAMP_TO_EDGE, CLAMP_TO_BORDER, MIRRORED_REPEAT };
 
 enum class JseVertexInputRate {
     VERTEX, INSTANCE
@@ -163,8 +170,19 @@ struct JseBufferUpdateInfo {
 struct JseSamplerDescription {
     JseFilter minFilter;
     JseFilter magFilter;
-
+    JseImageTiling tilingS;
+    JseImageTiling tilingT;
+    JseImageTiling tilingR;
+    float loadBias;
+    float minLod;
+    float maxLod;
     float maxAnisotropy;
+    JseColor4f borderColor;
+};
+
+struct JseSamplerCreateInfo {
+    JseSamplerID samplerId;
+    JseSamplerDescription samplerDescription;
 };
 
 struct JseImageCreateInfo {
@@ -172,16 +190,18 @@ struct JseImageCreateInfo {
     JseImageTarget target;
     JseFormat format;
     JseSamplerDescription samplerDescription;
+    JseSamplerID sampler;
     uint32_t width;
     uint32_t height;
     uint32_t depth;
     uint32_t mipCount;
-    uint32_t arrayCount;
+    uint32_t levelCount;    //array
+    bool srgb;
 };
 
 struct JseImageUploadInfo {
     JseImageID imageId;
-    uint32_t depth;
+    uint32_t level;
     uint32_t mipLevel;
     JseMemory data;
 };

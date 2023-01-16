@@ -23,6 +23,16 @@
 #define GLC()
 #endif
 
+// GL TextureFormatInfo.
+struct TextureFormatInfo {
+	GLenum internal_format;
+	GLenum internal_format_srgb;
+	GLenum format;
+	GLenum type;
+	bool supported;
+	uint16_t pixelByteSize;
+};
+
 
 class JseGfxCoreGL : public JseGfxCore {
 public:

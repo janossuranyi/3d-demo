@@ -23,6 +23,65 @@ void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 	const GLvoid* userParam);
 
 
+TextureFormatInfo s_texture_format[] = {
+	{GL_ALPHA,              GL_ZERO,         GL_ALPHA,            GL_UNSIGNED_BYTE,                false,  1}, // A8
+	{GL_R8,                 GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                false,  1}, // R8
+	{GL_R8I,                GL_ZERO,         GL_RED,              GL_BYTE,                         false,  1}, // R8I
+	{GL_R8UI,               GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                false,  1}, // R8U
+	{GL_R8_SNORM,           GL_ZERO,         GL_RED,              GL_BYTE,                         false,  1}, // R8S
+	{GL_R16,                GL_ZERO,         GL_RED,              GL_UNSIGNED_SHORT,               false,  2}, // R16
+	{GL_R16I,               GL_ZERO,         GL_RED,              GL_SHORT,                        false,  2}, // R16I
+	{GL_R16UI,              GL_ZERO,         GL_RED,              GL_UNSIGNED_SHORT,               false,  2}, // R16U
+	{GL_R16F,               GL_ZERO,         GL_RED,              GL_HALF_FLOAT,                   false,  2}, // R16F
+	{GL_R16_SNORM,          GL_ZERO,         GL_RED,              GL_SHORT,                        false,  2}, // R16S
+	{GL_R32I,               GL_ZERO,         GL_RED,              GL_INT,                          false,  4}, // R32I
+	{GL_R32UI,              GL_ZERO,         GL_RED,              GL_UNSIGNED_INT,                 false,  4}, // R32U
+	{GL_R32F,               GL_ZERO,         GL_RED,              GL_FLOAT,                        false,  4}, // R32F
+	{GL_RG8,                GL_ZERO,         GL_RG,               GL_UNSIGNED_BYTE,                false,  2}, // RG8
+	{GL_RG8I,               GL_ZERO,         GL_RG,               GL_BYTE,                         false,  2}, // RG8I
+	{GL_RG8UI,              GL_ZERO,         GL_RG,               GL_UNSIGNED_BYTE,                false,  2}, // RG8U
+	{GL_RG8_SNORM,          GL_ZERO,         GL_RG,               GL_BYTE,                         false,  2}, // RG8S
+	{GL_RG16,               GL_ZERO,         GL_RG,               GL_UNSIGNED_SHORT,               false,  4}, // RG16
+	{GL_RG16I,              GL_ZERO,         GL_RG,               GL_SHORT,                        false,  4}, // RG16I
+	{GL_RG16UI,             GL_ZERO,         GL_RG,               GL_UNSIGNED_SHORT,               false,  4}, // RG16U
+	{GL_RG16F,              GL_ZERO,         GL_RG,               GL_FLOAT,                        false,  8}, // RG16F
+	{GL_RG16_SNORM,         GL_ZERO,         GL_RG,               GL_SHORT,                        false,  4}, // RG16S
+	{GL_RG32I,              GL_ZERO,         GL_RG,               GL_INT,                          false,  8}, // RG32I
+	{GL_RG32UI,             GL_ZERO,         GL_RG,               GL_UNSIGNED_INT,                 false,  2}, // RG32U
+	{GL_RG32F,              GL_ZERO,         GL_RG,               GL_FLOAT,                        false,  8}, // RG32F
+	{GL_RGB8,               GL_SRGB8,        GL_RGB,              GL_UNSIGNED_BYTE,                false,  3}, // RGB8
+	{GL_RGB8I,              GL_ZERO,         GL_RGB,              GL_BYTE,                         false,  3}, // RGB8I
+	{GL_RGB8UI,             GL_ZERO,         GL_RGB,              GL_UNSIGNED_BYTE,                false,  3}, // RGB8U
+	{GL_RGB8_SNORM,         GL_ZERO,         GL_RGB,              GL_BYTE,                         false,  3}, // RGB8S
+	{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_BGRA,             GL_UNSIGNED_BYTE,                false,  4}, // BGRA8
+	{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_RGBA,             GL_UNSIGNED_BYTE,                false,  4}, // RGBA8
+	{GL_RGBA8I,             GL_ZERO,         GL_RGBA,             GL_BYTE,                         false,  4}, // RGBA8I
+	{GL_RGBA8UI,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_BYTE,                false,  4}, // RGBA8U
+	{GL_RGBA8_SNORM,        GL_ZERO,         GL_RGBA,             GL_BYTE,                         false,  4}, // RGBA8S
+	{GL_RGBA16,             GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT,               false,  8}, // RGBA16
+	{GL_RGBA16I,            GL_ZERO,         GL_RGBA,             GL_SHORT,                        false,  8}, // RGBA16I
+	{GL_RGBA16UI,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT,               false,  8}, // RGBA16U
+	{GL_RGBA16F,            GL_ZERO,         GL_RGBA,             GL_HALF_FLOAT,                   false,  8}, // RGBA16F
+	{GL_RGBA16_SNORM,       GL_ZERO,         GL_RGBA,             GL_SHORT,                        false,  8}, // RGBA16S
+	{GL_RGBA32I,            GL_ZERO,         GL_RGBA,             GL_INT,                          false, 16}, // RGBA32I
+	{GL_RGBA32UI,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT,                 false, 16}, // RGBA32U
+	{GL_RGBA32F,            GL_ZERO,         GL_RGBA,             GL_FLOAT,                        false, 16}, // RGBA32F
+	{GL_RGBA4,              GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_4_4_4_4_REV,   false,  2}, // RGBA4
+	{GL_RGB5_A1,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_1_5_5_5_REV,   false,  2}, // RGB5A1
+	{GL_RGB10_A2,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT_2_10_10_10_REV,  false,  4}, // RGB10A2
+	{GL_R11F_G11F_B10F,     GL_ZERO,         GL_RGB,              GL_UNSIGNED_INT_10F_11F_11F_REV, false,  4}, // RG11B10F
+	{GL_COMPRESSED_RGB,     GL_COMPRESSED_SRGB,GL_RGB,            GL_UNSIGNED_BYTE,                false,  3}, // RGB8_COMPRESSED
+	{GL_COMPRESSED_RGBA,    GL_COMPRESSED_SRGB_ALPHA,GL_RGBA,     GL_UNSIGNED_BYTE,                false,  4}, // RGBA8_COMPRESSED
+	{GL_DEPTH_COMPONENT16,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_SHORT,               false,  2}, // D16
+	{GL_DEPTH_COMPONENT24,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 false,  4}, // D24
+	{GL_DEPTH24_STENCIL8,   GL_ZERO,         GL_DEPTH_STENCIL,    GL_UNSIGNED_INT_24_8,            false,  4}, // D24S8
+	{GL_DEPTH_COMPONENT32,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 false,  4}, // D32
+	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false,  4}, // D16F
+	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false,  4}, // D24F
+	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false,  4}, // D32F
+	{GL_STENCIL_INDEX8,     GL_ZERO,         GL_STENCIL_INDEX,    GL_UNSIGNED_BYTE,                false,  1}, // D0S8
+};
+
 JseGfxCoreGL::~JseGfxCoreGL()
 {
 	Shutdown_impl();
@@ -245,8 +304,20 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 		return JseResult::ALREADY_EXISTS;
 	}
 
-	
+	ImageData data{};
+	TextureFormatInfo formatInfo = s_texture_format[static_cast<size_t>(cmd.format)];
 
+	data.target = MapJseImageTarget(cmd.target);
+	if (data.target == 0) {
+		return JseResult::INVALID_VALUE;
+	}
+
+	GL_CHECK(glCreateTextures(data.target, 1, &data.texture));
+	if (cmd.target == JseImageTarget::D2) {
+		GL_CHECK(glTextureStorage2D(data.texture, cmd.mipCount, cmd.srgb ? formatInfo.internal_format_srgb : formatInfo.internal_format, cmd.width, cmd.height));
+	}
+
+	// glTextureParameterf ...
     return JseResult();
 }
 
@@ -367,6 +438,29 @@ static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 		severityText,
 		message);
 }
+
+	static GLenum MapJseImageTarget(JseImageTarget t) {
+		switch (t) {
+		case JseImageTarget::D1:
+			return GL_TEXTURE_1D;
+		case JseImageTarget::D1_ARRAY:
+			return GL_TEXTURE_1D_ARRAY;
+		case JseImageTarget::D2:
+			return GL_TEXTURE_2D;
+		case JseImageTarget::D2_ARRAY:
+			return GL_TEXTURE_2D_ARRAY;
+		case JseImageTarget::D3:
+			return GL_TEXTURE_3D;
+		case JseImageTarget::D3_ARRAY:
+			return 0;
+		case JseImageTarget::CUBEMAP:
+			return GL_TEXTURE_CUBE_MAP;
+		case JseImageTarget::CUBEMAP_ARRAY:
+			return GL_TEXTURE_CUBE_MAP_ARRAY;
+		default: 
+			return 0;
+		}
+	}
 
 	static GLenum MapJseBufferTarget(JseBufferTarget t) {
 		switch (t) {
