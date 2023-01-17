@@ -30,14 +30,14 @@ struct TextureFormatInfo {
 	GLenum format;
 	GLenum type;
 	bool supported;
-	uint16_t pixelByteSize;
+	uint16_t componentCount;
 };
 
 
 class JseGfxCoreGL : public JseGfxCore {
 public:
 	~JseGfxCoreGL() override;
-	JseGfxCoreGL() = default;
+	JseGfxCoreGL();
 private:
 	bool useDebugMode_{};
 	SDL_Window* windowHandle_;
@@ -58,10 +58,15 @@ private:
 
 	virtual JseResult CreateImage_impl(const JseImageCreateInfo& createImageInfo) override;
 
+	virtual JseResult UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) override;
+
 	virtual JseResult CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) override;
+
+	virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;
 
 	virtual void Shutdown_impl() override;
 
+	JseDeviceCapabilities deviceCapabilities_{};
 
 	struct BufferData {
 		GLuint buffer;
@@ -73,7 +78,14 @@ private:
 	struct ImageData {
 		GLuint texture;
 		GLenum target;
+		GLenum format;
+		GLenum type;
 	};
+
+	struct glStateCache {
+		GLint unpackAlignment;
+
+	} stateCache_{};
 
 	JseHashMap<JseBufferID, BufferData> buffer_data_map_;
 	JseHashMap<JseImageID, ImageData> texture_data_map_;

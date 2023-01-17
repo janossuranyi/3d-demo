@@ -34,9 +34,24 @@ JseResult JseGfxCore::CreateImage(const JseImageCreateInfo& createImageInfo)
     return CreateImage_impl(createImageInfo);
 }
 
+JseResult JseGfxCore::CreateTexture(const JseImageCreateInfo& createImageInfo)
+{
+    return CreateImage_impl(createImageInfo);
+}
+
+JseResult JseGfxCore::UpdateImageData(const JseImageUploadInfo& imageUploadInfo)
+{
+    return UpdateImageData_impl(imageUploadInfo);
+}
+
 JseResult JseGfxCore::CreateGraphicsPipeline(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo)
 {
     return CreateGraphicsPipeline_impl(graphicsPipelineCreateInfo);
+}
+
+JseResult JseGfxCore::GetDeviceCapabilities(JseDeviceCapabilities& dest)
+{
+    return GetDeviceCapabilities_impl(dest);
 }
 
 void JseGfxCore::Shutdown()

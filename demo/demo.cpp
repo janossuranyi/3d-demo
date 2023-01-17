@@ -174,6 +174,11 @@ int SDL_main(int argc, char** argv)
         exit(1);
     }
 
+    JseDeviceCapabilities cap{};
+    core->GetDeviceCapabilities(cap);
+    Info("Renderer: %s", cap.renderer);
+    Info("Renderer ver: %s", cap.rendererVersion);
+
     JseBufferCreateInfo bci{};
     bci.bufferId = JseBufferID{ 1 };
     bci.size = 4 * 1024 * 1024;
@@ -190,6 +195,50 @@ int SDL_main(int argc, char** argv)
     bui.data = mem;
     if (core->UpdateBuffer(bui) == JseResult::SUCCESS) {
         Info("Buffer updated");
+    }
+
+    JseImageCreateInfo ici{};
+    JseSamplerDescription samplerDescription{};
+    samplerDescription.borderColor = JseColor4f{ 0.0f,0.0f,0.0f,1.0f };
+    samplerDescription.lodBias = 0.0f;
+    samplerDescription.minLod = 0.0f;
+    samplerDescription.maxLod = 1000.0f;
+    samplerDescription.maxAnisotropy = 1.0f;
+    samplerDescription.magFilter = JseFilter::LINEAR;
+    samplerDescription.minFilter = JseFilter::LINEAR;
+    samplerDescription.tilingS = JseImageTiling::CLAMP_TO_EDGE;
+    samplerDescription.tilingT = JseImageTiling::CLAMP_TO_EDGE;
+
+    JseMemory txData(128 * 128 * 4);
+    int x = static_cast<int>(txData[16]);
+
+    ici.imageId = JseImageID{ 1 };
+    ici.target = JseImageTarget::CUBEMAP_ARRAY;
+    ici.width = 128;
+    ici.height = 128;
+    ici.depth = 16; // 16 layer
+    ici.levelCount = 1;// static_cast<uint32_t>(std::log2(std::max(ici.width, ici.height))) + 1;
+    ici.format = JseFormat::RGBA8;
+    ici.sampler = JseSamplerID{};
+    ici.samplerDescription = &samplerDescription;
+
+    if (core->CreateTexture(ici) == JseResult::SUCCESS) {
+        Info("Texture created");
+    }
+
+    JseImageUploadInfo iui{};
+    iui.imageId = JseImageID{ 1 };
+    iui.level = 0;
+    iui.width = 128;
+    iui.height = 128;
+    iui.depth = 1;
+    iui.xoffset = 0;
+    iui.yoffset = 0;
+    iui.zoffset = 2; // layer
+    iui.face = JseCubeMapFace::POSITIVE_Y;
+    iui.data = txData;
+    if (core->UpdateImageData(iui) == JseResult::SUCCESS) {
+        Info("Texture updated");
     }
 
     if (core->DestroyBuffer(JseBufferID{ 1 }) == JseResult::SUCCESS) {
