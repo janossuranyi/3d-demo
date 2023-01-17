@@ -64,7 +64,11 @@ private:
 
 	virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;
 
+	virtual JseResult SetVSyncInterval_impl(int interval) override;
+
 	virtual void Shutdown_impl() override;
+
+	void SetRenderState(JseRenderState state, bool force = false);
 
 	JseDeviceCapabilities deviceCapabilities_{};
 
@@ -82,13 +86,24 @@ private:
 		GLenum type;
 	};
 
+	struct GfxPipelineData {
+		GLuint vao;
+		GLuint program;
+		JseRenderState renderState;
+
+	};
+
 	struct glStateCache {
 		GLint unpackAlignment;
 
 	} stateCache_{};
 
+	JseRenderState gl_state_;
+	GLfloat polyOfsScale_, polyOfsBias_;
+
 	JseHashMap<JseBufferID, BufferData> buffer_data_map_;
 	JseHashMap<JseImageID, ImageData> texture_data_map_;
+	JseHashMap<JseGrapicsPipelineID, GfxPipelineData> pipeline_data_map_;
 };
 
 #endif

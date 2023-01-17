@@ -174,6 +174,8 @@ int SDL_main(int argc, char** argv)
         exit(1);
     }
 
+    core->SetVSyncInterval(-1);
+
     JseDeviceCapabilities cap{};
     core->GetDeviceCapabilities(cap);
     Info("Renderer: %s", cap.renderer);

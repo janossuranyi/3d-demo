@@ -54,6 +54,11 @@ JseResult JseGfxCore::GetDeviceCapabilities(JseDeviceCapabilities& dest)
     return GetDeviceCapabilities_impl(dest);
 }
 
+JseResult JseGfxCore::SetVSyncInterval(int interval)
+{
+    return SetVSyncInterval_impl(interval);
+}
+
 void JseGfxCore::Shutdown()
 {
     Shutdown_impl();
