@@ -60,7 +60,13 @@ private:
 
 	virtual JseResult UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) override;
 
+	virtual JseResult DeleteImage_impl(JseImageID imageId) override;
+
 	virtual JseResult CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) override;
+	
+	virtual JseResult BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
+
+	virtual JseResult DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
 
 	virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) override;
 

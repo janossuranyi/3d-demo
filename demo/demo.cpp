@@ -328,6 +328,9 @@ void main() {
         Info("Graphics pipeline created");
     }
 
+    core->BindGraphicsPipeline(JseGrapicsPipelineID{ 1 });
+    core->DeleteGraphicsPipeline(JseGrapicsPipelineID{ 1 });
+
     core->Shutdown();
     JseShutdown();
 

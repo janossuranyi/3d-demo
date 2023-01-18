@@ -44,9 +44,24 @@ JseResult JseGfxCore::UpdateImageData(const JseImageUploadInfo& imageUploadInfo)
     return UpdateImageData_impl(imageUploadInfo);
 }
 
+JseResult JseGfxCore::DeleteImage(JseImageID imageId)
+{
+    return DeleteImage_impl(imageId);
+}
+
 JseResult JseGfxCore::CreateGraphicsPipeline(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo)
 {
     return CreateGraphicsPipeline_impl(graphicsPipelineCreateInfo);
+}
+
+JseResult JseGfxCore::DeleteGraphicsPipeline(JseGrapicsPipelineID pipelineId)
+{
+    return DeleteGraphicsPipeline_impl(pipelineId);
+}
+
+JseResult JseGfxCore::BindGraphicsPipeline(JseGrapicsPipelineID pipelineId)
+{
+    return BindGraphicsPipeline_impl(pipelineId);
 }
 
 JseResult JseGfxCore::CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput)

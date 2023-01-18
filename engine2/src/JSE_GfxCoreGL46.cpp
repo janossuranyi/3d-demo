@@ -445,6 +445,19 @@ JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 	return JseResult::SUCCESS;
 }
 
+JseResult JseGfxCoreGL::DeleteImage_impl(JseImageID imageId)
+{
+	auto find = texture_data_map_.find(imageId);
+
+	if (find == std::end(texture_data_map_)) return JseResult::NOT_EXISTS;
+
+	GL_CHECK(glDeleteTextures(1, &find->second.texture));
+
+	texture_data_map_.erase(imageId);
+
+	return JseResult::SUCCESS;
+}
+
 JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& cmd)
 {
 
@@ -497,10 +510,10 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 		}
 	}
 
-	for (int i = 0; i < cmd.stageCount; ++i) {
-		auto& shaderData = shader_map_.at(cmd.pStages[i].shader);
-		glDeleteShader(shaderData.shader);
-	}
+	//for (int i = 0; i < cmd.stageCount; ++i) {
+	//	auto& shaderData = shader_map_.at(cmd.pStages[i].shader);
+	//	glDeleteShader(shaderData.shader);
+	//}
 
 
 	if (res != JseResult::SUCCESS) {
@@ -515,6 +528,37 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 	}
 
 	return res;
+}
+
+JseResult JseGfxCoreGL::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
+{
+	auto find = pipeline_data_map_.find(pipelineId);
+	if (find == std::end(pipeline_data_map_)) {
+		return JseResult::NOT_EXISTS;
+	}
+
+	auto& data = find->second;
+	SetRenderState(data.renderState);
+	GL_CHECK(glBindVertexArray(data.vao));
+	GL_CHECK(glUseProgram(data.program));
+
+	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
+{
+	auto find = pipeline_data_map_.find(pipelineId);
+	if (find == std::end(pipeline_data_map_)) {
+		return JseResult::NOT_EXISTS;
+	}
+
+	auto& data = find->second;
+	GL_CHECK(glDeleteProgram(data.program));
+	GL_CHECK(glDeleteVertexArrays(1, &data.vao));
+
+	pipeline_data_map_.erase(pipelineId);
+
+	return JseResult::SUCCESS;
 }
 
 JseResult JseGfxCoreGL::CreateShader_impl(const JseShaderCreateInfo& cmd, std::string& errorOutput)

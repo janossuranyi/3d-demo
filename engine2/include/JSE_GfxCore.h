@@ -448,7 +448,10 @@ public:
     JseResult CreateImage(const JseImageCreateInfo& createImageInfo);
     JseResult CreateTexture(const JseImageCreateInfo& createImageInfo); // Alias for CreateImage
     JseResult UpdateImageData(const JseImageUploadInfo& imgageUploadInfo);
+    JseResult DeleteImage(JseImageID imageId);
     JseResult CreateGraphicsPipeline(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo);
+    JseResult DeleteGraphicsPipeline(JseGrapicsPipelineID pipelineId);
+    JseResult BindGraphicsPipeline(JseGrapicsPipelineID pipelineId);
     JseResult CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
 
     JseResult GetDeviceCapabilities(JseDeviceCapabilities& dest);
@@ -464,7 +467,10 @@ private:
     virtual JseResult UpdateBuffer_impl(const JseBufferUpdateInfo& bufferUpdateInfo) = 0;
     virtual JseResult DestroyBuffer_impl(JseBufferID bufferId) = 0;
     virtual JseResult CreateImage_impl(const JseImageCreateInfo& createImageInfo) = 0;
+    virtual JseResult DeleteImage_impl(JseImageID imageId) = 0;
     virtual JseResult CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) = 0;
+    virtual JseResult BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) = 0;
+    virtual JseResult DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) = 0;
     virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) = 0;
     virtual JseResult UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) = 0;
     virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) = 0;
