@@ -20,6 +20,12 @@ struct JseColor4f {
     float r, g, b, a;
 };
 
+typedef union JseClearValue {
+    JseColor4f color;
+    float depth;
+    int stenci;
+} JseClearValue;
+
 enum class JseCubeMapFace {
     POSITIVE_X,
     NEGATIVE_X,
@@ -261,6 +267,10 @@ struct JseGraphicsPipelineCreateInfo {
     uint32_t stageCount;
     JsePipelineShaderStageCreateInfo* pStages;
     JseRenderState renderState;
+};
+
+struct JseFrameBufferCreateInfo {
+    
 };
 
 struct JseDeviceCapabilities {
