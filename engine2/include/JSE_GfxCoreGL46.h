@@ -29,7 +29,7 @@ struct TextureFormatInfo {
 	GLenum internal_format_srgb;
 	GLenum format;
 	GLenum type;
-	bool supported;
+	bool normalized;
 	uint16_t componentCount;
 };
 
@@ -62,6 +62,8 @@ private:
 
 	virtual JseResult CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) override;
 
+	virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) override;
+
 	virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;
 
 	virtual JseResult SetVSyncInterval_impl(int interval) override;
@@ -89,8 +91,13 @@ private:
 	struct GfxPipelineData {
 		GLuint vao;
 		GLuint program;
+		std::vector<JseVertexInputBindingDescription> binding;
 		JseRenderState renderState;
+	};
 
+	struct ShaderData {
+		GLuint shader;
+		JseShaderStage stage;
 	};
 
 	struct glStateCache {
@@ -104,6 +111,7 @@ private:
 	JseHashMap<JseBufferID, BufferData> buffer_data_map_;
 	JseHashMap<JseImageID, ImageData> texture_data_map_;
 	JseHashMap<JseGrapicsPipelineID, GfxPipelineData> pipeline_data_map_;
+	JseHashMap<JseShaderID, ShaderData> shader_map_;
 };
 
 #endif

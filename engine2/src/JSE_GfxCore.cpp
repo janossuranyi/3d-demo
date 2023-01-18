@@ -49,6 +49,11 @@ JseResult JseGfxCore::CreateGraphicsPipeline(const JseGraphicsPipelineCreateInfo
     return CreateGraphicsPipeline_impl(graphicsPipelineCreateInfo);
 }
 
+JseResult JseGfxCore::CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput)
+{
+    return CreateShader_impl(shaderCreateInfo, errorOutput);
+}
+
 JseResult JseGfxCore::GetDeviceCapabilities(JseDeviceCapabilities& dest)
 {
     return GetDeviceCapabilities_impl(dest);

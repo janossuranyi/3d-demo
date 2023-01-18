@@ -7,6 +7,7 @@ GLenum MapJseFilterGl(JseFilter t);
 GLenum MapJseTilingGl(JseImageTiling t);
 GLenum MapJseImageTargetGl(JseImageTarget t);
 GLenum MapJseCubemapFaceGl(JseCubeMapFace t);
+GLenum MapJseShaderStageGl(JseShaderStage t);
 
 static void CheckOpenGLError(const char* stmt, const char* fname, int line)
 {
@@ -28,62 +29,62 @@ void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 
 
 TextureFormatInfo s_texture_format[] = {
-	{GL_ALPHA,              GL_ZERO,         GL_ALPHA,            GL_UNSIGNED_BYTE,                false,  1}, // A8
-	{GL_R8,                 GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                false,  1}, // R8
-	{GL_R8I,                GL_ZERO,         GL_RED,              GL_BYTE,                         false,  1}, // R8I
-	{GL_R8UI,               GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                false,  1}, // R8U
-	{GL_R8_SNORM,           GL_ZERO,         GL_RED,              GL_BYTE,                         false,  1}, // R8S
-	{GL_R16,                GL_ZERO,         GL_RED,              GL_UNSIGNED_SHORT,               false,  1}, // R16
-	{GL_R16I,               GL_ZERO,         GL_RED,              GL_SHORT,                        false,  1}, // R16I
-	{GL_R16UI,              GL_ZERO,         GL_RED,              GL_UNSIGNED_SHORT,               false,  1}, // R16U
-	{GL_R16F,               GL_ZERO,         GL_RED,              GL_HALF_FLOAT,                   false,  1}, // R16F
-	{GL_R16_SNORM,          GL_ZERO,         GL_RED,              GL_SHORT,                        false,  1}, // R16S
-	{GL_R32I,               GL_ZERO,         GL_RED,              GL_INT,                          false,  1}, // R32I
-	{GL_R32UI,              GL_ZERO,         GL_RED,              GL_UNSIGNED_INT,                 false,  1}, // R32U
-	{GL_R32F,               GL_ZERO,         GL_RED,              GL_FLOAT,                        false,  1}, // R32F
-	{GL_RG8,                GL_ZERO,         GL_RG,               GL_UNSIGNED_BYTE,                false,  2}, // RG8
-	{GL_RG8I,               GL_ZERO,         GL_RG,               GL_BYTE,                         false,  2}, // RG8I
-	{GL_RG8UI,              GL_ZERO,         GL_RG,               GL_UNSIGNED_BYTE,                false,  2}, // RG8U
-	{GL_RG8_SNORM,          GL_ZERO,         GL_RG,               GL_BYTE,                         false,  2}, // RG8S
-	{GL_RG16,               GL_ZERO,         GL_RG,               GL_UNSIGNED_SHORT,               false,  2}, // RG16
-	{GL_RG16I,              GL_ZERO,         GL_RG,               GL_SHORT,                        false,  2}, // RG16I
-	{GL_RG16UI,             GL_ZERO,         GL_RG,               GL_UNSIGNED_SHORT,               false,  2}, // RG16U
-	{GL_RG16F,              GL_ZERO,         GL_RG,               GL_FLOAT,                        false,  2}, // RG16F
-	{GL_RG16_SNORM,         GL_ZERO,         GL_RG,               GL_SHORT,                        false,  2}, // RG16S
-	{GL_RG32I,              GL_ZERO,         GL_RG,               GL_INT,                          false,  2}, // RG32I
-	{GL_RG32UI,             GL_ZERO,         GL_RG,               GL_UNSIGNED_INT,                 false,  2}, // RG32U
-	{GL_RG32F,              GL_ZERO,         GL_RG,               GL_FLOAT,                        false,  2}, // RG32F
-	{GL_RGB8,               GL_SRGB8,        GL_RGB,              GL_UNSIGNED_BYTE,                false,  3}, // RGB8
-	{GL_RGB8I,              GL_ZERO,         GL_RGB,              GL_BYTE,                         false,  3}, // RGB8I
-	{GL_RGB8UI,             GL_ZERO,         GL_RGB,              GL_UNSIGNED_BYTE,                false,  3}, // RGB8U
-	{GL_RGB8_SNORM,         GL_ZERO,         GL_RGB,              GL_BYTE,                         false,  3}, // RGB8S
-	{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_BGRA,             GL_UNSIGNED_BYTE,                false,  4}, // BGRA8
-	{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_RGBA,             GL_UNSIGNED_BYTE,                false,  4}, // RGBA8
-	{GL_RGBA8I,             GL_ZERO,         GL_RGBA,             GL_BYTE,                         false,  4}, // RGBA8I
-	{GL_RGBA8UI,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_BYTE,                false,  4}, // RGBA8U
-	{GL_RGBA8_SNORM,        GL_ZERO,         GL_RGBA,             GL_BYTE,                         false,  4}, // RGBA8S
-	{GL_RGBA16,             GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT,               false,  4}, // RGBA16
-	{GL_RGBA16I,            GL_ZERO,         GL_RGBA,             GL_SHORT,                        false,  4}, // RGBA16I
-	{GL_RGBA16UI,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT,               false,  4}, // RGBA16U
-	{GL_RGBA16F,            GL_ZERO,         GL_RGBA,             GL_HALF_FLOAT,                   false,  4}, // RGBA16F
-	{GL_RGBA16_SNORM,       GL_ZERO,         GL_RGBA,             GL_SHORT,                        false,  4}, // RGBA16S
-	{GL_RGBA32I,            GL_ZERO,         GL_RGBA,             GL_INT,                          false,  4}, // RGBA32I
-	{GL_RGBA32UI,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT,                 false,  4}, // RGBA32U
-	{GL_RGBA32F,            GL_ZERO,         GL_RGBA,             GL_FLOAT,                        false,  4}, // RGBA32F
-	{GL_RGBA4,              GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_4_4_4_4_REV,   false,  4}, // RGBA4
-	{GL_RGB5_A1,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_1_5_5_5_REV,   false,  4}, // RGB5A1
-	{GL_RGB10_A2,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT_2_10_10_10_REV,  false,  4}, // RGB10A2
-	{GL_R11F_G11F_B10F,     GL_ZERO,         GL_RGB,              GL_UNSIGNED_INT_10F_11F_11F_REV, false,  3}, // RG11B10F
-	{GL_COMPRESSED_RGB,     GL_COMPRESSED_SRGB,GL_RGB,            GL_UNSIGNED_BYTE,                false,  3}, // RGB8_COMPRESSED
-	{GL_COMPRESSED_RGBA,    GL_COMPRESSED_SRGB_ALPHA,GL_RGBA,     GL_UNSIGNED_BYTE,                false,  4}, // RGBA8_COMPRESSED
-	{GL_DEPTH_COMPONENT16,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_SHORT,               false,  1}, // D16
-	{GL_DEPTH_COMPONENT24,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 false,  1}, // D24
-	{GL_DEPTH24_STENCIL8,   GL_ZERO,         GL_DEPTH_STENCIL,    GL_UNSIGNED_INT_24_8,            false,  1}, // D24S8
-	{GL_DEPTH_COMPONENT32,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 false,  1}, // D32
-	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false,  1}, // D16F
-	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false,  1}, // D24F
-	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false,  1}, // D32F
-	{GL_STENCIL_INDEX8,     GL_ZERO,         GL_STENCIL_INDEX,    GL_UNSIGNED_BYTE,                false,  1}, // D0S8
+	{GL_ALPHA,              GL_ZERO,         GL_ALPHA,            GL_UNSIGNED_BYTE,                true,  1}, // A8
+	{GL_R8,                 GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                true,  1}, // R8
+	{GL_R8I,                GL_ZERO,         GL_RED,              GL_BYTE,                         true,  1}, // R8I
+	{GL_R8UI,               GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                true,  1}, // R8U
+	{GL_R8_SNORM,           GL_ZERO,         GL_RED,              GL_BYTE,                         true,  1}, // R8S
+	{GL_R16,                GL_ZERO,         GL_RED,              GL_UNSIGNED_SHORT,               true,  1}, // R16
+	{GL_R16I,               GL_ZERO,         GL_RED,              GL_SHORT,                        true,  1}, // R16I
+	{GL_R16UI,              GL_ZERO,         GL_RED,              GL_UNSIGNED_SHORT,               true,  1}, // R16U
+	{GL_R16F,               GL_ZERO,         GL_RED,              GL_HALF_FLOAT,                   false, 1}, // R16F
+	{GL_R16_SNORM,          GL_ZERO,         GL_RED,              GL_SHORT,                        true,  1}, // R16S
+	{GL_R32I,               GL_ZERO,         GL_RED,              GL_INT,                          true,  1}, // R32I
+	{GL_R32UI,              GL_ZERO,         GL_RED,              GL_UNSIGNED_INT,                 true,  1}, // R32U
+	{GL_R32F,               GL_ZERO,         GL_RED,              GL_FLOAT,                        false, 1}, // R32F
+	{GL_RG8,                GL_ZERO,         GL_RG,               GL_UNSIGNED_BYTE,                true,  2}, // RG8
+	{GL_RG8I,               GL_ZERO,         GL_RG,               GL_BYTE,                         true,  2}, // RG8I
+	{GL_RG8UI,              GL_ZERO,         GL_RG,               GL_UNSIGNED_BYTE,                true,  2}, // RG8U
+	{GL_RG8_SNORM,          GL_ZERO,         GL_RG,               GL_BYTE,                         true,  2}, // RG8S
+	{GL_RG16,               GL_ZERO,         GL_RG,               GL_UNSIGNED_SHORT,               true,  2}, // RG16
+	{GL_RG16I,              GL_ZERO,         GL_RG,               GL_SHORT,                        true,  2}, // RG16I
+	{GL_RG16UI,             GL_ZERO,         GL_RG,               GL_UNSIGNED_SHORT,               true,  2}, // RG16U
+	{GL_RG16F,              GL_ZERO,         GL_RG,               GL_FLOAT,                        false, 2}, // RG16F
+	{GL_RG16_SNORM,         GL_ZERO,         GL_RG,               GL_SHORT,                        true,  2}, // RG16S
+	{GL_RG32I,              GL_ZERO,         GL_RG,               GL_INT,                          true,  2}, // RG32I
+	{GL_RG32UI,             GL_ZERO,         GL_RG,               GL_UNSIGNED_INT,                 true,  2}, // RG32U
+	{GL_RG32F,              GL_ZERO,         GL_RG,               GL_FLOAT,                        false, 2}, // RG32F
+	{GL_RGB8,               GL_SRGB8,        GL_RGB,              GL_UNSIGNED_BYTE,                true,  3}, // RGB8
+	{GL_RGB8I,              GL_ZERO,         GL_RGB,              GL_BYTE,                         true,  3}, // RGB8I
+	{GL_RGB8UI,             GL_ZERO,         GL_RGB,              GL_UNSIGNED_BYTE,                true,  3}, // RGB8U
+	{GL_RGB8_SNORM,         GL_ZERO,         GL_RGB,              GL_BYTE,                         true,  3}, // RGB8S
+	{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_BGRA,             GL_UNSIGNED_BYTE,                true,  4}, // BGRA8
+	{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_RGBA,             GL_UNSIGNED_BYTE,                true,  4}, // RGBA8
+	{GL_RGBA8I,             GL_ZERO,         GL_RGBA,             GL_BYTE,                         true,  4}, // RGBA8I
+	{GL_RGBA8UI,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_BYTE,                true,  4}, // RGBA8U
+	{GL_RGBA8_SNORM,        GL_ZERO,         GL_RGBA,             GL_BYTE,                         true,  4}, // RGBA8S
+	{GL_RGBA16,             GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT,               true,  4}, // RGBA16
+	{GL_RGBA16I,            GL_ZERO,         GL_RGBA,             GL_SHORT,                        true,  4}, // RGBA16I
+	{GL_RGBA16UI,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT,               true,  4}, // RGBA16U
+	{GL_RGBA16F,            GL_ZERO,         GL_RGBA,             GL_HALF_FLOAT,                   false, 4}, // RGBA16F
+	{GL_RGBA16_SNORM,       GL_ZERO,         GL_RGBA,             GL_SHORT,                        true,  4}, // RGBA16S
+	{GL_RGBA32I,            GL_ZERO,         GL_RGBA,             GL_INT,                          true,  4}, // RGBA32I
+	{GL_RGBA32UI,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT,                 true,  4}, // RGBA32U
+	{GL_RGBA32F,            GL_ZERO,         GL_RGBA,             GL_FLOAT,                        false, 4}, // RGBA32F
+	{GL_RGBA4,              GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_4_4_4_4_REV,   true,  4}, // RGBA4
+	{GL_RGB5_A1,            GL_ZERO,         GL_RGBA,             GL_UNSIGNED_SHORT_1_5_5_5_REV,   true,  4}, // RGB5A1
+	{GL_RGB10_A2,           GL_ZERO,         GL_RGBA,             GL_UNSIGNED_INT_2_10_10_10_REV,  true,  4}, // RGB10A2
+	{GL_R11F_G11F_B10F,     GL_ZERO,         GL_RGB,              GL_UNSIGNED_INT_10F_11F_11F_REV, true,  3}, // RG11B10F
+	{GL_COMPRESSED_RGB,     GL_COMPRESSED_SRGB,GL_RGB,            GL_UNSIGNED_BYTE,                true,  3}, // RGB8_COMPRESSED
+	{GL_COMPRESSED_RGBA,    GL_COMPRESSED_SRGB_ALPHA,GL_RGBA,     GL_UNSIGNED_BYTE,                true,  4}, // RGBA8_COMPRESSED
+	{GL_DEPTH_COMPONENT16,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_SHORT,               true,  1}, // D16
+	{GL_DEPTH_COMPONENT24,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 true,  1}, // D24
+	{GL_DEPTH24_STENCIL8,   GL_ZERO,         GL_DEPTH_STENCIL,    GL_UNSIGNED_INT_24_8,            true,  1}, // D24S8
+	{GL_DEPTH_COMPONENT32,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 true,  1}, // D32
+	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false, 1}, // D16F
+	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false, 1}, // D24F
+	{GL_DEPTH_COMPONENT32F, GL_ZERO,         GL_DEPTH_COMPONENT,  GL_FLOAT,                        false, 1}, // D32F
+	{GL_STENCIL_INDEX8,     GL_ZERO,         GL_STENCIL_INDEX,    GL_UNSIGNED_BYTE,                true,  1}, // D0S8
 };
 
 JseGfxCoreGL::~JseGfxCoreGL()
@@ -215,8 +216,8 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glDisable(GL_FRAMEBUFFER_SRGB);
 
-	deviceCapabilities_.renderer = (const char*)glGetString(GL_RENDERER);
-	deviceCapabilities_.rendererVersion = (const char*)glGetString(GL_VERSION);
+	deviceCapabilities_.pRenderer = (const char*)glGetString(GL_RENDERER);
+	deviceCapabilities_.pRendererVersion = (const char*)glGetString(GL_VERSION);
 	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &deviceCapabilities_.maxArrayTextureLayers);
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &deviceCapabilities_.maxTextureImageUnits);
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &deviceCapabilities_.maxTextureSize);
@@ -444,9 +445,114 @@ JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 	return JseResult::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo)
+JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& cmd)
 {
-    return JseResult();
+
+	if (pipeline_data_map_.count(cmd.graphicsPipelineId) > 0) {
+		return JseResult::ALREADY_EXISTS;
+	}
+
+	JseResult res{ JseResult::SUCCESS };
+
+	GfxPipelineData data{};
+	GL_CHECK(glCreateVertexArrays(1, &data.vao));
+	GL_CHECK(glBindVertexArray(data.vao));
+	auto* attrDesc = cmd.pVertexInputState->pAttributes;
+	auto* bindDesc = cmd.pVertexInputState->pBindings;
+
+	for (int i = 0; i < cmd.pVertexInputState->bindingCount; ++i) {
+		data.binding.emplace_back(bindDesc[i]);
+	}
+
+	for (int i = 0; i < cmd.pVertexInputState->attributeCount; ++i) {
+		auto& attr = attrDesc[i];
+		auto& fmt = s_texture_format[static_cast<size_t>(attr.format)];
+		GL_CHECK(glEnableVertexAttribArray(attr.location));
+		GL_CHECK(glVertexAttribFormat(attr.location, fmt.componentCount, fmt.type, fmt.normalized, attr.offset));
+		GL_CHECK(glVertexAttribBinding(attr.location, bindDesc[attr.bindig].binding));
+		GL_CHECK(glVertexBindingDivisor(bindDesc[attr.bindig].binding, bindDesc[attr.bindig].inputRate == JseVertexInputRate::VERTEX ? 0 : 1));
+	}
+
+	SetRenderState(cmd.renderState);
+	GL_CHECK(data.program = glCreateProgram());
+	for (int i = 0; i < cmd.stageCount; ++i) {
+		auto& shaderData = shader_map_.at(cmd.pStages[i].shader);
+		glAttachShader(data.program, shaderData.shader);
+	}
+
+	GL_CHECK(glLinkProgram(data.program));
+	GLint result = GL_FALSE;
+
+	GL_CHECK(glGetProgramiv(data.program, GL_LINK_STATUS, &result));
+
+	if (result == GL_FALSE)
+	{
+		GLint infologLen;
+		GL_CHECK(glGetProgramiv(data.program, GL_INFO_LOG_LENGTH, &infologLen));
+		if (infologLen > 0) {
+			std::vector<char> logBuf(infologLen);
+			GL_CHECK(glGetProgramInfoLog(data.program, infologLen, nullptr, logBuf.data()));
+			Error("Linking of shader program failed: %s", logBuf.data());
+			res = JseResult::GENERIC_ERROR;
+		}
+	}
+
+	for (int i = 0; i < cmd.stageCount; ++i) {
+		auto& shaderData = shader_map_.at(cmd.pStages[i].shader);
+		glDeleteShader(shaderData.shader);
+	}
+
+	glBindVertexArray(0);
+
+	if (res != JseResult::SUCCESS) {
+		glDeleteProgram(data.program);
+		glDeleteVertexArrays(1, &data.vao);
+	}
+	else {
+		pipeline_data_map_.emplace(cmd.graphicsPipelineId, data);
+	}
+
+	return res;
+}
+
+JseResult JseGfxCoreGL::CreateShader_impl(const JseShaderCreateInfo& cmd, std::string& errorOutput)
+{
+	if (shader_map_.count(cmd.shaderId) > 0)
+		return JseResult::NOT_EXISTS;
+
+
+	GLuint shader = 0xffff;
+	GL_CHECK(shader = glCreateShader(MapJseShaderStageGl(cmd.stage)));
+
+	if (shader == 0xffff) {
+		return JseResult::GENERIC_ERROR;
+	}
+
+	const GLchar* tmp = reinterpret_cast<const GLchar*>(cmd.pCode);
+	GL_CHECK(glShaderSource(shader, 1, &tmp, nullptr));
+
+	GLint result = GL_FALSE;
+
+	GL_CHECK(glCompileShader(shader));
+	GL_CHECK(glGetShaderiv(shader, GL_COMPILE_STATUS, &result));
+
+	if (result == GL_FALSE)
+	{
+		GLint infologLen;
+		GL_CHECK(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infologLen));
+		if (infologLen > 0) {
+			std::vector<char> logBuf(infologLen);
+			GL_CHECK(glGetShaderInfoLog(shader, infologLen, nullptr, logBuf.data()));
+			errorOutput = std::string(logBuf.data());
+		}
+
+		GL_CHECK(glDeleteShader(shader));
+		return JseResult::GENERIC_ERROR;
+	}
+
+	shader_map_.emplace(cmd.shaderId, ShaderData{ shader, cmd.stage });
+
+	return JseResult::SUCCESS;
 }
 
 JseResult JseGfxCoreGL::GetDeviceCapabilities_impl(JseDeviceCapabilities& dest)
@@ -821,8 +927,6 @@ void JseGfxCoreGL::SetRenderState(JseRenderState state, bool force)
 	gl_state_ = state;
 }
 
-}
-
 static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 	GLenum type,
 	GLuint id,
@@ -996,4 +1100,23 @@ static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 
 	static GLenum MapJseCubemapFaceGl(JseCubeMapFace t) {
 		return GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<int>(t);
+	}
+
+	static GLenum MapJseShaderStageGl(JseShaderStage t) {
+		switch (t) {
+		case JseShaderStage::VERTEX:
+			return GL_VERTEX_SHADER;
+		case JseShaderStage::COMPUTE:
+			return GL_COMPUTE_SHADER;
+		case JseShaderStage::FRAGMENT:
+			return GL_FRAGMENT_SHADER;
+		case JseShaderStage::GEOMETRY:
+			return GL_GEOMETRY_SHADER;
+		case JseShaderStage::TESSELATION_CONTROL:
+			return GL_TESS_CONTROL_SHADER;
+		case JseShaderStage::TESSELATION:
+			return GL_TESS_EVALUATION_SHADER;
+		default:
+			return 0;
+		}
 	}

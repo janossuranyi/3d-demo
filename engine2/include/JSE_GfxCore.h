@@ -4,6 +4,7 @@
 struct JseBufferTag{};
 struct JseSamplerTag {};
 struct JseImageTag{};
+struct JseShaderTag{};
 struct JseVertexInputTag{};
 struct JseGraphicsPipelineTag{};
 
@@ -12,6 +13,8 @@ using JseImageID = JseHandle<JseImageTag, -1>;
 using JseSamplerID = JseHandle<JseSamplerTag, -1>;
 using JseVertexInputID = JseHandle<JseVertexInputTag, -1>;
 using JseGrapicsPipelineID = JseHandle<JseGraphicsPipelineTag, -1>;
+using JseShaderID = JseHandle<JseShaderTag, -1>;
+using JseRenderState = uint64_t;
 
 struct JseColor4f {
     float r, g, b, a;
@@ -233,28 +236,36 @@ struct JseVertexInputAttributeDescription {
     JseFormat format;    
 };
 
-struct JseShaderModuleStageDescription {
+struct JseShaderCreateInfo {
+    JseShaderID shaderId;
     JseShaderStage stage;
-    const char* source;
+    uint32_t codeSize;
+    const void* pCode;    
 };
 
-struct JseModuleDescription {
-    uint32_t stageCount;
-    JseShaderModuleStageDescription* stages;
+struct JsePipelineShaderStageCreateInfo {
+    JseShaderStage stage;
+    JseShaderID shader;
+};
+
+struct JsePipelineVertexInputStateCreateInfo {
+    uint32_t bindingCount;
+    JseVertexInputBindingDescription* pBindings;
+    uint32_t attributeCount;
+    JseVertexInputAttributeDescription* pAttributes;
 };
 
 struct JseGraphicsPipelineCreateInfo {
     JseGrapicsPipelineID graphicsPipelineId;
-    uint32_t bindingCount;
-    JseVertexInputBindingDescription* bindings;
-    uint32_t attributeCount;
-    JseVertexInputAttributeDescription* attributes;
-
+    JsePipelineVertexInputStateCreateInfo* pVertexInputState;
+    uint32_t stageCount;
+    JsePipelineShaderStageCreateInfo* pStages;
+    JseRenderState renderState;
 };
 
 struct JseDeviceCapabilities {
-    const char* renderer;
-    const char* rendererVersion;
+    const char* pRenderer;
+    const char* pRendererVersion;
     int maxTextureImageUnits;
     int maxArrayTextureLayers;
     int maxTextureSize;
@@ -264,7 +275,6 @@ struct JseDeviceCapabilities {
     int availableVideoMemory;
 };
 
-using JseRenderState = uint64_t;
 
 // one/zero is flipped on src/dest so a gl state of 0 is SRC_ONE,DST_ZERO
 static const JseRenderState GLS_SRCBLEND_ONE = 0 << 0;
@@ -439,6 +449,8 @@ public:
     JseResult CreateTexture(const JseImageCreateInfo& createImageInfo); // Alias for CreateImage
     JseResult UpdateImageData(const JseImageUploadInfo& imgageUploadInfo);
     JseResult CreateGraphicsPipeline(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo);
+    JseResult CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
+
     JseResult GetDeviceCapabilities(JseDeviceCapabilities& dest);
     JseResult SetVSyncInterval(int interval);
 	void Shutdown();
@@ -455,6 +467,7 @@ private:
     virtual JseResult CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) = 0;
     virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) = 0;
     virtual JseResult UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) = 0;
+    virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) = 0;
     virtual JseResult SetVSyncInterval_impl(int interval) = 0;
 
 	virtual void Shutdown_impl() = 0;

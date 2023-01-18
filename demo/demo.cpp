@@ -178,8 +178,8 @@ int SDL_main(int argc, char** argv)
 
     JseDeviceCapabilities cap{};
     core->GetDeviceCapabilities(cap);
-    Info("Renderer: %s", cap.renderer);
-    Info("Renderer ver: %s", cap.rendererVersion);
+    Info("Renderer: %s", cap.pRenderer);
+    Info("Renderer ver: %s", cap.pRendererVersion);
 
     JseBufferCreateInfo bci{};
     bci.bufferId = JseBufferID{ 1 };
@@ -251,6 +251,83 @@ int SDL_main(int argc, char** argv)
         Info("Buffer update failed");
     }
 
+    JseShaderCreateInfo shci_vert{};
+    shci_vert.shaderId = JseShaderID{ 1 };
+    shci_vert.stage = JseShaderStage::VERTEX;
+    shci_vert.codeSize = 0;
+    shci_vert.pCode = R"(
+#version 450
+layout(location = 0) vec4 in_Position;
+layout(location = 1) vec4 in_Color;
+
+out vec4 vofi_Color;
+
+void main() {
+    gl_Position = in_Position;
+    vofi_Color = in_Color;
+}
+)";
+    std::string err;
+    if (core->CreateShader(shci_vert, err) != JseResult::SUCCESS) {
+        Info("Shader compiler error: %s", err.c_str());
+    }
+
+    JseShaderCreateInfo shci_frag{};
+    shci_frag.shaderId = JseShaderID{ 2 };
+    shci_frag.stage = JseShaderStage::FRAGMENT;
+    shci_frag.codeSize = 0;
+    shci_frag.pCode = R"(
+#version 450
+out vec4 fragColor;
+in vec4 vofi_Color;
+
+void main() {
+    fragColor = vofi_Color;
+}
+)";
+    if (core->CreateShader(shci_frag, err) != JseResult::SUCCESS) {
+        Info("Shader compiler error: %s", err.c_str());
+    }
+
+    JseGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
+    JsePipelineShaderStageCreateInfo pipelineShaderStageCreateInfo[2]{};
+    JsePipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
+
+    JseVertexInputBindingDescription vertexInputBindingDescription{};
+    JseVertexInputAttributeDescription vertexInputAttributeDescription[2]{};
+    
+    pipelineShaderStageCreateInfo[0].stage = JseShaderStage::VERTEX;
+    pipelineShaderStageCreateInfo[0].shader = JseShaderID{ 1 };
+    pipelineShaderStageCreateInfo[1].stage = JseShaderStage::FRAGMENT;
+    pipelineShaderStageCreateInfo[1].shader = JseShaderID{ 2 };
+
+    vertexInputBindingDescription.binding = 0;
+    vertexInputBindingDescription.inputRate = JseVertexInputRate::VERTEX;
+    vertexInputBindingDescription.stride = 32;
+    vertexInputAttributeDescription[0].bindig = 0;
+    vertexInputAttributeDescription[0].format = JseFormat::RGBA32F;
+    vertexInputAttributeDescription[0].location = 0;
+    vertexInputAttributeDescription[0].offset = 0;
+    vertexInputAttributeDescription[1].bindig = 0;
+    vertexInputAttributeDescription[1].format = JseFormat::RGBA32F;
+    vertexInputAttributeDescription[1].location = 1;
+    vertexInputAttributeDescription[1].offset = 16;
+
+    pipelineVertexInputStateCreateInfo.attributeCount = 2;
+    pipelineVertexInputStateCreateInfo.bindingCount = 1;
+    pipelineVertexInputStateCreateInfo.pBindings = &vertexInputBindingDescription;
+    pipelineVertexInputStateCreateInfo.pAttributes = vertexInputAttributeDescription;
+    
+    graphicsPipelineCreateInfo.graphicsPipelineId = JseGrapicsPipelineID{ 1 };
+    graphicsPipelineCreateInfo.stageCount = 2;
+    graphicsPipelineCreateInfo.pVertexInputState = &pipelineVertexInputStateCreateInfo;
+    graphicsPipelineCreateInfo.stageCount = 2;
+    graphicsPipelineCreateInfo.pStages = pipelineShaderStageCreateInfo;
+    graphicsPipelineCreateInfo.renderState = GLS_DEPTHFUNC_LESS | GLS_CULL_BACKSIDED;
+    if (core->CreateGraphicsPipeline(graphicsPipelineCreateInfo) == JseResult::SUCCESS) {
+        Info("Graphics pipeline created");
+    }
+
     core->Shutdown();
     JseShutdown();
 
@@ -267,7 +344,7 @@ int SDL_main(int argc, char** argv)
 
     TinyGLTF loader;
     Model model;
-    string err, warn;
+    string warn;
 
     Info("sizeof(Model)=%d", sizeof(Model));
 
