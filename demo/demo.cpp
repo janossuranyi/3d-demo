@@ -291,8 +291,8 @@ void main() {
 
     JseGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
     JsePipelineShaderStageCreateInfo pipelineShaderStageCreateInfo[2]{};
+    
     JsePipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
-
     JseVertexInputBindingDescription vertexInputBindingDescription{};
     JseVertexInputAttributeDescription vertexInputAttributeDescription[2]{};
     

@@ -502,13 +502,15 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 		glDeleteShader(shaderData.shader);
 	}
 
-	glBindVertexArray(0);
 
 	if (res != JseResult::SUCCESS) {
 		glDeleteProgram(data.program);
 		glDeleteVertexArrays(1, &data.vao);
 	}
 	else {
+		glUseProgram(data.program);
+		glUseProgram(0);
+		glBindVertexArray(0);
 		pipeline_data_map_.emplace(cmd.graphicsPipelineId, data);
 	}
 
