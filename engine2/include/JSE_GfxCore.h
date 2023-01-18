@@ -272,6 +272,7 @@ struct JseDeviceCapabilities {
     int maxComputeSharedMemorySize;
     int maxUniformBlockSize;
     int maxShaderStorageBlockSize;
+    int uniformBufferOffsetAligment;
     int availableVideoMemory;
 };
 

@@ -224,7 +224,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &deviceCapabilities_.maxComputeSharedMemorySize);
 	glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &deviceCapabilities_.maxUniformBlockSize);
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &deviceCapabilities_.maxShaderStorageBlockSize);
-
+	glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &deviceCapabilities_.uniformBufferOffsetAligment);
 	glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &deviceCapabilities_.availableVideoMemory);
 	glGetError();
 	glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &deviceCapabilities_.availableVideoMemory);

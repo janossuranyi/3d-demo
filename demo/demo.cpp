@@ -212,14 +212,12 @@ int SDL_main(int argc, char** argv)
     samplerDescription.tilingT = JseImageTiling::CLAMP_TO_EDGE;
 
     JseMemory txData(128 * 128 * 4);
-    int x = static_cast<int>(txData[16]);
-
     ici.imageId = JseImageID{ 1 };
-    ici.target = JseImageTarget::CUBEMAP_ARRAY;
-    ici.width = 128;
-    ici.height = 128;
-    ici.depth = 16; // 16 layer
-    ici.levelCount = 1;// static_cast<uint32_t>(std::log2(std::max(ici.width, ici.height))) + 1;
+    ici.target = JseImageTarget::D2_ARRAY;
+    ici.width = 1024*2;
+    ici.height = 1024*2;
+    ici.depth = 256; // 16 layer
+    ici.levelCount = static_cast<uint32_t>(std::log2(std::max(ici.width, ici.height))) + 1;
     ici.format = JseFormat::RGBA8;
     ici.sampler = JseSamplerID{};
     ici.samplerDescription = &samplerDescription;
@@ -257,8 +255,8 @@ int SDL_main(int argc, char** argv)
     shci_vert.codeSize = 0;
     shci_vert.pCode = R"(
 #version 450
-layout(location = 0) vec4 in_Position;
-layout(location = 1) vec4 in_Color;
+layout(location = 0) in vec4 in_Position;
+layout(location = 1) in vec4 in_Color;
 
 out vec4 vofi_Color;
 
@@ -270,6 +268,7 @@ void main() {
     std::string err;
     if (core->CreateShader(shci_vert, err) != JseResult::SUCCESS) {
         Info("Shader compiler error: %s", err.c_str());
+        goto _exit;
     }
 
     JseShaderCreateInfo shci_frag{};
@@ -287,6 +286,7 @@ void main() {
 )";
     if (core->CreateShader(shci_frag, err) != JseResult::SUCCESS) {
         Info("Shader compiler error: %s", err.c_str());
+        goto _exit;
     }
 
     JseGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
@@ -331,6 +331,7 @@ void main() {
     core->BindGraphicsPipeline(JseGrapicsPipelineID{ 1 });
     core->DeleteGraphicsPipeline(JseGrapicsPipelineID{ 1 });
 
+    _exit:
     core->Shutdown();
     JseShutdown();
 
