@@ -64,9 +64,39 @@ JseResult JseGfxCore::BindGraphicsPipeline(JseGrapicsPipelineID pipelineId)
     return BindGraphicsPipeline_impl(pipelineId);
 }
 
+JseResult JseGfxCore::CreateFrameBuffer(const JseFrameBufferCreateInfo& frameBufferCreateInfo)
+{
+    return CreateFrameBuffer_impl(frameBufferCreateInfo);
+}
+
+JseResult JseGfxCore::DeleteFrameBuffer(JseFrameBufferID framebufferId)
+{
+    return DeleteFrameBuffer_impl(framebufferId);
+}
+
 JseResult JseGfxCore::CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput)
 {
     return CreateShader_impl(shaderCreateInfo, errorOutput);
+}
+
+JseResult JseGfxCore::BeginRenderPass(const JseRenderPassInfo& renderPassInfo)
+{
+    return BeginRenderPass_impl(renderPassInfo);
+}
+
+JseResult JseGfxCore::EndRenderPass()
+{
+    return EndRenderPass_impl();
+}
+
+void JseGfxCore::BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets)
+{
+    BindVertexBuffers_impl(firstBinding, bindingCount, pBuffers, pOffsets);
+}
+
+void JseGfxCore::BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type)
+{
+    BindIndexBuffer_impl(buffer, offset, type);
 }
 
 JseResult JseGfxCore::GetDeviceCapabilities(JseDeviceCapabilities& dest)
@@ -77,6 +107,11 @@ JseResult JseGfxCore::GetDeviceCapabilities(JseDeviceCapabilities& dest)
 JseResult JseGfxCore::SetVSyncInterval(int interval)
 {
     return SetVSyncInterval_impl(interval);
+}
+
+JseResult JseGfxCore::GetSurfaceDimension(JseRect2D& x)
+{
+    return GetSurfaceDimension_impl(x);
 }
 
 void JseGfxCore::Shutdown()

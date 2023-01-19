@@ -2,6 +2,7 @@
 #define JSE_GFX_CORE_H
 
 struct JseBufferTag{};
+struct JseFrameBufferTag {};
 struct JseSamplerTag {};
 struct JseImageTag{};
 struct JseShaderTag{};
@@ -9,22 +10,47 @@ struct JseVertexInputTag{};
 struct JseGraphicsPipelineTag{};
 
 using JseBufferID = JseHandle<JseBufferTag, -1>;
+using JseFrameBufferID = JseHandle<JseFrameBufferTag, -1>;
 using JseImageID = JseHandle<JseImageTag, -1>;
 using JseSamplerID = JseHandle<JseSamplerTag, -1>;
 using JseVertexInputID = JseHandle<JseVertexInputTag, -1>;
 using JseGrapicsPipelineID = JseHandle<JseGraphicsPipelineTag, -1>;
 using JseShaderID = JseHandle<JseShaderTag, -1>;
 using JseRenderState = uint64_t;
+using JseDeviceSize = uint64_t;
+
+/*
+Resorce types:
+
+1. Vertex buffer
+2. Index buffer
+3. Uniform buffer
+4. Shader Storage buffer
+5. Image Load/Store
+6. Inline uniform block
+
+*/
 
 struct JseColor4f {
     float r, g, b, a;
 };
 
+struct JseRect2D {
+    uint32_t x;
+    uint32_t y;
+    uint32_t w;
+    uint32_t h;
+};
+
 typedef union JseClearValue {
     JseColor4f color;
     float depth;
-    int stenci;
+    int stencil;
 } JseClearValue;
+
+enum class JseIndexType {
+    UINT16, UINT32
+};
 
 enum class JseCubeMapFace {
     POSITIVE_X,
@@ -269,8 +295,34 @@ struct JseGraphicsPipelineCreateInfo {
     JseRenderState renderState;
 };
 
+struct JseFrameBufferAttachmentDescription {
+    JseImageID image;
+    JseCubeMapFace face;
+    uint32_t level;
+    uint32_t layer;
+};
+
 struct JseFrameBufferCreateInfo {
-    
+    JseFrameBufferID frameBufferId;
+    uint32_t width;
+    uint32_t height;
+    uint32_t colorAttachmentCount;
+    JseFrameBufferAttachmentDescription* pColorAttachments;
+    JseFrameBufferAttachmentDescription* pDepthAttachment;
+    JseFrameBufferAttachmentDescription* pStencilAttachment;
+};
+
+struct JseRenderPassInfo {
+    JseFrameBufferID framebuffer;
+    JseRect2D viewport;
+    JseRect2D scissor;
+    bool colorClearEnable;
+    bool depthClearEnable;
+    bool stencilClearEnable;
+    bool scissorEnable;
+    JseClearValue colorClearValue;
+    JseClearValue depthClearValue;
+    JseClearValue stencilClearValue;
 };
 
 struct JseDeviceCapabilities {
@@ -282,6 +334,8 @@ struct JseDeviceCapabilities {
     int maxComputeSharedMemorySize;
     int maxUniformBlockSize;
     int maxShaderStorageBlockSize;
+    int maxVertexAttribs;
+    int maxVertexAttribBindings;
     int uniformBufferOffsetAligment;
     int availableVideoMemory;
 };
@@ -463,10 +517,18 @@ public:
     JseResult CreateGraphicsPipeline(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo);
     JseResult DeleteGraphicsPipeline(JseGrapicsPipelineID pipelineId);
     JseResult BindGraphicsPipeline(JseGrapicsPipelineID pipelineId);
+    JseResult CreateFrameBuffer(const JseFrameBufferCreateInfo& frameBufferCreateInfo);
+    JseResult DeleteFrameBuffer(JseFrameBufferID framebufferId);
     JseResult CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
+    JseResult BeginRenderPass(const JseRenderPassInfo& renderPassInfo);
+    JseResult EndRenderPass();
+    void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets);
+    void BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type);
 
     JseResult GetDeviceCapabilities(JseDeviceCapabilities& dest);
     JseResult SetVSyncInterval(int interval);
+    JseResult GetSurfaceDimension(JseRect2D& x);
+
 	void Shutdown();
 
 	virtual ~JseGfxCore() {}
@@ -485,7 +547,16 @@ private:
     virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) = 0;
     virtual JseResult UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) = 0;
     virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) = 0;
+    virtual JseResult CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo) = 0;
+    virtual JseResult DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) = 0;
+    virtual JseResult BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) = 0;
+    virtual JseResult EndRenderPass_impl() = 0;
+
+    virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) = 0;
+    virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) = 0;
+
     virtual JseResult SetVSyncInterval_impl(int interval) = 0;
+    virtual JseResult GetSurfaceDimension_impl(JseRect2D& x) = 0;
 
 	virtual void Shutdown_impl() = 0;
 };

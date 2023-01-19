@@ -216,7 +216,7 @@ int SDL_main(int argc, char** argv)
     ici.target = JseImageTarget::D2_ARRAY;
     ici.width = 1024*2;
     ici.height = 1024*2;
-    ici.depth = 256; // 16 layer
+    ici.depth = 16; // 16 layer
     ici.levelCount = static_cast<uint32_t>(std::log2(std::max(ici.width, ici.height))) + 1;
     ici.format = JseFormat::RGBA8;
     ici.sampler = JseSamplerID{};
@@ -224,6 +224,50 @@ int SDL_main(int argc, char** argv)
 
     if (core->CreateTexture(ici) == JseResult::SUCCESS) {
         Info("Texture created");
+    }
+
+    ici.imageId = JseImageID{ 2 };
+    ici.target = JseImageTarget::D2;
+    ici.width = 1024;
+    ici.height = 1024;
+    ici.depth = 1; // 16 layer
+    ici.levelCount = static_cast<uint32_t>(std::log2(std::max(ici.width, ici.height))) + 1;
+    ici.format = JseFormat::RG11B10F;
+    ici.sampler = JseSamplerID{};
+    ici.samplerDescription = &samplerDescription;
+
+    if (core->CreateTexture(ici) == JseResult::SUCCESS) {
+        Info("Texture created");
+    }
+
+    ici.imageId = JseImageID{ 3 };
+    ici.target = JseImageTarget::D2;
+    ici.width = 1024;
+    ici.height = 1024;
+    ici.depth = 1; // 16 layer
+    ici.levelCount = static_cast<uint32_t>(std::log2(std::max(ici.width, ici.height))) + 1;
+    ici.format = JseFormat::D32F;
+    ici.sampler = JseSamplerID{};
+    ici.samplerDescription = &samplerDescription;
+
+    if (core->CreateTexture(ici) == JseResult::SUCCESS) {
+        Info("Texture created");
+    }
+
+    JseFrameBufferAttachmentDescription color{};
+    JseFrameBufferAttachmentDescription depth{};
+    color.image = JseImageID{ 2 };
+    depth.image = JseImageID{ 3 };
+    
+    JseFrameBufferCreateInfo fbci{};
+    fbci.frameBufferId = JseFrameBufferID{ 1 };
+    fbci.colorAttachmentCount = 1;
+    fbci.pColorAttachments = &color;
+    fbci.pDepthAttachment = &depth;
+    fbci.width = 1024;
+    fbci.height = 1024;
+    if (core->CreateFrameBuffer(fbci) == JseResult::SUCCESS) {
+        Info("Framebuffer created");
     }
 
     JseImageUploadInfo iui{};
@@ -255,6 +299,7 @@ int SDL_main(int argc, char** argv)
     shci_vert.codeSize = 0;
     shci_vert.pCode = R"(
 #version 450
+
 layout(location = 0) in vec4 in_Position;
 layout(location = 1) in vec4 in_Color;
 
@@ -277,7 +322,8 @@ void main() {
     shci_frag.codeSize = 0;
     shci_frag.pCode = R"(
 #version 450
-out vec4 fragColor;
+
+layout(location = 0) out vec4 fragColor;
 in vec4 vofi_Color;
 
 void main() {
@@ -303,13 +349,13 @@ void main() {
 
     vertexInputBindingDescription.binding = 0;
     vertexInputBindingDescription.inputRate = JseVertexInputRate::VERTEX;
-    vertexInputBindingDescription.stride = 32;
+    vertexInputBindingDescription.stride = 20;
     vertexInputAttributeDescription[0].bindig = 0;
     vertexInputAttributeDescription[0].format = JseFormat::RGBA32F;
     vertexInputAttributeDescription[0].location = 0;
     vertexInputAttributeDescription[0].offset = 0;
     vertexInputAttributeDescription[1].bindig = 0;
-    vertexInputAttributeDescription[1].format = JseFormat::RGBA32F;
+    vertexInputAttributeDescription[1].format = JseFormat::RGBA8;
     vertexInputAttributeDescription[1].location = 1;
     vertexInputAttributeDescription[1].offset = 16;
 
@@ -328,8 +374,19 @@ void main() {
         Info("Graphics pipeline created");
     }
 
+    JseRenderPassInfo pass{};
+    pass.framebuffer = JseFrameBufferID{ 1 };
+    pass.colorClearEnable = true;
+    pass.depthClearEnable = true;
+    pass.depthClearValue.depth = 1.0f;
+    pass.colorClearValue.color = JseColor4f{ 0.f,0.f,0.f,1.f };
+    pass.viewport = JseRect2D{ 0,0,1024,1024 };
+    core->BeginRenderPass(pass);
+
     core->BindGraphicsPipeline(JseGrapicsPipelineID{ 1 });
     core->DeleteGraphicsPipeline(JseGrapicsPipelineID{ 1 });
+
+    core->EndRenderPass();
 
     _exit:
     core->Shutdown();

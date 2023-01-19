@@ -69,14 +69,31 @@ private:
 	virtual JseResult DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
 
 	virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) override;
+	
+	virtual JseResult CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo) override;
+
+	virtual JseResult DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) override;
+
+	virtual JseResult BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) override;
+
+	virtual JseResult EndRenderPass_impl() override;
+
+	virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) override;
+
+	virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) override;
 
 	virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;
 
 	virtual JseResult SetVSyncInterval_impl(int interval) override;
 
+	virtual JseResult GetSurfaceDimension_impl(JseRect2D& x) override;
+
 	virtual void Shutdown_impl() override;
 
 	void SetRenderState(JseRenderState state, bool force = false);
+
+	void _glBindFramebuffer(GLenum a, GLuint b);
+	void _glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
 
 	JseDeviceCapabilities deviceCapabilities_{};
 
@@ -106,18 +123,36 @@ private:
 		JseShaderStage stage;
 	};
 
+	struct FrameBufferData {
+		GLuint framebuffer;
+	};
+
 	struct glStateCache {
 		GLint unpackAlignment;
-
+		GLuint framebuffer;
+		JseRect2D viewport;
+		JseRect2D scissor;
+		GLuint indexBuffer;
 	} stateCache_{};
 
-	JseRenderState gl_state_;
-	GLfloat polyOfsScale_, polyOfsBias_;
+	struct ActivePipelineData {
+		GfxPipelineData* pData;
+	} activePipelineData_;
+
+	JseRenderState gl_state_{};
+	GLfloat polyOfsScale_{}, polyOfsBias_{};
+	
+	std::vector<GLuint> vertex_buffer_bindings_;
+	std::vector<GLintptr> vertex_buffer_offsets_;
+	std::vector<GLsizei> vertex_buffer_strides_;
+	GLintptr active_index_offset_{};
+	JseIndexType active_index_type_{};
 
 	JseHashMap<JseBufferID, BufferData> buffer_data_map_;
 	JseHashMap<JseImageID, ImageData> texture_data_map_;
 	JseHashMap<JseGrapicsPipelineID, GfxPipelineData> pipeline_data_map_;
 	JseHashMap<JseShaderID, ShaderData> shader_map_;
+	JseHashMap<JseFrameBufferID, FrameBufferData> framebuffer_map_;
 };
 
 #endif

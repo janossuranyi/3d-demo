@@ -212,6 +212,8 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	SDL_GetWindowSize(windowHandle_, &_w, &_h);
 	glViewport(0, 0, _w, _h);
 	glScissor(0, 0, _w, _h);
+	stateCache_.viewport = JseRect2D{ 0,0,static_cast<uint32_t>(_w),static_cast<uint32_t>(_h)};
+	stateCache_.scissor = JseRect2D{ 0,0,static_cast<uint32_t>(_w),static_cast<uint32_t>(_h) };
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glDisable(GL_FRAMEBUFFER_SRGB);
@@ -224,8 +226,12 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &deviceCapabilities_.maxComputeSharedMemorySize);
 	glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &deviceCapabilities_.maxUniformBlockSize);
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &deviceCapabilities_.maxShaderStorageBlockSize);
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &deviceCapabilities_.maxVertexAttribs);
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIB_BINDINGS, &deviceCapabilities_.maxVertexAttribBindings);
+
 	glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &deviceCapabilities_.uniformBufferOffsetAligment);
 	glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &deviceCapabilities_.availableVideoMemory);
+
 	glGetError();
 	glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &deviceCapabilities_.availableVideoMemory);
 	glGetError();
@@ -537,7 +543,8 @@ JseResult JseGfxCoreGL::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineI
 		return JseResult::NOT_EXISTS;
 	}
 
-	auto& data = find->second;
+	const auto& data = find->second;
+	activePipelineData_.pData = &find->second;
 	SetRenderState(data.renderState);
 	GL_CHECK(glBindVertexArray(data.vao));
 	GL_CHECK(glUseProgram(data.program));
@@ -601,6 +608,173 @@ JseResult JseGfxCoreGL::CreateShader_impl(const JseShaderCreateInfo& cmd, std::s
 	return JseResult::SUCCESS;
 }
 
+JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& cmd)
+{
+	auto find = framebuffer_map_.find(cmd.frameBufferId);
+
+	if (find != std::end(framebuffer_map_)) {
+		return JseResult::ALREADY_EXISTS;
+	}
+
+	FrameBufferData data{};
+	GL_CHECK(glGenFramebuffers(1, &data.framebuffer));
+	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer));
+	std::vector<GLenum> draw_buffers;
+	for (int i = 0; i < cmd.colorAttachmentCount; ++i) {
+		auto& img = texture_data_map_.at(cmd.pColorAttachments[i].image);
+		draw_buffers.emplace_back(GL_COLOR_ATTACHMENT0 + i);
+
+		if (img.target == GL_TEXTURE_CUBE_MAP) {
+			glFramebufferTexture2D(GL_FRAMEBUFFER,
+				draw_buffers.back(),
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<uint32_t>(cmd.pColorAttachments[i].face),
+				img.texture,
+				cmd.pColorAttachments[i].level);
+		} else if (img.target == GL_TEXTURE_3D) {
+			glFramebufferTexture3D(GL_FRAMEBUFFER,
+				draw_buffers.back(),
+				img.target,
+				img.texture,
+				cmd.pColorAttachments[i].level,
+				cmd.pColorAttachments[i].layer);
+
+		} else {
+			GL_CHECK(glFramebufferTexture(GL_FRAMEBUFFER, draw_buffers.back(), img.texture, cmd.pColorAttachments[i].level));
+		}
+	}
+
+	if (draw_buffers.empty()) {
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+	}
+	else {
+		GL_CHECK(glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
+	}
+
+	if (cmd.pDepthAttachment && cmd.pDepthAttachment->image.isValid()) {
+		auto& img = texture_data_map_.at(cmd.pDepthAttachment->image);
+
+		if (img.target == GL_TEXTURE_CUBE_MAP) {
+			glFramebufferTexture2D(GL_FRAMEBUFFER,
+				GL_DEPTH_ATTACHMENT,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<uint32_t>(cmd.pDepthAttachment->face),
+				img.texture,
+				cmd.pDepthAttachment->level);
+		}
+		else {
+			GL_CHECK(glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, img.texture, cmd.pDepthAttachment->level));
+		}
+	}
+	if (cmd.pStencilAttachment && cmd.pStencilAttachment->image.isValid()) {
+		auto& img = texture_data_map_.at(cmd.pStencilAttachment->image);
+		GL_CHECK(glFramebufferTexture(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, img.texture, cmd.pStencilAttachment->level));
+	}
+
+	GLenum status{};	
+	GL_CHECK(status = glCheckFramebufferStatus(GL_FRAMEBUFFER));
+	if (status != GL_FRAMEBUFFER_COMPLETE)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &data.framebuffer);
+		return JseResult::FRAMEBUFFER_INCOMPLETE;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	framebuffer_map_.emplace(cmd.frameBufferId, data);
+
+	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::DeleteFrameBuffer_impl(JseFrameBufferID framebufferId)
+{
+	auto find = framebuffer_map_.find(framebufferId);
+
+	if (find == std::end(framebuffer_map_)) {
+		return JseResult::NOT_EXISTS;
+	}
+
+	GL_CHECK(glDeleteFramebuffers(1, &find->second.framebuffer));
+	framebuffer_map_.erase(framebufferId);
+
+	return JseResult();
+}
+
+JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo)
+{
+
+	GLuint fb{ 0 };
+	if (renderPassInfo.framebuffer.isValid()) { 
+		auto& fbuff = framebuffer_map_.at(renderPassInfo.framebuffer);
+		fb = fbuff.framebuffer;
+	}
+
+	_glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	_glViewport(renderPassInfo.viewport.x, renderPassInfo.viewport.y, renderPassInfo.viewport.w, renderPassInfo.viewport.h);
+	if (renderPassInfo.scissorEnable) {
+		GL_CHECK(glScissor(renderPassInfo.scissor.x, renderPassInfo.scissor.y, renderPassInfo.scissor.w, renderPassInfo.scissor.h));
+	}
+	GLbitfield clearBits{};
+	if (renderPassInfo.colorClearEnable) {
+		clearBits |= GL_COLOR_BUFFER_BIT;
+		GL_CHECK(glClearColor(renderPassInfo.colorClearValue.color.r, renderPassInfo.colorClearValue.color.g, renderPassInfo.colorClearValue.color.b, renderPassInfo.colorClearValue.color.a));
+	}
+	if (renderPassInfo.depthClearEnable) {
+		clearBits |= GL_DEPTH_BUFFER_BIT;
+		GL_CHECK(glClearDepth(renderPassInfo.depthClearValue.depth));
+	}
+	if (renderPassInfo.stencilClearEnable) {
+		clearBits |= GL_STENCIL_BUFFER_BIT;
+		GL_CHECK(glClearStencil(renderPassInfo.stencilClearValue.stencil));
+	}
+
+	if (clearBits) {
+		GL_CHECK(glClear(clearBits));
+	}
+
+	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::EndRenderPass_impl()
+{
+	_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	return JseResult::SUCCESS;
+}
+
+void JseGfxCoreGL::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets)
+{
+	if (activePipelineData_.pData) {
+		if (bindingCount == 1) {
+			const auto& data = buffer_data_map_.at(*pBuffers);
+			GL_CHECK(glBindVertexBuffer(firstBinding, data.buffer, *pOffsets, activePipelineData_.pData->binding[firstBinding].stride));
+		}
+		else {
+			vertex_buffer_bindings_.clear();
+			vertex_buffer_offsets_.clear();
+			vertex_buffer_strides_.clear();
+
+			for (int i = 0; i < bindingCount; ++i) {
+				const auto& data = buffer_data_map_.at(pBuffers[i]);
+				vertex_buffer_bindings_.push_back(data.buffer);
+				vertex_buffer_offsets_.push_back(static_cast<GLintptr>(pOffsets[i]));
+				vertex_buffer_strides_.push_back(static_cast<GLsizei>(activePipelineData_.pData->binding[i].stride));
+			}
+
+			GL_CHECK(glBindVertexBuffers(firstBinding, bindingCount, vertex_buffer_bindings_.data(), vertex_buffer_offsets_.data(), vertex_buffer_strides_.data()));
+		}
+	}
+}
+
+void JseGfxCoreGL::BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type)
+{
+	const auto& data = buffer_data_map_.at(buffer);
+	active_index_offset_ = static_cast<GLintptr>(offset);
+	active_index_type_ = type;
+	if (stateCache_.indexBuffer != data.buffer) {
+		stateCache_.indexBuffer = data.buffer;
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.buffer);
+	}
+}
+
 JseResult JseGfxCoreGL::GetDeviceCapabilities_impl(JseDeviceCapabilities& dest)
 {
 	dest = deviceCapabilities_;
@@ -613,6 +787,16 @@ JseResult JseGfxCoreGL::SetVSyncInterval_impl(int interval)
 	if (SDL_GL_SetSwapInterval(interval) == -1) {
 		return JseResult::GENERIC_ERROR;
 	}
+
+	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::GetSurfaceDimension_impl(JseRect2D& x)
+{
+	int _w, _h;
+
+	SDL_GetWindowSize(windowHandle_, &_w, &_h);
+	x = JseRect2D{ 0,0,static_cast<uint32_t>(_w),static_cast<uint32_t>(_h) };
 
 	return JseResult::SUCCESS;
 }
@@ -971,6 +1155,25 @@ void JseGfxCoreGL::SetRenderState(JseRenderState state, bool force)
 	}
 
 	gl_state_ = state;
+}
+
+void JseGfxCoreGL::_glBindFramebuffer(GLenum a, GLuint b)
+{
+	if (stateCache_.framebuffer != b) {
+		stateCache_.framebuffer = b;
+		GL_CHECK(glBindFramebuffer(a, b));
+	}
+}
+
+void JseGfxCoreGL::_glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
+{
+	if (stateCache_.viewport.x != x || stateCache_.viewport.y != y || stateCache_.viewport.w != w || stateCache_.viewport.h != h) {
+		stateCache_.viewport.x = x;
+		stateCache_.viewport.y = y;
+		stateCache_.viewport.w = w;
+		stateCache_.viewport.h = h;
+		GL_CHECK(glViewport(x, y, w, h));
+	}
 }
 
 static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
