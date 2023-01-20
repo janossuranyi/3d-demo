@@ -522,6 +522,7 @@ public:
     JseResult CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
     JseResult BeginRenderPass(const JseRenderPassInfo& renderPassInfo);
     JseResult EndRenderPass();
+    void BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets);
     void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets);
     void BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type);
 
@@ -553,6 +554,7 @@ private:
     virtual JseResult EndRenderPass_impl() = 0;
 
     virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) = 0;
+    virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) = 0;
     virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) = 0;
 
     virtual JseResult SetVSyncInterval_impl(int interval) = 0;

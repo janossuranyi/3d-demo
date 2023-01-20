@@ -80,6 +80,8 @@ private:
 
 	virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) override;
 
+	virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) override;
+
 	virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) override;
 
 	virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;

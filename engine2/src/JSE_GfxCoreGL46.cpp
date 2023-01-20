@@ -744,8 +744,7 @@ void JseGfxCoreGL::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindin
 {
 	if (activePipelineData_.pData) {
 		if (bindingCount == 1) {
-			const auto& data = buffer_data_map_.at(*pBuffers);
-			GL_CHECK(glBindVertexBuffer(firstBinding, data.buffer, *pOffsets, activePipelineData_.pData->binding[firstBinding].stride));
+			BindVertexBuffer_impl(firstBinding, *pBuffers, *pOffsets);
 		}
 		else {
 			vertex_buffer_bindings_.clear();
@@ -762,6 +761,12 @@ void JseGfxCoreGL::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindin
 			GL_CHECK(glBindVertexBuffers(firstBinding, bindingCount, vertex_buffer_bindings_.data(), vertex_buffer_offsets_.data(), vertex_buffer_strides_.data()));
 		}
 	}
+}
+
+void JseGfxCoreGL::BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offset)
+{
+	const auto& data = buffer_data_map_.at(buffer);
+	GL_CHECK(glBindVertexBuffer(binding, data.buffer, offset, activePipelineData_.pData->binding[binding].stride));
 }
 
 void JseGfxCoreGL::BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type)
