@@ -303,11 +303,18 @@ int SDL_main(int argc, char** argv)
 layout(location = 0) in vec4 in_Position;
 layout(location = 1) in vec4 in_Color;
 
+struct cb_Input {
+    vec4 a;
+    vec4 b;
+};
+
+uniform cb_Input vs_input;
+
 out vec4 vofi_Color;
 
 void main() {
-    gl_Position = in_Position;
-    vofi_Color = in_Color;
+    gl_Position = in_Position * vs_input.b;
+    vofi_Color = in_Color * vs_input.a;
 }
 )";
     std::string err;
@@ -370,6 +377,32 @@ void main() {
     graphicsPipelineCreateInfo.stageCount = 2;
     graphicsPipelineCreateInfo.pStages = pipelineShaderStageCreateInfo;
     graphicsPipelineCreateInfo.renderState = GLS_DEPTHFUNC_LESS | GLS_CULL_BACKSIDED;
+    graphicsPipelineCreateInfo.setLayoutId = JseDescriptorSetLayoutID{ 1 };
+
+    JseDescriptorSetLayoutCreateInfo setCreate{};
+    JseDescriptorSetLayoutBinding layout_bindings[]{
+        {
+            2,
+            JseDescriptorType::SAMPLED_IMAGE,
+            1,
+            JSE_STAGE_FLAG_FRAGMENT
+        },
+        {
+            3,
+            JseDescriptorType::UNIFORM_BUFFER,
+            1,
+            JSE_STAGE_FLAG_ALL
+        }
+    };
+
+    setCreate.bindingCount = 2;
+    setCreate.pBindings = layout_bindings;
+    setCreate.setLayoutId = JseDescriptorSetLayoutID{ 1 };
+
+    if (core->CreateDescriptorSetLayout(setCreate) == JseResult::SUCCESS) {
+        Info("Layout creted");
+    }
+
     if (core->CreateGraphicsPipeline(graphicsPipelineCreateInfo) == JseResult::SUCCESS) {
         Info("Graphics pipeline created");
     }
@@ -387,6 +420,7 @@ void main() {
     core->DeleteGraphicsPipeline(JseGrapicsPipelineID{ 1 });
 
     core->EndRenderPass();
+
 
     _exit:
     core->Shutdown();

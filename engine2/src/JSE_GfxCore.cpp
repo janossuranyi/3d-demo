@@ -84,6 +84,11 @@ JseResult JseGfxCore::BeginRenderPass(const JseRenderPassInfo& renderPassInfo)
     return BeginRenderPass_impl(renderPassInfo);
 }
 
+JseResult JseGfxCore::CreateDescriptorSetLayout(const JseDescriptorSetLayoutCreateInfo& cmd)
+{
+    return CreateDescriptorSetLayout_impl(cmd);
+}
+
 JseResult JseGfxCore::EndRenderPass()
 {
     return EndRenderPass_impl();

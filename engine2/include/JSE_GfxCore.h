@@ -8,7 +8,9 @@ struct JseImageTag{};
 struct JseShaderTag{};
 struct JseVertexInputTag{};
 struct JseGraphicsPipelineTag{};
+struct JseDescriptorSetLayoutTag{};
 
+using JseDescriptorSetLayoutID = JseHandle<JseDescriptorSetLayoutTag, -1>;
 using JseBufferID = JseHandle<JseBufferTag, -1>;
 using JseFrameBufferID = JseHandle<JseFrameBufferTag, -1>;
 using JseImageID = JseHandle<JseImageTag, -1>;
@@ -18,18 +20,6 @@ using JseGrapicsPipelineID = JseHandle<JseGraphicsPipelineTag, -1>;
 using JseShaderID = JseHandle<JseShaderTag, -1>;
 using JseRenderState = uint64_t;
 using JseDeviceSize = uint64_t;
-
-/*
-Resorce types:
-
-1. Vertex buffer
-2. Index buffer
-3. Uniform buffer
-4. Shader Storage buffer
-5. Image Load/Store
-6. Inline uniform block
-
-*/
 
 struct JseColor4f {
     float r, g, b, a;
@@ -108,6 +98,41 @@ enum class JseShaderStage {
     TESSELATION,
     COMPUTE
 };
+
+enum JseShaderStageFlags {
+    JSE_STAGE_FLAG_VERTEX = 1,
+    JSE_STAGE_FLAG_FRAGMENT = 2,
+    JSE_STAGE_FLAG_GEOMETRY = 4,
+    JSE_STAGE_FLAG_TESSELATION_CONTROL = 8,
+    JSE_STAGE_FLAG_TESSELATION = 16,
+    JSE_STAGE_FLAG_COMPUTE = 32,
+    JSE_STAGE_FLAG_ALL = 0xFFFFFFFF
+};
+
+/*
+Resorce types:
+
+1. Vertex buffer
+2. Index buffer
+3. Uniform buffer
+4. Shader Storage buffer
+5. Image Load/Store
+6. Inline uniform block
+
+*/
+
+enum class JseDescriptorType {
+    UNIFORM_BUFFER,
+    UNIFORM_BUFFER_DYNAMIC,
+    STORAGE_BUFFER,
+    STORAGE_BUFFER_DYNAMIC,
+    STORAGE_IMAGE,
+    SAMPLED_IMAGE,
+    SAMPLED_BUFFER,
+    INLINE_UNIFORM_BLOCK
+};
+
+
 
 /*
  * RGBA16S
@@ -282,17 +307,18 @@ struct JsePipelineShaderStageCreateInfo {
 
 struct JsePipelineVertexInputStateCreateInfo {
     uint32_t bindingCount;
-    JseVertexInputBindingDescription* pBindings;
+    const JseVertexInputBindingDescription* pBindings;
     uint32_t attributeCount;
-    JseVertexInputAttributeDescription* pAttributes;
+    const JseVertexInputAttributeDescription* pAttributes;
 };
 
 struct JseGraphicsPipelineCreateInfo {
     JseGrapicsPipelineID graphicsPipelineId;
     JsePipelineVertexInputStateCreateInfo* pVertexInputState;
     uint32_t stageCount;
-    JsePipelineShaderStageCreateInfo* pStages;
+    const JsePipelineShaderStageCreateInfo* pStages;
     JseRenderState renderState;
+    JseDescriptorSetLayoutID setLayoutId;
 };
 
 struct JseFrameBufferAttachmentDescription {
@@ -307,9 +333,9 @@ struct JseFrameBufferCreateInfo {
     uint32_t width;
     uint32_t height;
     uint32_t colorAttachmentCount;
-    JseFrameBufferAttachmentDescription* pColorAttachments;
-    JseFrameBufferAttachmentDescription* pDepthAttachment;
-    JseFrameBufferAttachmentDescription* pStencilAttachment;
+    const JseFrameBufferAttachmentDescription* pColorAttachments;
+    const JseFrameBufferAttachmentDescription* pDepthAttachment;
+    const JseFrameBufferAttachmentDescription* pStencilAttachment;
 };
 
 struct JseRenderPassInfo {
@@ -325,10 +351,32 @@ struct JseRenderPassInfo {
     JseClearValue stencilClearValue;
 };
 
+struct JseDescriptorSetLayoutBinding {
+    uint32_t binding;
+    JseDescriptorType descriptorType;
+    uint32_t descriptorCount;
+    JseShaderStageFlags stageFlags;
+};
+
+struct JseDescriptorSetLayoutCreateInfo {
+    JseDescriptorSetLayoutID setLayoutId;
+    uint32_t bindingCount;
+    const JseDescriptorSetLayoutBinding* pBindings;
+};
+
+struct JseDescriptorSetImageBinding {
+    JseDescriptorSetLayoutID setLayoutId;
+
+};
+struct JseDescriptorSetBufferBinding {};
+struct JseDescriptorSetInlineUniformBinding {};
+
 struct JseDeviceCapabilities {
     const char* pRenderer;
     const char* pRendererVersion;
-    int maxTextureImageUnits;
+    int maxFragmentTextureImageUnits;
+    int maxVertexTextureImageUnits;
+    int maxComputeTextureImageUnits;
     int maxArrayTextureLayers;
     int maxTextureSize;
     int maxComputeSharedMemorySize;
@@ -521,6 +569,7 @@ public:
     JseResult DeleteFrameBuffer(JseFrameBufferID framebufferId);
     JseResult CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
     JseResult BeginRenderPass(const JseRenderPassInfo& renderPassInfo);
+    JseResult CreateDescriptorSetLayout(const JseDescriptorSetLayoutCreateInfo& cmd);
     JseResult EndRenderPass();
     void BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets);
     void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets);
@@ -551,6 +600,7 @@ private:
     virtual JseResult CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo) = 0;
     virtual JseResult DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) = 0;
     virtual JseResult BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) = 0;
+    virtual JseResult CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) = 0;
     virtual JseResult EndRenderPass_impl() = 0;
 
     virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) = 0;

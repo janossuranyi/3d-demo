@@ -76,6 +76,8 @@ private:
 
 	virtual JseResult BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) override;
 
+	virtual JseResult CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) override;
+
 	virtual JseResult EndRenderPass_impl() override;
 
 	virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) override;
@@ -113,11 +115,13 @@ private:
 		GLenum type;
 	};
 
+	struct SetLayoutData;
 	struct GfxPipelineData {
 		GLuint vao;
 		GLuint program;
 		std::vector<JseVertexInputBindingDescription> binding;
 		JseRenderState renderState;
+		const SetLayoutData* setLayout;
 	};
 
 	struct ShaderData {
@@ -141,6 +145,26 @@ private:
 		GfxPipelineData* pData;
 	} activePipelineData_;
 
+	struct SetUniformBufferData { uint32_t binding; };
+	struct SetStorageBufferData{ uint32_t binding; };
+	struct SetSampledImgData{ uint32_t binding; };
+	struct SetSampledBufData { uint32_t binding; };
+	struct SetStorageImageData{ uint32_t binding; };
+	struct SetInlineUniformData{ uint32_t binding; };
+
+	struct SetLayoutData {
+		JseHashMap<uint32_t, JseDescriptorSetLayoutBinding> bindings;
+	};
+
+	struct DesriptorSetData {
+		JseVector<SetUniformBufferData> uniformBuffers;
+		JseVector<SetStorageBufferData> storageBuffers;
+		JseVector<SetSampledImgData> textures;
+		JseVector<SetSampledBufData> bufferTextures;
+		JseVector<SetStorageImageData> storageImages;
+		JseVector<SetInlineUniformData> uniforms;
+	};
+
 	JseRenderState gl_state_{};
 	GLfloat polyOfsScale_{}, polyOfsBias_{};
 	
@@ -155,6 +179,7 @@ private:
 	JseHashMap<JseGrapicsPipelineID, GfxPipelineData> pipeline_data_map_;
 	JseHashMap<JseShaderID, ShaderData> shader_map_;
 	JseHashMap<JseFrameBufferID, FrameBufferData> framebuffer_map_;
+	JseHashMap<JseDescriptorSetLayoutID, SetLayoutData> set_layout_map_;
 };
 
 #endif

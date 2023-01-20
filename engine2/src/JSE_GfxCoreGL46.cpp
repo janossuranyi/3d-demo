@@ -221,7 +221,11 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	deviceCapabilities_.pRenderer = (const char*)glGetString(GL_RENDERER);
 	deviceCapabilities_.pRendererVersion = (const char*)glGetString(GL_VERSION);
 	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &deviceCapabilities_.maxArrayTextureLayers);
-	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &deviceCapabilities_.maxTextureImageUnits);
+	
+	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &deviceCapabilities_.maxFragmentTextureImageUnits);
+	glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &deviceCapabilities_.maxVertexTextureImageUnits);
+	glGetIntegerv(GL_MAX_COMPUTE_TEXTURE_IMAGE_UNITS, &deviceCapabilities_.maxComputeTextureImageUnits);
+
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &deviceCapabilities_.maxTextureSize);
 	glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &deviceCapabilities_.maxComputeSharedMemorySize);
 	glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &deviceCapabilities_.maxUniformBlockSize);
@@ -530,6 +534,10 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 		glUseProgram(data.program);
 		glUseProgram(0);
 		glBindVertexArray(0);
+		if (cmd.setLayoutId.isValid()) {
+			auto& set = set_layout_map_.at(cmd.setLayoutId);
+			data.setLayout = &set;
+		}
 		pipeline_data_map_.emplace(cmd.graphicsPipelineId, data);
 	}
 
@@ -730,6 +738,24 @@ JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPass
 	if (clearBits) {
 		GL_CHECK(glClear(clearBits));
 	}
+
+	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd)
+{
+	auto find = set_layout_map_.find(cmd.setLayoutId);
+	if (find != std::end(set_layout_map_)) {
+		return JseResult::ALREADY_EXISTS;
+	}
+
+	SetLayoutData data{};
+	for (int i = 0; i < cmd.bindingCount; ++i) {
+		auto& _b = cmd.pBindings[i];
+		data.bindings.emplace(_b.binding, _b);
+	}
+
+	set_layout_map_.emplace(cmd.setLayoutId, data);
 
 	return JseResult::SUCCESS;
 }
