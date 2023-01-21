@@ -94,6 +94,16 @@ JseResult JseGfxCore::EndRenderPass()
     return EndRenderPass_impl();
 }
 
+JseResult JseGfxCore::CreateDescriptorSet(const JseDescriptorSetCreateInfo& cmd)
+{
+    return CreateDescriptorSet_impl(cmd);
+}
+
+JseResult JseGfxCore::WriteDescriptorSet(const JseWriteDescriptorSet& cmd)
+{
+    return WriteDescriptorSet_impl(cmd);
+}
+
 void JseGfxCore::BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets)
 {
     BindVertexBuffer_impl(binding, buffer, offsets);

@@ -63,13 +63,13 @@ private:
 	virtual JseResult DeleteImage_impl(JseImageID imageId) override;
 
 	virtual JseResult CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) override;
-	
+
 	virtual JseResult BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
 
 	virtual JseResult DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
 
 	virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) override;
-	
+
 	virtual JseResult CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo) override;
 
 	virtual JseResult DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) override;
@@ -79,6 +79,10 @@ private:
 	virtual JseResult CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) override;
 
 	virtual JseResult EndRenderPass_impl() override;
+
+	virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) override;
+
+	virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) override;
 
 	virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) override;
 
@@ -95,6 +99,9 @@ private:
 	virtual void Shutdown_impl() override;
 
 	void SetRenderState(JseRenderState state, bool force = false);
+	
+	struct DescriptorSetData;
+	void SetUniforms(DescriptorSetData& set, const JseUniformMap& uniforms);
 
 	void _glBindFramebuffer(GLenum a, GLuint b);
 	void _glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
@@ -113,6 +120,7 @@ private:
 		GLenum target;
 		GLenum format;
 		GLenum type;
+		GLuint buffer;
 	};
 
 	struct SetLayoutData;
@@ -139,30 +147,40 @@ private:
 		JseRect2D viewport;
 		JseRect2D scissor;
 		GLuint indexBuffer;
+		GLuint program;
 	} stateCache_{};
 
 	struct ActivePipelineData {
 		GfxPipelineData* pData;
 	} activePipelineData_;
 
-	struct SetUniformBufferData { uint32_t binding; };
-	struct SetStorageBufferData{ uint32_t binding; };
-	struct SetSampledImgData{ uint32_t binding; };
-	struct SetSampledBufData { uint32_t binding; };
-	struct SetStorageImageData{ uint32_t binding; };
-	struct SetInlineUniformData{ uint32_t binding; };
-
 	struct SetLayoutData {
 		JseHashMap<uint32_t, JseDescriptorSetLayoutBinding> bindings;
 	};
 
-	struct DesriptorSetData {
-		JseVector<SetUniformBufferData> uniformBuffers;
-		JseVector<SetStorageBufferData> storageBuffers;
-		JseVector<SetSampledImgData> textures;
-		JseVector<SetSampledBufData> bufferTextures;
-		JseVector<SetStorageImageData> storageImages;
-		JseVector<SetInlineUniformData> uniforms;
+	struct DescriptorImageData {
+		uint32_t binding;
+		JseDescriptorType type;
+		GLuint texture;
+		GLint level;
+		GLboolean layered;
+		GLint layer;
+		GLenum access;
+		GLenum format;
+	};
+	struct DescriptorBufferData {
+		uint32_t binding;
+		GLuint buffer;
+		GLintptr offset;
+		GLsizeiptr size;
+	};
+
+	struct DescriptorSetData {
+		JseDescriptorSetLayoutID setLayout;
+		const SetLayoutData* pLayoutData;
+		JseVector<DescriptorImageData> images;
+		JseVector<DescriptorBufferData> buffers;
+		JseHashMap<JseString, GLint> uniform_location_map;
 	};
 
 	JseRenderState gl_state_{};
@@ -180,6 +198,7 @@ private:
 	JseHashMap<JseShaderID, ShaderData> shader_map_;
 	JseHashMap<JseFrameBufferID, FrameBufferData> framebuffer_map_;
 	JseHashMap<JseDescriptorSetLayoutID, SetLayoutData> set_layout_map_;
+	JseHashMap<JseDescriptorSetID, DescriptorSetData> set_data_map_;
 };
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef JSE_GFX_CORE_H
 #define JSE_GFX_CORE_H
 
+#include <variant>
+
 struct JseBufferTag{};
 struct JseFrameBufferTag {};
 struct JseSamplerTag {};
@@ -9,8 +11,10 @@ struct JseShaderTag{};
 struct JseVertexInputTag{};
 struct JseGraphicsPipelineTag{};
 struct JseDescriptorSetLayoutTag{};
+struct JseDescriptorSetTag {};
 
 using JseDescriptorSetLayoutID = JseHandle<JseDescriptorSetLayoutTag, -1>;
+using JseDescriptorSetID = JseHandle<JseDescriptorSetTag, -1>;
 using JseBufferID = JseHandle<JseBufferTag, -1>;
 using JseFrameBufferID = JseHandle<JseFrameBufferTag, -1>;
 using JseImageID = JseHandle<JseImageTag, -1>;
@@ -20,6 +24,9 @@ using JseGrapicsPipelineID = JseHandle<JseGraphicsPipelineTag, -1>;
 using JseShaderID = JseHandle<JseShaderTag, -1>;
 using JseRenderState = uint64_t;
 using JseDeviceSize = uint64_t;
+
+using JseUniformData = std::variant<int, float, glm::ivec2, glm::ivec3, glm::ivec4, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, JseVector<float>, JseVector<glm::vec4>>;
+using JseUniformMap = JseHashMap<JseString, JseUniformData>;
 
 struct JseColor4f {
     float r, g, b, a;
@@ -37,6 +44,8 @@ typedef union JseClearValue {
     float depth;
     int stencil;
 } JseClearValue;
+
+enum class JseAccess { READ, WRITE, READ_WRITE };
 
 enum class JseIndexType {
     UINT16, UINT32
@@ -260,10 +269,13 @@ struct JseImageCreateInfo {
     JseFormat format;
     JseSamplerDescription* samplerDescription;
     JseSamplerID sampler;
+    JseBufferID buffer;
     uint32_t width;
     uint32_t height;    // 2D height or Array size
     uint32_t depth;     // 3D depth or Array size
     uint32_t levelCount;
+    JseDeviceSize offset;   // Buffer Texture offset
+    JseDeviceSize size;     // Buffer Texture size
     bool srgb;
 };
 
@@ -364,12 +376,40 @@ struct JseDescriptorSetLayoutCreateInfo {
     const JseDescriptorSetLayoutBinding* pBindings;
 };
 
-struct JseDescriptorSetImageBinding {
-    JseDescriptorSetLayoutID setLayoutId;
-
+struct JseDescriptorImageInfo {
+    JseImageID image;
+    int level;
+    bool layered;
+    int layer;
+    JseAccess access;
+    JseFormat format;
 };
-struct JseDescriptorSetBufferBinding {};
-struct JseDescriptorSetInlineUniformBinding {};
+
+struct JseDescriptorBufferInfo {
+    JseBufferID buffer;
+    JseDeviceSize offset;
+    JseDeviceSize size;
+};
+
+struct JseDescriptorUniformInfo {
+    JseUniformMap uniforms;
+};
+
+struct JseWriteDescriptorSet {
+    JseDescriptorSetID setId;
+    uint32_t dstBinding;
+    uint32_t dstArrayElement;
+    uint32_t descriptorCount;
+    JseDescriptorType descriptorType;
+    const JseDescriptorImageInfo* pImageInfo;
+    const JseDescriptorBufferInfo* pBufferInfo;
+    const JseDescriptorUniformInfo* pUniformInfo;
+};
+
+struct JseDescriptorSetCreateInfo {
+    JseDescriptorSetID setId;
+    JseDescriptorSetLayoutID setLayoutId;
+};
 
 struct JseDeviceCapabilities {
     const char* pRenderer;
@@ -571,6 +611,9 @@ public:
     JseResult BeginRenderPass(const JseRenderPassInfo& renderPassInfo);
     JseResult CreateDescriptorSetLayout(const JseDescriptorSetLayoutCreateInfo& cmd);
     JseResult EndRenderPass();
+    JseResult CreateDescriptorSet(const JseDescriptorSetCreateInfo& cmd);
+    JseResult WriteDescriptorSet(const JseWriteDescriptorSet& cmd);
+
     void BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets);
     void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets);
     void BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type);
@@ -602,7 +645,8 @@ private:
     virtual JseResult BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) = 0;
     virtual JseResult CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) = 0;
     virtual JseResult EndRenderPass_impl() = 0;
-
+    virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) = 0;
+    virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) = 0;
     virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) = 0;
     virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) = 0;
     virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) = 0;

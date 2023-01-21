@@ -8,6 +8,7 @@ GLenum MapJseTilingGl(JseImageTiling t);
 GLenum MapJseImageTargetGl(JseImageTarget t);
 GLenum MapJseCubemapFaceGl(JseCubeMapFace t);
 GLenum MapJseShaderStageGl(JseShaderStage t);
+GLenum MapJseAccessImageAccessGl(JseAccess t);
 
 static void CheckOpenGLError(const char* stmt, const char* fname, int line)
 {
@@ -26,6 +27,57 @@ void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 	GLsizei length,
 	const GLchar* message,
 	const GLvoid* userParam);
+
+class GLUniformBinder {
+public:
+	GLUniformBinder() : uniform_location_{ 0 } {
+	}
+
+	~GLUniformBinder() = default;
+
+	void operator()(const int& value) {
+		GL_CHECK(glUniform1i(uniform_location_, value));
+	}
+	void operator()(const float& value) {
+		GL_CHECK(glUniform1f(uniform_location_, value));
+	}
+	void operator()(const glm::ivec2& value) {
+		GL_CHECK(glUniform2iv(uniform_location_, 1, &value[0]));
+	}
+	void operator()(const glm::ivec3& value) {
+		GL_CHECK(glUniform3iv(uniform_location_, 1, &value[0]));
+	}
+	void operator()(const glm::ivec4& value) {
+		GL_CHECK(glUniform4iv(uniform_location_, 1, &value[0]));
+	}
+	void operator()(const glm::vec2& value) {
+		GL_CHECK(glUniform2fv(uniform_location_, 1, &value[0]));
+	}
+	void operator()(const glm::vec3& value) {
+		GL_CHECK(glUniform3fv(uniform_location_, 1, &value[0]));
+	}
+	void operator()(const glm::vec4& value) {
+		GL_CHECK(glUniform4fv(uniform_location_, 1, &value[0]));
+	}
+	void operator()(const glm::mat3& value) {
+		GL_CHECK(glUniformMatrix3fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
+	}
+	void operator()(const glm::mat4& value) {
+		GL_CHECK(glUniformMatrix4fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
+	}
+	void operator()(const JseVector<float>& value) {
+		glUniform1fv(uniform_location_, value.size(), (const GLfloat*)value.data());
+	}
+	void operator()(const JseVector<glm::vec4>& value) {
+		glUniform4fv(uniform_location_, value.size(), (const GLfloat*)value.data());
+	}
+	void update(GLint location, const JseUniformData& value) {
+		uniform_location_ = location;
+		std::visit(*this, value);
+	}
+private:
+	GLint uniform_location_;
+};
 
 
 TextureFormatInfo s_texture_format[] = {
@@ -345,8 +397,10 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 	if (find != std::end(texture_data_map_)) {
 		return JseResult::ALREADY_EXISTS;
 	}
-
-	Info("Format index: %d", static_cast<size_t>(cmd.format));
+	
+	if (cmd.target == JseImageTarget::BUFFER && !cmd.buffer.isValid()) {
+		return JseResult::INVALID_VALUE;
+	}
 
 	ImageData data{};
 	TextureFormatInfo formatInfo = s_texture_format[static_cast<size_t>(cmd.format)];
@@ -362,7 +416,16 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 	data.type = formatInfo.type;
 	
 	GL_CHECK(glCreateTextures(data.target, 1, &data.texture));
-	if (cmd.target == JseImageTarget::D1) {
+	if (cmd.target == JseImageTarget::BUFFER) {
+		auto& buf = buffer_data_map_.at(cmd.buffer);
+		if (cmd.offset == 0 && cmd.size == 0) {
+			GL_CHECK(glTextureBuffer(data.texture, data.format, buf.buffer));
+		}
+		else {
+			GL_CHECK(glTextureBufferRange(data.texture, data.format, buf.buffer, cmd.offset, cmd.size));
+		}
+	} 
+	else if (cmd.target == JseImageTarget::D1) {
 		GL_CHECK(glTextureStorage1D(data.texture, cmd.levelCount, internalFormat, cmd.width));
 	}
 	else if (cmd.target == JseImageTarget::D2 || cmd.target == JseImageTarget::CUBEMAP || cmd.target == JseImageTarget::D1_ARRAY) {
@@ -399,17 +462,18 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 	}
 
 	// glTextureParameterf ...
-	GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_MIN_FILTER, minFilter));
-	GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_MAG_FILTER, magFilter));
-	GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_S, tilingS));
-	GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_T, tilingT));
-	GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_R, tilingR));
-	GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy));
-	GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MIN_LOD, minLod));
-	GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MAX_LOD, maxLod));
-	GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_LOD_BIAS, lodBias));
-	GL_CHECK(glTextureParameterfv(data.texture, GL_TEXTURE_BORDER_COLOR, &borderColor.r));
-
+	if (cmd.target != JseImageTarget::BUFFER) {
+		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_MIN_FILTER, minFilter));
+		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_MAG_FILTER, magFilter));
+		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_S, tilingS));
+		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_T, tilingT));
+		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_R, tilingR));
+		GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy));
+		GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MIN_LOD, minLod));
+		GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MAX_LOD, maxLod));
+		GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_LOD_BIAS, lodBias));
+		GL_CHECK(glTextureParameterfv(data.texture, GL_TEXTURE_BORDER_COLOR, &borderColor.r));
+	}
 	texture_data_map_.emplace(cmd.imageId, data);
 
 	return JseResult::SUCCESS;
@@ -556,6 +620,7 @@ JseResult JseGfxCoreGL::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineI
 	SetRenderState(data.renderState);
 	GL_CHECK(glBindVertexArray(data.vao));
 	GL_CHECK(glUseProgram(data.program));
+	stateCache_.program = data.program;
 
 	return JseResult::SUCCESS;
 }
@@ -763,6 +828,113 @@ JseResult JseGfxCoreGL::CreateDescriptorSetLayout_impl(const JseDescriptorSetLay
 JseResult JseGfxCoreGL::EndRenderPass_impl()
 {
 	_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd)
+{
+	auto find = set_data_map_.find(cmd.setId);
+
+	if (find != std::end(set_data_map_)) {
+		return JseResult::ALREADY_EXISTS;
+	}
+
+	const auto& layout = set_layout_map_.at(cmd.setLayoutId);
+
+	DescriptorSetData data{};
+	data.setLayout = cmd.setLayoutId;
+	data.pLayoutData = &layout;
+	
+	for (const auto& elem : layout.bindings) {
+		switch (elem.second.descriptorType) {
+		case JseDescriptorType::UNIFORM_BUFFER:
+		case JseDescriptorType::UNIFORM_BUFFER_DYNAMIC:
+		case JseDescriptorType::STORAGE_BUFFER:
+		case JseDescriptorType::STORAGE_BUFFER_DYNAMIC:
+		{
+			DescriptorBufferData bd{};
+			bd.binding = elem.second.binding;
+			data.buffers.emplace_back(bd);
+		}
+			break;
+		case JseDescriptorType::STORAGE_IMAGE:
+		case JseDescriptorType::SAMPLED_IMAGE:
+		case JseDescriptorType::SAMPLED_BUFFER:
+		{
+			DescriptorImageData id{};
+			id.binding = elem.second.binding;
+			id.type = elem.second.descriptorType;
+			data.images.emplace_back(id);
+		}
+			break;
+		}
+	}
+	set_data_map_.emplace(cmd.setId, data);
+
+	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd)
+{
+	auto find = set_data_map_.find(cmd.setId);
+	if (find == std::end(set_data_map_)) {
+		return JseResult::NOT_EXISTS;
+	}
+
+	auto& data = find->second;
+	const auto& binding = data.pLayoutData->bindings.at(cmd.dstBinding);
+	assert(cmd.descriptorType == binding.descriptorType);
+
+	for (int i = 0; i < cmd.descriptorCount; ++i) {
+
+		switch (cmd.descriptorType) {
+		case JseDescriptorType::INLINE_UNIFORM_BLOCK:
+			SetUniforms(data, cmd.pUniformInfo[i].uniforms);
+			break;
+		case JseDescriptorType::UNIFORM_BUFFER:
+		case JseDescriptorType::UNIFORM_BUFFER_DYNAMIC:
+		case JseDescriptorType::STORAGE_BUFFER:
+		case JseDescriptorType::STORAGE_BUFFER_DYNAMIC:
+			for (auto& elem : data.buffers) {
+				if (elem.binding == cmd.dstBinding) {
+					const auto& bdata = buffer_data_map_.at(cmd.pBufferInfo[i].buffer);
+					elem.buffer = bdata.buffer;
+					elem.offset = cmd.pBufferInfo[i].offset;
+					elem.size = cmd.pBufferInfo[i].size;
+					break;
+				}
+			}
+			break;
+		case JseDescriptorType::SAMPLED_IMAGE:
+		case JseDescriptorType::SAMPLED_BUFFER:
+			for (auto& elem : data.images) {
+				if (elem.binding == cmd.dstBinding) {
+					const auto& idata = texture_data_map_.at(cmd.pImageInfo[i].image);
+					elem.texture = idata.texture;
+					elem.type = cmd.descriptorType;
+					break;
+				}
+			}
+			break;
+		case JseDescriptorType::STORAGE_IMAGE:
+			for (auto& elem : data.images) {
+				if (elem.binding == cmd.dstBinding) {
+					const auto& idata = texture_data_map_.at(cmd.pImageInfo[i].image);
+					elem.texture = idata.texture;
+					elem.type = cmd.descriptorType;
+					elem.access = MapJseAccessImageAccessGl(cmd.pImageInfo[i].access);
+					elem.format = s_texture_format[static_cast<size_t>(cmd.pImageInfo[i].format)].internal_format;
+					elem.layer = cmd.pImageInfo[i].layer;
+					elem.level = cmd.pImageInfo[i].level;
+					elem.layered = cmd.pImageInfo[i].layered;
+					break;
+				}
+			}
+			break;
+		default:
+			Error("Unhadled DescriptorType");
+		}
+	}
 	return JseResult::SUCCESS;
 }
 
@@ -1188,6 +1360,38 @@ void JseGfxCoreGL::SetRenderState(JseRenderState state, bool force)
 	gl_state_ = state;
 }
 
+void JseGfxCoreGL::SetUniforms(DescriptorSetData& set, const JseUniformMap& uniforms)
+{
+	if (activePipelineData_.pData == nullptr) return;
+
+	GLuint program = activePipelineData_.pData->program;
+
+	GLUniformBinder binder;
+	for (const auto& cb : uniforms)
+	{
+		auto location = set.uniform_location_map.find(cb.first);
+		GLint uniform_location;
+		if (location != std::end(set.uniform_location_map))
+		{
+			uniform_location = location->second;
+		}
+		else {
+			GL_CHECK(uniform_location = glGetUniformLocation(program, cb.first.c_str()));
+			set.uniform_location_map.emplace(cb.first, uniform_location);
+#ifdef _DEBUG
+			if (uniform_location == -1) {
+				Warning("Uniform variable %s not found!!!", cb.first.c_str());
+			}
+#endif
+		}
+
+		if (uniform_location == -1) continue;
+
+		binder.update(uniform_location, cb.second);
+
+	}
+}
+
 void JseGfxCoreGL::_glBindFramebuffer(GLenum a, GLuint b)
 {
 	if (stateCache_.framebuffer != b) {
@@ -1398,5 +1602,13 @@ static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 			return GL_TESS_EVALUATION_SHADER;
 		default:
 			return 0;
+		}
+	}
+
+	static GLenum MapJseAccessImageAccessGl(JseAccess t) {
+		switch (t) {
+		case JseAccess::READ: return GL_READ_ONLY;
+		case JseAccess::WRITE: return GL_WRITE_ONLY;
+		case JseAccess::READ_WRITE: return GL_READ_WRITE;
 		}
 	}

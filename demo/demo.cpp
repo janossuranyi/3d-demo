@@ -285,10 +285,6 @@ int SDL_main(int argc, char** argv)
         Info("Texture updated");
     }
 
-    if (core->DestroyBuffer(JseBufferID{ 1 }) == JseResult::SUCCESS) {
-        Info("Buffer deleted");
-    }
-
     if (core->UpdateBuffer(bui) != JseResult::SUCCESS) {
         Info("Buffer update failed");
     }
@@ -392,6 +388,12 @@ void main() {
             JseDescriptorType::UNIFORM_BUFFER,
             1,
             JSE_STAGE_FLAG_ALL
+        },
+        {
+            99,
+            JseDescriptorType::INLINE_UNIFORM_BLOCK,
+            0,
+            JSE_STAGE_FLAG_ALL
         }
     };
 
@@ -417,10 +419,37 @@ void main() {
     core->BeginRenderPass(pass);
 
     core->BindGraphicsPipeline(JseGrapicsPipelineID{ 1 });
+
+    JseDescriptorSetCreateInfo setCreate2{};
+    setCreate2.setLayoutId = JseDescriptorSetLayoutID{ 1 };;
+    setCreate2.setId = JseDescriptorSetID{ 1 };
+    if (core->CreateDescriptorSet(setCreate2) == JseResult::SUCCESS) {
+        Info("Set created");
+    }
+
+    JseDescriptorBufferInfo writeBufferInfo{};
+    writeBufferInfo.buffer = JseBufferID{ 1 };
+    writeBufferInfo.offset = 0;
+    writeBufferInfo.size = 256;
+
+    JseWriteDescriptorSet write{};
+    write.setId = JseDescriptorSetID{ 1 };
+    write.descriptorCount = 1;
+    write.descriptorType = JseDescriptorType::UNIFORM_BUFFER;
+    write.dstArrayElement = 0;
+    write.dstBinding = 3;
+    write.pBufferInfo = &writeBufferInfo;
+    if (core->WriteDescriptorSet(write) == JseResult::SUCCESS) {
+        Info("Set written");
+    }
+
     core->DeleteGraphicsPipeline(JseGrapicsPipelineID{ 1 });
 
     core->EndRenderPass();
 
+    if (core->DestroyBuffer(JseBufferID{ 1 }) == JseResult::SUCCESS) {
+        Info("Buffer deleted");
+    }
 
     _exit:
     core->Shutdown();
