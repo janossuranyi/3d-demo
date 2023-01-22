@@ -9,6 +9,7 @@ GLenum MapJseImageTargetGl(JseImageTarget t);
 GLenum MapJseCubemapFaceGl(JseCubeMapFace t);
 GLenum MapJseShaderStageGl(JseShaderStage t);
 GLenum MapJseAccessImageAccessGl(JseAccess t);
+GLenum MapJseTopologyGl(JseTopology p);
 
 static void CheckOpenGLError(const char* stmt, const char* fname, int line)
 {
@@ -357,13 +358,13 @@ JseResult JseGfxCoreGL::UpdateBuffer_impl(const JseBufferUpdateInfo& cmd)
 	auto find = buffer_data_map_.find(cmd.bufferId);
 
 	if (find != std::end(buffer_data_map_)) {
-		if (find->second.size < (cmd.offset + cmd.data.size())) {
+		if (find->second.size < (cmd.offset + cmd.size)) {
 			return JseResult::INTERVAL_EXCEEDED;
 		}
 		if (find->second.mapptr) {
-			std::memcpy(reinterpret_cast<char*>(find->second.mapptr) + cmd.offset, cmd.data.data(), cmd.data.size());
+			std::memcpy(reinterpret_cast<char*>(find->second.mapptr) + cmd.offset, cmd.data, cmd.size);
 		} else {
-			GL_CHECK(glNamedBufferSubData(find->second.buffer, cmd.offset, cmd.data.size(), cmd.data.data()));
+			GL_CHECK(glNamedBufferSubData(find->second.buffer, cmd.offset, cmd.size, cmd.data));
 		}
 		return JseResult::SUCCESS;
 	}
@@ -493,10 +494,10 @@ JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 	}
 
 	if (iData.target == GL_TEXTURE_1D) {
-		GL_CHECK(glTextureSubImage1D(iData.texture, cmd.level, cmd.xoffset, cmd.width, iData.format, iData.type, cmd.data.data()));
+		GL_CHECK(glTextureSubImage1D(iData.texture, cmd.level, cmd.xoffset, cmd.width, iData.format, iData.type, cmd.data));
 	}
 	else if (iData.target == GL_TEXTURE_2D || iData.target == GL_TEXTURE_1D_ARRAY) {
-		GL_CHECK(glTextureSubImage2D(iData.texture, cmd.level, cmd.xoffset, cmd.yoffset, cmd.width, cmd.height, iData.format, iData.type, cmd.data.data()));
+		GL_CHECK(glTextureSubImage2D(iData.texture, cmd.level, cmd.xoffset, cmd.yoffset, cmd.width, cmd.height, iData.format, iData.type, cmd.data));
 	}
 	else if (iData.target == GL_TEXTURE_3D || iData.target == GL_TEXTURE_2D_ARRAY || iData.target == GL_TEXTURE_CUBE_MAP || iData.target == GL_TEXTURE_CUBE_MAP_ARRAY) {
 		/*
@@ -513,7 +514,7 @@ JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 		* and the depth​ set to 1 (because you're only uploading one layer-face).
 		*/
 		GLint const zoffset = (iData.target == GL_TEXTURE_CUBE_MAP_ARRAY ? 6 : 1) * cmd.zoffset + static_cast<GLint>(cmd.face);
-		GL_CHECK(glTextureSubImage3D(iData.texture, cmd.level, cmd.xoffset, cmd.yoffset, zoffset, cmd.width, cmd.height, cmd.depth, iData.format, iData.type, cmd.data.data()));
+		GL_CHECK(glTextureSubImage3D(iData.texture, cmd.level, cmd.xoffset, cmd.yoffset, zoffset, cmd.width, cmd.height, cmd.depth, iData.format, iData.type, cmd.data));
 	}
 
 	return JseResult::SUCCESS;
@@ -854,6 +855,7 @@ JseResult JseGfxCoreGL::CreateDescriptorSet_impl(const JseDescriptorSetCreateInf
 		{
 			DescriptorBufferData bd{};
 			bd.binding = elem.second.binding;
+			bd.type = elem.second.descriptorType;
 			data.buffers.emplace_back(bd);
 		}
 			break;
@@ -867,11 +869,78 @@ JseResult JseGfxCoreGL::CreateDescriptorSet_impl(const JseDescriptorSetCreateInf
 			data.images.emplace_back(id);
 		}
 			break;
+		case JseDescriptorType::INLINE_UNIFORM_BLOCK:
+			;
+		break;
 		}
 	}
 	set_data_map_.emplace(cmd.setId, data);
 
 	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets)
+{
+	for (int i = 0; i < descriptorSetCount; ++i) {
+		auto find = set_data_map_.find(pDescriptorSets[i]);
+
+		if (find == std::end(set_data_map_)) {
+			continue;
+		}
+
+		auto& data = find->second;
+		int dynIndex = 0;
+		for (const auto& elem : data.buffers) {
+			switch (elem.type) {
+			case JseDescriptorType::UNIFORM_BUFFER:
+				if (elem.size == 0) {
+					GL_CHECK(glBindBufferBase(GL_UNIFORM_BUFFER, elem.binding, elem.buffer));
+				}
+				else {
+					GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, elem.binding, elem.buffer, elem.offset, elem.size));
+				}
+				break;
+
+			case JseDescriptorType::UNIFORM_BUFFER_DYNAMIC:
+				if (dynamicOffsetCount > 0 && dynamicOffsetCount > dynIndex) {
+					GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, elem.binding, elem.buffer, elem.offset + static_cast<GLsizeiptr>(pDynamicOffsets[dynIndex++]), elem.size));
+				}
+				break;
+
+			case JseDescriptorType::STORAGE_BUFFER:
+				if (elem.size == 0) {
+					GL_CHECK(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, elem.binding, elem.buffer));
+				}
+				else {
+					GL_CHECK(glBindBufferRange(GL_SHADER_STORAGE_BUFFER, elem.binding, elem.buffer, elem.offset, elem.size));
+				}
+				break;
+
+				case JseDescriptorType::STORAGE_BUFFER_DYNAMIC:
+				if (dynamicOffsetCount > 0 && dynamicOffsetCount > dynIndex) {
+					GL_CHECK(glBindBufferRange(GL_SHADER_STORAGE_BUFFER, elem.binding, elem.buffer, elem.offset + static_cast<GLsizeiptr>(pDynamicOffsets[dynIndex++]), elem.size));
+					++dynIndex;
+				}
+			}
+
+			for (const auto& elem : data.images) {
+				switch (elem.type) {
+				case JseDescriptorType::SAMPLED_IMAGE:
+				case JseDescriptorType::SAMPLED_BUFFER:
+					GL_CHECK(glBindMultiTextureEXT(elem.binding, elem.target, elem.texture));
+					break;
+				case JseDescriptorType::STORAGE_IMAGE:
+					GL_CHECK(glBindImageTexture(elem.binding, elem.texture, elem.level, elem.layered, elem.layer, elem.access, elem.format));
+				}
+			}
+
+			if (!data.uniforms.empty()) {
+				SetUniforms(data, data.uniforms);
+			}
+		}
+	}
+
+	return JseResult();
 }
 
 JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd)
@@ -888,9 +957,6 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 	for (int i = 0; i < cmd.descriptorCount; ++i) {
 
 		switch (cmd.descriptorType) {
-		case JseDescriptorType::INLINE_UNIFORM_BLOCK:
-			SetUniforms(data, cmd.pUniformInfo[i].uniforms);
-			break;
 		case JseDescriptorType::UNIFORM_BUFFER:
 		case JseDescriptorType::UNIFORM_BUFFER_DYNAMIC:
 		case JseDescriptorType::STORAGE_BUFFER:
@@ -912,6 +978,7 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 					const auto& idata = texture_data_map_.at(cmd.pImageInfo[i].image);
 					elem.texture = idata.texture;
 					elem.type = cmd.descriptorType;
+					elem.target = idata.target;
 					break;
 				}
 			}
@@ -929,6 +996,12 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 					elem.layered = cmd.pImageInfo[i].layered;
 					break;
 				}
+			}
+			break;
+		case JseDescriptorType::INLINE_UNIFORM_BLOCK:
+			data.uniforms.clear();
+			for (int i = 0; i < cmd.descriptorCount; ++i) {
+				data.uniforms.merge(cmd.pUniformInfo[i].uniforms);
 			}
 			break;
 		default:
@@ -971,10 +1044,30 @@ void JseGfxCoreGL::BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, Jse
 {
 	const auto& data = buffer_data_map_.at(buffer);
 	active_index_offset_ = static_cast<GLintptr>(offset);
-	active_index_type_ = type;
+	active_index_type_ = type == JseIndexType::UINT16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 	if (stateCache_.indexBuffer != data.buffer) {
 		stateCache_.indexBuffer = data.buffer;
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.buffer);
+	}
+}
+
+void JseGfxCoreGL::Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+{
+	GL_CHECK(glDrawArraysInstancedBaseInstance(MapJseTopologyGl(mode), firstVertex, vertexCount, instanceCount, firstInstance));
+}
+
+void JseGfxCoreGL::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+{
+	if (activePipelineData_.pData) {
+		const uint32_t mult = active_index_type_ == GL_UNSIGNED_SHORT ? 2 : 4;
+		GL_CHECK(glDrawElementsInstancedBaseVertexBaseInstance(
+			MapJseTopologyGl(mode),
+			indexCount,
+			active_index_type_,
+			reinterpret_cast<const void*>(firstIndex * mult),
+			instanceCount,
+			vertexOffset,
+			firstInstance));
 	}
 }
 
@@ -1610,5 +1703,26 @@ static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 		case JseAccess::READ: return GL_READ_ONLY;
 		case JseAccess::WRITE: return GL_WRITE_ONLY;
 		case JseAccess::READ_WRITE: return GL_READ_WRITE;
+		}
+	}
+
+	static GLenum MapJseTopologyGl(JseTopology p)
+	{
+		switch (p)
+		{
+		case JseTopology::Lines:
+			return GL_LINES;
+		case JseTopology::LineLoop:
+			return GL_LINE_LOOP;
+		case JseTopology::LineStrip:
+			return GL_LINE_STRIP;
+		case JseTopology::Point:
+			return GL_POINTS;
+		case JseTopology::Triangles:
+			return GL_TRIANGLES;
+		case JseTopology::TriangleFan:
+			return GL_TRIANGLE_FAN;
+		case JseTopology::TriangleStrip:
+			return GL_TRIANGLE_STRIP;
 		}
 	}

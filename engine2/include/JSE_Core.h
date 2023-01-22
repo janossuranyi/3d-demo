@@ -1,5 +1,5 @@
-#ifndef JseCORE_H
-#define JseCORE_H
+#ifndef JSE_CORE_H
+#define JSE_CORE_H
 
 #include <cinttypes>
 

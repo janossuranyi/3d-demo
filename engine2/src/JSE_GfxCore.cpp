@@ -104,6 +104,11 @@ JseResult JseGfxCore::WriteDescriptorSet(const JseWriteDescriptorSet& cmd)
     return WriteDescriptorSet_impl(cmd);
 }
 
+JseResult JseGfxCore::BindDescriptorSet(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets)
+{
+    return BindDescriptorSet_impl(firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+}
+
 void JseGfxCore::BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets)
 {
     BindVertexBuffer_impl(binding, buffer, offsets);
@@ -117,6 +122,16 @@ void JseGfxCore::BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount,
 void JseGfxCore::BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type)
 {
     BindIndexBuffer_impl(buffer, offset, type);
+}
+
+void JseGfxCore::Draw(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+{
+    Draw_impl(mode, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void JseGfxCore::DrawIndexed(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance)
+{
+    DrawIndexed_impl(mode, indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
 }
 
 JseResult JseGfxCore::GetDeviceCapabilities(JseDeviceCapabilities& dest)

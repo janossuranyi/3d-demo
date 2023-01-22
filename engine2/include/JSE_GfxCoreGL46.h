@@ -1,11 +1,7 @@
 #ifndef JSE_GFX_CORE_GL_H
 #define JSE_GFX_CORE_GL_H
 
-#include <set>
-#include <string>
-#include <SDL.h>
-#include "JSE_Core.h"
-#include "JSE_GfxCore.h"
+#include <GL/glew.h>
 
 #ifdef _DEBUG
 #define GL_FLUSH_ERRORS() while(glGetError() != GL_NO_ERROR) {}
@@ -78,9 +74,11 @@ private:
 
 	virtual JseResult CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) override;
 
-	virtual JseResult EndRenderPass_impl() override;
-
 	virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) override;
+
+	virtual JseResult BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) override;
+
+	virtual JseResult EndRenderPass_impl() override;
 
 	virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) override;
 
@@ -89,6 +87,10 @@ private:
 	virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) override;
 
 	virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) override;
+
+	virtual void Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
+
+	virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
 
 	virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;
 
@@ -162,6 +164,7 @@ private:
 		uint32_t binding;
 		JseDescriptorType type;
 		GLuint texture;
+		GLenum target;
 		GLint level;
 		GLboolean layered;
 		GLint layer;
@@ -169,6 +172,7 @@ private:
 		GLenum format;
 	};
 	struct DescriptorBufferData {
+		JseDescriptorType type;
 		uint32_t binding;
 		GLuint buffer;
 		GLintptr offset;
@@ -180,6 +184,7 @@ private:
 		const SetLayoutData* pLayoutData;
 		JseVector<DescriptorImageData> images;
 		JseVector<DescriptorBufferData> buffers;
+		JseUniformMap uniforms;
 		JseHashMap<JseString, GLint> uniform_location_map;
 	};
 
@@ -190,7 +195,7 @@ private:
 	std::vector<GLintptr> vertex_buffer_offsets_;
 	std::vector<GLsizei> vertex_buffer_strides_;
 	GLintptr active_index_offset_{};
-	JseIndexType active_index_type_{};
+	GLenum active_index_type_{};
 
 	JseHashMap<JseBufferID, BufferData> buffer_data_map_;
 	JseHashMap<JseImageID, ImageData> texture_data_map_;

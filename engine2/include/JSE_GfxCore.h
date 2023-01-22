@@ -47,6 +47,9 @@ typedef union JseClearValue {
 
 enum class JseAccess { READ, WRITE, READ_WRITE };
 
+// Primitives
+enum class JseTopology { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };
+
 enum class JseIndexType {
     UINT16, UINT32
 };
@@ -242,7 +245,8 @@ struct JseBufferCreateInfo {
 struct JseBufferUpdateInfo {
     JseBufferID bufferId;
     uint32_t offset;
-    JseMemory data;
+    uint32_t size;
+    uint8_t* data;
 };
 
 struct JseSamplerDescription {
@@ -289,7 +293,7 @@ struct JseImageUploadInfo {
     uint32_t width;
     uint32_t height;
     uint32_t depth;
-    JseMemory data;
+    uint8_t* data;
 };
 
 struct JseVertexInputBindingDescription {
@@ -319,16 +323,16 @@ struct JsePipelineShaderStageCreateInfo {
 
 struct JsePipelineVertexInputStateCreateInfo {
     uint32_t bindingCount;
-    const JseVertexInputBindingDescription* pBindings;
+    JseVertexInputBindingDescription* pBindings;
     uint32_t attributeCount;
-    const JseVertexInputAttributeDescription* pAttributes;
+    JseVertexInputAttributeDescription* pAttributes;
 };
 
 struct JseGraphicsPipelineCreateInfo {
     JseGrapicsPipelineID graphicsPipelineId;
     JsePipelineVertexInputStateCreateInfo* pVertexInputState;
     uint32_t stageCount;
-    const JsePipelineShaderStageCreateInfo* pStages;
+    JsePipelineShaderStageCreateInfo* pStages;
     JseRenderState renderState;
     JseDescriptorSetLayoutID setLayoutId;
 };
@@ -345,9 +349,9 @@ struct JseFrameBufferCreateInfo {
     uint32_t width;
     uint32_t height;
     uint32_t colorAttachmentCount;
-    const JseFrameBufferAttachmentDescription* pColorAttachments;
-    const JseFrameBufferAttachmentDescription* pDepthAttachment;
-    const JseFrameBufferAttachmentDescription* pStencilAttachment;
+    JseFrameBufferAttachmentDescription* pColorAttachments;
+    JseFrameBufferAttachmentDescription* pDepthAttachment;
+    JseFrameBufferAttachmentDescription* pStencilAttachment;
 };
 
 struct JseRenderPassInfo {
@@ -403,7 +407,7 @@ struct JseWriteDescriptorSet {
     JseDescriptorType descriptorType;
     const JseDescriptorImageInfo* pImageInfo;
     const JseDescriptorBufferInfo* pBufferInfo;
-    const JseDescriptorUniformInfo* pUniformInfo;
+    JseDescriptorUniformInfo* pUniformInfo;
 };
 
 struct JseDescriptorSetCreateInfo {
@@ -613,11 +617,13 @@ public:
     JseResult EndRenderPass();
     JseResult CreateDescriptorSet(const JseDescriptorSetCreateInfo& cmd);
     JseResult WriteDescriptorSet(const JseWriteDescriptorSet& cmd);
+    JseResult BindDescriptorSet(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets);
 
     void BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets);
     void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets);
     void BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type);
-
+    void Draw(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
+    void DrawIndexed(JseTopology mode, uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
     JseResult GetDeviceCapabilities(JseDeviceCapabilities& dest);
     JseResult SetVSyncInterval(int interval);
     JseResult GetSurfaceDimension(JseRect2D& x);
@@ -644,12 +650,15 @@ private:
     virtual JseResult DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) = 0;
     virtual JseResult BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) = 0;
     virtual JseResult CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) = 0;
+    virtual JseResult BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) = 0;
     virtual JseResult EndRenderPass_impl() = 0;
     virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) = 0;
     virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) = 0;
     virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) = 0;
     virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) = 0;
     virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) = 0;
+    virtual void Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
+    virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
 
     virtual JseResult SetVSyncInterval_impl(int interval) = 0;
     virtual JseResult GetSurfaceDimension_impl(JseRect2D& x) = 0;
