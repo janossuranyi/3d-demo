@@ -6,9 +6,9 @@ void JseGfxRenderer::Frame()
 	renderFrame_ = activeFrame_;
 	activeFrame_ = (activeFrame_ + 1) % ON_FLIGHT_FRAMES;
 	frameData_ = &frames_[activeFrame_];
-	frameData_->frameMemoryPtr = 0;
+	frameData_->frameMemoryPtr.Set(0);
 
-	JseGfxCmdEmpty* cmd = (JseGfxCmdEmpty*)R_FrameAlloc(sizeof(JseGfxCmdEmpty));
+	JseGfxCmdEmpty* cmd = SDL_reinterpret_cast(JseGfxCmdEmpty*, R_FrameAlloc(sizeof(JseGfxCmdEmpty)));
 	cmd->command = RC_NOP;
 	cmd->next = nullptr;
 	frameData_->cmdTail = cmd;
@@ -23,7 +23,7 @@ void JseGfxRenderer::Frame()
 		case RC_NOP:
 			break;
 		case RC_CreateBufer:
-			//r = core->CreateBuffer(((JseGfxCmdCreateBuffer*)cmd)->info);
+			//r = core->CreateBuffer(SDL_reinterpret_cast(JseGfxCmdCreateBuffer*, cmd)->info);
 			break;
 		}
 		Info("Cmd: %d, r: %d", cmd->command, r);
@@ -34,10 +34,11 @@ JseGfxRenderer::JseGfxRenderer()
 {
 	core = new JseGfxCoreGL();
 	frameMemorySize_ = FRAME_MEM_SIZE;
+	CPU_CACHELINE_SIZE = JseGetCPUCacheLineSize();
 	for (int i = 0; i < ON_FLIGHT_FRAMES; ++i) {
 		frameData_ = &frames_[i];
 		frameData_->frameMemory.reset(reinterpret_cast<uint8_t*>(JseMemAlloc16(frameMemorySize_)), JseMemFree16);
-		frameData_->frameMemoryPtr = 0;
+		frameData_->frameMemoryPtr.Set(0);
 		JseGfxCmdEmpty* cmd = (JseGfxCmdEmpty*)R_FrameAlloc(sizeof(JseGfxCmdEmpty));
 		cmd->command = RC_NOP;
 		cmd->next = nullptr;
@@ -47,7 +48,6 @@ JseGfxRenderer::JseGfxRenderer()
 	activeFrame_ = 0;
 	renderFrame_ = 1;
 	frameData_ = &frames_[activeFrame_];
-	CPU_CACHELINE_SIZE = JseGetCPUCacheLineSize();
 
 }
 
@@ -65,7 +65,7 @@ uint8_t* JseGfxRenderer::R_FrameAlloc(uint32_t bytes)
 {
 	bytes = (bytes + CPU_CACHELINE_SIZE - 1) & ~(CPU_CACHELINE_SIZE - 1);
 
-	uint32_t end = frameData_->frameMemoryPtr + bytes;
+	int end = frameData_->frameMemoryPtr.Add(bytes) + bytes;
 
 	if (end > frameMemorySize_) {
 		throw std::runtime_error("Out of frame memory");
@@ -73,12 +73,11 @@ uint8_t* JseGfxRenderer::R_FrameAlloc(uint32_t bytes)
 
 	uint8_t* ret = frameData_->frameMemory.get() + end - bytes;
 
-	frameData_->frameMemoryPtr += bytes;
-
-	maxFrameMemUsage_ = std::max(maxFrameMemUsage_, frameData_->frameMemoryPtr);
+	maxFrameMemUsage_ = std::max(maxFrameMemUsage_, end);
 
 	for (uint32_t offset = 0; offset < bytes; offset += CPU_CACHELINE_SIZE) {
 		std::memset(ret + offset, 0, CPU_CACHELINE_SIZE);
 	}
+
 	return ret;
 }

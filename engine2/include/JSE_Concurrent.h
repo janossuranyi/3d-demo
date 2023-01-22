@@ -98,4 +98,116 @@ private:
     SDL_cond* m_pCond;
 };
 
+class JseAtomicInt
+{
+private:
+    SDL_atomic_t    value_;
+public:
+    JseAtomicInt();
+    JseAtomicInt(int v);
+    void Set(int x);
+    int Get() const;
+    int Add(int x);
+    int Inc();
+    int Dec();
+    bool CompareAndSet(int oldval, int newval);
+    static bool CompareAndSetPtr(void** a, void* oldval, void* newval);
+    static void* SetPtr(void** a, void* v);
+    static void* GetPtr(void** a);
+    int value() const;
+    void operator=(int v);
+    int operator+=(int v);
+    int operator-=(int v);
+    int operator+(int v);
+    int operator-(int v);
+    int operator++();
+    int operator--();
+    operator int() const;
+};
+
+inline JseAtomicInt::JseAtomicInt(int v)
+{
+    Set(v);
+}
+
+inline JseAtomicInt::JseAtomicInt() : JseAtomicInt(0) {}
+
+inline int JseAtomicInt::Get() const
+{
+    return SDL_AtomicGet(const_cast<SDL_atomic_t*>(&value_));
+}
+inline void JseAtomicInt::Set(int v)
+{
+    SDL_AtomicSet(&value_, v);
+}
+inline int JseAtomicInt::Add(int v)
+{
+    return SDL_AtomicAdd(&value_, v);
+}
+inline int JseAtomicInt::Inc()
+{
+    return Add(1);
+}
+inline bool JseAtomicInt::CompareAndSet(int oldval, int newval)
+{
+    return SDL_AtomicCAS(&value_, oldval, newval) == SDL_TRUE;
+}
+inline bool JseAtomicInt::CompareAndSetPtr(void** a, void* oldval, void* newval)
+{
+    return SDL_AtomicCASPtr(a, oldval, newval) == SDL_TRUE;
+}
+inline void* JseAtomicInt::SetPtr(void** a, void* v)
+{
+    return SDL_AtomicSetPtr(a, v);
+}
+inline void* JseAtomicInt::GetPtr(void** a)
+{
+    return SDL_AtomicGetPtr(a);
+}
+inline int JseAtomicInt::value() const
+{
+    return Get();
+}
+
+inline void JseAtomicInt::operator=(int v)
+{
+    Set(v);
+}
+
+inline int JseAtomicInt::operator+=(int v)
+{
+    return Add(v) + v;
+}
+
+inline int JseAtomicInt::operator-=(int v)
+{
+    return Add(-v) - v;
+}
+
+inline int JseAtomicInt::operator+(int v)
+{
+    return Get() + v;
+}
+
+inline int JseAtomicInt::operator-(int v)
+{
+    return Get() - v;
+}
+
+inline int JseAtomicInt::operator++()
+{
+    return Add(1);
+}
+
+inline int JseAtomicInt::operator--()
+{
+    return Add(-1);
+}
+
+inline JseAtomicInt::operator int() const
+{
+    return Get();
+}
+
+
 #endif

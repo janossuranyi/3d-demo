@@ -191,21 +191,21 @@ public:
 	static const size_t ON_FLIGHT_FRAMES = 2;
 private:
 	struct frameData_t {
-		uintptr_t frameMemoryPtr;
+		JseAtomicInt frameMemoryPtr;
 		std::shared_ptr<uint8_t> frameMemory;
 		JseGfxCmdEmpty* cmdTail;
 		JseGfxCmdEmpty* cmdHead;
 	};
 
-	JseGfxCore* core;
-	JseSemaphore renderSem_{0};
-	JseSemaphore frontendSem_{0};
-	size_t frameMemorySize_{};
-	size_t maxFrameMemUsage_{ 0 };
-	frameData_t frames_[ON_FLIGHT_FRAMES];
-	int activeFrame_;
-	int renderFrame_;
-	frameData_t* frameData_;
+	JseGfxCore*		core;
+	JseSemaphore	renderSem_{0};
+	JseSemaphore	frontendSem_{0};
+	size_t			frameMemorySize_{};
+	int				maxFrameMemUsage_{ 0 };
+	frameData_t		frames_[ON_FLIGHT_FRAMES];
+	int				activeFrame_;
+	int				renderFrame_;
+	frameData_t*	frameData_;
 
 	uint32_t CPU_CACHELINE_SIZE{};
 
