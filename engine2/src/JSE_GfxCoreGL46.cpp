@@ -32,6 +32,7 @@ void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 class GLUniformBinder {
 public:
 	GLUniformBinder() : uniform_location_{ 0 } {
+		Info("JseGfxCore OpenGL 4.6 Driver v0.1");
 	}
 
 	~GLUniformBinder() = default;

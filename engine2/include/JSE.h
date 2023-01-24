@@ -1,6 +1,10 @@
 #ifndef JSE_H
 #define JSE_H
 
+#define RCAST(type,var) reinterpret_cast<type>(var)
+#define SCAST(type,var) static_cast<type>(var)
+#define CCAST(type,var) const_cast<type>(var)
+
 #include <cinttypes>
 #include <string>
 #include <cstring>
