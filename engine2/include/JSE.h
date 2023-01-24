@@ -39,6 +39,8 @@
 #include "JSE_Heap.h"
 #include "JSE_Memory.h"
 #include "JSE_GfxCore.h"
+#include "JSE_Input.h"
+
 //#include "JSE_GfxCoreGL46.h"
 #include "JSE_GfxRender.h"
 #endif
