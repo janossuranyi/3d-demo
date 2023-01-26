@@ -555,9 +555,6 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 	auto* attrDesc = cmd.pVertexInputState->pAttributes;
 	auto* bindDesc = cmd.pVertexInputState->pBindings;
 
-	for (int i = 0; i < cmd.pVertexInputState->bindingCount; ++i) {
-		data.binding.emplace_back(bindDesc[i]);
-	}
 
 	for (int i = 0; i < cmd.pVertexInputState->attributeCount; ++i) {
 		auto& attr = attrDesc[i];
@@ -565,7 +562,11 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 		GL_CHECK(glEnableVertexAttribArray(attr.location));
 		GL_CHECK(glVertexAttribFormat(attr.location, fmt.componentCount, fmt.type, fmt.normalized, attr.offset));
 		GL_CHECK(glVertexAttribBinding(attr.location, bindDesc[attr.bindig].binding));
-		GL_CHECK(glVertexBindingDivisor(bindDesc[attr.bindig].binding, bindDesc[attr.bindig].inputRate == JseVertexInputRate::VERTEX ? 0 : 1));
+	}
+
+	for (int i = 0; i < cmd.pVertexInputState->bindingCount; ++i) {
+		data.binding.emplace_back(bindDesc[i]);
+		GL_CHECK(glVertexBindingDivisor(bindDesc[i].binding, bindDesc[i].inputRate == JseVertexInputRate::VERTEX ? 0 : 1));
 	}
 
 	SetRenderState(cmd.renderState);
