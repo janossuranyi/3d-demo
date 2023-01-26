@@ -1,5 +1,6 @@
 #include "JSE.h"
 #include "JSE_GfxCoreGL46.h"
+#include <nv_dds.h>
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -33,12 +34,19 @@ struct xVertex {
 
 const xVertex rect[]{
     {{-0.5f,   0.5f, 0.0f},{0.0f, 1.0f}},
+    {{ 0.5f,  -0.5f, 0.0f},{1.0f, 0.0f}},
     {{ 0.5f,   0.5f, 0.0f},{1.0f, 1.0f}},
-    {{ 0.5f,  -0.5f, 0.0f},{1.0f, 0.0f}}
+    {{ 0.5f,  -0.5f, 0.0f},{1.0f, 0.0f}},
+    {{-0.5f,   0.5f, 0.0f},{0.0f, 1.0f}},
+    {{-0.5f,  -0.5f, 0.0f},{0.0f, 0.0f}}
 };
 
 int main(int argc, char** argv)
 {
+    using namespace nv_dds;
+
+    CDDSImage image;
+    image.load("d:/tokio.dds");
 
 
     JseInit(argc, argv);
@@ -67,7 +75,7 @@ in vec2 vofi_TexCoord;
 out vec4 fragColor;
 
 void main() {
-    fragColor = vec4(1.0,0.0,0.0,1.0);    
+    fragColor = vec4(vofi_TexCoord.x, vofi_TexCoord.y, 0.0, 1.0);
 }
 )" };
 
@@ -86,7 +94,7 @@ void main() {
             });
 
         R.SetCore(new JseGfxCoreGL());
-        R.InitCore(1024, 768, false, true);
+        R.InitCore(1024, 768, false, false);
 
         JseCreateShaderCommand& sp1 = *R.GetCommandBuffer<JseCreateShaderCommand>();
         sp1.info.pCode = vtxshader;
@@ -162,7 +170,7 @@ void main() {
             draw.firstVertex = 0;
             draw.instanceCount = 1;
             draw.mode = JseTopology::Triangles;
-            draw.vertexCount = 3;
+            draw.vertexCount = 6;
             
             R.Frame();
             I.ProcessEvents();

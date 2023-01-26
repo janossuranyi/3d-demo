@@ -9,6 +9,7 @@ void JseGfxRenderer::Frame()
 
 	if (!useThread_) {
 		RenderFrame(frameData_);
+		core_->SwapChainNextImage();
 		ResetCommandBuffer();
 	}
 	else {

@@ -104,6 +104,11 @@ add_library(engine2 STATIC
   ${ENGINE2_FILES}
 )
 
+add_library(nv_dds STATIC
+  external/nv_dds/nv_dds.h
+  external/nv_dds/nv_dds.cpp
+)
+
 add_library(glew STATIC
   external/glew-2.1.0/src/glew.c
   external/glew-2.1.0/include/GL/glew.h
@@ -121,13 +126,6 @@ add_library(tinygltf STATIC
   external/tinygltf/tiny_gltf.cpp
 )
 
-option(KTX_FEATURE_TESTS "" OFF)
-option(KTX_FEATURE_STATIC_LIBRARY "" ON)
-option(KTX_FEATURE_VULKAN "" ON)
-option(KTX_FEATURE_GL_UPLOAD "" ON)
-
-add_subdirectory(external/ktx)
-
 include_directories(
   ./
   demo/
@@ -139,7 +137,7 @@ include_directories(
   external/stb/
   external/half/
   external/tinygltf/
-  external/ktx/include/
+  external/nv_dds/
   ${SDL2_INCLUDE_DIR}
 )
 
@@ -161,7 +159,7 @@ target_link_libraries(demo
   tinygltf
   engine
   engine2
-  ktx
+  nv_dds
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}
 )

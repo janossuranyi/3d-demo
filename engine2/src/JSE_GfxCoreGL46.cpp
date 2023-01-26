@@ -275,7 +275,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	stateCache_.scissor = JseRect2D{ 0,0,static_cast<uint32_t>(_w),static_cast<uint32_t>(_h) };
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glDisable(GL_FRAMEBUFFER_SRGB);
+	glEnable(GL_FRAMEBUFFER_SRGB);
 
 	deviceCapabilities_.pRenderer = (const char*)glGetString(GL_RENDERER);
 	deviceCapabilities_.pRendererVersion = (const char*)glGetString(GL_VERSION);
@@ -937,7 +937,7 @@ JseResult JseGfxCoreGL::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descr
 				switch (elem.type) {
 				case JseDescriptorType::SAMPLED_IMAGE:
 				case JseDescriptorType::SAMPLED_BUFFER:
-					GL_CHECK(glBindMultiTextureEXT(elem.binding, elem.target, elem.texture));
+					GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + elem.binding, elem.target, elem.texture));
 					break;
 				case JseDescriptorType::STORAGE_IMAGE:
 					GL_CHECK(glBindImageTexture(elem.binding, elem.texture, elem.level, elem.layered, elem.layer, elem.access, elem.format));
