@@ -1,31 +1,29 @@
 #ifndef JSE_INPUT_H
 #define JSE_INPUT_H
 
-enum JseKeyEventType {
-	JSE_KEYDOWN,JSE_KEYUP
-};
-enum JseKeyState {
-	JSE_PRESSED, JSE_RELEASED
-};
+using JseKeyCode = SDL_KeyCode;
+using JseKeyMod = SDL_Keymod;
+using JseKeyboardEvent = SDL_KeyboardEvent;
+using JseMouseMotionEvent = SDL_MouseMotionEvent;
+using JseMouseButtonEvent = SDL_MouseButtonEvent;
+using JseMouseWheelEvent = SDL_MouseWheelEvent;
+using JseEvent = SDL_Event;
 
-using JseKeyCode = int;
+#define JSE_RELEASED SDL_RELEASED
+#define JSE_PRESSED SDL_PRESSED
 
-struct JseKeySym {
-	JseKeyCode key;
-	uint16_t mod;
+class JseInputManager 
+{
+private:
+	std::function<void(JseKeyboardEvent)> onKeyboard_;
+	std::function<void()> onExit_;
+public:
+
+	void SetOnExitEvent(const std::function<void()> onexit);
+	void SetOnKeyboardEvent(const std::function<void(JseKeyboardEvent)> onkey);
+	void ProcessEvents();
+
+	virtual ~JseInputManager() {}
 };
-
-struct JseKeyEvent {
-	JseKeyEventType type;
-	JseKeyState state;
-	uint32_t timestamp;
-	bool repeat;
-	JseKeySym keysysm;
-};
-
-struct JseMouseButtonEvent {
-
-};
-struct JseMouseMoveEvent {};
 
 #endif

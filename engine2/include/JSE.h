@@ -4,6 +4,7 @@
 #define RCAST(type,var) reinterpret_cast<type>(var)
 #define SCAST(type,var) static_cast<type>(var)
 #define CCAST(type,var) const_cast<type>(var)
+#define JSE_INLINE inline
 
 #include <cinttypes>
 #include <string>
@@ -40,6 +41,7 @@
 #include "JSE_Memory.h"
 #include "JSE_GfxCore.h"
 #include "JSE_Input.h"
+#include "JSE_Updatable.h"
 
 //#include "JSE_GfxCoreGL46.h"
 #include "JSE_GfxRender.h"

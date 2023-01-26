@@ -92,6 +92,16 @@ private:
 
 	virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
 
+	virtual void Viewport_impl(const JseRect2D& x) override;
+
+	virtual void Scissor_impl(const JseRect2D& x) override;
+
+	virtual void BeginRendering_impl() override;
+
+	virtual void EndRendering_impl() override;
+
+	virtual void SwapChainNextImage_impl() override;
+
 	virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;
 
 	virtual JseResult SetVSyncInterval_impl(int interval) override;
@@ -107,6 +117,8 @@ private:
 
 	void _glBindFramebuffer(GLenum a, GLuint b);
 	void _glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
+	void _glScissor(GLint x, GLint y, GLsizei w, GLsizei h);
+	void _glScissorEnabled(bool b);
 
 	JseDeviceCapabilities deviceCapabilities_{};
 
@@ -191,11 +203,12 @@ private:
 	JseRenderState gl_state_{};
 	GLfloat polyOfsScale_{}, polyOfsBias_{};
 	
-	std::vector<GLuint> vertex_buffer_bindings_;
-	std::vector<GLintptr> vertex_buffer_offsets_;
-	std::vector<GLsizei> vertex_buffer_strides_;
-	GLintptr active_index_offset_{};
-	GLenum active_index_type_{};
+	std::vector<GLuint>		vertex_buffer_bindings_;
+	std::vector<GLintptr>	vertex_buffer_offsets_;
+	std::vector<GLsizei>	vertex_buffer_strides_;
+	GLintptr				active_index_offset_{};
+	GLenum					active_index_type_{};
+	bool					scissorEnabled_{};
 
 	JseHashMap<JseBufferID, BufferData> buffer_data_map_;
 	JseHashMap<JseImageID, ImageData> texture_data_map_;

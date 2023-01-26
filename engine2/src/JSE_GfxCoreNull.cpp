@@ -130,6 +130,26 @@ void JseGfxCoreNull::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uin
 {
 }
 
+void JseGfxCoreNull::Viewport_impl(const JseRect2D& x)
+{
+}
+
+void JseGfxCoreNull::Scissor_impl(const JseRect2D& x)
+{
+}
+
+void JseGfxCoreNull::BeginRendering_impl()
+{
+}
+
+void JseGfxCoreNull::EndRendering_impl()
+{
+}
+
+void JseGfxCoreNull::SwapChainNextImage_impl()
+{
+}
+
 JseResult JseGfxCoreNull::SetVSyncInterval_impl(int interval)
 {
     return JseResult();

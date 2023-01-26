@@ -112,6 +112,7 @@ TextureFormatInfo s_texture_format[] = {
 	{GL_RGB8I,              GL_ZERO,         GL_RGB,              GL_BYTE,                         true,  3}, // RGB8I
 	{GL_RGB8UI,             GL_ZERO,         GL_RGB,              GL_UNSIGNED_BYTE,                true,  3}, // RGB8U
 	{GL_RGB8_SNORM,         GL_ZERO,         GL_RGB,              GL_BYTE,                         true,  3}, // RGB8S
+	{GL_RGB32F,             GL_ZERO,         GL_RGB,              GL_FLOAT,                        false, 3}, // RGB32F
 	{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_BGRA,             GL_UNSIGNED_BYTE,                true,  4}, // BGRA8
 	{GL_RGBA8,              GL_SRGB8_ALPHA8, GL_RGBA,             GL_UNSIGNED_BYTE,                true,  4}, // RGBA8
 	{GL_RGBA8I,             GL_ZERO,         GL_RGBA,             GL_BYTE,                         true,  4}, // RGBA8I
@@ -201,7 +202,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 		flags |= SDL_WINDOW_FULLSCREEN;
 	}
 
-	Info("SD_CreateWindow start");
+	Info("SDL_CreateWindow start");
 	windowHandle_ = SDL_CreateWindow("JseGfxCoreGL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, createSurfaceInfo.width, createSurfaceInfo.height, flags);
 	if (!windowHandle_)
 	{
@@ -209,7 +210,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 		return JseResult::GENERIC_ERROR;
 	}
 
-	Info("SD_CreateWindow done");
+	Info("SDL_CreateWindow done");
 
 	glcontext_ = SDL_GL_CreateContext(windowHandle_);
 	if (!glcontext_)
@@ -238,11 +239,14 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 
 	Info("OpenGL extensions");
 	GLint numExts; glGetIntegerv(GL_NUM_EXTENSIONS, &numExts);
+	JseString exts;
+
 	for (int ext_ = 0; ext_ < numExts; ++ext_)
 	{
 		const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, ext_);
 		//Info("%s", extension);
 		gl_extensions_.emplace(extension);
+		exts.append(extension).append(" ");
 	}
 	const float gl_version = float(atof(version.c_str()));
 	glVersion_ = int(gl_version * 100);
@@ -253,6 +257,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 		return JseResult::GENERIC_ERROR;
 	}
 
+	Info("extensions: %s", exts.c_str());
 	SDL_version ver;
 
 	SDL_GetVersion(&ver);
@@ -313,6 +318,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 
 	}
 #endif
+
 	return JseResult::SUCCESS;
 }
 
@@ -563,6 +569,7 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 	}
 
 	SetRenderState(cmd.renderState);
+
 	GL_CHECK(data.program = glCreateProgram());
 	for (int i = 0; i < cmd.stageCount; ++i) {
 		auto& shaderData = shader_map_.at(cmd.pStages[i].shader);
@@ -778,7 +785,7 @@ JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPass
 {
 
 	GLuint fb{ 0 };
-	if (renderPassInfo.framebuffer.isValid()) { 
+	if (renderPassInfo.framebuffer.isValid() && renderPassInfo.framebuffer.internal() > 0) {
 		auto& fbuff = framebuffer_map_.at(renderPassInfo.framebuffer);
 		fb = fbuff.framebuffer;
 	}
@@ -786,6 +793,7 @@ JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPass
 	_glBindFramebuffer(GL_FRAMEBUFFER, fb);
 	_glViewport(renderPassInfo.viewport.x, renderPassInfo.viewport.y, renderPassInfo.viewport.w, renderPassInfo.viewport.h);
 	if (renderPassInfo.scissorEnable) {
+		_glScissorEnabled(renderPassInfo.scissorEnable);
 		GL_CHECK(glScissor(renderPassInfo.scissor.x, renderPassInfo.scissor.y, renderPassInfo.scissor.w, renderPassInfo.scissor.h));
 	}
 	GLbitfield clearBits{};
@@ -1070,6 +1078,31 @@ void JseGfxCoreGL::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint3
 			vertexOffset,
 			firstInstance));
 	}
+}
+
+void JseGfxCoreGL::Viewport_impl(const JseRect2D& x)
+{
+	_glViewport(x.x, x.y, x.w, x.h);
+}
+
+void JseGfxCoreGL::Scissor_impl(const JseRect2D& x)
+{
+	_glScissor(x.x, x.y, x.w, x.h);
+}
+
+void JseGfxCoreGL::BeginRendering_impl()
+{
+	SDL_GL_MakeCurrent(windowHandle_, glcontext_);
+}
+
+void JseGfxCoreGL::EndRendering_impl()
+{
+	SDL_GL_MakeCurrent(windowHandle_, NULL);
+}
+
+void JseGfxCoreGL::SwapChainNextImage_impl()
+{
+	SDL_GL_SwapWindow(windowHandle_);
 }
 
 JseResult JseGfxCoreGL::GetDeviceCapabilities_impl(JseDeviceCapabilities& dest)
@@ -1502,6 +1535,27 @@ void JseGfxCoreGL::_glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 		stateCache_.viewport.w = w;
 		stateCache_.viewport.h = h;
 		GL_CHECK(glViewport(x, y, w, h));
+	}
+}
+
+void JseGfxCoreGL::_glScissor(GLint x, GLint y, GLsizei w, GLsizei h)
+{
+	if (stateCache_.scissor.x != x || stateCache_.scissor.y != y || stateCache_.scissor.w != w || stateCache_.scissor.h != h) {
+		stateCache_.scissor.x = x;
+		stateCache_.scissor.y = y;
+		stateCache_.scissor.w = w;
+		stateCache_.scissor.h = h;
+		GL_CHECK(glScissor(x, y, w, h));
+	}
+
+}
+
+void JseGfxCoreGL::_glScissorEnabled(bool b)
+{
+	if (scissorEnabled_ != b) {
+		scissorEnabled_ = b;
+		if (b) glEnable(GL_SCISSOR_TEST);
+		else glDisable(GL_SCISSOR_TEST);
 	}
 }
 

@@ -35,6 +35,12 @@ private:
 	virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) override;
 	virtual void Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
 	virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
+	virtual void Viewport_impl(const JseRect2D& x) override;
+	virtual void Scissor_impl(const JseRect2D& x) override;
+	virtual void BeginRendering_impl() override;
+	virtual void EndRendering_impl() override;
+	virtual void SwapChainNextImage_impl() override;
+
 	virtual JseResult SetVSyncInterval_impl(int interval) override;
 	virtual JseResult GetSurfaceDimension_impl(JseRect2D& x) override;
 	virtual void Shutdown_impl() override;

@@ -109,6 +109,21 @@ JseResult JseGfxCore::BindDescriptorSet(uint32_t firstSet, uint32_t descriptorSe
     return BindDescriptorSet_impl(firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 }
 
+void JseGfxCore::SwapChainNextImage()
+{
+    SwapChainNextImage_impl();
+}
+
+void JseGfxCore::BeginRendering()
+{
+    BeginRendering_impl();
+}
+
+void JseGfxCore::EndRendering()
+{
+    EndRendering_impl();
+}
+
 void JseGfxCore::BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets)
 {
     BindVertexBuffer_impl(binding, buffer, offsets);
@@ -132,6 +147,16 @@ void JseGfxCore::Draw(JseTopology mode, uint32_t vertexCount, uint32_t instanceC
 void JseGfxCore::DrawIndexed(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance)
 {
     DrawIndexed_impl(mode, indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
+}
+
+void JseGfxCore::Viewport(const JseRect2D& x)
+{
+    Viewport_impl(x);
+}
+
+void JseGfxCore::Scissor(const JseRect2D& x)
+{
+    Scissor(x);
 }
 
 JseResult JseGfxCore::GetDeviceCapabilities(JseDeviceCapabilities& dest)

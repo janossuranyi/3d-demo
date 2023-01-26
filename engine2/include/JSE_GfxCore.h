@@ -188,6 +188,7 @@ enum class JseFormat {
     RGB8I,
     RGB8U,
     RGB8S,
+    RGB32F,
     BGRA8,
     RGBA8,
     RGBA8I,
@@ -618,12 +619,18 @@ public:
     JseResult CreateDescriptorSet(const JseDescriptorSetCreateInfo& cmd);
     JseResult WriteDescriptorSet(const JseWriteDescriptorSet& cmd);
     JseResult BindDescriptorSet(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets);
+    
+    void SwapChainNextImage();
+    void BeginRendering();
+    void EndRendering();
 
     void BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets);
     void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets);
     void BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type);
     void Draw(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
     void DrawIndexed(JseTopology mode, uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
+    void Viewport(const JseRect2D& x);
+    void Scissor(const JseRect2D& x);
     JseResult GetDeviceCapabilities(JseDeviceCapabilities& dest);
     JseResult SetVSyncInterval(int interval);
     JseResult GetSurfaceDimension(JseRect2D& x);
@@ -654,12 +661,18 @@ private:
     virtual JseResult EndRenderPass_impl() = 0;
     virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) = 0;
     virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) = 0;
+
+    virtual void SwapChainNextImage_impl() = 0;
+    virtual void BeginRendering_impl() = 0;
+    virtual void EndRendering_impl() = 0;
+
     virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) = 0;
     virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) = 0;
     virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) = 0;
     virtual void Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
     virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
-
+    virtual void Viewport_impl(const JseRect2D& x) = 0;
+    virtual void Scissor_impl(const JseRect2D& x) = 0;
     virtual JseResult SetVSyncInterval_impl(int interval) = 0;
     virtual JseResult GetSurfaceDimension_impl(JseRect2D& x) = 0;
 

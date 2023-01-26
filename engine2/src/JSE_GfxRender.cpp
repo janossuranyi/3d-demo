@@ -1,6 +1,7 @@
 #include "JSE.h"
 #include "JSE_GfxCoreNull.h"
 
+#define CACHE_LINE_ALIGN(bytes) (((bytes) + CPU_CACHELINE_SIZE - 1) & ~(CPU_CACHELINE_SIZE - 1))
 
 void JseGfxRenderer::Frame()
 {
@@ -20,12 +21,8 @@ void JseGfxRenderer::Frame()
 		renderFrame_ = activeFrame_;
 		activeFrame_ = (activeFrame_ + 1) % ON_FLIGHT_FRAMES;
 
-		SDL_AtomicLock(&frameSwitchLck_);
-		{
-			frameData_ = &frames_[activeFrame_];
-			ResetCommandBuffer();
-		}
-		SDL_AtomicUnlock(&frameSwitchLck_);
+		frameData_ = &frames_[activeFrame_];
+		ResetCommandBuffer();
 
 		frontendSem_.post();
 	}
@@ -44,7 +41,58 @@ void JseGfxRenderer::ProcessCommandList(frameData_t* frameData)
 
 		switch (cmd->command) {
 		case RC_NOP:
-			Info("RC_NOP");
+			break;
+		case RC_BEGIN_RENDERPASS:
+			core_->BeginRenderPass(((JseBeginRenderpassCommand*)cmd)->info);
+			break;
+		case RC_CREATE_GRAPHICS_PIPELINE:
+			core_->CreateGraphicsPipeline(((JseCreateGraphicsPipelineCommand*)cmd)->info);
+			break;
+		case RC_VIEWPORT:
+			core_->Viewport(((JseViewportCommand*)cmd)->viewport);
+			break;
+		case RC_SCISSOR:
+			core_->Scissor(((JseScissorCommand*)cmd)->scissor);
+			break;
+		case RC_CREATE_SHADER: {
+			std::string err;
+			JseResult r;
+			if ((r = core_->CreateShader(((JseCreateShaderCommand*)cmd)->info, err)) != JseResult::SUCCESS) {
+				Error("Shader %d error: %d - %s", ((JseCreateShaderCommand*)cmd)->info.shaderId, r, err.c_str());
+			}
+		}
+			break;
+		case RC_CREATE_DESCRIPTOR_SET_LAYOUT_BINDING:
+			core_->CreateDescriptorSetLayout(((JseCreateDescriptorSetLayoutBinding*)cmd)->info);
+			break;
+		case RC_CREATE_BUFFER: {
+			JseResult r;
+			if ((r = core_->CreateBuffer(((JseCreateBufferCommand*)cmd)->info)) != JseResult::SUCCESS) {
+				Error("Buffer create error: %d", r);
+			}
+		}
+			break;
+		case RC_UPDATE_BUFFER: {
+			JseResult r;
+			if ((r = core_->UpdateBuffer(((JseUpdateBufferCommand*)cmd)->info)) != JseResult::SUCCESS) {
+				Error("Buffer update error: %d", r);
+			}
+		}
+			break;
+		case RC_BIND_VERTEX_BUFFERS: {
+			const auto* xcmd = (JseBindVertexBuffersCommand*)cmd;
+			core_->BindVertexBuffers(xcmd->firstBinding, xcmd->bindingCount, xcmd->pBuffers, xcmd->pOffsets);
+		}
+			break;
+		case RC_BIND_GRAPHICS_PIPELINE: {
+			const auto* xcmd = (JseBindGraphicsPipelineCommand*)cmd;
+			core_->BindGraphicsPipeline(xcmd->pipeline);
+		}
+			break;
+		case RC_DRAW: {
+			const auto* xcmd = (JseDrawCommand*)cmd;
+			core_->Draw(xcmd->mode, xcmd->vertexCount, xcmd->instanceCount, xcmd->firstVertex, xcmd->firstInstance);
+		}
 			break;
 		default:
 			Error("Unhandled render command: %d", cmd->command);
@@ -56,6 +104,8 @@ void JseGfxRenderer::RenderThread()
 {
 	bool running{1};
 
+	core_->BeginRendering();
+
 	while (running) {
 		frontendSem_.wait();
 
@@ -63,10 +113,14 @@ void JseGfxRenderer::RenderThread()
 
 		if (running) {
 			RenderFrame(&frames_[renderFrame_]);
+			core_->SwapChainNextImage();
 		}
 
 		renderSem_.post();
 	}
+
+	core_->EndRendering();
+
 }
 
 int JseGfxRenderer::RenderThreadWrapper(void* data)
@@ -78,13 +132,18 @@ int JseGfxRenderer::RenderThreadWrapper(void* data)
 
 void JseGfxRenderer::ResetCommandBuffer()
 {
-	frameData_->frameMemoryPtr.Set(sizeof(JseEmptyCommand));
+	int size = CACHE_LINE_ALIGN(sizeof(JseEmptyCommand));
+	
+	frameData_->frameMemoryPtr.Set(size);
 	JseEmptyCommand* cmd = RCAST(JseEmptyCommand*, frameData_->frameMemory.get());
 	cmd->command = RC_NOP;
 	cmd->next = nullptr;
 	frameData_->cmdTail = cmd;
 	frameData_->cmdHead = cmd;
+
+
 }
+
 
 JseGfxRenderer::JseGfxRenderer()
 {
@@ -93,18 +152,12 @@ JseGfxRenderer::JseGfxRenderer()
 	CPU_CACHELINE_SIZE = JseGetCPUCacheLineSize();
 	for (int i = 0; i < ON_FLIGHT_FRAMES; ++i) {
 		frameData_ = &frames_[i];
-		frameData_->frameMemory.reset(reinterpret_cast<uint8_t*>(JseMemAlloc16(frameMemorySize_)), JseMemFree16);
-		frameData_->frameMemoryPtr.Set(0);
-		JseEmptyCommand* cmd = RCAST(JseEmptyCommand*, R_FrameAlloc(sizeof(JseEmptyCommand)));
-		cmd->command = RC_NOP;
-		cmd->next = nullptr;
-		frameData_->cmdTail = cmd;
-		frameData_->cmdHead = cmd;
+		frameData_->frameMemory.reset(RCAST(uint8_t*, JseMemAlloc16(frameMemorySize_)), JseMemFree16);
+		ResetCommandBuffer();
 	}
 	activeFrame_ = 0;
 	renderFrame_ = 1;
 	frameData_ = &frames_[activeFrame_];
-
 }
 
 JseGfxRenderer::~JseGfxRenderer()
@@ -143,7 +196,8 @@ JseResult JseGfxRenderer::InitCore(int w, int h, bool fs, bool useThread)
 		useThread_ = useThread;
 
 		if (useThread_) {
-			renderThread_ = JseThread(RenderThreadWrapper, "JseRenderer-Thread", this);
+			core_->EndRendering();
+			renderThread_ = JseThread(RenderThreadWrapper, "JseRender-Thread", this);
 		}
 	}
 
@@ -157,7 +211,7 @@ void JseGfxRenderer::CreateBuffer(const JseBufferCreateInfo& info, std::promise<
 
 uint8_t* JseGfxRenderer::R_FrameAlloc(uint32_t bytes)
 {
-	bytes = (bytes + CPU_CACHELINE_SIZE - 1) & ~(CPU_CACHELINE_SIZE - 1);
+	bytes = CACHE_LINE_ALIGN(bytes);
 
 	int			end{};
 	uint8_t*	ret{};

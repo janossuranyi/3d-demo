@@ -35,7 +35,6 @@ JseThread::~JseThread()
 	if (m_bJoinable) {
 		SDL_WaitThread(m_pThread, nullptr);
 	}
-
 	m_pThread = nullptr;
 }
 
