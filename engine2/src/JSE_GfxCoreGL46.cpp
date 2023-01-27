@@ -10,6 +10,7 @@ GLenum MapJseCubemapFaceGl(JseCubeMapFace t);
 GLenum MapJseShaderStageGl(JseShaderStage t);
 GLenum MapJseAccessImageAccessGl(JseAccess t);
 GLenum MapJseTopologyGl(JseTopology p);
+JseFormat MapGlFormatToJse(GLenum format);
 
 static void CheckOpenGLError(const char* stmt, const char* fname, int line)
 {
@@ -543,6 +544,7 @@ JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 	}
 	break;
 	case GL_TEXTURE_2D_ARRAY:
+	case GL_TEXTURE_CUBE_MAP_ARRAY:
 	case GL_TEXTURE_3D: {
 		if (compressed) {
 			GL_CHECK(glCompressedTexImage3D(iData.target, cmd.level, iData.internal_format, cmd.width, cmd.height, cmd.depth, 0, cmd.imageSize, cmd.data));
@@ -1812,4 +1814,7 @@ static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 		case JseTopology::TriangleStrip:
 			return GL_TRIANGLE_STRIP;
 		}
+	}
+	static JseFormat MapGlFormatToJse(GLenum format) {
+		
 	}
