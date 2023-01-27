@@ -123,11 +123,11 @@ bool EngineTestEffect::Init()
 		rc::ResourceManager::get_resource("textures/cubemaps/skybox/back.jpg")
 	};
 
-//	auto cube_images = gfx::ImageSet::fromFiles(skybox_set);
+	auto cube_images = gfx::ImageSet::fromFiles(skybox_set);
 
-	skybox = tm->createFromResource("textures/cubemaps/skybox.ktx2");
+//	skybox = tm->createFromResource("textures/cubemaps/skybox.ktx2");
 
-//	skybox = hwr->createTextureCubemap(gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, cube_images, true);
+	skybox = hwr->createTextureCubemap(gfx::TextureWrap::ClampToEdge, gfx::TextureFilter::Linear, gfx::TextureFilter::Linear, cube_images, true);
 	
 
 	{

@@ -132,6 +132,12 @@ TextureFormatInfo s_texture_format[] = {
 	{GL_R11F_G11F_B10F,     GL_ZERO,         GL_RGB,              GL_UNSIGNED_INT_10F_11F_11F_REV, true,  3}, // RG11B10F
 	{GL_COMPRESSED_RGB,     GL_COMPRESSED_SRGB,GL_RGB,            GL_UNSIGNED_BYTE,                true,  3}, // RGB8_COMPRESSED
 	{GL_COMPRESSED_RGBA,    GL_COMPRESSED_SRGB_ALPHA,GL_RGBA,     GL_UNSIGNED_BYTE,                true,  4}, // RGBA8_COMPRESSED
+	
+	{GL_COMPRESSED_RGB_S3TC_DXT1_EXT,	GL_COMPRESSED_SRGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_BYTE,true,  3},
+	{GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
+	{GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
+	{GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
+
 	{GL_DEPTH_COMPONENT16,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_SHORT,               true,  1}, // D16
 	{GL_DEPTH_COMPONENT24,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 true,  1}, // D24
 	{GL_DEPTH24_STENCIL8,   GL_ZERO,         GL_DEPTH_STENCIL,    GL_UNSIGNED_INT_24_8,            true,  1}, // D24S8
@@ -183,9 +189,9 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, createSurfaceInfo.stencilBits);
 
 	//SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_FALSE);
-	if (useDebugMode_) {
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-	}
+#if _DEBUG
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#endif
 	//SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, SDL_TRUE);
 
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
@@ -318,7 +324,6 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 
 	}
 #endif
-
 	return JseResult::SUCCESS;
 }
 
@@ -421,6 +426,7 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 	GLenum const internalFormat = cmd.srgb ? formatInfo.internal_format_srgb : formatInfo.internal_format;
 	
 	data.format = formatInfo.format;
+	data.internal_format = internalFormat;
 	data.type = formatInfo.type;
 	
 	GL_CHECK(glCreateTextures(data.target, 1, &data.texture));
@@ -434,14 +440,14 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 		}
 	} 
 	else if (cmd.target == JseImageTarget::D1) {
-		GL_CHECK(glTextureStorage1D(data.texture, cmd.levelCount, internalFormat, cmd.width));
+		//GL_CHECK(glTextureStorage1D(data.texture, cmd.levelCount, internalFormat, cmd.width));
 	}
 	else if (cmd.target == JseImageTarget::D2 || cmd.target == JseImageTarget::CUBEMAP || cmd.target == JseImageTarget::D1_ARRAY) {
-		GL_CHECK(glTextureStorage2D(data.texture, cmd.levelCount, internalFormat, cmd.width, cmd.height));
+		//GL_CHECK(glTextureStorage2D(data.texture, cmd.levelCount, internalFormat, cmd.width, cmd.height));
 	}
 	else if (cmd.target == JseImageTarget::D3 || cmd.target == JseImageTarget::D2_ARRAY || cmd.target == JseImageTarget::CUBEMAP_ARRAY) {
-		GLint depth = cmd.target == JseImageTarget::CUBEMAP_ARRAY ? 6 * cmd.depth : cmd.depth;
-		GL_CHECK(glTextureStorage3D(data.texture, cmd.levelCount, internalFormat, cmd.width, cmd.height, depth));
+		//GLint depth = cmd.target == JseImageTarget::CUBEMAP_ARRAY ? 6 * cmd.depth : cmd.depth;
+		//GL_CHECK(glTextureStorage3D(data.texture, cmd.levelCount, internalFormat, cmd.width, cmd.height, depth));
 	}
 
 	GLenum tilingS = MapJseTilingGl(JseImageTiling::CLAMP_TO_EDGE);
@@ -500,29 +506,54 @@ JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 		stateCache_.unpackAlignment = 1;
 	}
 
-	if (iData.target == GL_TEXTURE_1D) {
-		GL_CHECK(glTextureSubImage1D(iData.texture, cmd.level, cmd.xoffset, cmd.width, iData.format, iData.type, cmd.data));
+	bool const compressed =
+		iData.internal_format == GL_COMPRESSED_RGB_S3TC_DXT1_EXT ||
+		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
+		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
+		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
+		iData.internal_format == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT ||
+		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT ||
+		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT ||
+		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+
+	glBindTexture(iData.target, iData.texture);
+	GLenum const target = iData.target == GL_TEXTURE_CUBE_MAP ? (GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<GLint>(cmd.face)) : iData.target;
+
+	switch (iData.target) {
+	case GL_TEXTURE_1D:
+	{
+		if (compressed) {
+			GL_CHECK(glCompressedTexImage1D(target, cmd.level, iData.internal_format, cmd.width, 0, cmd.imageSize, cmd.data));
+		}
+		else {
+			GL_CHECK(glTexImage1D(target, cmd.level, iData.internal_format, cmd.width, 0, iData.format, iData.type, cmd.data));
+		}
 	}
-	else if (iData.target == GL_TEXTURE_2D || iData.target == GL_TEXTURE_1D_ARRAY) {
-		GL_CHECK(glTextureSubImage2D(iData.texture, cmd.level, cmd.xoffset, cmd.yoffset, cmd.width, cmd.height, iData.format, iData.type, cmd.data));
+	break;
+	case GL_TEXTURE_1D_ARRAY:
+	case GL_TEXTURE_2D:
+	case GL_TEXTURE_CUBE_MAP:
+	{
+		if (compressed) {
+			GL_CHECK(glCompressedTexImage2D(target, cmd.level, iData.internal_format, cmd.width, cmd.height, 0, cmd.imageSize, cmd.data));
+		}
+		else {
+			GL_CHECK(glTexImage2D(target, cmd.level, iData.internal_format, cmd.width, cmd.height, 0, iData.format, iData.type, cmd.data));
+		}
 	}
-	else if (iData.target == GL_TEXTURE_3D || iData.target == GL_TEXTURE_2D_ARRAY || iData.target == GL_TEXTURE_CUBE_MAP || iData.target == GL_TEXTURE_CUBE_MAP_ARRAY) {
-		/*
-		* GL_TEXTURE_CUBE_MAP_ARRAY
-		* Layers also have to be dealt with in an unusual way.
-		* Cubemap array textures have, for each mipmap, some number of cubemaps.
-		* That number of cubemaps is the number of layers.
-		* But since each cubemap is composed of 6 2D faces, array cubemaps also have a number of layer-faces, which is 6 times the number of layers.
-		* Some interfaces count by layers, and others count by layer-faces.
-		* Every OpenGL API call that operates on cubemap array textures takes layer-faces, not array layers. For example, when you allocate storage for the texture, you would use glTexStorage3D or glTexImage3D or similar. However, the depth​ parameter will be the number of layer-faces, not layers. So it must be divisible by 6.
-		* Similarly, when uploading texel data to the cubemap array, the parameters that represent the Z component are layer-faces.
-		* So if you want to upload to just the positive Z face of the second layer in the array, you would use call glTexSubImage3D,
-		* with the zoffset​​ parameter set to 10 (layer 1 * 6 faces per layer + face index 4),
-		* and the depth​ set to 1 (because you're only uploading one layer-face).
-		*/
-		GLint const zoffset = (iData.target == GL_TEXTURE_CUBE_MAP_ARRAY ? 6 : 1) * cmd.zoffset + static_cast<GLint>(cmd.face);
-		GL_CHECK(glTextureSubImage3D(iData.texture, cmd.level, cmd.xoffset, cmd.yoffset, zoffset, cmd.width, cmd.height, cmd.depth, iData.format, iData.type, cmd.data));
+	break;
+	case GL_TEXTURE_2D_ARRAY:
+	case GL_TEXTURE_3D: {
+		if (compressed) {
+			GL_CHECK(glCompressedTexImage3D(iData.target, cmd.level, iData.internal_format, cmd.width, cmd.height, cmd.depth, 0, cmd.imageSize, cmd.data));
+		}
+		else {
+			GL_CHECK(glTexImage3D(iData.target, cmd.level, iData.internal_format, cmd.width, cmd.height, cmd.depth, 0, iData.format, iData.type, cmd.data));
+		}
 	}
+	}
+
+	glBindTexture(iData.target, 0);
 
 	return JseResult::SUCCESS;
 }

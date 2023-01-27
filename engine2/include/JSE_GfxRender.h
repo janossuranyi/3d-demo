@@ -13,6 +13,8 @@ enum RenderCommand {
 	RC_CREATE_DESCRIPTOR_SET_LAYOUT_BINDING,
 	RC_CREATE_BUFFER,
 	RC_UPDATE_BUFFER,
+	RC_CREATE_IMAGE,
+	RC_UPLOAD_IMAGE,
 	RC_BIND_GRAPHICS_PIPELINE,
 	RC_BIND_VERTEX_BUFFERS,
 	RC_DRAW
@@ -83,6 +85,16 @@ struct JseDrawCommand {
 	uint32_t instanceCount;
 	uint32_t firstVertex;
 	uint32_t firstInstance;
+};
+struct JseCreateImageCommand {
+	RenderCommand command{ RC_CREATE_IMAGE };
+	RenderCommand* next;
+	JseImageCreateInfo info;
+};
+struct JseUploadImageCommand {
+	RenderCommand command{ RC_UPLOAD_IMAGE };
+	RenderCommand* next;
+	JseImageUploadInfo info;
 };
 
 class JseGfxRenderer {

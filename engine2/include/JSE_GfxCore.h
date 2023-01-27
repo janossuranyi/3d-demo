@@ -208,6 +208,10 @@ enum class JseFormat {
     RG11B10F,
     RGB8_COMPRESSED,
     RGBA8_COMPRESSED,
+    RGB_DXT1,
+    RGBA_DXT1,
+    RGBA_DXT3,
+    RGBA_DXT5,
     // Depth formats.
     D16,
     D24,
@@ -294,6 +298,7 @@ struct JseImageUploadInfo {
     uint32_t width;
     uint32_t height;
     uint32_t depth;
+    uint32_t imageSize;
     uint8_t* data;
 };
 

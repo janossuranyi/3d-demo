@@ -1,6 +1,8 @@
 #include "JSE.h"
 #include "JSE_GfxCoreNull.h"
 
+#include <nv_dds.h>
+
 #define CACHE_LINE_ALIGN(bytes) (((bytes) + CPU_CACHELINE_SIZE - 1) & ~(CPU_CACHELINE_SIZE - 1))
 
 void JseGfxRenderer::Frame()
@@ -93,6 +95,16 @@ void JseGfxRenderer::ProcessCommandList(frameData_t* frameData)
 		case RC_DRAW: {
 			const auto* xcmd = (JseDrawCommand*)cmd;
 			core_->Draw(xcmd->mode, xcmd->vertexCount, xcmd->instanceCount, xcmd->firstVertex, xcmd->firstInstance);
+		}
+			break;
+		case RC_CREATE_IMAGE: {
+			const auto* xcmd = (JseCreateImageCommand*)cmd;
+			core_->CreateImage(xcmd->info);
+		}
+			break;
+		case RC_UPLOAD_IMAGE: {
+			const auto* xcmd = (JseUploadImageCommand*)cmd;
+			core_->UpdateImageData(xcmd->info);
 		}
 			break;
 		default:
@@ -192,6 +204,13 @@ JseResult JseGfxRenderer::InitCore(int w, int h, bool fs, bool useThread)
 	sci.width = w;
 	
 	auto res = core_->CreateSurface(sci);
+#if 0
+	using namespace nv_dds;
+
+	CDDSImage image;
+	image.load("d:/tokio.dds");
+	image.upload_textureCubemap();
+#endif
 	if (res == JseResult::SUCCESS) {
 		initialized_ = true;
 		useThread_ = useThread;

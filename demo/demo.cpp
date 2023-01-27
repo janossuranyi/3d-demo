@@ -45,10 +45,6 @@ int main(int argc, char** argv)
 {
     using namespace nv_dds;
 
-    CDDSImage image;
-    image.load("d:/tokio.dds");
-
-
     JseInit(argc, argv);
 
     bool running = true;
@@ -150,7 +146,68 @@ void main() {
         bb.pOffsets = R.FrameAlloc<JseDeviceSize>(1);
         bb.pOffsets[0] = 0;
 
-        R.Frame();
+        {
+            CDDSImage image;
+            image.load("d:/tokio.dds");
+
+            JseCreateImageCommand& img = *R.GetCommandBuffer<JseCreateImageCommand>();
+            img.info.imageId = JseImageID{ 1 };
+            img.info.format = JseFormat::RGBA_DXT1;
+            img.info.target = JseImageTarget::CUBEMAP;
+            img.info.height = image.get_height();
+            img.info.width = image.get_width();
+            img.info.levelCount = 1+image.get_num_mipmaps();
+
+            for (int face = 0; face < 6; ++face) {
+                auto& cface = image.get_cubemap_face(face);
+
+                JseCubeMapFace f;
+                switch (face) {
+                case 0:
+                    f = JseCubeMapFace::POSITIVE_X;
+                    break;
+                case 1:
+                    f = JseCubeMapFace::NEGATIVE_X;
+                    break;
+                case 2:
+                    f = JseCubeMapFace::POSITIVE_Y;
+                    break;
+                case 3:
+                    f = JseCubeMapFace::NEGATIVE_Y;
+                    break;
+                case 4:
+                    f = JseCubeMapFace::POSITIVE_Z;
+                    break;
+                case 5:
+                    f = JseCubeMapFace::NEGATIVE_Z;
+                    break;
+                }
+                JseUploadImageCommand& upl = *R.GetCommandBuffer<JseUploadImageCommand>();
+                upl.info.imageId = JseImageID{ 1 };
+                upl.info.face = f;
+                upl.info.width = cface.get_width();
+                upl.info.height = cface.get_height();
+                upl.info.depth = 1;
+                upl.info.level = 0;
+                upl.info.data = cface;
+                upl.info.imageSize = cface.get_size();
+
+                for (int k = 0; k < cface.get_num_mipmaps(); ++k) {
+                    auto& level = cface.get_mipmap(k);
+                    JseUploadImageCommand& upl = *R.GetCommandBuffer<JseUploadImageCommand>();
+                    upl.info.imageId = JseImageID{ 1 };
+                    upl.info.face = f;
+                    upl.info.width = level.get_width();
+                    upl.info.height = level.get_height();
+                    upl.info.depth = 1;
+                    upl.info.level = k+1;
+                    upl.info.data = level;
+                    upl.info.imageSize = level.get_size();
+                }
+            }
+            R.Frame();
+        }
+
 
         while(running) {
             JseBeginRenderpassCommand& x = *R.GetCommandBuffer<JseBeginRenderpassCommand>();

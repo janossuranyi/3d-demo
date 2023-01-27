@@ -1,6 +1,5 @@
 
 //#define KHRONOS_STATIC
-#include <ktx.h>
 #include <algorithm>
 #include "stb_image_resize.h"
 #include "gfx/opengl/gl_context.h"
@@ -141,45 +140,6 @@ namespace gfx {
 		texture_map_.emplace(cmd.handle, t_data);
 	}
 
-	GLenum OpenGLRenderContext::KTX_load_texture(const cmd::CreateTexture& cmd, ktxTexture* kTexture, GLuint& texture)
-	{
-		KTX_error_code result{};
-		if (ktxTexture_NeedsTranscoding(kTexture))
-		{
-			ktx_texture_transcode_fmt_e tf;
-
-			switch (cmd.transcode_quality) {
-			case 0:
-				tf = KTX_TTF_BC1_OR_3;
-				break;
-			case 1:
-				tf = KTX_TTF_BC7_RGBA; //BPTC
-				break;
-			case 2:
-				tf = KTX_TTF_ETC;
-				break;
-			default:
-				tf = KTX_TTF_RGBA32;
-			}
-
-			result = ktxTexture2_TranscodeBasis((ktxTexture2*)kTexture, tf, 0);
-
-			// Then use VkUpload or GLUpload to create a texture object on the GPU.
-		}
-
-		GLenum target{};
-		GLenum glerror{};
-		result = ktxTexture_GLUpload(kTexture, &texture, &target, &glerror);
-		ktxTexture_Destroy(kTexture);
-
-		if (result != KTX_SUCCESS || glerror != GL_NO_ERROR)
-		{
-			Error("Error creating KTX texture [%d]", cmd.handle);
-			//GL_CHECK(glDeleteTextures(1, &texture));
-		}
-		return target;
-	}
-
 	void OpenGLRenderContext::operator()(const cmd::CreateTexture& cmd)
 	{
 		if (texture_map_.count(cmd.handle))
@@ -190,73 +150,61 @@ namespace gfx {
 		GLuint texture{};
 		GLenum target = GL_TEXTURE_2D;
 
-		ktxTexture* kTexture{};
-		KTX_error_code result{};
-
 		const bool srgb = (cmd.flags & 1) == 1;
 		const bool automipmap = (cmd.flags & 2) == 2;
 		const bool compress = (cmd.flags & 4) == 4;
 		uint levels = 1;
 
-		result = ktxTexture_CreateFromNamedFile(cmd.path.c_str(), KTX_TEXTURE_CREATE_NO_FLAGS, &kTexture);
-		if (result == KTX_SUCCESS)
+		target = GL_TEXTURE_2D;
+
+		// load with stb_image
+		ImageSet S;
+		S.fromFile(cmd.path, srgb);
+		if (S.empty())
 		{
-			target = KTX_load_texture(cmd, kTexture, texture);
-			levels = kTexture->numLevels;
-			if (!target) return;
+			Error("Cant load image %s", cmd.path.c_str());
+			return;
 		}
-		else
+		if (automipmap)
 		{
-			target = GL_TEXTURE_2D;
+			S.generateMipmaps();
+		}
+		if (S.shape() == TextureShape::D1)
+		{
+			target = GL_TEXTURE_1D;
+		}
 
-			// load with stb_image
-			ImageSet S;
-			S.fromFile(cmd.path, srgb);
-			if (S.empty())
-			{
-				Error("Cant load image %s", cmd.path.c_str());
-				return;
-			}
-			if (automipmap)
-			{
-				S.generateMipmaps();
-			}
-			if (S.shape() == TextureShape::D1)
-			{
-				target = GL_TEXTURE_1D;
-			}
+		GL_CHECK(glCreateTextures(target, 1, &texture));
+		const auto& texinfo = s_texture_format[static_cast<size_t>(S.format())];
+		const auto& compinfo = compress ? s_texture_format[static_cast<size_t>(TextureFormat::RGBA8_COMPRESSED)] : texinfo;
 
-			GL_CHECK(glCreateTextures(target, 1, &texture));
-			const auto& texinfo = s_texture_format[static_cast<size_t>(S.format())];
-			const auto& compinfo = compress ? s_texture_format[static_cast<size_t>(TextureFormat::RGBA8_COMPRESSED)] : texinfo;
+		levels = S.levels();
 
-			levels = S.levels();
+		if (target == GL_TEXTURE_1D)
+		{
+			GL_CHECK(glTextureStorage1D(texture, levels,
+				(srgb ? compinfo.internal_format_srgb : compinfo.internal_format), S[0].width));
+		}
+		if (target == GL_TEXTURE_2D)
+		{
+			GL_CHECK(glTextureStorage2D(texture, levels,
+				(srgb ? compinfo.internal_format_srgb : compinfo.internal_format), S[0].width, S[0].height));
+		}
 
+		for (int k = 0; k < S.levels(); ++k)
+		{
 			if (target == GL_TEXTURE_1D)
 			{
-				GL_CHECK(glTextureStorage1D(texture, levels,
-					(srgb ? compinfo.internal_format_srgb : compinfo.internal_format), S[0].width));
+				GL_CHECK(glTextureSubImage1D(texture, k, 0,
+					S[k].width, texinfo.format, texinfo.type, S[k].data.data()));
 			}
-			if (target == GL_TEXTURE_2D)
+			else
 			{
-				GL_CHECK(glTextureStorage2D(texture, levels,
-					(srgb ? compinfo.internal_format_srgb : compinfo.internal_format), S[0].width, S[0].height));
-			}
-
-			for (int k = 0; k < S.levels(); ++k)
-			{
-				if (target == GL_TEXTURE_1D)
-				{
-					GL_CHECK(glTextureSubImage1D(texture, k, 0,
-						S[k].width, texinfo.format, texinfo.type, S[k].data.data()));
-				}
-				else
-				{
-					GL_CHECK(glTextureSubImage2D(texture, k, 0, 0,
-						S[k].width, S[k].height, texinfo.format, texinfo.type, S[k].data.data()));
-				}
+				GL_CHECK(glTextureSubImage2D(texture, k, 0, 0,
+					S[k].width, S[k].height, texinfo.format, texinfo.type, S[k].data.data()));
 			}
 		}
+
 
 		TextureWrap t_wrap = cmd.wrap;
 		if (target == GL_TEXTURE_CUBE_MAP) {

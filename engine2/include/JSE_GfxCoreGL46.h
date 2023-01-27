@@ -133,6 +133,7 @@ private:
 		GLuint texture;
 		GLenum target;
 		GLenum format;
+		GLenum internal_format;
 		GLenum type;
 		GLuint buffer;
 	};
