@@ -120,7 +120,6 @@ private:
 	void _glScissor(GLint x, GLint y, GLsizei w, GLsizei h);
 	void _glScissorEnabled(bool b);
 
-	JseResult UpdateImageData_impl_1(const JseImageUploadInfo& imgageUploadInfo);
 
 	JseDeviceCapabilities deviceCapabilities_{};
 
@@ -138,6 +137,8 @@ private:
 		GLenum internal_format;
 		GLenum type;
 		GLuint buffer;
+		bool compressed;
+		bool immutable;
 	};
 
 	struct SetLayoutData;
@@ -220,6 +221,10 @@ private:
 	JseHashMap<JseFrameBufferID, FrameBufferData> framebuffer_map_;
 	JseHashMap<JseDescriptorSetLayoutID, SetLayoutData> set_layout_map_;
 	JseHashMap<JseDescriptorSetID, DescriptorSetData> set_data_map_;
+
+	JseResult UpdateImageData_mutable(const JseImageUploadInfo& imgageUploadInfo, const ImageData& data);
+	JseResult UpdateImageData_immutable(const JseImageUploadInfo& imgageUploadInfo, const ImageData& data);
+
 };
 
 #endif

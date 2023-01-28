@@ -296,19 +296,22 @@ struct JseImageCreateInfo {
     JseDeviceSize offset;   // Buffer Texture offset
     JseDeviceSize size;     // Buffer Texture size
     bool srgb;
-    bool initAfterCreate;
+    bool immutable;
+    bool compressed;
 };
 
 struct JseImageUploadInfo {
     JseImageID imageId;
     uint32_t level;
-    JseCubeMapFace face;
+    uint32_t face;
     uint32_t width;
     uint32_t height;
     uint32_t depth;
+    uint32_t xoffset;
+    uint32_t yoffset;
+    uint32_t zoffset;
     uint32_t imageSize;
     uint8_t* data;
-    bool compressed;
 };
 
 struct JseVertexInputBindingDescription {
@@ -392,7 +395,7 @@ struct JseDescriptorSetLayoutBinding {
 struct JseDescriptorSetLayoutCreateInfo {
     JseDescriptorSetLayoutID setLayoutId;
     uint32_t bindingCount;
-    const JseDescriptorSetLayoutBinding* pBindings;
+    JseDescriptorSetLayoutBinding* pBindings;
 };
 
 struct JseDescriptorImageInfo {
@@ -411,8 +414,12 @@ struct JseDescriptorBufferInfo {
 };
 
 struct JseDescriptorUniformInfo {
-    JseUniformMap uniforms;
+    uint32_t vectorCount;
+    glm::vec4* pVectors;
+    char name[32];
 };
+
+static_assert(sizeof(JseDescriptorUniformInfo) <= std::hardware_destructive_interference_size, "");
 
 struct JseWriteDescriptorSet {
     JseDescriptorSetID setId;
@@ -420,8 +427,8 @@ struct JseWriteDescriptorSet {
     uint32_t dstArrayElement;
     uint32_t descriptorCount;
     JseDescriptorType descriptorType;
-    const JseDescriptorImageInfo* pImageInfo;
-    const JseDescriptorBufferInfo* pBufferInfo;
+    JseDescriptorImageInfo* pImageInfo;
+    JseDescriptorBufferInfo* pBufferInfo;
     JseDescriptorUniformInfo* pUniformInfo;
 };
 

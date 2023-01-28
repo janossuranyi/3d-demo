@@ -59,22 +59,22 @@ JseFormat MapGLCompressedFmt(uint32_t f) {
 
 KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
 {
-    JseGfxRenderer* R = (JseGfxRenderer*)userdata;
+    JseGfxRenderer* R = RCAST(JseGfxRenderer*, userdata);
     JseUploadImageCommand& c = *R->GetCommandBuffer<JseUploadImageCommand>();
 
     c.info.data = R->FrameAlloc<uint8_t>(faceLodSize);
     std::memcpy(c.info.data, pixels, faceLodSize);
 
     c.info.imageId = JseImageID{ 1 };
-    c.info.face = JSE_CUBE_MAP_FACES[face];
+    c.info.face = face;
     c.info.width = width;
     c.info.height = height;
     c.info.level = miplevel;
-    c.info.depth = 0;
+    c.info.depth = 1;
     c.info.imageSize = faceLodSize;
-    c.info.compressed = true;
 
     Info("level %d, face %d, width %d, height %d, depth %d, size %d", miplevel, face, width, height, depth, faceLodSize);
+
     return KTX_SUCCESS;
 }
 
@@ -94,9 +94,14 @@ layout(location = 1) in vec2 in_TexCoord;
 
 out vec2 vofi_TexCoord;
 
+uniform vec4 _va_freqLow[1];
+uniform vec4 _va_freqHigh[2];
+
+#define g_Scale _va_freqLow[0].xxx
+
 void main() {
-    gl_Position = vec4(in_Position, 1.0);
-    vofi_TexCoord = in_TexCoord;
+    gl_Position = vec4(in_Position * g_Scale, 1.0);
+    vofi_TexCoord = in_TexCoord * _va_freqHigh[1].xy;
 }
 )" };
 
@@ -105,13 +110,21 @@ void main() {
 
 in vec2 vofi_TexCoord;
 
+layout(binding = 0) uniform sampler2D samp0;
+
 out vec4 fragColor;
 
 void main() {
-    fragColor = vec4(vofi_TexCoord.x, vofi_TexCoord.y, 0.0, 1.0);
+    fragColor = texture(samp0, vofi_TexCoord.xy);
 }
 )" };
 
+    namespace fs = std::filesystem;
+    JseFileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
+
+    JseResourceManager::add_resource_path("../assets/shaders");
+    JseResourceManager::add_resource_path("../assets/textures");
+    JseResourceManager::add_resource_path("../assets/models");
 
     try {
         JseGfxRenderer R;
@@ -128,7 +141,7 @@ void main() {
             });
 
         R.SetCore(new JseGfxCoreGL());
-        R.InitCore(1024, 768, false, false);
+        R.InitCore(1024, 768, false, true);
 
         JseCreateShaderCommand& sp1 = *R.GetCommandBuffer<JseCreateShaderCommand>();
         sp1.info.pCode = vtxshader;
@@ -141,7 +154,16 @@ void main() {
 
         JseCreateDescriptorSetLayoutBinding& setBinding = *R.GetCommandBuffer<JseCreateDescriptorSetLayoutBinding>();
         setBinding.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
-        setBinding.info.bindingCount = 0;
+        setBinding.info.bindingCount = 2;
+        setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(2);
+        setBinding.info.pBindings[0].binding = 0;
+        setBinding.info.pBindings[0].descriptorCount = 1;
+        setBinding.info.pBindings[0].descriptorType = JseDescriptorType::SAMPLED_IMAGE;
+        setBinding.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_FRAGMENT;
+        setBinding.info.pBindings[1].binding = 100;
+        setBinding.info.pBindings[1].descriptorCount = 1;
+        setBinding.info.pBindings[1].descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
+        setBinding.info.pBindings[1].stageFlags = JSE_STAGE_FLAG_ALL;
 
         JseCreateGraphicsPipelineCommand& p = *R.GetCommandBuffer<JseCreateGraphicsPipelineCommand>();
         p.info.graphicsPipelineId = JseGrapicsPipelineID{ 1 };
@@ -173,24 +195,21 @@ void main() {
         upd.info.size = sizeof(rect);
         upd.info.data = (uint8_t*)&rect[0];
 
-        JseBindGraphicsPipelineCommand& bind = *R.GetCommandBuffer<JseBindGraphicsPipelineCommand>();
-        bind.pipeline = JseGrapicsPipelineID{ 1 };
 
-        JseBindVertexBuffersCommand& bb = *R.GetCommandBuffer<JseBindVertexBuffersCommand>();
-        bb.bindingCount = 1;
-        bb.firstBinding = 0;
-        bb.pBuffers = R.FrameAlloc<JseBufferID>(1);
-        bb.pBuffers[0] = JseBufferID{ 1 };
-        bb.pOffsets = R.FrameAlloc<JseDeviceSize>(1);
-        bb.pOffsets[0] = 0;
+        R.Frame();
 
         {
             ktxTexture* kTexture;
             KTX_error_code ktxresult;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                "d:/skybox.ktx2",
+                JseResourceManager::get_resource("textures/test/HerringboneMarbleTiles01_2048.ktx2").c_str(),
+//                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);
+
+            if (ktxresult != KTX_SUCCESS) {
+                exit(255);
+            }
 
             assert(kTexture->classId == ktxTexture2_c);
             ktxTexture2* kt2 = (ktxTexture2*)kTexture;
@@ -208,30 +227,80 @@ void main() {
                 target = JseImageTarget::D3;
             }
 
-            GLint glFormat = glGetInternalFormatFromVkFormat((VkFormat)kt2->vkFormat);
-            assert(glFormat == GL_COMPRESSED_RGBA_BPTC_UNORM || glFormat == GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM);
-
-            JseCreateImageCommand& img = *R.GetCommandBuffer<JseCreateImageCommand>();
+            auto& img = *R.GetCommandBuffer<JseCreateImageCommand>();
             img.info.imageId = JseImageID{ 1 };
             img.info.format = JseFormat::RGBA_BPTC;
             img.info.target = target;
             img.info.height = kt2->baseHeight;
             img.info.width = kt2->baseWidth;
+            img.info.depth = kt2->baseDepth;
             img.info.levelCount = kt2->numLevels;
-            img.info.srgb = glFormat == GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
+            img.info.srgb = kt2->vkFormat == VK_FORMAT_BC7_SRGB_BLOCK;
+            img.info.compressed = kt2->isCompressed;
+            img.info.immutable = 1;
 
+            R.GetCore()->SetVSyncInterval(0);
             ktxTexture_IterateLoadLevelFaces(kTexture, imageCB, &R);
-
-            //img.info.initAfterCreate = true;
-
-            R.Frame();
+            R.GetCore()->SetVSyncInterval(1);
         }
 
+        JseBindGraphicsPipelineCommand& bind = *R.GetCommandBuffer<JseBindGraphicsPipelineCommand>();
+        bind.pipeline = JseGrapicsPipelineID{ 1 };
+
+        JseBindVertexBuffersCommand& bb = *R.GetCommandBuffer<JseBindVertexBuffersCommand>();
+        bb.bindingCount = 1;
+        bb.firstBinding = 0;
+        bb.pBuffers = R.FrameAlloc<JseBufferID>(1);
+        bb.pBuffers[0] = JseBufferID{ 1 };
+        bb.pOffsets = R.FrameAlloc<JseDeviceSize>(1);
+        bb.pOffsets[0] = 0;
+        bb.pipeline = JseGrapicsPipelineID{ 1 };
+
+        auto& crdset = *R.GetCommandBuffer<JseCreateDescriptorSetCommand>();
+        crdset.info.setId = JseDescriptorSetID{ 1 };
+        crdset.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
+
+        auto& wrdset = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
+        wrdset.info.descriptorCount = 1;
+        wrdset.info.descriptorType = JseDescriptorType::SAMPLED_IMAGE;
+        wrdset.info.dstBinding = 0;
+        wrdset.info.setId = JseDescriptorSetID{ 1 };
+        wrdset.info.pImageInfo = R.FrameAlloc<JseDescriptorImageInfo>();
+        wrdset.info.pImageInfo[0].image = JseImageID{ 1 };
+
+        JseUniformMap map;
+
+        auto& wrdset2 = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
+        wrdset2.info.descriptorCount = 2;
+        wrdset2.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
+        wrdset2.info.dstBinding = 100;
+        wrdset2.info.setId = JseDescriptorSetID{ 1 };
+        wrdset2.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>(2);
+
+        std::strcpy(wrdset2.info.pUniformInfo[0].name, "_va_freqLow");
+        wrdset2.info.pUniformInfo[0].vectorCount = 1;
+        wrdset2.info.pUniformInfo[0].pVectors = R.FrameAlloc<glm::vec4>(1);
+        wrdset2.info.pUniformInfo[0].pVectors[0] = glm::vec4(2.0f);
+
+        std::strcpy(wrdset2.info.pUniformInfo[1].name, "_va_freqHigh");
+        wrdset2.info.pUniformInfo[1].vectorCount = 2;
+        wrdset2.info.pUniformInfo[1].pVectors = R.FrameAlloc<glm::vec4>(2);
+        wrdset2.info.pUniformInfo[1].pVectors[0] = glm::vec4(1.0f);
+        wrdset2.info.pUniformInfo[1].pVectors[1] = glm::vec4(2.0f, 2.0f, 0.0f, 0.0f);
+
+        auto& bindset = *R.GetCommandBuffer<JseBindDescriptorSetsCommand>();
+        bindset.descriptorSetCount = 1;
+        bindset.firstSet = 0;
+        bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
+        bindset.pDescriptorSets[0] = JseDescriptorSetID{ 1 };
+        
+        R.Frame();
 
         while(running) {
+
             JseBeginRenderpassCommand& x = *R.GetCommandBuffer<JseBeginRenderpassCommand>();
             x.info.colorClearEnable = true;
-            x.info.colorClearValue.color = JseColor4f{ 0.4f,0.0f,0.4f,1.0f };
+            x.info.colorClearValue.color = JseColor4f{ 0.1f,0.0f,0.1f,1.0f };
             x.info.scissorEnable = false;
             x.info.framebuffer = JseFrameBufferID{ 0 };
             x.info.viewport.x = 0;

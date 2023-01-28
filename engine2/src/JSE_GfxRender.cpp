@@ -82,29 +82,37 @@ void JseGfxRenderer::ProcessCommandList(frameData_t* frameData)
 			}
 		}
 			break;
-		case RC_BIND_VERTEX_BUFFERS: {
+		case RC_BIND_VERTEX_BUFFERS:
+		{
 			const auto* xcmd = (JseBindVertexBuffersCommand*)cmd;
 			core_->BindVertexBuffers(xcmd->firstBinding, xcmd->bindingCount, xcmd->pBuffers, xcmd->pOffsets);
 		}
 			break;
-		case RC_BIND_GRAPHICS_PIPELINE: {
-			const auto* xcmd = (JseBindGraphicsPipelineCommand*)cmd;
-			core_->BindGraphicsPipeline(xcmd->pipeline);
-		}
+		case RC_BIND_GRAPHICS_PIPELINE:
+			core_->BindGraphicsPipeline(((JseBindGraphicsPipelineCommand*)cmd)->pipeline);
 			break;
-		case RC_DRAW: {
+		case RC_DRAW:
+		{
 			const auto* xcmd = (JseDrawCommand*)cmd;
 			core_->Draw(xcmd->mode, xcmd->vertexCount, xcmd->instanceCount, xcmd->firstVertex, xcmd->firstInstance);
 		}
 			break;
-		case RC_CREATE_IMAGE: {
-			const auto* xcmd = (JseCreateImageCommand*)cmd;
-			core_->CreateImage(xcmd->info);
-		}
+		case RC_CREATE_IMAGE:
+			core_->CreateImage(((JseCreateImageCommand*)cmd)->info);
 			break;
-		case RC_UPLOAD_IMAGE: {
-			const auto* xcmd = (JseUploadImageCommand*)cmd;
-			core_->UpdateImageData(xcmd->info);
+		case RC_UPLOAD_IMAGE:
+			core_->UpdateImageData(((JseUploadImageCommand*)cmd)->info);
+			break;
+		case RC_CREATE_DESCRIPTOR_SET:
+			core_->CreateDescriptorSet(((JseCreateDescriptorSetCommand*)cmd)->info);
+			break;
+		case RC_WRITE_DESCRIPTOR_SET:
+			core_->WriteDescriptorSet(((JseWriteDescriptorSetCommand*)cmd)->info);
+			break;
+		case RC_BIND_DESCRIPTOR_SETS:
+		{
+			const auto* xcmd = (JseBindDescriptorSetsCommand*)cmd;
+			core_->BindDescriptorSet(xcmd->firstSet, xcmd->descriptorSetCount, xcmd->pDescriptorSets, xcmd->dynamicOffsetCount, xcmd->pDynamicOffsets);
 		}
 			break;
 		default:
@@ -181,6 +189,11 @@ JseGfxRenderer::~JseGfxRenderer()
 		frontendSem_.post();
 		renderThread_.join();
 	}
+}
+
+JseGfxCore* JseGfxRenderer::GetCore()
+{
+	return core_;
 }
 
 void JseGfxRenderer::SetCore(JseGfxCore* core)

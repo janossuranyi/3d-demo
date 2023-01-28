@@ -11,6 +11,9 @@ enum RenderCommand {
 	RC_SCISSOR,
 	RC_CREATE_SHADER,
 	RC_CREATE_DESCRIPTOR_SET_LAYOUT_BINDING,
+	RC_CREATE_DESCRIPTOR_SET,
+	RC_WRITE_DESCRIPTOR_SET,
+	RC_BIND_DESCRIPTOR_SETS,
 	RC_CREATE_BUFFER,
 	RC_UPDATE_BUFFER,
 	RC_CREATE_IMAGE,
@@ -76,6 +79,7 @@ struct JseBindVertexBuffersCommand {
 	uint32_t bindingCount; 
 	JseBufferID* pBuffers;
 	JseDeviceSize* pOffsets;
+	JseGrapicsPipelineID pipeline;
 };
 struct JseDrawCommand {
 	RenderCommand command{ RC_DRAW };
@@ -95,6 +99,25 @@ struct JseUploadImageCommand {
 	RenderCommand command{ RC_UPLOAD_IMAGE };
 	RenderCommand* next;
 	JseImageUploadInfo info;
+};
+struct JseCreateDescriptorSetCommand {
+	RenderCommand command{ RC_CREATE_DESCRIPTOR_SET };
+	RenderCommand* next;
+	JseDescriptorSetCreateInfo info;
+};
+struct JseWriteDescriptorSetCommand {
+	RenderCommand command{ RC_WRITE_DESCRIPTOR_SET };
+	RenderCommand* next;
+	JseWriteDescriptorSet info;
+};
+struct JseBindDescriptorSetsCommand {
+	RenderCommand command{ RC_BIND_DESCRIPTOR_SETS };
+	RenderCommand* next;
+	uint32_t firstSet; 
+	uint32_t descriptorSetCount;
+	uint32_t dynamicOffsetCount; 
+	uint32_t* pDynamicOffsets;
+	JseDescriptorSetID* pDescriptorSets;
 };
 
 class JseGfxRenderer {
@@ -132,6 +155,8 @@ private:
 public: 
 	JseGfxRenderer();
 	~JseGfxRenderer();
+
+	JseGfxCore* GetCore();
 
 	void SetCore(JseGfxCore* core);
 	JseResult InitCore(int w, int h, bool fs, bool useThread);
