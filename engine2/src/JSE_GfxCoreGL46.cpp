@@ -10,6 +10,8 @@ GLenum MapJseCubemapFaceGl(JseCubeMapFace t);
 GLenum MapJseShaderStageGl(JseShaderStage t);
 GLenum MapJseAccessImageAccessGl(JseAccess t);
 GLenum MapJseTopologyGl(JseTopology p);
+GLenum MapTexureTargetToBinding(GLenum target);
+
 JseFormat MapGlFormatToJse(GLenum format);
 
 static void CheckOpenGLError(const char* stmt, const char* fname, int line)
@@ -306,6 +308,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &deviceCapabilities_.availableVideoMemory);
 	glGetError();
 
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 #ifdef _DEBUG
 	if (gl_extensions_.count("GL_ARB_debug_output"))
@@ -313,7 +316,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 
 		glDebugMessageCallbackARB(&JSE_DebugMessageCallback, NULL);
-
+#if 0
 		glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
 		glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_ERROR_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 		glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
@@ -322,7 +325,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 
 		glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
 		glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
-
+#endif
 	}
 #endif
 	return JseResult::SUCCESS;
@@ -429,27 +432,22 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 	data.format = formatInfo.format;
 	data.internal_format = internalFormat;
 	data.type = formatInfo.type;
+	GLenum binding = MapTexureTargetToBinding(data.target);
+	GLint bound{};
 	
-	GL_CHECK(glCreateTextures(data.target, 1, &data.texture));
+	GL_CHECK(glGetIntegerv(binding, &bound));
+	GL_CHECK(glGenTextures(1, &data.texture));
+	GL_CHECK(glBindTexture(data.target, data.texture));
+
 	if (cmd.target == JseImageTarget::BUFFER) {
 		auto& buf = buffer_data_map_.at(cmd.buffer);
 		if (cmd.offset == 0 && cmd.size == 0) {
-			GL_CHECK(glTextureBuffer(data.texture, data.format, buf.buffer));
+			GL_CHECK(glTexBuffer(data.target, data.format, buf.buffer));
 		}
 		else {
-			GL_CHECK(glTextureBufferRange(data.texture, data.format, buf.buffer, cmd.offset, cmd.size));
+			GL_CHECK(glTexBufferRange(data.target, data.format, buf.buffer, cmd.offset, cmd.size));
 		}
 	} 
-	else if (cmd.target == JseImageTarget::D1) {
-		//GL_CHECK(glTextureStorage1D(data.texture, cmd.levelCount, internalFormat, cmd.width));
-	}
-	else if (cmd.target == JseImageTarget::D2 || cmd.target == JseImageTarget::CUBEMAP || cmd.target == JseImageTarget::D1_ARRAY) {
-		//GL_CHECK(glTextureStorage2D(data.texture, cmd.levelCount, internalFormat, cmd.width, cmd.height));
-	}
-	else if (cmd.target == JseImageTarget::D3 || cmd.target == JseImageTarget::D2_ARRAY || cmd.target == JseImageTarget::CUBEMAP_ARRAY) {
-		//GLint depth = cmd.target == JseImageTarget::CUBEMAP_ARRAY ? 6 * cmd.depth : cmd.depth;
-		//GL_CHECK(glTextureStorage3D(data.texture, cmd.levelCount, internalFormat, cmd.width, cmd.height, depth));
-	}
 
 	GLenum tilingS = MapJseTilingGl(JseImageTiling::CLAMP_TO_EDGE);
 	GLenum tilingT = MapJseTilingGl(JseImageTiling::CLAMP_TO_EDGE);
@@ -478,84 +476,52 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 
 	// glTextureParameterf ...
 	if (cmd.target != JseImageTarget::BUFFER) {
-		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_MIN_FILTER, minFilter));
-		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_MAG_FILTER, magFilter));
-		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_S, tilingS));
-		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_T, tilingT));
-		GL_CHECK(glTextureParameteri(data.texture, GL_TEXTURE_WRAP_R, tilingR));
-		GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy));
-		GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MIN_LOD, minLod));
-		GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_MAX_LOD, maxLod));
-		GL_CHECK(glTextureParameterf(data.texture, GL_TEXTURE_LOD_BIAS, lodBias));
-		GL_CHECK(glTextureParameterfv(data.texture, GL_TEXTURE_BORDER_COLOR, &borderColor.r));
+		GL_CHECK(glTexParameteri(data.target, GL_TEXTURE_MIN_FILTER, minFilter));
+		GL_CHECK(glTexParameteri(data.target, GL_TEXTURE_MAG_FILTER, magFilter));
+		GL_CHECK(glTexParameteri(data.target, GL_TEXTURE_WRAP_S, tilingS));
+		GL_CHECK(glTexParameteri(data.target, GL_TEXTURE_WRAP_T, tilingT));
+		GL_CHECK(glTexParameteri(data.target, GL_TEXTURE_WRAP_R, tilingR));
+		GL_CHECK(glTexParameterf(data.target, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy));
+		GL_CHECK(glTexParameterf(data.target, GL_TEXTURE_MIN_LOD, minLod));
+		GL_CHECK(glTexParameterf(data.target, GL_TEXTURE_MAX_LOD, maxLod));
+		GL_CHECK(glTexParameterf(data.target, GL_TEXTURE_LOD_BIAS, lodBias));
+		GL_CHECK(glTexParameterfv(data.target, GL_TEXTURE_BORDER_COLOR, &borderColor.r));
 	}
+
+	if (cmd.initAfterCreate) {
+		uint32_t w, h;
+		w = cmd.width;
+		h = cmd.height;
+
+		if (cmd.target == JseImageTarget::D1) {
+			for (auto level = 0; level < cmd.levelCount; ++level) {
+				glTexImage1D(data.target, level, data.internal_format, w, 0, data.format, data.type, nullptr);
+				w = std::max(1u, w / 2);
+			}
+		} 
+		else if (cmd.target == JseImageTarget::D2) {
+			for (auto level = 0; level < cmd.levelCount; ++level) {
+				glTexImage2D(data.target, level, data.internal_format, w, h, 0, data.format, data.type, nullptr);
+				w = std::max(1u, w / 2);
+				h = std::max(1u, h / 2);
+			}
+		}
+		else if (cmd.target == JseImageTarget::CUBEMAP) {
+			for (auto face = 0; face < 6u; ++face) {
+				w = cmd.width;
+				h = cmd.height;
+				for (auto level = 0; level < cmd.levelCount; ++level) {
+					glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, level, data.internal_format, w, h, 0, data.format, data.type, nullptr);
+					w = std::max(1u, w / 2);
+					h = std::max(1u, h / 2);
+				}
+			}
+		}
+	}
+
+	GL_CHECK(glBindTexture(data.target, bound));
+
 	texture_data_map_.emplace(cmd.imageId, data);
-
-	return JseResult::SUCCESS;
-}
-
-JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
-{
-	auto find = texture_data_map_.find(cmd.imageId);
-
-	if (find == std::end(texture_data_map_)) return JseResult::NOT_EXISTS;
-	
-	auto& iData = find->second;
-
-	if (stateCache_.unpackAlignment != 1) {
-		GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-		stateCache_.unpackAlignment = 1;
-	}
-
-	bool const compressed =
-		iData.internal_format == GL_COMPRESSED_RGB_S3TC_DXT1_EXT ||
-		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
-		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
-		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
-		iData.internal_format == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT ||
-		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT ||
-		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT ||
-		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
-
-	glBindTexture(iData.target, iData.texture);
-	GLenum const target = iData.target == GL_TEXTURE_CUBE_MAP ? (GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<GLint>(cmd.face)) : iData.target;
-
-	switch (iData.target) {
-	case GL_TEXTURE_1D:
-	{
-		if (compressed) {
-			GL_CHECK(glCompressedTexImage1D(target, cmd.level, iData.internal_format, cmd.width, 0, cmd.imageSize, cmd.data));
-		}
-		else {
-			GL_CHECK(glTexImage1D(target, cmd.level, iData.internal_format, cmd.width, 0, iData.format, iData.type, cmd.data));
-		}
-	}
-	break;
-	case GL_TEXTURE_1D_ARRAY:
-	case GL_TEXTURE_2D:
-	case GL_TEXTURE_CUBE_MAP:
-	{
-		if (compressed) {
-			GL_CHECK(glCompressedTexImage2D(target, cmd.level, iData.internal_format, cmd.width, cmd.height, 0, cmd.imageSize, cmd.data));
-		}
-		else {
-			GL_CHECK(glTexImage2D(target, cmd.level, iData.internal_format, cmd.width, cmd.height, 0, iData.format, iData.type, cmd.data));
-		}
-	}
-	break;
-	case GL_TEXTURE_2D_ARRAY:
-	case GL_TEXTURE_CUBE_MAP_ARRAY:
-	case GL_TEXTURE_3D: {
-		if (compressed) {
-			GL_CHECK(glCompressedTexImage3D(iData.target, cmd.level, iData.internal_format, cmd.width, cmd.height, cmd.depth, 0, cmd.imageSize, cmd.data));
-		}
-		else {
-			GL_CHECK(glTexImage3D(iData.target, cmd.level, iData.internal_format, cmd.width, cmd.height, cmd.depth, 0, iData.format, iData.type, cmd.data));
-		}
-	}
-	}
-
-	glBindTexture(iData.target, 0);
 
 	return JseResult::SUCCESS;
 }
@@ -1593,6 +1559,77 @@ void JseGfxCoreGL::_glScissorEnabled(bool b)
 	}
 }
 
+JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
+{
+	auto find = texture_data_map_.find(cmd.imageId);
+
+	if (find == std::end(texture_data_map_)) return JseResult::NOT_EXISTS;
+
+	auto& iData = find->second;
+
+	if (stateCache_.unpackAlignment != 1) {
+		GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+		stateCache_.unpackAlignment = 1;
+	}
+
+	bool const compressed =
+		iData.internal_format == GL_COMPRESSED_RGB_S3TC_DXT1_EXT ||
+		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
+		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
+		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
+		iData.internal_format == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT ||
+		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT ||
+		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT ||
+		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+
+	GLenum const binding = MapTexureTargetToBinding(iData.target);
+	GLint bound{};
+
+	GL_CHECK(glGetIntegerv(binding, &bound));
+	GL_CHECK(glBindTexture(iData.target, iData.texture));
+	GLenum const target	= (iData.target == GL_TEXTURE_CUBE_MAP) ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<GLint>(cmd.face) : iData.target;
+	GLint const depth	= (iData.target == GL_TEXTURE_CUBE_MAP_ARRAY ? 6 : 1) * cmd.depth + static_cast<GLint>(cmd.face);
+
+	switch (iData.target) {
+	case GL_TEXTURE_1D:
+	{
+		if (compressed) {
+			GL_CHECK(glCompressedTexImage1D(target, cmd.level, iData.internal_format, cmd.width, 0, cmd.imageSize, cmd.data));
+		}
+		else {
+			GL_CHECK(glTexImage1D(target, cmd.level, iData.internal_format, cmd.width, 0, iData.format, iData.type, cmd.data));
+		}
+	}
+	break;
+	case GL_TEXTURE_1D_ARRAY:
+	case GL_TEXTURE_2D:
+	case GL_TEXTURE_CUBE_MAP:
+	{
+		if (compressed) {
+			GL_CHECK(glCompressedTexImage2D(target, cmd.level, iData.internal_format, cmd.width, cmd.height, 0, cmd.imageSize, cmd.data));
+		}
+		else {
+			GL_CHECK(glTexImage2D(target, cmd.level, iData.internal_format, cmd.width, cmd.height, 0, iData.format, iData.type, cmd.data));
+		}
+	}
+	break;
+	case GL_TEXTURE_2D_ARRAY:
+	case GL_TEXTURE_CUBE_MAP_ARRAY:
+	case GL_TEXTURE_3D: {
+		if (compressed) {
+			GL_CHECK(glCompressedTexImage3D(iData.target, cmd.level, iData.internal_format, cmd.width, cmd.height, depth, 0, cmd.imageSize, cmd.data));
+		}
+		else {
+			GL_CHECK(glTexImage3D(iData.target, cmd.level, iData.internal_format, cmd.width, cmd.height, depth, 0, iData.format, iData.type, cmd.data));
+		}
+	}
+	}
+
+	GL_CHECK(glBindTexture(iData.target, bound));
+
+	return JseResult::SUCCESS;
+}
+
 static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 	GLenum type,
 	GLuint id,
@@ -1817,4 +1854,24 @@ static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 	}
 	static JseFormat MapGlFormatToJse(GLenum format) {
 		
+	}
+	static GLenum MapTexureTargetToBinding(GLenum target) {
+		switch (target)
+		{
+		case GL_TEXTURE_1D:
+			return GL_TEXTURE_BINDING_1D;
+		case GL_TEXTURE_1D_ARRAY:
+			return GL_TEXTURE_BINDING_1D_ARRAY;
+		case GL_TEXTURE_2D:
+			return GL_TEXTURE_BINDING_2D;
+		case GL_TEXTURE_2D_ARRAY:
+			return GL_TEXTURE_BINDING_2D_ARRAY;
+		case GL_TEXTURE_3D:
+			return GL_TEXTURE_BINDING_3D;
+		case GL_TEXTURE_CUBE_MAP:
+			return GL_TEXTURE_BINDING_CUBE_MAP;
+		case GL_TEXTURE_CUBE_MAP_ARRAY:
+			return GL_TEXTURE_BINDING_CUBE_MAP_ARRAY;
+
+		}
 	}

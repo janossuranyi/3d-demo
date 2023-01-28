@@ -41,6 +41,18 @@ const xVertex rect[]{
     {{-0.5f,  -0.5f, 0.0f},{0.0f, 0.0f}}
 };
 
+JseFormat MapGLCompressedFmt(uint32_t f) {
+    switch (f)
+    {
+    case 0x83F0: return JseFormat::RGB_DXT1;
+    case 0x83F1: return JseFormat::RGBA_DXT1;
+    case 0x83F2: return JseFormat::RGBA_DXT3;
+    case 0x83F3: return JseFormat::RGBA_DXT5;
+    default:
+        return JseFormat::RGBA8;
+    }
+}
+
 int main(int argc, char** argv)
 {
     using namespace nv_dds;
@@ -150,44 +162,37 @@ void main() {
             CDDSImage image;
             image.load("d:/tokio.dds");
 
+            JseImageTarget target{JseImageTarget::D2};
+
+            if (image.is_cubemap()) {
+                target = JseImageTarget::CUBEMAP;
+            }
+            else if (image.get_height() == 0) {
+                target = JseImageTarget::D1;
+            }
+            else if (image.is_volume()) {
+                target = JseImageTarget::D3;
+            }
+
             JseCreateImageCommand& img = *R.GetCommandBuffer<JseCreateImageCommand>();
             img.info.imageId = JseImageID{ 1 };
-            img.info.format = JseFormat::RGBA_DXT1;
-            img.info.target = JseImageTarget::CUBEMAP;
+            img.info.format = MapGLCompressedFmt(image.get_format());
+            img.info.target = target;
             img.info.height = image.get_height();
             img.info.width = image.get_width();
             img.info.levelCount = 1+image.get_num_mipmaps();
+            //img.info.initAfterCreate = true;
 
             for (int face = 0; face < 6; ++face) {
                 auto& cface = image.get_cubemap_face(face);
 
-                JseCubeMapFace f;
-                switch (face) {
-                case 0:
-                    f = JseCubeMapFace::POSITIVE_X;
-                    break;
-                case 1:
-                    f = JseCubeMapFace::NEGATIVE_X;
-                    break;
-                case 2:
-                    f = JseCubeMapFace::POSITIVE_Y;
-                    break;
-                case 3:
-                    f = JseCubeMapFace::NEGATIVE_Y;
-                    break;
-                case 4:
-                    f = JseCubeMapFace::POSITIVE_Z;
-                    break;
-                case 5:
-                    f = JseCubeMapFace::NEGATIVE_Z;
-                    break;
-                }
+                JseCubeMapFace f = JSE_CUBE_MAP_FACES[face];
+
                 JseUploadImageCommand& upl = *R.GetCommandBuffer<JseUploadImageCommand>();
                 upl.info.imageId = JseImageID{ 1 };
                 upl.info.face = f;
                 upl.info.width = cface.get_width();
                 upl.info.height = cface.get_height();
-                upl.info.depth = 1;
                 upl.info.level = 0;
                 upl.info.data = cface;
                 upl.info.imageSize = cface.get_size();
@@ -199,7 +204,6 @@ void main() {
                     upl.info.face = f;
                     upl.info.width = level.get_width();
                     upl.info.height = level.get_height();
-                    upl.info.depth = 1;
                     upl.info.level = k+1;
                     upl.info.data = level;
                     upl.info.imageSize = level.get_size();

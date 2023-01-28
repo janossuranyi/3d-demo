@@ -120,6 +120,8 @@ private:
 	void _glScissor(GLint x, GLint y, GLsizei w, GLsizei h);
 	void _glScissorEnabled(bool b);
 
+	JseResult UpdateImageData_impl_1(const JseImageUploadInfo& imgageUploadInfo);
+
 	JseDeviceCapabilities deviceCapabilities_{};
 
 	struct BufferData {

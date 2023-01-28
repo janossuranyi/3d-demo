@@ -63,6 +63,15 @@ enum class JseCubeMapFace {
     NEGATIVE_Z
 };
 
+const JseCubeMapFace JSE_CUBE_MAP_FACES[] {
+    JseCubeMapFace::POSITIVE_X,
+    JseCubeMapFace::NEGATIVE_X,
+    JseCubeMapFace::POSITIVE_Y,
+    JseCubeMapFace::NEGATIVE_Y,
+    JseCubeMapFace::POSITIVE_Z,
+    JseCubeMapFace::NEGATIVE_Z
+};
+
 enum JseBufferStorageFlags {
     JSE_BUFFER_STORAGE_PERSISTENT_BIT = 1,
     JSE_BUFFER_STORAGE_COHERENT_BIT = 2,
@@ -286,15 +295,13 @@ struct JseImageCreateInfo {
     JseDeviceSize offset;   // Buffer Texture offset
     JseDeviceSize size;     // Buffer Texture size
     bool srgb;
+    bool initAfterCreate;
 };
 
 struct JseImageUploadInfo {
     JseImageID imageId;
     uint32_t level;
     JseCubeMapFace face;
-    uint32_t xoffset;
-    uint32_t yoffset;
-    uint32_t zoffset;
     uint32_t width;
     uint32_t height;
     uint32_t depth;
