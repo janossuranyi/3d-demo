@@ -10,8 +10,6 @@ find_package(SDL2 REQUIRED)
 
 add_definitions(
   -DGLEW_STATIC
-  -DKHRONOS_STATIC
-  -DSUPPORT_SOFTWARE_ETC_UNPACK=1
 )
 
 # specify the C++ standard
@@ -138,6 +136,7 @@ include_directories(
   external/half/
   external/tinygltf/
   external/nv_dds/
+  lib/ktx/include/
   ${SDL2_INCLUDE_DIR}
 )
 
@@ -160,6 +159,7 @@ target_link_libraries(demo
   engine
   engine2
   nv_dds
+  ../lib/ktx/ktx
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}
 )
@@ -180,6 +180,10 @@ if(WIN32)
   add_custom_command(TARGET demo POST_BUILD
      COMMAND ${CMAKE_COMMAND} -E copy
      "${SDL2_INCLUDE_DIR}/../lib/${ARCH}/SDL2.dll"
+     $<TARGET_FILE_DIR:demo>)
+     add_custom_command(TARGET demo POST_BUILD
+     COMMAND ${CMAKE_COMMAND} -E copy
+     "../lib/ktx/ktx.dll"
      $<TARGET_FILE_DIR:demo>)
 endif()
 

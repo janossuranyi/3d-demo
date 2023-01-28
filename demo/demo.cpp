@@ -1,8 +1,10 @@
 #include "JSE.h"
 #include "JSE_GfxCoreGL46.h"
 #include <nv_dds.h>
+#include <ktx.h>
+#include <gl_format.h>
 
-#define SCREEN_WIDTH 1440
+#define SCREEN_WIDTH 14401
 #define SCREEN_HEIGHT 900
 #define FULLSCREEN false
 
@@ -48,9 +50,32 @@ JseFormat MapGLCompressedFmt(uint32_t f) {
     case 0x83F1: return JseFormat::RGBA_DXT1;
     case 0x83F2: return JseFormat::RGBA_DXT3;
     case 0x83F3: return JseFormat::RGBA_DXT5;
+    case 0x8E8D: return JseFormat::RGBA_BPTC;
+    case 0x8E8E: return JseFormat::RGBA_BPTC;
     default:
         return JseFormat::RGBA8;
     }
+}
+
+KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
+{
+    JseGfxRenderer* R = (JseGfxRenderer*)userdata;
+    JseUploadImageCommand& c = *R->GetCommandBuffer<JseUploadImageCommand>();
+
+    c.info.data = R->FrameAlloc<uint8_t>(faceLodSize);
+    std::memcpy(c.info.data, pixels, faceLodSize);
+
+    c.info.imageId = JseImageID{ 1 };
+    c.info.face = JSE_CUBE_MAP_FACES[face];
+    c.info.width = width;
+    c.info.height = height;
+    c.info.level = miplevel;
+    c.info.depth = 0;
+    c.info.imageSize = faceLodSize;
+    c.info.compressed = true;
+
+    Info("level %d, face %d, width %d, height %d, depth %d, size %d", miplevel, face, width, height, depth, faceLodSize);
+    return KTX_SUCCESS;
 }
 
 int main(int argc, char** argv)
@@ -86,6 +111,7 @@ void main() {
     fragColor = vec4(vofi_TexCoord.x, vofi_TexCoord.y, 0.0, 1.0);
 }
 )" };
+
 
     try {
         JseGfxRenderer R;
@@ -159,56 +185,45 @@ void main() {
         bb.pOffsets[0] = 0;
 
         {
-            CDDSImage image;
-            image.load("d:/tokio.dds");
+            ktxTexture* kTexture;
+            KTX_error_code ktxresult;
+            ktxresult = ktxTexture_CreateFromNamedFile(
+                "d:/skybox.ktx2",
+                KTX_TEXTURE_CREATE_NO_FLAGS,
+                &kTexture);
+
+            assert(kTexture->classId == ktxTexture2_c);
+            ktxTexture2* kt2 = (ktxTexture2*)kTexture;
+            Info("isCompressed: %d", kt2->isCompressed);
 
             JseImageTarget target{JseImageTarget::D2};
 
-            if (image.is_cubemap()) {
+            if (kt2->isCubemap) {
                 target = JseImageTarget::CUBEMAP;
             }
-            else if (image.get_height() == 0) {
+            else if (kt2->numDimensions == 1) {
                 target = JseImageTarget::D1;
             }
-            else if (image.is_volume()) {
+            else if (kt2->numDimensions == 3) {
                 target = JseImageTarget::D3;
             }
 
+            GLint glFormat = glGetInternalFormatFromVkFormat((VkFormat)kt2->vkFormat);
+            assert(glFormat == GL_COMPRESSED_RGBA_BPTC_UNORM || glFormat == GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM);
+
             JseCreateImageCommand& img = *R.GetCommandBuffer<JseCreateImageCommand>();
             img.info.imageId = JseImageID{ 1 };
-            img.info.format = MapGLCompressedFmt(image.get_format());
+            img.info.format = JseFormat::RGBA_BPTC;
             img.info.target = target;
-            img.info.height = image.get_height();
-            img.info.width = image.get_width();
-            img.info.levelCount = 1+image.get_num_mipmaps();
+            img.info.height = kt2->baseHeight;
+            img.info.width = kt2->baseWidth;
+            img.info.levelCount = kt2->numLevels;
+            img.info.srgb = glFormat == GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
+
+            ktxTexture_IterateLoadLevelFaces(kTexture, imageCB, &R);
+
             //img.info.initAfterCreate = true;
 
-            for (int face = 0; face < 6; ++face) {
-                auto& cface = image.get_cubemap_face(face);
-
-                JseCubeMapFace f = JSE_CUBE_MAP_FACES[face];
-
-                JseUploadImageCommand& upl = *R.GetCommandBuffer<JseUploadImageCommand>();
-                upl.info.imageId = JseImageID{ 1 };
-                upl.info.face = f;
-                upl.info.width = cface.get_width();
-                upl.info.height = cface.get_height();
-                upl.info.level = 0;
-                upl.info.data = cface;
-                upl.info.imageSize = cface.get_size();
-
-                for (int k = 0; k < cface.get_num_mipmaps(); ++k) {
-                    auto& level = cface.get_mipmap(k);
-                    JseUploadImageCommand& upl = *R.GetCommandBuffer<JseUploadImageCommand>();
-                    upl.info.imageId = JseImageID{ 1 };
-                    upl.info.face = f;
-                    upl.info.width = level.get_width();
-                    upl.info.height = level.get_height();
-                    upl.info.level = k+1;
-                    upl.info.data = level;
-                    upl.info.imageSize = level.get_size();
-                }
-            }
             R.Frame();
         }
 

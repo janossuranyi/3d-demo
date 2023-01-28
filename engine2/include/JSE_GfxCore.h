@@ -221,6 +221,7 @@ enum class JseFormat {
     RGBA_DXT1,
     RGBA_DXT3,
     RGBA_DXT5,
+    RGBA_BPTC,
     // Depth formats.
     D16,
     D24,
@@ -307,6 +308,7 @@ struct JseImageUploadInfo {
     uint32_t depth;
     uint32_t imageSize;
     uint8_t* data;
+    bool compressed;
 };
 
 struct JseVertexInputBindingDescription {

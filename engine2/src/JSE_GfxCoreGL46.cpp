@@ -135,12 +135,12 @@ TextureFormatInfo s_texture_format[] = {
 	{GL_R11F_G11F_B10F,     GL_ZERO,         GL_RGB,              GL_UNSIGNED_INT_10F_11F_11F_REV, true,  3}, // RG11B10F
 	{GL_COMPRESSED_RGB,     GL_COMPRESSED_SRGB,GL_RGB,            GL_UNSIGNED_BYTE,                true,  3}, // RGB8_COMPRESSED
 	{GL_COMPRESSED_RGBA,    GL_COMPRESSED_SRGB_ALPHA,GL_RGBA,     GL_UNSIGNED_BYTE,                true,  4}, // RGBA8_COMPRESSED
-	
+
 	{GL_COMPRESSED_RGB_S3TC_DXT1_EXT,	GL_COMPRESSED_SRGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_BYTE,true,  3},
 	{GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
 	{GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
 	{GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
-
+	{GL_COMPRESSED_RGBA_BPTC_UNORM,		GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM,	GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
 	{GL_DEPTH_COMPONENT16,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_SHORT,               true,  1}, // D16
 	{GL_DEPTH_COMPONENT24,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 true,  1}, // D24
 	{GL_DEPTH24_STENCIL8,   GL_ZERO,         GL_DEPTH_STENCIL,    GL_UNSIGNED_INT_24_8,            true,  1}, // D24S8
@@ -1572,15 +1572,7 @@ JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 		stateCache_.unpackAlignment = 1;
 	}
 
-	bool const compressed =
-		iData.internal_format == GL_COMPRESSED_RGB_S3TC_DXT1_EXT ||
-		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
-		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
-		iData.internal_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
-		iData.internal_format == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT ||
-		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT ||
-		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT ||
-		iData.internal_format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+	bool const compressed = cmd.compressed;
 
 	GLenum const binding = MapTexureTargetToBinding(iData.target);
 	GLint bound{};
