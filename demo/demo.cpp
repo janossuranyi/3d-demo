@@ -98,10 +98,11 @@ uniform vec4 _va_freqLow[1];
 uniform vec4 _va_freqHigh[2];
 
 #define g_Scale _va_freqLow[0].xxx
+#define g_TexCoordScale _va_freqHigh[1].xy
 
 void main() {
     gl_Position = vec4(in_Position * g_Scale, 1.0);
-    vofi_TexCoord = in_TexCoord * _va_freqHigh[1].xy;
+    vofi_TexCoord = in_TexCoord * g_TexCoordScale;
 }
 )" };
 
@@ -154,16 +155,22 @@ void main() {
 
         JseCreateDescriptorSetLayoutBinding& setBinding = *R.GetCommandBuffer<JseCreateDescriptorSetLayoutBinding>();
         setBinding.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
-        setBinding.info.bindingCount = 2;
-        setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(2);
+        setBinding.info.bindingCount = 1;
+        setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(1);
         setBinding.info.pBindings[0].binding = 0;
         setBinding.info.pBindings[0].descriptorCount = 1;
         setBinding.info.pBindings[0].descriptorType = JseDescriptorType::SAMPLED_IMAGE;
         setBinding.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_FRAGMENT;
-        setBinding.info.pBindings[1].binding = 100;
-        setBinding.info.pBindings[1].descriptorCount = 1;
-        setBinding.info.pBindings[1].descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
-        setBinding.info.pBindings[1].stageFlags = JSE_STAGE_FLAG_ALL;
+
+
+        JseCreateDescriptorSetLayoutBinding& setBinding2 = *R.GetCommandBuffer<JseCreateDescriptorSetLayoutBinding>();
+        setBinding2.info.setLayoutId = JseDescriptorSetLayoutID{ 2 };
+        setBinding2.info.bindingCount = 1;
+        setBinding2.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(1);
+        setBinding2.info.pBindings[0].binding = 100;
+        setBinding2.info.pBindings[0].descriptorCount = 1;
+        setBinding2.info.pBindings[0].descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
+        setBinding2.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_ALL;
 
         JseCreateGraphicsPipelineCommand& p = *R.GetCommandBuffer<JseCreateGraphicsPipelineCommand>();
         p.info.graphicsPipelineId = JseGrapicsPipelineID{ 1 };
@@ -187,7 +194,7 @@ void main() {
         JseCreateBufferCommand& buf = *R.GetCommandBuffer<JseCreateBufferCommand>();
         buf.info.bufferId = JseBufferID{ 1 };
         buf.info.size = 64 * 1024;
-        buf.info.storageFlags = JSE_BUFFER_STORAGE_DYNAMIC_BIT;
+        //buf.info.storageFlags = JSE_BUFFER_STORAGE_DYNAMIC_BIT|JSE_BUFFER_STORAGE_COHERENT_BIT|JSE_BUFFER_STORAGE_PERSISTENT_BIT|JSE_BUFFER_STORAGE_WRITE_BIT;
         buf.info.target = JseBufferTarget::VERTEX;
 
         JseUpdateBufferCommand& upd = *R.GetCommandBuffer<JseUpdateBufferCommand>();
@@ -259,6 +266,9 @@ void main() {
         auto& crdset = *R.GetCommandBuffer<JseCreateDescriptorSetCommand>();
         crdset.info.setId = JseDescriptorSetID{ 1 };
         crdset.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
+        auto& crdset2 = *R.GetCommandBuffer<JseCreateDescriptorSetCommand>();
+        crdset2.info.setId = JseDescriptorSetID{ 2 };
+        crdset2.info.setLayoutId = JseDescriptorSetLayoutID{ 2 };
 
         auto& wrdset = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
         wrdset.info.descriptorCount = 1;
@@ -268,33 +278,35 @@ void main() {
         wrdset.info.pImageInfo = R.FrameAlloc<JseDescriptorImageInfo>();
         wrdset.info.pImageInfo[0].image = JseImageID{ 1 };
 
-        JseUniformMap map;
-
         auto& wrdset2 = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
         wrdset2.info.descriptorCount = 2;
         wrdset2.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
         wrdset2.info.dstBinding = 100;
-        wrdset2.info.setId = JseDescriptorSetID{ 1 };
+        wrdset2.info.setId = JseDescriptorSetID{ 2 };
         wrdset2.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>(2);
 
-        std::strcpy(wrdset2.info.pUniformInfo[0].name, "_va_freqLow");
+        std::strncpy(wrdset2.info.pUniformInfo[0].name, "_va_freqLow", 32);
         wrdset2.info.pUniformInfo[0].vectorCount = 1;
         wrdset2.info.pUniformInfo[0].pVectors = R.FrameAlloc<glm::vec4>(1);
         wrdset2.info.pUniformInfo[0].pVectors[0] = glm::vec4(2.0f);
 
-        std::strcpy(wrdset2.info.pUniformInfo[1].name, "_va_freqHigh");
+        std::strncpy(wrdset2.info.pUniformInfo[1].name, "_va_freqHigh", 32);
         wrdset2.info.pUniformInfo[1].vectorCount = 2;
         wrdset2.info.pUniformInfo[1].pVectors = R.FrameAlloc<glm::vec4>(2);
         wrdset2.info.pUniformInfo[1].pVectors[0] = glm::vec4(1.0f);
-        wrdset2.info.pUniformInfo[1].pVectors[1] = glm::vec4(2.0f, 2.0f, 0.0f, 0.0f);
+        wrdset2.info.pUniformInfo[1].pVectors[1] = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f);
 
         auto& bindset = *R.GetCommandBuffer<JseBindDescriptorSetsCommand>();
-        bindset.descriptorSetCount = 1;
+        bindset.descriptorSetCount = 2;
         bindset.firstSet = 0;
-        bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
+        bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(2);
         bindset.pDescriptorSets[0] = JseDescriptorSetID{ 1 };
-        
+        bindset.pDescriptorSets[1] = JseDescriptorSetID{ 2 };
+
         R.Frame();
+
+        float tick = SCAST(float, SDL_GetTicks64()) / 1000;
+        float angle = 0.f;
 
         while(running) {
 
@@ -310,6 +322,12 @@ void main() {
             x.info.scissor.w = 512;
             x.info.scissor.h = 512;
 
+            auto& bindset = *R.GetCommandBuffer<JseBindDescriptorSetsCommand>();
+            bindset.descriptorSetCount = 1;
+            bindset.firstSet = 0;
+            bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
+            bindset.pDescriptorSets[0] = JseDescriptorSetID{ 2 };
+
             JseDrawCommand& draw = *R.GetCommandBuffer<JseDrawCommand>();
             draw.firstInstance = 0;
             draw.firstVertex = 0;
@@ -318,7 +336,27 @@ void main() {
             draw.vertexCount = 6;
             
             R.Frame();
+            void* ptr = R.GetMappedBufferPointer(JseBufferID{ 1 });
+
             I.ProcessEvents();
+
+            float now = SCAST(float, SDL_GetTicks64()) / 1000.f;
+            float dt = now - tick;
+            tick = now;
+
+            auto& wrdset2 = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
+            wrdset2.info.descriptorCount = 1;
+            wrdset2.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
+            wrdset2.info.dstBinding = 100;
+            wrdset2.info.setId = JseDescriptorSetID{ 2 };
+            wrdset2.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>(1);
+            std::strncpy(wrdset2.info.pUniformInfo[0].name, "_va_freqLow", 32);
+            wrdset2.info.pUniformInfo[0].vectorCount = 1;
+            wrdset2.info.pUniformInfo[0].pVectors = R.FrameAlloc<glm::vec4>(1);
+            wrdset2.info.pUniformInfo[0].pVectors[0] = glm::vec4(10.0f + std::sinf(angle) * 9.f);
+
+            angle += 1.f * dt;
+
         }
     }
     catch (std::exception e) { Error("error=%s", e.what()); }

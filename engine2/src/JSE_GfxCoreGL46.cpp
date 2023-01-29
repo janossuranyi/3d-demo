@@ -35,7 +35,6 @@ void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,
 class GLUniformBinder {
 public:
 	GLUniformBinder() : uniform_location_{ 0 } {
-		Info("JseGfxCore OpenGL 4.6 Driver v0.1");
 	}
 
 	~GLUniformBinder() = default;
@@ -71,10 +70,10 @@ public:
 		GL_CHECK(glUniformMatrix4fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
 	}
 	void operator()(const JseVector<float>& value) {
-		glUniform1fv(uniform_location_, value.size(), (const GLfloat*)value.data());
+		GL_CHECK(glUniform1fv(uniform_location_, value.size(), (const GLfloat*)value.data()));
 	}
 	void operator()(const JseVector<glm::vec4>& value) {
-		glUniform4fv(uniform_location_, value.size(), (const GLfloat*)value.data());
+		GL_CHECK(glUniform4fv(uniform_location_, value.size(), (const GLfloat*)value.data()));
 	}
 	void update(GLint location, const JseUniformData& value) {
 		uniform_location_ = location;
@@ -136,11 +135,12 @@ TextureFormatInfo s_texture_format[] = {
 	{GL_COMPRESSED_RGB,     GL_COMPRESSED_SRGB,GL_RGB,            GL_UNSIGNED_BYTE,                true,  3}, // RGB8_COMPRESSED
 	{GL_COMPRESSED_RGBA,    GL_COMPRESSED_SRGB_ALPHA,GL_RGBA,     GL_UNSIGNED_BYTE,                true,  4}, // RGBA8_COMPRESSED
 
-	{GL_COMPRESSED_RGB_S3TC_DXT1_EXT,	GL_COMPRESSED_SRGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_BYTE,true,  3},
-	{GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
-	{GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
-	{GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
-	{GL_COMPRESSED_RGBA_BPTC_UNORM,		GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM,	GL_RGBA, GL_UNSIGNED_BYTE, true, 4},
+	{GL_COMPRESSED_RGB_S3TC_DXT1_EXT,	GL_COMPRESSED_SRGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_BYTE,true,  3}, // RGB_DXT1
+	{GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4}, // RGBA_DXT1
+	{GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4}, // RGBA_DXT3
+	{GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,	GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_BYTE, true, 4}, // RGBA_DXT5
+	{GL_COMPRESSED_RGBA_BPTC_UNORM,		GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM,	GL_RGBA, GL_UNSIGNED_BYTE, true, 4}, // RGBA_BPTC aka. BC7
+
 	{GL_DEPTH_COMPONENT16,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_SHORT,               true,  1}, // D16
 	{GL_DEPTH_COMPONENT24,  GL_ZERO,         GL_DEPTH_COMPONENT,  GL_UNSIGNED_INT,                 true,  1}, // D24
 	{GL_DEPTH24_STENCIL8,   GL_ZERO,         GL_DEPTH_STENCIL,    GL_UNSIGNED_INT_24_8,            true,  1}, // D24S8
@@ -163,6 +163,13 @@ JseGfxCoreGL::JseGfxCoreGL() :
 	glVersion_(0)
 {
 	Info("JseGfxCore OpenGL 4.6 Driver v0.1");
+}
+
+void* JseGfxCoreGL::GetMappedBufferPointer_impl(JseBufferID id)
+{
+	auto find = buffer_data_map_.find(id);
+
+	return find != std::end(buffer_data_map_) ? find->second.mapptr : nullptr;
 }
 
 JseResult JseGfxCoreGL::Init_impl(bool debugMode)
@@ -359,6 +366,7 @@ JseResult JseGfxCoreGL::CreateBuffer_impl(const JseBufferCreateInfo& cmd)
 	GL_CHECK(glNamedBufferStorage(bufferData.buffer, _size, nullptr, flags));
 
 	if (cmd.storageFlags & JSE_BUFFER_STORAGE_PERSISTENT_BIT) {
+		flags = flags & ~GL_DYNAMIC_STORAGE_BIT;
 		GL_CHECK(bufferData.mapptr = glMapNamedBufferRange(bufferData.buffer, 0, _size, flags));
 	}
 
@@ -452,10 +460,12 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 
 	if (cmd.target != JseImageTarget::BUFFER) {
 
+		JseFilter filter = cmd.levelCount > 1 ? JseFilter::LINEAR_MIPMAP_LINEAR : JseFilter::LINEAR;
+
 		GLenum tilingS = MapJseTilingGl(JseImageTiling::CLAMP_TO_EDGE);
 		GLenum tilingT = MapJseTilingGl(JseImageTiling::CLAMP_TO_EDGE);
 		GLenum tilingR = MapJseTilingGl(JseImageTiling::CLAMP_TO_EDGE);
-		GLenum minFilter = MapJseFilterGl(JseFilter::LINEAR);
+		GLenum minFilter = MapJseFilterGl(filter);
 		GLenum magFilter = MapJseFilterGl(JseFilter::LINEAR);
 		GLfloat maxAnisotropy = 1.0f;
 		GLfloat minLod = 0.0f;
@@ -801,7 +811,10 @@ JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPass
 	GLbitfield clearBits{};
 	if (renderPassInfo.colorClearEnable) {
 		clearBits |= GL_COLOR_BUFFER_BIT;
-		GL_CHECK(glClearColor(renderPassInfo.colorClearValue.color.r, renderPassInfo.colorClearValue.color.g, renderPassInfo.colorClearValue.color.b, renderPassInfo.colorClearValue.color.a));
+		if (stateCache_.clearColor != renderPassInfo.colorClearValue.color) {
+			GL_CHECK(glClearColor(renderPassInfo.colorClearValue.color.r, renderPassInfo.colorClearValue.color.g, renderPassInfo.colorClearValue.color.b, renderPassInfo.colorClearValue.color.a));
+			stateCache_.clearColor = renderPassInfo.colorClearValue.color;
+		}
 	}
 	if (renderPassInfo.depthClearEnable) {
 		clearBits |= GL_DEPTH_BUFFER_BIT;

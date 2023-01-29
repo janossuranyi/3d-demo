@@ -1,8 +1,6 @@
 #include "JSE.h"
 #include "JSE_GfxCoreNull.h"
 
-#include <nv_dds.h>
-
 #define CACHE_LINE_ALIGN(bytes) (((bytes) + CPU_CACHELINE_SIZE - 1) & ~(CPU_CACHELINE_SIZE - 1))
 
 void JseGfxRenderer::Frame()
@@ -235,6 +233,15 @@ JseResult JseGfxRenderer::InitCore(int w, int h, bool fs, bool useThread)
 	}
 
 	return res;
+}
+
+void* JseGfxRenderer::GetMappedBufferPointer(JseBufferID id)
+{
+	if (useThread_) renderSem_.wait();
+	void* ptr = core_->GetMappedBufferPointer(id);
+	if (useThread_) renderSem_.post();
+
+	return ptr;
 }
 
 void JseGfxRenderer::CreateBuffer(const JseBufferCreateInfo& info, std::promise<JseResult> result)

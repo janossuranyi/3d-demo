@@ -5,6 +5,11 @@ JseGfxCoreNull::JseGfxCoreNull()
     Info("JseGfxCore NULL Driver v0.1");
 }
 
+void* JseGfxCoreNull::GetMappedBufferPointer_impl(JseBufferID id)
+{
+    return nullptr;
+}
+
 JseResult JseGfxCoreNull::Init_impl(bool debugMode)
 {
     return JseResult();

@@ -9,6 +9,7 @@ public:
 	JseGfxCoreNull();
 private:
 	// Inherited via JseGfxCore
+	virtual void* GetMappedBufferPointer_impl(JseBufferID id) override;
 	virtual JseResult Init_impl(bool debugMode) override;
 	virtual JseResult CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo) override;
 	virtual JseResult CreateBuffer_impl(const JseBufferCreateInfo& createBufferInfo) override;

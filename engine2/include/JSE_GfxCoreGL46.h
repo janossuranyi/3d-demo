@@ -42,6 +42,8 @@ private:
 	int glVersion_;
 
 	// Inherited via JseGfxCore
+	virtual void* GetMappedBufferPointer_impl(JseBufferID id) override;
+	
 	virtual JseResult Init_impl(bool debugMode) override;
 
 	virtual JseResult CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo) override;
@@ -166,6 +168,7 @@ private:
 		JseRect2D scissor;
 		GLuint indexBuffer;
 		GLuint program;
+		JseColor4f clearColor;
 	} stateCache_{};
 
 	struct ActivePipelineData {

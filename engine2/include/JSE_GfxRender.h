@@ -160,6 +160,7 @@ public:
 
 	void SetCore(JseGfxCore* core);
 	JseResult InitCore(int w, int h, bool fs, bool useThread);
+	void* GetMappedBufferPointer(JseBufferID id);
 
 	void CreateBuffer(const JseBufferCreateInfo& info, std::promise<JseResult> result);
 

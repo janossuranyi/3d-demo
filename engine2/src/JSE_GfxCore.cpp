@@ -159,6 +159,10 @@ void JseGfxCore::Scissor(const JseRect2D& x)
     Scissor(x);
 }
 
+void* JseGfxCore::GetMappedBufferPointer(JseBufferID id) {
+    return GetMappedBufferPointer_impl(id);
+}
+
 JseResult JseGfxCore::GetDeviceCapabilities(JseDeviceCapabilities& dest)
 {
     return GetDeviceCapabilities_impl(dest);

@@ -30,6 +30,16 @@ using JseUniformMap = JseHashMap<JseString, JseUniformData>;
 
 struct JseColor4f {
     float r, g, b, a;
+    bool operator==(const JseColor4f& x) {
+        if (r != x.r) return false;
+        if (g != x.g) return false;
+        if (b != x.b) return false;
+        if (a != x.a) return false;
+        return true;
+    }
+    bool operator!=(const JseColor4f& x) {
+        return !operator==(x);
+    }
 };
 
 struct JseRect2D {
@@ -252,7 +262,7 @@ struct JseSurfaceCreateInfo {
 struct JseBufferCreateInfo {
     JseBufferID bufferId;
     JseBufferTarget target;
-    JseBufferStorageFlags storageFlags;
+    uint32_t storageFlags;
     JseFormat format;
     uint32_t size;
 };
@@ -656,11 +666,14 @@ public:
     JseResult SetVSyncInterval(int interval);
     JseResult GetSurfaceDimension(JseRect2D& x);
 
+    void* GetMappedBufferPointer(JseBufferID id);
+
 	void Shutdown();
 
 	virtual ~JseGfxCore() {}
 private:
 	// data & virtual implementations
+    virtual void* GetMappedBufferPointer_impl(JseBufferID id) = 0;
 	virtual JseResult Init_impl(bool debugMode) = 0;
 	virtual JseResult CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo) = 0;
     virtual JseResult CreateBuffer_impl(const JseBufferCreateInfo& createBufferInfo) = 0;
