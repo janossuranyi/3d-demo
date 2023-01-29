@@ -122,7 +122,7 @@ struct JseCmdBindDescriptorSets {
 
 class JseGfxRenderer {
 public:
-	static const size_t FRAME_MEM_SIZE = 128 * 1024 * 1024;
+	static const size_t DEFAULT_FRAME_MEM_SIZE = 64 * 1024 * 1024;
 	static const size_t ON_FLIGHT_FRAMES = 2;
 private:
 	struct frameData_t {
@@ -139,6 +139,7 @@ private:
 	bool					renderThreadReady_;
 	bool					renderThreadDoWork_;
 	JseAtomicInt			shouldTerminate_{ 0 };
+	JseAtomicInt			nextId_{ 1 };
 	size_t					frameMemorySize_{};
 	int						maxFrameMemUsage_{ 0 };
 	frameData_t				frames_[ON_FLIGHT_FRAMES];
@@ -154,9 +155,16 @@ private:
 
 public: 
 	JseGfxRenderer();
+	JseGfxRenderer(int frameMemorySize);
 	~JseGfxRenderer();
-
+	
+	uint32_t NextID();
+	
 	JseGfxCore* GetCore();
+	void ExecuteInCriticalSection(std::function<void()> func);
+
+	JseResult CreateImage(const JseImageCreateInfo& x);
+	JseResult UploadImage(const JseImageUploadInfo& x);
 
 	void SetCore(JseGfxCore* core);
 

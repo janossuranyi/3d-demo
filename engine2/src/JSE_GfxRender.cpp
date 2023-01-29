@@ -128,7 +128,6 @@ void JseGfxRenderer::RenderThread()
 {
 	bool running{1};
 
-	core_->BeginRendering();
 
 	while (running) {
 
@@ -142,8 +141,12 @@ void JseGfxRenderer::RenderThread()
 		running = ! shouldTerminate_.Get();
 
 		if (running) {
-			RenderFrame(renderData_);
-			core_->SwapChainNextImage();
+			core_->BeginRendering();
+			{
+				RenderFrame(renderData_);
+				core_->SwapChainNextImage();
+			}
+			core_->EndRendering();
 		}
 
 		lck.lock();
@@ -152,9 +155,6 @@ void JseGfxRenderer::RenderThread()
 
 		renderThreadSync_.notify_all();
 	}
-
-	core_->EndRendering();
-
 }
 
 int JseGfxRenderer::RenderThreadWrapper(void* data)
@@ -178,10 +178,14 @@ void JseGfxRenderer::ResetCommandBuffer()
 }
 
 
-JseGfxRenderer::JseGfxRenderer()
+JseGfxRenderer::JseGfxRenderer() : JseGfxRenderer(DEFAULT_FRAME_MEM_SIZE)
+{
+}
+
+JseGfxRenderer::JseGfxRenderer(int frameMemorySize)
 {
 	core_ = new JseGfxCoreNull();
-	frameMemorySize_ = FRAME_MEM_SIZE;
+	frameMemorySize_ = frameMemorySize;
 	assert(CACHE_LINE_SIZE == JseGetCPUCacheLineSize());
 
 	for (int i = 0; i < ON_FLIGHT_FRAMES; ++i) {
@@ -191,7 +195,7 @@ JseGfxRenderer::JseGfxRenderer()
 	}
 	activeFrame_ = 0;
 	renderFrame_ = 1;
-	frameData_	= &frames_[activeFrame_];
+	frameData_ = &frames_[activeFrame_];
 	renderData_ = &frames_[renderFrame_];
 }
 
@@ -211,9 +215,56 @@ JseGfxRenderer::~JseGfxRenderer()
 	core_->Shutdown();
 }
 
+uint32_t JseGfxRenderer::NextID()
+{
+	return SCAST(uint32_t, nextId_.Add(1));
+}
+
 JseGfxCore* JseGfxRenderer::GetCore()
 {
 	return core_;
+}
+
+void JseGfxRenderer::ExecuteInCriticalSection(std::function<void()> func)
+{
+	if (!func) return;
+
+	if (useThread_) {
+		JseUniqueLock lck(renderThreadMtx_);
+		renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
+		core_->BeginRendering();
+		func();
+		core_->EndRendering();
+	}
+	else {
+		func();
+	}
+}
+
+JseResult JseGfxRenderer::CreateImage(const JseImageCreateInfo& x)
+{
+	JseResult r{};
+
+	ExecuteInCriticalSection(
+		[this, &r, x]
+		{
+			r = core_->CreateImage(x);
+		});
+
+	return r;
+}
+
+JseResult JseGfxRenderer::UploadImage(const JseImageUploadInfo& x)
+{
+	JseResult r{};
+
+	ExecuteInCriticalSection(
+		[this, &r, x]
+		{
+			r = core_->UpdateImageData(x);
+		});
+
+	return r;
 }
 
 void JseGfxRenderer::SetCore(JseGfxCore* core)

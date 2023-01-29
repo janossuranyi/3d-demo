@@ -60,11 +60,13 @@ JseFormat MapGLCompressedFmt(uint32_t f) {
 KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
 {
     JseGfxRenderer* R = RCAST(JseGfxRenderer*, userdata);
-    JseCmdUploadImage& c = *R->GetCommandBuffer<JseCmdUploadImage>();
+    //JseCmdUploadImage& c = *R->GetCommandBuffer<JseCmdUploadImage>();
+    JseCmdUploadImage c = JseCmdUploadImage();
 
-    c.info.data = R->FrameAlloc<uint8_t>(faceLodSize);
-    std::memcpy(c.info.data, pixels, faceLodSize);
+    //c.info.data = R->FrameAlloc<uint8_t>(faceLodSize);
+    //std::memcpy(c.info.data, pixels, faceLodSize);
 
+    c.info.data = (uint8_t*)pixels;
     c.info.imageId = JseImageID{ 1 };
     c.info.face = face;
     c.info.width = width;
@@ -74,6 +76,7 @@ KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth,
     c.info.imageSize = faceLodSize;
 
     Info("level %d, face %d, width %d, height %d, depth %d, size %d", miplevel, face, width, height, depth, faceLodSize);
+    R->UploadImage(c.info);
 
     return KTX_SUCCESS;
 }
@@ -155,17 +158,21 @@ void main() {
         R.SetCore(new JseGfxCoreGL());
         R.InitCore(1024, 768, false, true);
 
+        auto vert = JseShaderID(R.NextID());
+        auto frag = JseShaderID(R.NextID());
+
         JseCmdCreateShader& sp1 = *R.GetCommandBuffer<JseCmdCreateShader>();
         sp1.info.pCode = vtxshader;
-        sp1.info.shaderId = JseShaderID{ 1 };
+        sp1.info.shaderId = vert;
         sp1.info.stage = JseShaderStage::VERTEX;
         JseCmdCreateShader& sp2 = *R.GetCommandBuffer<JseCmdCreateShader>();
         sp2.info.pCode = fragshader;
-        sp2.info.shaderId = JseShaderID{ 2 };
+        sp2.info.shaderId = frag;
         sp2.info.stage = JseShaderStage::FRAGMENT;
 
+        auto texLayout = JseDescriptorSetLayoutID{ R.NextID() };
         JseCmdCreateDescriptorSetLayoutBindind& setBinding = *R.GetCommandBuffer<JseCmdCreateDescriptorSetLayoutBindind>();
-        setBinding.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
+        setBinding.info.setLayoutId = texLayout;
         setBinding.info.bindingCount = 1;
         setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(1);
         setBinding.info.pBindings[0].binding = 0;
@@ -174,8 +181,9 @@ void main() {
         setBinding.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_FRAGMENT;
 
 
+        auto uniformLayout = JseDescriptorSetLayoutID{ R.NextID() };
         JseCmdCreateDescriptorSetLayoutBindind& setBinding2 = *R.GetCommandBuffer<JseCmdCreateDescriptorSetLayoutBindind>();
-        setBinding2.info.setLayoutId = JseDescriptorSetLayoutID{ 2 };
+        setBinding2.info.setLayoutId = uniformLayout;
         setBinding2.info.bindingCount = 1;
         setBinding2.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(1);
         setBinding2.info.pBindings[0].binding = 100;
@@ -186,13 +194,13 @@ void main() {
         JseCmdCreateGraphicsPipeline& p = *R.GetCommandBuffer<JseCmdCreateGraphicsPipeline>();
         p.info.graphicsPipelineId = JseGrapicsPipelineID{ 1 };
         p.info.renderState = GLS_DEPTHFUNC_LESS;
-        p.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
+        p.info.setLayoutId = JseDescriptorSetLayoutID{};
         p.info.stageCount = 2;
         p.info.pStages = R.FrameAlloc<JsePipelineShaderStageCreateInfo>(2);
         p.info.pStages[0].stage = JseShaderStage::VERTEX;
-        p.info.pStages[0].shader = JseShaderID{ 1 };
+        p.info.pStages[0].shader = vert;
         p.info.pStages[1].stage = JseShaderStage::FRAGMENT;
-        p.info.pStages[1].shader = JseShaderID{ 2 };
+        p.info.pStages[1].shader = frag;
 
         p.info.pVertexInputState = R.FrameAlloc<JsePipelineVertexInputStateCreateInfo>();
         p.info.pVertexInputState->attributeCount = xVertex::attributeCount();
@@ -256,6 +264,7 @@ void main() {
             img.info.srgb = kt2->vkFormat == VK_FORMAT_BC7_SRGB_BLOCK;
             img.info.compressed = kt2->isCompressed;
             img.info.immutable = 1;
+            R.Frame();
 
             R.GetCore()->SetVSyncInterval(0);
             ktxTexture_IterateLoadLevelFaces(kTexture, imageCB, &R);
@@ -274,18 +283,20 @@ void main() {
         bb.pOffsets[0] = 0;
         bb.pipeline = JseGrapicsPipelineID{ 1 };
 
+        auto texSet = JseDescriptorSetID(R.NextID());
         auto& crdset = *R.GetCommandBuffer<JseCmdCreateDescriptorSet>();
-        crdset.info.setId = JseDescriptorSetID{ 1 };
-        crdset.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
+        crdset.info.setId = texSet;
+        crdset.info.setLayoutId = texLayout;
+        auto uniformSet = JseDescriptorSetID(R.NextID());
         auto& crdset2 = *R.GetCommandBuffer<JseCmdCreateDescriptorSet>();
-        crdset2.info.setId = JseDescriptorSetID{ 2 };
-        crdset2.info.setLayoutId = JseDescriptorSetLayoutID{ 2 };
+        crdset2.info.setId = uniformSet;
+        crdset2.info.setLayoutId = uniformLayout;
 
         auto& wrdset = *R.GetCommandBuffer<JseCmdWriteDescriptorSet>();
         wrdset.info.descriptorCount = 1;
         wrdset.info.descriptorType = JseDescriptorType::SAMPLED_IMAGE;
         wrdset.info.dstBinding = 0;
-        wrdset.info.setId = JseDescriptorSetID{ 1 };
+        wrdset.info.setId = texSet;
         wrdset.info.pImageInfo = R.FrameAlloc<JseDescriptorImageInfo>();
         wrdset.info.pImageInfo[0].image = JseImageID{ 1 };
 
@@ -294,8 +305,8 @@ void main() {
         bindset.descriptorSetCount = 2;
         bindset.firstSet = 0;
         bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(2);
-        bindset.pDescriptorSets[0] = JseDescriptorSetID{ 1 };
-        bindset.pDescriptorSets[1] = JseDescriptorSetID{ 2 };
+        bindset.pDescriptorSets[0] = texSet;
+        bindset.pDescriptorSets[1] = uniformSet;
 
         R.Frame();
 
@@ -321,7 +332,7 @@ void main() {
             wrdset.info.descriptorCount = 1;
             wrdset.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
             wrdset.info.dstBinding = 100;
-            wrdset.info.setId = JseDescriptorSetID{ 2 };
+            wrdset.info.setId = uniformSet;
             wrdset.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>();
 
             glm::mat4 W(1.0f);
@@ -336,7 +347,7 @@ void main() {
             bindset.descriptorSetCount = 1;
             bindset.firstSet = 0;
             bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
-            bindset.pDescriptorSets[0] = JseDescriptorSetID{ 2 };
+            bindset.pDescriptorSets[0] = uniformSet;
 
             JseCmdDraw& draw = *R.GetCommandBuffer<JseCmdDraw>();
             draw.firstInstance = 0;
