@@ -60,7 +60,7 @@ JseFormat MapGLCompressedFmt(uint32_t f) {
 KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
 {
     JseGfxRenderer* R = RCAST(JseGfxRenderer*, userdata);
-    JseUploadImageCommand& c = *R->GetCommandBuffer<JseUploadImageCommand>();
+    JseCmdUploadImage& c = *R->GetCommandBuffer<JseCmdUploadImage>();
 
     c.info.data = R->FrameAlloc<uint8_t>(faceLodSize);
     std::memcpy(c.info.data, pixels, faceLodSize);
@@ -155,16 +155,16 @@ void main() {
         R.SetCore(new JseGfxCoreGL());
         R.InitCore(1024, 768, false, true);
 
-        JseCreateShaderCommand& sp1 = *R.GetCommandBuffer<JseCreateShaderCommand>();
+        JseCmdCreateShader& sp1 = *R.GetCommandBuffer<JseCmdCreateShader>();
         sp1.info.pCode = vtxshader;
         sp1.info.shaderId = JseShaderID{ 1 };
         sp1.info.stage = JseShaderStage::VERTEX;
-        JseCreateShaderCommand& sp2 = *R.GetCommandBuffer<JseCreateShaderCommand>();
+        JseCmdCreateShader& sp2 = *R.GetCommandBuffer<JseCmdCreateShader>();
         sp2.info.pCode = fragshader;
         sp2.info.shaderId = JseShaderID{ 2 };
         sp2.info.stage = JseShaderStage::FRAGMENT;
 
-        JseCreateDescriptorSetLayoutBinding& setBinding = *R.GetCommandBuffer<JseCreateDescriptorSetLayoutBinding>();
+        JseCmdCreateDescriptorSetLayoutBindind& setBinding = *R.GetCommandBuffer<JseCmdCreateDescriptorSetLayoutBindind>();
         setBinding.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
         setBinding.info.bindingCount = 1;
         setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(1);
@@ -174,7 +174,7 @@ void main() {
         setBinding.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_FRAGMENT;
 
 
-        JseCreateDescriptorSetLayoutBinding& setBinding2 = *R.GetCommandBuffer<JseCreateDescriptorSetLayoutBinding>();
+        JseCmdCreateDescriptorSetLayoutBindind& setBinding2 = *R.GetCommandBuffer<JseCmdCreateDescriptorSetLayoutBindind>();
         setBinding2.info.setLayoutId = JseDescriptorSetLayoutID{ 2 };
         setBinding2.info.bindingCount = 1;
         setBinding2.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(1);
@@ -183,7 +183,7 @@ void main() {
         setBinding2.info.pBindings[0].descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
         setBinding2.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_ALL;
 
-        JseCreateGraphicsPipelineCommand& p = *R.GetCommandBuffer<JseCreateGraphicsPipelineCommand>();
+        JseCmdCreateGraphicsPipeline& p = *R.GetCommandBuffer<JseCmdCreateGraphicsPipeline>();
         p.info.graphicsPipelineId = JseGrapicsPipelineID{ 1 };
         p.info.renderState = GLS_DEPTHFUNC_LESS;
         p.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
@@ -202,13 +202,13 @@ void main() {
         xVertex::getBindings(p.info.pVertexInputState->pBindings);
         xVertex::getAttribs(p.info.pVertexInputState->pAttributes);
 
-        JseCreateBufferCommand& buf = *R.GetCommandBuffer<JseCreateBufferCommand>();
+        JseCmdCreateBuffer& buf = *R.GetCommandBuffer<JseCmdCreateBuffer>();
         buf.info.bufferId = JseBufferID{ 1 };
         buf.info.size = 64 * 1024;
         //buf.info.storageFlags = JSE_BUFFER_STORAGE_DYNAMIC_BIT|JSE_BUFFER_STORAGE_COHERENT_BIT|JSE_BUFFER_STORAGE_PERSISTENT_BIT|JSE_BUFFER_STORAGE_WRITE_BIT;
         buf.info.target = JseBufferTarget::VERTEX;
 
-        JseUpdateBufferCommand& upd = *R.GetCommandBuffer<JseUpdateBufferCommand>();
+        JseCmdUpdateBuffer& upd = *R.GetCommandBuffer<JseCmdUpdateBuffer>();
         upd.info.bufferId = JseBufferID{ 1 };
         upd.info.size = sizeof(rect);
         upd.info.data = (uint8_t*)&rect[0];
@@ -245,7 +245,7 @@ void main() {
                 target = JseImageTarget::D3;
             }
 
-            auto& img = *R.GetCommandBuffer<JseCreateImageCommand>();
+            auto& img = *R.GetCommandBuffer<JseCmdCreateImage>();
             img.info.imageId = JseImageID{ 1 };
             img.info.format = JseFormat::RGBA_BPTC;
             img.info.target = target;
@@ -262,10 +262,10 @@ void main() {
             R.GetCore()->SetVSyncInterval(1);
         }
 
-        JseBindGraphicsPipelineCommand& bind = *R.GetCommandBuffer<JseBindGraphicsPipelineCommand>();
+        JseCmdBindGraphicsPipeline& bind = *R.GetCommandBuffer<JseCmdBindGraphicsPipeline>();
         bind.pipeline = JseGrapicsPipelineID{ 1 };
 
-        JseBindVertexBuffersCommand& bb = *R.GetCommandBuffer<JseBindVertexBuffersCommand>();
+        JseCmdBindVertexBuffers& bb = *R.GetCommandBuffer<JseCmdBindVertexBuffers>();
         bb.bindingCount = 1;
         bb.firstBinding = 0;
         bb.pBuffers = R.FrameAlloc<JseBufferID>(1);
@@ -274,14 +274,14 @@ void main() {
         bb.pOffsets[0] = 0;
         bb.pipeline = JseGrapicsPipelineID{ 1 };
 
-        auto& crdset = *R.GetCommandBuffer<JseCreateDescriptorSetCommand>();
+        auto& crdset = *R.GetCommandBuffer<JseCmdCreateDescriptorSet>();
         crdset.info.setId = JseDescriptorSetID{ 1 };
         crdset.info.setLayoutId = JseDescriptorSetLayoutID{ 1 };
-        auto& crdset2 = *R.GetCommandBuffer<JseCreateDescriptorSetCommand>();
+        auto& crdset2 = *R.GetCommandBuffer<JseCmdCreateDescriptorSet>();
         crdset2.info.setId = JseDescriptorSetID{ 2 };
         crdset2.info.setLayoutId = JseDescriptorSetLayoutID{ 2 };
 
-        auto& wrdset = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
+        auto& wrdset = *R.GetCommandBuffer<JseCmdWriteDescriptorSet>();
         wrdset.info.descriptorCount = 1;
         wrdset.info.descriptorType = JseDescriptorType::SAMPLED_IMAGE;
         wrdset.info.dstBinding = 0;
@@ -290,7 +290,7 @@ void main() {
         wrdset.info.pImageInfo[0].image = JseImageID{ 1 };
 
 
-        auto& bindset = *R.GetCommandBuffer<JseBindDescriptorSetsCommand>();
+        auto& bindset = *R.GetCommandBuffer<JseCmdBindDescriptorSets>();
         bindset.descriptorSetCount = 2;
         bindset.firstSet = 0;
         bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(2);
@@ -307,7 +307,7 @@ void main() {
             JseRect2D screen{};
             R.GetCore()->GetSurfaceDimension(screen);
 
-            JseBeginRenderpassCommand& x = *R.GetCommandBuffer<JseBeginRenderpassCommand>();
+            JseCmdBeginRenderpass& x = *R.GetCommandBuffer<JseCmdBeginRenderpass>();
             x.info.colorClearEnable = true;
             x.info.colorClearValue.color = JseColor4f{ 0.1f,0.0f,0.1f,1.0f };
             x.info.scissorEnable = false;
@@ -316,7 +316,7 @@ void main() {
             x.info.scissor.w = 512;
             x.info.scissor.h = 512;
 
-            auto& wrdset = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
+            auto& wrdset = *R.GetCommandBuffer<JseCmdWriteDescriptorSet>();
 
             wrdset.info.descriptorCount = 1;
             wrdset.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
@@ -332,13 +332,13 @@ void main() {
             wrdset.info.pUniformInfo[0].pVectors = R.FrameAlloc<glm::vec4>(4);
             std::memcpy(wrdset.info.pUniformInfo[0].pVectors, &W[0][0], sizeof(W));
 
-            auto& bindset = *R.GetCommandBuffer<JseBindDescriptorSetsCommand>();
+            auto& bindset = *R.GetCommandBuffer<JseCmdBindDescriptorSets>();
             bindset.descriptorSetCount = 1;
             bindset.firstSet = 0;
             bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
             bindset.pDescriptorSets[0] = JseDescriptorSetID{ 2 };
 
-            JseDrawCommand& draw = *R.GetCommandBuffer<JseDrawCommand>();
+            JseCmdDraw& draw = *R.GetCommandBuffer<JseCmdDraw>();
             draw.firstInstance = 0;
             draw.firstVertex = 0;
             draw.instanceCount = 1;
