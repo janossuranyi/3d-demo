@@ -94,15 +94,23 @@ layout(location = 1) in vec2 in_TexCoord;
 
 out vec2 vofi_TexCoord;
 
-uniform vec4 _va_freqLow[1];
-uniform vec4 _va_freqHigh[2];
+uniform vec4 _va_freqHigh[4];
 
-#define g_Scale _va_freqLow[0].xxx
-#define g_TexCoordScale _va_freqHigh[1].xy
+#define g_WorldMatrix_X _va_freqHigh[0]
+#define g_WorldMatrix_Y _va_freqHigh[1]
+#define g_WorldMatrix_Z _va_freqHigh[2]
+#define g_WorldMatrix_W _va_freqHigh[3]
 
 void main() {
-    gl_Position = vec4(in_Position * g_Scale, 1.0);
-    vofi_TexCoord = in_TexCoord * g_TexCoordScale;
+    mat4 W = mat4(
+        g_WorldMatrix_X,
+        g_WorldMatrix_Y,
+        g_WorldMatrix_Z,
+        g_WorldMatrix_W
+    );
+
+    gl_Position = W * vec4(in_Position, 1.0);
+    vofi_TexCoord = in_TexCoord;
 }
 )" };
 
@@ -128,8 +136,8 @@ void main() {
     JseResourceManager::add_resource_path("../assets/models");
 
     try {
-        JseGfxRenderer R;
         JseInputManager I;
+        JseGfxRenderer R;
 
         I.SetOnExitEvent([&]
             {
@@ -139,6 +147,9 @@ void main() {
         I.SetOnKeyboardEvent([&](JseKeyboardEvent e)
             {
                 Info("Key event: %x:%04x", e.type, e.keysym.sym);
+                if (e.keysym.sym == JseKeyCode::SDLK_ESCAPE) {
+                    running = false;
+                }
             });
 
         R.SetCore(new JseGfxCoreGL());
@@ -278,23 +289,6 @@ void main() {
         wrdset.info.pImageInfo = R.FrameAlloc<JseDescriptorImageInfo>();
         wrdset.info.pImageInfo[0].image = JseImageID{ 1 };
 
-        auto& wrdset2 = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
-        wrdset2.info.descriptorCount = 2;
-        wrdset2.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
-        wrdset2.info.dstBinding = 100;
-        wrdset2.info.setId = JseDescriptorSetID{ 2 };
-        wrdset2.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>(2);
-
-        std::strncpy(wrdset2.info.pUniformInfo[0].name, "_va_freqLow", 32);
-        wrdset2.info.pUniformInfo[0].vectorCount = 1;
-        wrdset2.info.pUniformInfo[0].pVectors = R.FrameAlloc<glm::vec4>(1);
-        wrdset2.info.pUniformInfo[0].pVectors[0] = glm::vec4(2.0f);
-
-        std::strncpy(wrdset2.info.pUniformInfo[1].name, "_va_freqHigh", 32);
-        wrdset2.info.pUniformInfo[1].vectorCount = 2;
-        wrdset2.info.pUniformInfo[1].pVectors = R.FrameAlloc<glm::vec4>(2);
-        wrdset2.info.pUniformInfo[1].pVectors[0] = glm::vec4(1.0f);
-        wrdset2.info.pUniformInfo[1].pVectors[1] = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f);
 
         auto& bindset = *R.GetCommandBuffer<JseBindDescriptorSetsCommand>();
         bindset.descriptorSetCount = 2;
@@ -310,17 +304,33 @@ void main() {
 
         while(running) {
 
+            JseRect2D screen{};
+            R.GetCore()->GetSurfaceDimension(screen);
+
             JseBeginRenderpassCommand& x = *R.GetCommandBuffer<JseBeginRenderpassCommand>();
             x.info.colorClearEnable = true;
             x.info.colorClearValue.color = JseColor4f{ 0.1f,0.0f,0.1f,1.0f };
             x.info.scissorEnable = false;
             x.info.framebuffer = JseFrameBufferID{ 0 };
-            x.info.viewport.x = 0;
-            x.info.viewport.y = 0;
-            x.info.viewport.w = 1024;
-            x.info.viewport.h = 768;
+            x.info.viewport = screen;
             x.info.scissor.w = 512;
             x.info.scissor.h = 512;
+
+            auto& wrdset = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
+
+            wrdset.info.descriptorCount = 1;
+            wrdset.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
+            wrdset.info.dstBinding = 100;
+            wrdset.info.setId = JseDescriptorSetID{ 2 };
+            wrdset.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>();
+
+            glm::mat4 W(1.0f);
+            W = glm::rotate(W, glm::radians(angle/2.f), glm::vec3(0, 0, 1));
+            W = glm::scale(W, glm::vec3(2.f + 0.5f * std::sinf(glm::radians(angle))));
+            std::strncpy(wrdset.info.pUniformInfo[0].name, "_va_freqHigh", 32);
+            wrdset.info.pUniformInfo[0].vectorCount = 4;
+            wrdset.info.pUniformInfo[0].pVectors = R.FrameAlloc<glm::vec4>(4);
+            std::memcpy(wrdset.info.pUniformInfo[0].pVectors, &W[0][0], sizeof(W));
 
             auto& bindset = *R.GetCommandBuffer<JseBindDescriptorSetsCommand>();
             bindset.descriptorSetCount = 1;
@@ -334,9 +344,8 @@ void main() {
             draw.instanceCount = 1;
             draw.mode = JseTopology::Triangles;
             draw.vertexCount = 6;
-            
+
             R.Frame();
-            void* ptr = R.GetMappedBufferPointer(JseBufferID{ 1 });
 
             I.ProcessEvents();
 
@@ -344,23 +353,12 @@ void main() {
             float dt = now - tick;
             tick = now;
 
-            auto& wrdset2 = *R.GetCommandBuffer<JseWriteDescriptorSetCommand>();
-            wrdset2.info.descriptorCount = 1;
-            wrdset2.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
-            wrdset2.info.dstBinding = 100;
-            wrdset2.info.setId = JseDescriptorSetID{ 2 };
-            wrdset2.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>(1);
-            std::strncpy(wrdset2.info.pUniformInfo[0].name, "_va_freqLow", 32);
-            wrdset2.info.pUniformInfo[0].vectorCount = 1;
-            wrdset2.info.pUniformInfo[0].pVectors = R.FrameAlloc<glm::vec4>(1);
-            wrdset2.info.pUniformInfo[0].pVectors[0] = glm::vec4(10.0f + std::sinf(angle) * 9.f);
-
-            angle += 1.f * dt;
+            angle += 30.f * dt;
 
         }
     }
     catch (std::exception e) { Error("error=%s", e.what()); }
-
+    
     JseShutdown();
 
 	Info("Program terminated");

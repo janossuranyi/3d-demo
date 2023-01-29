@@ -31,6 +31,7 @@ class JseMutex : public JseNonMovable {
         explicit operator bool() const noexcept;
 private:
         SDL_mutex* m_pMutex;
+        int m_lockCount{};
 };
 
 class JseLockGuard : public JseNonMovable {
@@ -45,6 +46,7 @@ private:
 class JseUniqueLock : public JseNonCopyable {
 public:
     JseUniqueLock() = delete;
+    ~JseUniqueLock();
     JseUniqueLock(JseMutex& mutex, bool defer_lock = false);
     void swap(JseUniqueLock& other);
     void release();

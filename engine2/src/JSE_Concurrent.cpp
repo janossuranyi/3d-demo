@@ -12,17 +12,31 @@ JseMutex::~JseMutex()
 
 int JseMutex::lock()
 {
-	return SDL_LockMutex(m_pMutex);
+	int r = SDL_LockMutex(m_pMutex);
+	++m_lockCount;
+
+	return r;
 }
 
 int JseMutex::tryLock()
 {
-	return SDL_TryLockMutex(m_pMutex);
+	int r = SDL_TryLockMutex(m_pMutex);
+	if (r != SDL_MUTEX_TIMEDOUT) {
+		++m_lockCount;
+	}
+
+	return r;
 }
 
 int JseMutex::unlock()
 {
-	return SDL_UnlockMutex(m_pMutex);
+	int r = -1;
+	assert(m_lockCount > 0);
+
+	r = SDL_UnlockMutex(m_pMutex);
+	--m_lockCount;
+	
+	return r;
 }
 
 JseMutex::operator bool() const noexcept
@@ -38,6 +52,12 @@ JseLockGuard::JseLockGuard(JseMutex& mutex) : m_mutex(mutex)
 JseLockGuard::~JseLockGuard()
 {
 	m_mutex.unlock();
+}
+
+JseUniqueLock::~JseUniqueLock()
+{
+	unlock();
+	release();
 }
 
 JseUniqueLock::JseUniqueLock(JseMutex& mutex, bool defer_lock)
@@ -78,7 +98,6 @@ int JseUniqueLock::lock()
 {
 	int r = -1;
 	r = m_pMutex->lock();
-
 	return r;
 }
 

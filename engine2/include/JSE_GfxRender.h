@@ -23,56 +23,56 @@ enum RenderCommand {
 	RC_DRAW
 };
 
-struct JseEmptyCommand {
+struct JseCmdEmpty {
 	RenderCommand command{ RC_NOP };
 	RenderCommand* next;
 };
-struct JseBeginRenderpassCommand {
+struct JseCmdBeginRenderpass {
 	RenderCommand command{ RC_BEGIN_RENDERPASS };
 	RenderCommand* next;
 	JseRenderPassInfo info;
 };
-struct JseCreateGraphicsPipelineCommand {
+struct JseCmdCreateGraphicsPipeline {
 	RenderCommand command{ RC_CREATE_GRAPHICS_PIPELINE };
 	RenderCommand* next;
 	JseGraphicsPipelineCreateInfo info;
 };
-struct JseCreateDescriptorSetLayoutBinding {
+struct JseCmdCreateDescriptorSetLayoutBindind {
 	RenderCommand command{ RC_CREATE_DESCRIPTOR_SET_LAYOUT_BINDING };
 	RenderCommand* next;
 	JseDescriptorSetLayoutCreateInfo info;
 };
-struct JseViewportCommand {
+struct JseCmdViewport {
 	RenderCommand command{ RC_VIEWPORT };
 	RenderCommand* next;
 	JseRect2D viewport;
 };
-struct JseScissorCommand {
+struct JseCmdScissor {
 	RenderCommand command{ RC_SCISSOR };
 	RenderCommand* next;
 	JseRect2D scissor;
 };
-struct JseCreateShaderCommand {
+struct JseCmdCreateShader {
 	RenderCommand command{ RC_CREATE_SHADER };
 	RenderCommand* next;
 	JseShaderCreateInfo info;
 };
-struct JseCreateBufferCommand {
+struct JseCmdCreateBuffer {
 	RenderCommand command{ RC_CREATE_BUFFER };
 	RenderCommand* next;
 	JseBufferCreateInfo info;
 };
-struct JseUpdateBufferCommand {
+struct JseCmdUpdateBuffer {
 	RenderCommand command{ RC_UPDATE_BUFFER };
 	RenderCommand* next;
 	JseBufferUpdateInfo info;
 };
-struct JseBindGraphicsPipelineCommand {
+struct JseCmdBindGraphicsPipeline {
 	RenderCommand command{ RC_BIND_GRAPHICS_PIPELINE };
 	RenderCommand* next;
 	JseGrapicsPipelineID pipeline;
 };
-struct JseBindVertexBuffersCommand {
+struct JseCmdBindVertexBuffers {
 	RenderCommand command{ RC_BIND_VERTEX_BUFFERS };
 	RenderCommand* next;
 	uint32_t firstBinding; 
@@ -81,7 +81,7 @@ struct JseBindVertexBuffersCommand {
 	JseDeviceSize* pOffsets;
 	JseGrapicsPipelineID pipeline;
 };
-struct JseDrawCommand {
+struct JseCmdDraw {
 	RenderCommand command{ RC_DRAW };
 	RenderCommand* next;
 	JseTopology mode;
@@ -90,27 +90,27 @@ struct JseDrawCommand {
 	uint32_t firstVertex;
 	uint32_t firstInstance;
 };
-struct JseCreateImageCommand {
+struct JseCmdCreateImage {
 	RenderCommand command{ RC_CREATE_IMAGE };
 	RenderCommand* next;
 	JseImageCreateInfo info;
 };
-struct JseUploadImageCommand {
+struct JseCmdUploadImage {
 	RenderCommand command{ RC_UPLOAD_IMAGE };
 	RenderCommand* next;
 	JseImageUploadInfo info;
 };
-struct JseCreateDescriptorSetCommand {
+struct JseCmdCreateDescriptorSet {
 	RenderCommand command{ RC_CREATE_DESCRIPTOR_SET };
 	RenderCommand* next;
 	JseDescriptorSetCreateInfo info;
 };
-struct JseWriteDescriptorSetCommand {
+struct JseCmdWriteDescriptorSet {
 	RenderCommand command{ RC_WRITE_DESCRIPTOR_SET };
 	RenderCommand* next;
 	JseWriteDescriptorSet info;
 };
-struct JseBindDescriptorSetsCommand {
+struct JseCmdBindDescriptorSets {
 	RenderCommand command{ RC_BIND_DESCRIPTOR_SETS };
 	RenderCommand* next;
 	uint32_t firstSet; 
@@ -126,29 +126,29 @@ public:
 	static const size_t ON_FLIGHT_FRAMES = 2;
 private:
 	struct frameData_t {
-		JseAtomicInt frameMemoryPtr;
-		std::shared_ptr<uint8_t> frameMemory;
-		JseEmptyCommand* cmdTail;
-		JseEmptyCommand* cmdHead;
+		JseAtomicInt				frameMemoryPtr;
+		std::shared_ptr<uint8_t>	frameMemory;
+		JseCmdEmpty*				cmdTail;
+		JseCmdEmpty*				cmdHead;
 	};
 
-	JseGfxCore*		core_;
-	JseSemaphore	renderSem_{1};
-	JseSemaphore	frontendSem_{0};
-	SDL_SpinLock	frameSwitchLck_{0};
-	JseAtomicInt	shouldTerminate_{0};
-	JseThread		renderThread_;
-	size_t			frameMemorySize_{};
-	int				maxFrameMemUsage_{ 0 };
-	frameData_t		frames_[ON_FLIGHT_FRAMES];
-	int				activeFrame_;
-	int				renderFrame_;
-	frameData_t*	frameData_;
-	bool			useThread_{};
-	bool			threadRunning_{};
-	bool			initialized_{};
-	int				CPU_CACHELINE_SIZE{};
-
+	JseGfxCore*				core_;
+	JseThread				renderThread_;
+	JseMutex				renderThreadMtx_;
+	JseConditionVariable	renderThreadSync_;
+	bool					renderThreadReady_;
+	bool					renderThreadDoWork_;
+	JseAtomicInt			shouldTerminate_{ 0 };
+	size_t					frameMemorySize_{};
+	int						maxFrameMemUsage_{ 0 };
+	frameData_t				frames_[ON_FLIGHT_FRAMES];
+	int						activeFrame_;
+	int						renderFrame_;
+	frameData_t*			frameData_;
+	frameData_t*			renderData_;
+	bool					useThread_{};
+	bool					threadRunning_{};
+	bool					initialized_{};
 	
 	void ResetCommandBuffer();
 
@@ -159,10 +159,10 @@ public:
 	JseGfxCore* GetCore();
 
 	void SetCore(JseGfxCore* core);
-	JseResult InitCore(int w, int h, bool fs, bool useThread);
-	void* GetMappedBufferPointer(JseBufferID id);
 
-	void CreateBuffer(const JseBufferCreateInfo& info, std::promise<JseResult> result);
+	JseResult InitCore(int w, int h, bool fs, bool useThread);
+	
+	void* GetMappedBufferPointer(JseBufferID id);
 
 	uint8_t* R_FrameAlloc(uint32_t bytes);
 
@@ -180,7 +180,7 @@ public:
 		cmd = new (R_FrameAlloc(sizeof(_Type))) _Type();
 		cmd->next = nullptr;
 		frameData_->cmdTail->next = &cmd->command;
-		frameData_->cmdTail = RCAST(JseEmptyCommand*, cmd);
+		frameData_->cmdTail = RCAST(JseCmdEmpty*, cmd);
 
 		return cmd;
 	}
@@ -190,7 +190,7 @@ public:
 		_Ty* cmd = new (R_FrameAlloc(sizeof(_Ty))) _Ty();
 		cmd->next = nullptr;
 		frameData_->cmdTail->next = &cmd->command;
-		frameData_->cmdTail = RCAST(JseEmptyCommand*, cmd);
+		frameData_->cmdTail = RCAST(JseCmdEmpty*, cmd);
 
 		*ref = cmd;
 	}
