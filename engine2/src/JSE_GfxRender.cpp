@@ -39,88 +39,108 @@ void JseGfxRenderer::RenderFrame(frameData_t* renderData)
 	ProcessCommandList(renderData);
 }
 
+void JseGfxRenderer::operator()(const JseCmdEmpty& cmd)
+{
+}
+
+void JseGfxRenderer::operator()(const JseCmdBeginRenderpass& cmd) {
+	lastResult_ = core_->BeginRenderPass(cmd.info);
+}
+
+void JseGfxRenderer::operator()(const JseCmdCreateGraphicsPipeline& cmd)
+{
+	lastResult_ = core_->CreateGraphicsPipeline(cmd.info);
+}
+
+void JseGfxRenderer::operator()(const JseCmdViewport& cmd)
+{
+	core_->Viewport(cmd.viewport);
+}
+
+void JseGfxRenderer::operator()(const JseCmdScissor& cmd)
+{
+	core_->Scissor(cmd.scissor);
+}
+
+void JseGfxRenderer::operator()(const JseCmdCreateShader& cmd)
+{
+	std::string err;
+	JseResult r{};
+	if ((r = core_->CreateShader(cmd.info, err)) != JseResult::SUCCESS) {
+		Error("Shader %d error: %d - %s", cmd.info.shaderId, r, err.c_str());
+	}
+
+	lastResult_ = r;
+}
+
+void JseGfxRenderer::operator()(const JseCmdCreateDescriptorSetLayoutBindind& cmd)
+{
+	lastResult_ = core_->CreateDescriptorSetLayout(cmd.info);
+}
+
+void JseGfxRenderer::operator()(const JseCmdCreateBuffer& cmd)
+{
+	JseResult r;
+	if ((r = core_->CreateBuffer(cmd.info)) != JseResult::SUCCESS) {
+		Error("Buffer create error: %d", r);
+	}
+	lastResult_ = r;
+}
+
+void JseGfxRenderer::operator()(const JseCmdUpdateBuffer& cmd)
+{
+	JseResult r;
+	if ((r = core_->UpdateBuffer(cmd.info)) != JseResult::SUCCESS) {
+		Error("Buffer update error: %d", r);
+	}
+	lastResult_ = r;
+}
+
+void JseGfxRenderer::operator()(const JseCmdBindVertexBuffers& cmd)
+{
+	core_->BindVertexBuffers(cmd.firstBinding, cmd.bindingCount, cmd.pBuffers, cmd.pOffsets);
+}
+
+void JseGfxRenderer::operator()(const JseCmdBindGraphicsPipeline& cmd)
+{
+	lastResult_ = core_->BindGraphicsPipeline(cmd.pipeline);
+}
+
+void JseGfxRenderer::operator()(const JseCmdDraw& cmd)
+{
+	core_->Draw(cmd.mode, cmd.vertexCount, cmd.instanceCount, cmd.firstVertex, cmd.firstInstance);
+}
+
+void JseGfxRenderer::operator()(const JseCmdCreateImage& cmd)
+{
+	lastResult_ = core_->CreateImage(cmd.info);
+}
+
+void JseGfxRenderer::operator()(const JseCmdUploadImage& cmd)
+{
+	lastResult_ = core_->UpdateImageData(cmd.info);
+}
+
+void JseGfxRenderer::operator()(const JseCmdCreateDescriptorSet& cmd)
+{
+	lastResult_ = core_->CreateDescriptorSet(cmd.info);
+}
+
+void JseGfxRenderer::operator()(const JseCmdWriteDescriptorSet& cmd)
+{
+	lastResult_ = core_->WriteDescriptorSet(cmd.info);
+}
+
+void JseGfxRenderer::operator()(const JseCmdBindDescriptorSets& cmd)
+{
+	lastResult_ = core_->BindDescriptorSet(cmd.firstSet, cmd.descriptorSetCount, cmd.pDescriptorSets, cmd.dynamicOffsetCount, cmd.pDynamicOffsets);
+}
+
 void JseGfxRenderer::ProcessCommandList(frameData_t* frameData)
 {
-	for (JseCmdEmpty* cmd = frameData->cmdHead; cmd; cmd = RCAST(JseCmdEmpty*, cmd->next)) {
+	for (JseCmdWrapper* cmd = frameData->cmdHead; cmd; cmd = cmd->next) {
 
-		JseResult r{ JseResult::SUCCESS };
-
-		switch (cmd->command) {
-		case RC_NOP:
-			break;
-		case RC_BEGIN_RENDERPASS:
-			core_->BeginRenderPass(((JseCmdBeginRenderpass*)cmd)->info);
-			break;
-		case RC_CREATE_GRAPHICS_PIPELINE:
-			core_->CreateGraphicsPipeline(((JseCmdCreateGraphicsPipeline*)cmd)->info);
-			break;
-		case RC_VIEWPORT:
-			core_->Viewport(((JseCmdViewport*)cmd)->viewport);
-			break;
-		case RC_SCISSOR:
-			core_->Scissor(((JseCmdScissor*)cmd)->scissor);
-			break;
-		case RC_CREATE_SHADER: {
-			std::string err;
-			JseResult r;
-			if ((r = core_->CreateShader(((JseCmdCreateShader*)cmd)->info, err)) != JseResult::SUCCESS) {
-				Error("Shader %d error: %d - %s", ((JseCmdCreateShader*)cmd)->info.shaderId, r, err.c_str());
-			}
-		}
-			break;
-		case RC_CREATE_DESCRIPTOR_SET_LAYOUT_BINDING:
-			core_->CreateDescriptorSetLayout(((JseCmdCreateDescriptorSetLayoutBindind*)cmd)->info);
-			break;
-		case RC_CREATE_BUFFER: {
-			JseResult r;
-			if ((r = core_->CreateBuffer(((JseCmdCreateBuffer*)cmd)->info)) != JseResult::SUCCESS) {
-				Error("Buffer create error: %d", r);
-			}
-		}
-			break;
-		case RC_UPDATE_BUFFER: {
-			JseResult r;
-			if ((r = core_->UpdateBuffer(((JseCmdUpdateBuffer*)cmd)->info)) != JseResult::SUCCESS) {
-				Error("Buffer update error: %d", r);
-			}
-		}
-			break;
-		case RC_BIND_VERTEX_BUFFERS:
-		{
-			const auto* xcmd = (JseCmdBindVertexBuffers*)cmd;
-			core_->BindVertexBuffers(xcmd->firstBinding, xcmd->bindingCount, xcmd->pBuffers, xcmd->pOffsets);
-		}
-			break;
-		case RC_BIND_GRAPHICS_PIPELINE:
-			core_->BindGraphicsPipeline(((JseCmdBindGraphicsPipeline*)cmd)->pipeline);
-			break;
-		case RC_DRAW:
-		{
-			const auto* xcmd = (JseCmdDraw*)cmd;
-			core_->Draw(xcmd->mode, xcmd->vertexCount, xcmd->instanceCount, xcmd->firstVertex, xcmd->firstInstance);
-		}
-			break;
-		case RC_CREATE_IMAGE:
-			core_->CreateImage(((JseCmdCreateImage*)cmd)->info);
-			break;
-		case RC_UPLOAD_IMAGE:
-			core_->UpdateImageData(((JseCmdUploadImage*)cmd)->info);
-			break;
-		case RC_CREATE_DESCRIPTOR_SET:
-			core_->CreateDescriptorSet(((JseCmdCreateDescriptorSet*)cmd)->info);
-			break;
-		case RC_WRITE_DESCRIPTOR_SET:
-			core_->WriteDescriptorSet(((JseCmdWriteDescriptorSet*)cmd)->info);
-			break;
-		case RC_BIND_DESCRIPTOR_SETS:
-		{
-			const auto* xcmd = (JseCmdBindDescriptorSets*)cmd;
-			core_->BindDescriptorSet(xcmd->firstSet, xcmd->descriptorSetCount, xcmd->pDescriptorSets, xcmd->dynamicOffsetCount, xcmd->pDynamicOffsets);
-		}
-			break;
-		default:
-			Error("Unhandled render command: %d", cmd->command);
-		}
+		std::visit(*this, cmd->command);
 	}
 }
 
@@ -167,11 +187,11 @@ int JseGfxRenderer::RenderThreadWrapper(void* data)
 void JseGfxRenderer::ResetCommandBuffer()
 {
 	const uintptr_t bytesNeededForAlignment = CACHE_LINE_SIZE - ((uintptr_t)frameData_->frameMemory.get() & (CACHE_LINE_SIZE - 1));
-	int size = bytesNeededForAlignment + CACHE_LINE_ALIGN(sizeof(JseCmdEmpty));
+	int size = bytesNeededForAlignment + CACHE_LINE_ALIGN(sizeof(JseCmdWrapper));
 
 	frameData_->frameMemoryPtr.Set(size);
-	JseCmdEmpty* cmd = RCAST(JseCmdEmpty*, frameData_->frameMemory.get() + bytesNeededForAlignment);
-	cmd->command = RC_NOP;
+	JseCmdWrapper* cmd = RCAST(JseCmdWrapper*, frameData_->frameMemory.get() + bytesNeededForAlignment);
+	cmd->command = JseCmdEmpty{};
 	cmd->next = nullptr;
 	frameData_->cmdTail = cmd;
 	frameData_->cmdHead = cmd;
@@ -286,7 +306,8 @@ JseResult JseGfxRenderer::InitCore(int w, int h, bool fs, bool useThread)
 	sci.stencilBits = 8;
 	sci.swapInterval = 1;
 	sci.width = w;
-	
+	sci.srgb = false;
+
 	auto res = core_->CreateSurface(sci);
 #if 0
 	using namespace nv_dds;
@@ -341,7 +362,9 @@ uint8_t* JseGfxRenderer::R_FrameAlloc(uint32_t bytes)
 
 	ret = frameData_->frameMemory.get() + end - bytes;
 
-	maxFrameMemUsage_ = std::max(maxFrameMemUsage_, end);
+	if (end > maxFrameMemUsage_) {
+		maxFrameMemUsage_ = end;
+	}
 
 	for (uint32_t offset = 0; offset < bytes; offset += CACHE_LINE_SIZE) {
 		//std::memset(ret + offset, 0, CPU_CACHELINE_SIZE);
@@ -349,4 +372,15 @@ uint8_t* JseGfxRenderer::R_FrameAlloc(uint32_t bytes)
 	}
 
 	return ret;
+}
+
+JseCmdWrapper* JseGfxRenderer::GetCommandBuffer()
+{
+	JseCmdWrapper* cmd;
+	cmd = new (R_FrameAlloc(sizeof(JseCmd))) JseCmdWrapper();
+	cmd->next = nullptr;
+	frameData_->cmdTail->next = cmd;
+	frameData_->cmdTail = cmd;
+
+	return cmd;
 }

@@ -149,7 +149,7 @@ private:
 		GLuint program;
 		std::vector<JseVertexInputBindingDescription> binding;
 		JseRenderState renderState;
-		const SetLayoutData* setLayout;
+		//const SetLayoutData* setLayout;
 	};
 
 	struct ShaderData {
@@ -168,7 +168,7 @@ private:
 		JseRect2D scissor;
 		GLuint indexBuffer;
 		GLuint program;
-		JseColor4f clearColor;
+		glm::vec4 clearColor;
 	} stateCache_{};
 
 	struct ActivePipelineData {

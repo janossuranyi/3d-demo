@@ -50,7 +50,7 @@ struct JseRect2D {
 };
 
 typedef union JseClearValue {
-    JseColor4f color;
+    glm::vec4 color;
     float depth;
     int stencil;
 } JseClearValue;
@@ -257,6 +257,7 @@ struct JseSurfaceCreateInfo {
 	int stencilBits;
     int swapInterval;
 	bool fullScreen;
+    bool srgb;
 };
 
 struct JseBufferCreateInfo {
@@ -426,10 +427,11 @@ struct JseDescriptorBufferInfo {
 struct JseDescriptorUniformInfo {
     uint32_t vectorCount;
     glm::vec4* pVectors;
+    JseUniformData value;
     char name[32];
 };
 
-static_assert(sizeof(JseDescriptorUniformInfo) <= std::hardware_destructive_interference_size, "");
+static_assert(sizeof(JseDescriptorUniformInfo) <= 2 * std::hardware_destructive_interference_size, "");
 
 struct JseWriteDescriptorSet {
     JseDescriptorSetID setId;

@@ -162,7 +162,7 @@ JseGfxCoreGL::JseGfxCoreGL() :
 	glcontext_(0),
 	glVersion_(0)
 {
-	Info("JseGfxCore OpenGL 4.6 Driver v0.1");
+	Info("JseGfxCore OpenGL 4.6 Driver v1.0");
 }
 
 void* JseGfxCoreGL::GetMappedBufferPointer_impl(JseBufferID id)
@@ -199,7 +199,9 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, createSurfaceInfo.alphaBits);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, createSurfaceInfo.stencilBits);
 
-	//SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_FALSE);
+	if (createSurfaceInfo.srgb) {
+		SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_TRUE);
+	}
 #if _DEBUG
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
@@ -236,7 +238,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 		return JseResult::GENERIC_ERROR;
 	}
 
-	SDL_GL_MakeCurrent(windowHandle_, glcontext_);
+	//SDL_GL_MakeCurrent(windowHandle_, glcontext_);
 
 	Info("SDL_GL_CreateContext done");
 
@@ -288,14 +290,18 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	SDL_GetWindowSize(windowHandle_, &_w, &_h);
 	glViewport(0, 0, _w, _h);
 	glScissor(0, 0, _w, _h);
-	stateCache_.viewport = JseRect2D{ 0,0,static_cast<uint32_t>(_w),static_cast<uint32_t>(_h)};
-	stateCache_.scissor = JseRect2D{ 0,0,static_cast<uint32_t>(_w),static_cast<uint32_t>(_h) };
+	stateCache_.viewport = JseRect2D{ 0,0,SCAST(uint32_t, _w),SCAST(uint32_t, _h) };
+	stateCache_.scissor  = JseRect2D{ 0,0,SCAST(uint32_t, _w),SCAST(uint32_t, _h) };
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glEnable(GL_FRAMEBUFFER_SRGB);
 
-	deviceCapabilities_.pRenderer = (const char*)glGetString(GL_RENDERER);
-	deviceCapabilities_.pRendererVersion = (const char*)glGetString(GL_VERSION);
+	if (createSurfaceInfo.srgb) {
+		glEnable(GL_FRAMEBUFFER_SRGB);
+	}
+
+
+	deviceCapabilities_.pRenderer			= (const char*)glGetString(GL_RENDERER);
+	deviceCapabilities_.pRendererVersion	= (const char*)glGetString(GL_VERSION);
 	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &deviceCapabilities_.maxArrayTextureLayers);
 	
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &deviceCapabilities_.maxFragmentTextureImageUnits);
@@ -315,8 +321,8 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	glGetError();
 	glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &deviceCapabilities_.availableVideoMemory);
 	glGetError();
-
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 
 #ifdef _DEBUG
 	if (gl_extensions_.count("GL_ARB_debug_output"))
@@ -619,10 +625,12 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 		//glUseProgram(data.program);
 		//glUseProgram(0);
 		glBindVertexArray(0);
+		/*
 		if (cmd.setLayoutId.isValid()) {
 			auto& set = set_layout_map_.at(cmd.setLayoutId);
 			data.setLayout = &set;
 		}
+		*/
 		pipeline_data_map_.emplace(cmd.graphicsPipelineId, data);
 	}
 
@@ -975,8 +983,12 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 	}
 
 	auto& data = find->second;
-	const auto& binding = data.pLayoutData->bindings.at(cmd.dstBinding);
-	assert(cmd.descriptorType == binding.descriptorType);
+	auto binding = data.pLayoutData->bindings.find(cmd.dstBinding);
+	if (binding == std::end(data.pLayoutData->bindings)) {
+		return JseResult::INVALID_VALUE;
+	}
+
+	assert(cmd.descriptorType == binding->second.descriptorType);
 
 	for (int i = 0; i < cmd.descriptorCount; ++i) {
 
@@ -1031,6 +1043,9 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 				if (uniforms.vectorCount) {
 					tmp.assign(uniforms.pVectors, uniforms.pVectors + uniforms.vectorCount);
 					data.uniforms[uniforms.name] = tmp;
+				}
+				else {
+					data.uniforms.emplace(uniforms.name, uniforms.value);
 				}
 			}
 		}

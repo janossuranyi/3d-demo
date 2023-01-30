@@ -23,58 +23,35 @@ enum RenderCommand {
 	RC_DRAW
 };
 
-struct JseCmdEmpty {
-	RenderCommand command{ RC_NOP };
-	RenderCommand* next;
-};
+struct JseCmdEmpty {};
 struct JseCmdBeginRenderpass {
-	RenderCommand command{ RC_BEGIN_RENDERPASS };
-	RenderCommand* next;
 	JseRenderPassInfo info;
 };
 struct JseCmdCreateGraphicsPipeline {
-	RenderCommand command{ RC_CREATE_GRAPHICS_PIPELINE };
-	RenderCommand* next;
 	JseGraphicsPipelineCreateInfo info;
 };
 struct JseCmdCreateDescriptorSetLayoutBindind {
-	RenderCommand command{ RC_CREATE_DESCRIPTOR_SET_LAYOUT_BINDING };
-	RenderCommand* next;
 	JseDescriptorSetLayoutCreateInfo info;
 };
 struct JseCmdViewport {
-	RenderCommand command{ RC_VIEWPORT };
-	RenderCommand* next;
 	JseRect2D viewport;
 };
 struct JseCmdScissor {
-	RenderCommand command{ RC_SCISSOR };
-	RenderCommand* next;
 	JseRect2D scissor;
 };
 struct JseCmdCreateShader {
-	RenderCommand command{ RC_CREATE_SHADER };
-	RenderCommand* next;
 	JseShaderCreateInfo info;
 };
 struct JseCmdCreateBuffer {
-	RenderCommand command{ RC_CREATE_BUFFER };
-	RenderCommand* next;
 	JseBufferCreateInfo info;
 };
 struct JseCmdUpdateBuffer {
-	RenderCommand command{ RC_UPDATE_BUFFER };
-	RenderCommand* next;
 	JseBufferUpdateInfo info;
 };
 struct JseCmdBindGraphicsPipeline {
-	RenderCommand command{ RC_BIND_GRAPHICS_PIPELINE };
-	RenderCommand* next;
 	JseGrapicsPipelineID pipeline;
 };
 struct JseCmdBindVertexBuffers {
-	RenderCommand command{ RC_BIND_VERTEX_BUFFERS };
-	RenderCommand* next;
 	uint32_t firstBinding; 
 	uint32_t bindingCount; 
 	JseBufferID* pBuffers;
@@ -82,8 +59,6 @@ struct JseCmdBindVertexBuffers {
 	JseGrapicsPipelineID pipeline;
 };
 struct JseCmdDraw {
-	RenderCommand command{ RC_DRAW };
-	RenderCommand* next;
 	JseTopology mode;
 	uint32_t vertexCount;
 	uint32_t instanceCount;
@@ -91,33 +66,48 @@ struct JseCmdDraw {
 	uint32_t firstInstance;
 };
 struct JseCmdCreateImage {
-	RenderCommand command{ RC_CREATE_IMAGE };
-	RenderCommand* next;
 	JseImageCreateInfo info;
 };
 struct JseCmdUploadImage {
-	RenderCommand command{ RC_UPLOAD_IMAGE };
-	RenderCommand* next;
 	JseImageUploadInfo info;
 };
 struct JseCmdCreateDescriptorSet {
-	RenderCommand command{ RC_CREATE_DESCRIPTOR_SET };
-	RenderCommand* next;
 	JseDescriptorSetCreateInfo info;
 };
 struct JseCmdWriteDescriptorSet {
-	RenderCommand command{ RC_WRITE_DESCRIPTOR_SET };
-	RenderCommand* next;
 	JseWriteDescriptorSet info;
 };
 struct JseCmdBindDescriptorSets {
-	RenderCommand command{ RC_BIND_DESCRIPTOR_SETS };
-	RenderCommand* next;
 	uint32_t firstSet; 
 	uint32_t descriptorSetCount;
 	uint32_t dynamicOffsetCount; 
 	uint32_t* pDynamicOffsets;
 	JseDescriptorSetID* pDescriptorSets;
+};
+
+using JseCmd = std::variant<
+	JseCmdEmpty,
+	JseCmdBindDescriptorSets,
+	JseCmdWriteDescriptorSet,
+	JseCmdCreateDescriptorSet,
+	JseCmdUploadImage,
+	JseCmdCreateImage,
+	JseCmdDraw,
+	JseCmdBindVertexBuffers,
+	JseCmdBindGraphicsPipeline,
+	JseCmdUpdateBuffer,
+	JseCmdCreateBuffer,
+	JseCmdCreateShader,
+	JseCmdScissor,
+	JseCmdViewport,
+	JseCmdCreateDescriptorSetLayoutBindind,
+	JseCmdCreateGraphicsPipeline,
+	JseCmdBeginRenderpass
+>;
+
+struct JseCmdWrapper {
+	JseCmd command;
+	JseCmdWrapper* next;
 };
 
 class JseGfxRenderer {
@@ -128,8 +118,8 @@ private:
 	struct frameData_t {
 		JseAtomicInt				frameMemoryPtr;
 		std::shared_ptr<uint8_t>	frameMemory;
-		JseCmdEmpty*				cmdTail;
-		JseCmdEmpty*				cmdHead;
+		JseCmdWrapper*				cmdTail;
+		JseCmdWrapper*				cmdHead;
 	};
 
 	JseGfxCore*				core_;
@@ -153,7 +143,31 @@ private:
 	
 	void ResetCommandBuffer();
 
-public: 
+	JseResult lastResult_;
+public:
+
+	void operator()(const JseCmdEmpty& cmd);
+	void operator()(const JseCmdBeginRenderpass& cmd);
+	void operator()(const JseCmdCreateGraphicsPipeline& cmd);
+	void operator()(const JseCmdViewport& cmd);
+	void operator()(const JseCmdScissor& cmd);
+	void operator()(const JseCmdCreateShader& cmd);
+	void operator()(const JseCmdCreateDescriptorSetLayoutBindind& cmd);
+	void operator()(const JseCmdCreateBuffer& cmd);
+	void operator()(const JseCmdUpdateBuffer& cmd);
+	void operator()(const JseCmdBindVertexBuffers& cmd);
+	void operator()(const JseCmdBindGraphicsPipeline& cmd);
+	void operator()(const JseCmdDraw& cmd);
+	void operator()(const JseCmdCreateImage& cmd);
+	void operator()(const JseCmdUploadImage& cmd);
+	void operator()(const JseCmdCreateDescriptorSet& cmd);
+	void operator()(const JseCmdWriteDescriptorSet& cmd);
+	void operator()(const JseCmdBindDescriptorSets& cmd);
+	
+	template <typename T> void operator()(const T& c) {
+		static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
+	}
+
 	JseGfxRenderer();
 	JseGfxRenderer(int frameMemorySize);
 	~JseGfxRenderer();
@@ -182,15 +196,12 @@ public:
 		return reinterpret_cast<_Ty*>(pData);
 	}
 
-	template<typename _Type>
-	_Type* GetCommandBuffer() {
-		_Type* cmd;
-		cmd = new (R_FrameAlloc(sizeof(_Type))) _Type();
-		cmd->next = nullptr;
-		frameData_->cmdTail->next = &cmd->command;
-		frameData_->cmdTail = RCAST(JseCmdEmpty*, cmd);
+	JseCmdWrapper* GetCommandBuffer();
 
-		return cmd;
+	void SubmitCommand(const JseCmd& cmd) { 
+		auto* p = GetCommandBuffer();
+		std::memcpy(&p->command, &cmd, sizeof(cmd));
+		//p->command = std::move(cmd);
 	}
 
 	template<typename _Ty>
