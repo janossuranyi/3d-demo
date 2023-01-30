@@ -198,11 +198,7 @@ public:
 
 	JseCmdWrapper* GetCommandBuffer();
 
-	void SubmitCommand(const JseCmd& cmd) { 
-		auto* p = GetCommandBuffer();
-		std::memcpy(&p->command, &cmd, sizeof(cmd));
-		//p->command = std::move(cmd);
-	}
+	void SubmitCommand(const JseCmd& cmd);
 
 	template<typename _Ty>
 	void GetCommandBuffer(_Ty** ref) {

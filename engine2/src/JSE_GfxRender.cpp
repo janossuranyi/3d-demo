@@ -384,3 +384,10 @@ JseCmdWrapper* JseGfxRenderer::GetCommandBuffer()
 
 	return cmd;
 }
+
+void JseGfxRenderer::SubmitCommand(const JseCmd& cmd)
+{
+	auto* p = GetCommandBuffer();
+	std::memcpy(&p->command, &cmd, sizeof(cmd));
+	//p->command = std::move(cmd);
+}
