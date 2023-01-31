@@ -3,6 +3,9 @@
 
 #include <stdexcept>
 
+using Invokable = std::function<void()>;
+
+
 enum RenderCommand {
 	RC_NOP = 0,
 	RC_BEGIN_RENDERPASS,
@@ -175,18 +178,23 @@ public:
 	uint32_t NextID();
 	
 	JseGfxCore* GetCore();
-	void ExecuteInCriticalSection(std::function<void()> func);
-
 	JseResult CreateImage(const JseImageCreateInfo& x);
 	JseResult UploadImage(const JseImageUploadInfo& x);
-
-	void SetCore(JseGfxCore* core);
-
 	JseResult InitCore(int w, int h, bool fs, bool useThread);
 	
-	void* GetMappedBufferPointer(JseBufferID id);
-
 	uint8_t* R_FrameAlloc(uint32_t bytes);
+	JseCmdWrapper* GetCommandBuffer();
+
+	void Invoke(Invokable func);
+	void* GetMappedBufferPointer(JseBufferID id);
+	void SubmitCommand(const JseCmd& cmd);
+	void SetCore(JseGfxCore* core);
+	void Frame();
+	void RenderFrame(frameData_t* renderData);
+	void ProcessCommandList(frameData_t* frameData);
+	void RenderThread();
+	void SetVSyncInterval(int x);
+	static int RenderThreadWrapper(void* data);
 
 	template<typename _Ty>
 	_Ty* FrameAlloc(int count = 1) {
@@ -196,25 +204,17 @@ public:
 		return reinterpret_cast<_Ty*>(pData);
 	}
 
-	JseCmdWrapper* GetCommandBuffer();
-
-	void SubmitCommand(const JseCmd& cmd);
-
-	template<typename _Ty>
-	void GetCommandBuffer(_Ty** ref) {
-		_Ty* cmd = new (R_FrameAlloc(sizeof(_Ty))) _Ty();
-		cmd->next = nullptr;
-		frameData_->cmdTail->next = &cmd->command;
-		frameData_->cmdTail = RCAST(JseCmdEmpty*, cmd);
-
-		*ref = cmd;
+	template<typename _Ty> _Ty* CreateCommand() {
+		auto* ptr = GetCommandBuffer();
+		ptr->command.emplace<_Ty>();
+		
+		return RCAST(_Ty*, &ptr->command);
 	}
-
-	void Frame();
-	void RenderFrame(frameData_t* renderData);
-	void ProcessCommandList(frameData_t* frameData);
-	void RenderThread();
-	static int RenderThreadWrapper(void* data);
 };
+
+inline 	void JseGfxRenderer::SubmitCommand(const JseCmd& cmd) {
+	auto* p = GetCommandBuffer();
+	std::memcpy(&p->command, &cmd, sizeof(cmd));
+}
 
 #endif

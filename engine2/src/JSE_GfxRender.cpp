@@ -245,7 +245,7 @@ JseGfxCore* JseGfxRenderer::GetCore()
 	return core_;
 }
 
-void JseGfxRenderer::ExecuteInCriticalSection(std::function<void()> func)
+void JseGfxRenderer::Invoke(Invokable func)
 {
 	if (!func) return;
 
@@ -253,7 +253,9 @@ void JseGfxRenderer::ExecuteInCriticalSection(std::function<void()> func)
 		JseUniqueLock lck(renderThreadMtx_);
 		renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
 		core_->BeginRendering();
-		func();
+		{
+			func();
+		}
 		core_->EndRendering();
 	}
 	else {
@@ -265,11 +267,7 @@ JseResult JseGfxRenderer::CreateImage(const JseImageCreateInfo& x)
 {
 	JseResult r{};
 
-	ExecuteInCriticalSection(
-		[this, &r, x]
-		{
-			r = core_->CreateImage(x);
-		});
+	Invoke([this, &r, x] {r = core_->CreateImage(x); });
 
 	return r;
 }
@@ -278,11 +276,7 @@ JseResult JseGfxRenderer::UploadImage(const JseImageUploadInfo& x)
 {
 	JseResult r{};
 
-	ExecuteInCriticalSection(
-		[this, &r, x]
-		{
-			r = core_->UpdateImageData(x);
-		});
+	Invoke([this, &r, x] {r = core_->UpdateImageData(x); });
 
 	return r;
 }
@@ -309,13 +303,7 @@ JseResult JseGfxRenderer::InitCore(int w, int h, bool fs, bool useThread)
 	sci.srgb = false;
 
 	auto res = core_->CreateSurface(sci);
-#if 0
-	using namespace nv_dds;
 
-	CDDSImage image;
-	image.load("d:/tokio.dds");
-	image.upload_textureCubemap();
-#endif
 	if (res == JseResult::SUCCESS) {
 		initialized_ = true;
 		useThread_ = useThread;
@@ -334,15 +322,8 @@ JseResult JseGfxRenderer::InitCore(int w, int h, bool fs, bool useThread)
 void* JseGfxRenderer::GetMappedBufferPointer(JseBufferID id)
 {
 	void* ptr{};
-	if (useThread_) {
-		JseUniqueLock lck(renderThreadMtx_);
-		renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
 
-		ptr = core_->GetMappedBufferPointer(id);
-	}
-	else {
-		ptr = core_->GetMappedBufferPointer(id);
-	}
+	Invoke([this,&ptr,id] {ptr = core_->GetMappedBufferPointer(id); });
 
 	return ptr;
 }
@@ -385,9 +366,6 @@ JseCmdWrapper* JseGfxRenderer::GetCommandBuffer()
 	return cmd;
 }
 
-void JseGfxRenderer::SubmitCommand(const JseCmd& cmd)
-{
-	auto* p = GetCommandBuffer();
-	std::memcpy(&p->command, &cmd, sizeof(cmd));
-	//p->command = std::move(cmd);
+void JseGfxRenderer::SetVSyncInterval(int x) {
+	Invoke([this,x] {core_->SetVSyncInterval(x); });
 }

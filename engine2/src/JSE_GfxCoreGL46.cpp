@@ -526,7 +526,7 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 
 		if (cmd.compressed) {
 			/*
-			* when using CompressedTex*Subimage* functions the format must be the exact internal format
+			* when using CompressedTex*Subimage* functions, the format must be the exact internal format
 			*/
 			GLint format{SCAST(GLint, data.internal_format)};
 			GLenum const target = data.target != GL_TEXTURE_CUBE_MAP ? data.target : GL_TEXTURE_CUBE_MAP_POSITIVE_X;
@@ -718,6 +718,9 @@ JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& c
 		return JseResult::ALREADY_EXISTS;
 	}
 
+	GLint bound{};
+	GL_CHECK(glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound));
+
 	FrameBufferData data{};
 	GL_CHECK(glGenFramebuffers(1, &data.framebuffer));
 	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer));
@@ -727,13 +730,15 @@ JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& c
 		draw_buffers.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 
 		if (img.target == GL_TEXTURE_CUBE_MAP) {
-			glFramebufferTexture2D(GL_FRAMEBUFFER,
+			glFramebufferTexture2D(
+				GL_FRAMEBUFFER,
 				draw_buffers.back(),
 				GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<uint32_t>(cmd.pColorAttachments[i].face),
 				img.texture,
 				cmd.pColorAttachments[i].level);
 		} else if (img.target == GL_TEXTURE_3D) {
-			glFramebufferTexture3D(GL_FRAMEBUFFER,
+			glFramebufferTexture3D(
+				GL_FRAMEBUFFER,
 				draw_buffers.back(),
 				img.target,
 				img.texture,
@@ -746,8 +751,8 @@ JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& c
 	}
 
 	if (draw_buffers.empty()) {
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
+		GL_CHECK(glDrawBuffer(GL_NONE));
+		GL_CHECK(glReadBuffer(GL_NONE));
 	}
 	else {
 		GL_CHECK(glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
@@ -757,11 +762,12 @@ JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& c
 		auto& img = texture_data_map_.at(cmd.pDepthAttachment->image);
 
 		if (img.target == GL_TEXTURE_CUBE_MAP) {
-			glFramebufferTexture2D(GL_FRAMEBUFFER,
+			GL_CHECK(glFramebufferTexture2D(
+				GL_FRAMEBUFFER,
 				GL_DEPTH_ATTACHMENT,
 				GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<uint32_t>(cmd.pDepthAttachment->face),
 				img.texture,
-				cmd.pDepthAttachment->level);
+				cmd.pDepthAttachment->level));
 		}
 		else {
 			GL_CHECK(glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, img.texture, cmd.pDepthAttachment->level));
@@ -774,13 +780,12 @@ JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& c
 
 	GLenum status{};	
 	GL_CHECK(status = glCheckFramebufferStatus(GL_FRAMEBUFFER));
+	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, bound));
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDeleteFramebuffers(1, &data.framebuffer);
+		GL_CHECK(glDeleteFramebuffers(1, &data.framebuffer));
 		return JseResult::FRAMEBUFFER_INCOMPLETE;
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	framebuffer_map_.emplace(cmd.frameBufferId, data);
 
@@ -1112,7 +1117,7 @@ void JseGfxCoreGL::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint3
 			MapJseTopologyGl(mode),
 			indexCount,
 			active_index_type_,
-			reinterpret_cast<const void*>(firstIndex * mult),
+			RCAST(const void*, (firstIndex * mult)),
 			instanceCount,
 			vertexOffset,
 			firstInstance));
@@ -1154,6 +1159,7 @@ JseResult JseGfxCoreGL::GetDeviceCapabilities_impl(JseDeviceCapabilities& dest)
 JseResult JseGfxCoreGL::SetVSyncInterval_impl(int interval)
 {
 	if (SDL_GL_SetSwapInterval(interval) == -1) {
+		Error("%s", SDL_GetError());
 		return JseResult::GENERIC_ERROR;
 	}
 
@@ -1165,7 +1171,7 @@ JseResult JseGfxCoreGL::GetSurfaceDimension_impl(JseRect2D& x)
 	int _w, _h;
 
 	SDL_GetWindowSize(windowHandle_, &_w, &_h);
-	x = JseRect2D{ 0,0,static_cast<uint32_t>(_w),static_cast<uint32_t>(_h) };
+	x = JseRect2D{ 0,0,uint32_t(_w),uint32_t(_h) };
 
 	return JseResult::SUCCESS;
 }
