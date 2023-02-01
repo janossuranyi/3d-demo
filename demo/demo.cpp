@@ -12,6 +12,12 @@ using namespace glm;
 
 void demo_1();
 
+struct UniformMatrixes {
+    mat4 W;
+    mat4 V;
+    mat4 P;
+};
+
 struct xVertex {
     glm::vec3 pos;
     glm::vec2 uv;
@@ -106,6 +112,12 @@ layout(location = 1) in vec2 in_TexCoord;
 
 out vec2 vofi_TexCoord;
 
+layout(binding = 1, std140) uniform UniformMatrixes {
+    mat4 W;
+    mat4 V;
+    mat4 P;
+} matrix;
+
 uniform mat4 g_W;
 
 void main() {
@@ -132,7 +144,7 @@ vec4 gamma(vec4 c) {
 }
 
 float alpha = 0.05;
-vec3 blend = vec3(1.0, 1.0, 0.0);
+vec3 blend = vec3(0.0, 0.0, 1.0);
 
 void main() {
     vec3 color = texture(samp0, vofi_TexCoord.xy).xyz;
@@ -207,12 +219,16 @@ void main() {
 
         auto& setBinding = *R.CreateCommand<JseCmdCreateDescriptorSetLayoutBindind>();
         setBinding.info.setLayoutId = texLayout;
-        setBinding.info.bindingCount = 1;
-        setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(1);
+        setBinding.info.bindingCount = 2;
+        setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(2);
         setBinding.info.pBindings[0].binding = 0;
         setBinding.info.pBindings[0].descriptorCount = 1;
         setBinding.info.pBindings[0].descriptorType = JseDescriptorType::SAMPLED_IMAGE;
         setBinding.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_FRAGMENT;
+        setBinding.info.pBindings[1].binding = 1;
+        setBinding.info.pBindings[1].descriptorCount = 1;
+        setBinding.info.pBindings[1].descriptorType = JseDescriptorType::UNIFORM_BUFFER_DYNAMIC;
+        setBinding.info.pBindings[1].stageFlags = JSE_STAGE_FLAG_VERTEX;
 
         auto uniformLayout = JseDescriptorSetLayoutID{ R.NextID() };
         auto& setBinding2 = *R.CreateCommand<JseCmdCreateDescriptorSetLayoutBindind>();
@@ -348,13 +364,13 @@ void main() {
         crdset2.info.setId = uniformSet;
         crdset2.info.setLayoutId = uniformLayout;
 
-        auto& wrdset = *R.CreateCommand<JseCmdWriteDescriptorSet>();
-        wrdset.info.descriptorCount = 1;
-        wrdset.info.descriptorType = JseDescriptorType::SAMPLED_IMAGE;
-        wrdset.info.dstBinding = 0;
-        wrdset.info.setId = texSet;
-        wrdset.info.pImageInfo = R.FrameAlloc<JseDescriptorImageInfo>();
-        wrdset.info.pImageInfo[0].image = JseImageID{ 1 };
+        auto* wrdset = R.CreateCommand<JseCmdWriteDescriptorSet>();
+        wrdset->info.descriptorCount = 1;
+        wrdset->info.descriptorType = JseDescriptorType::SAMPLED_IMAGE;
+        wrdset->info.dstBinding = 0;
+        wrdset->info.setId = texSet;
+        wrdset->info.pImageInfo = R.FrameAlloc<JseDescriptorImageInfo>();
+        wrdset->info.pImageInfo[0].image = JseImageID{ 1 };
 
         auto& bindset = *R.CreateCommand<JseCmdBindDescriptorSets>();
         bindset.descriptorSetCount = 2;

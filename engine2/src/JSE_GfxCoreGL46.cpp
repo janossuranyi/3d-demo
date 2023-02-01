@@ -803,7 +803,7 @@ JseResult JseGfxCoreGL::DeleteFrameBuffer_impl(JseFrameBufferID framebufferId)
 	GL_CHECK(glDeleteFramebuffers(1, &find->second.framebuffer));
 	framebuffer_map_.erase(framebufferId);
 
-	return JseResult();
+	return JseResult::SUCCESS;
 }
 
 JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo)
@@ -1064,6 +1064,8 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 		default:
 			Error("Unhadled DescriptorType");
 		}
+
+		
 	}
 	return JseResult::SUCCESS;
 }
