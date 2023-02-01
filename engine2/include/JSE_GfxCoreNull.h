@@ -43,7 +43,7 @@ private:
 	virtual void SwapChainNextImage_impl() override;
 
 	virtual JseResult SetVSyncInterval_impl(int interval) override;
-	virtual JseResult GetSurfaceDimension_impl(JseRect2D& x) override;
+	virtual JseResult GetSurfaceDimension_impl(glm::ivec2& x) override;
 	virtual void Shutdown_impl() override;
 };
 #endif // !JSE_GFX_CORE_NULL

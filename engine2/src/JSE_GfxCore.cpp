@@ -173,7 +173,7 @@ JseResult JseGfxCore::SetVSyncInterval(int interval)
     return SetVSyncInterval_impl(interval);
 }
 
-JseResult JseGfxCore::GetSurfaceDimension(JseRect2D& x)
+JseResult JseGfxCore::GetSurfaceDimension(glm::ivec2& x)
 {
     return GetSurfaceDimension_impl(x);
 }

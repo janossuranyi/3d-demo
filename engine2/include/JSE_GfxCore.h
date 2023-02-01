@@ -43,10 +43,10 @@ struct JseColor4f {
 };
 
 struct JseRect2D {
-    uint32_t x;
-    uint32_t y;
-    uint32_t w;
-    uint32_t h;
+    int x;
+    int y;
+    int w;
+    int h;
 };
 
 typedef union JseClearValue {
@@ -666,7 +666,7 @@ public:
     void Scissor(const JseRect2D& x);
     JseResult GetDeviceCapabilities(JseDeviceCapabilities& dest);
     JseResult SetVSyncInterval(int interval);
-    JseResult GetSurfaceDimension(JseRect2D& x);
+    JseResult GetSurfaceDimension(glm::ivec2& x);
 
     void* GetMappedBufferPointer(JseBufferID id);
 
@@ -710,7 +710,7 @@ private:
     virtual void Viewport_impl(const JseRect2D& x) = 0;
     virtual void Scissor_impl(const JseRect2D& x) = 0;
     virtual JseResult SetVSyncInterval_impl(int interval) = 0;
-    virtual JseResult GetSurfaceDimension_impl(JseRect2D& x) = 0;
+    virtual JseResult GetSurfaceDimension_impl(glm::ivec2&) = 0;
 
 	virtual void Shutdown_impl() = 0;
 };

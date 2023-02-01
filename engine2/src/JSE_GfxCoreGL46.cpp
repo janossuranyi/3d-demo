@@ -287,11 +287,11 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 
 	int _w, _h;
 
-	SDL_GetWindowSize(windowHandle_, &_w, &_h);
+	SDL_GL_GetDrawableSize(windowHandle_, &_w, &_h);
 	glViewport(0, 0, _w, _h);
 	glScissor(0, 0, _w, _h);
-	stateCache_.viewport = JseRect2D{ 0,0,SCAST(uint32_t, _w),SCAST(uint32_t, _h) };
-	stateCache_.scissor  = JseRect2D{ 0,0,SCAST(uint32_t, _w),SCAST(uint32_t, _h) };
+	stateCache_.viewport = JseRect2D{ 0,0,_w,_h };
+	stateCache_.scissor  = JseRect2D{ 0,0,_w,_h };
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -322,7 +322,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &deviceCapabilities_.availableVideoMemory);
 	glGetError();
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
+	glEnable(GL_DEPTH_TEST);
 
 #ifdef _DEBUG
 	if (gl_extensions_.count("GL_ARB_debug_output"))
@@ -831,11 +831,17 @@ JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPass
 	}
 	if (renderPassInfo.depthClearEnable) {
 		clearBits |= GL_DEPTH_BUFFER_BIT;
-		GL_CHECK(glClearDepth(renderPassInfo.depthClearValue.depth));
+		if (stateCache_.clearDepth != renderPassInfo.depthClearValue.depth) {
+			GL_CHECK(glClearDepth(renderPassInfo.depthClearValue.depth));
+			stateCache_.clearDepth = renderPassInfo.depthClearValue.depth;
+		}
 	}
 	if (renderPassInfo.stencilClearEnable) {
 		clearBits |= GL_STENCIL_BUFFER_BIT;
-		GL_CHECK(glClearStencil(renderPassInfo.stencilClearValue.stencil));
+		if (stateCache_.clearStencil != renderPassInfo.stencilClearValue.stencil) {
+			GL_CHECK(glClearStencil(renderPassInfo.stencilClearValue.stencil));
+			stateCache_.clearStencil = renderPassInfo.stencilClearValue.stencil;
+		}
 	}
 
 	if (clearBits) {
@@ -1166,12 +1172,10 @@ JseResult JseGfxCoreGL::SetVSyncInterval_impl(int interval)
 	return JseResult::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::GetSurfaceDimension_impl(JseRect2D& x)
+JseResult JseGfxCoreGL::GetSurfaceDimension_impl(glm::ivec2& x)
 {
-	int _w, _h;
-
-	SDL_GetWindowSize(windowHandle_, &_w, &_h);
-	x = JseRect2D{ 0,0,uint32_t(_w),uint32_t(_h) };
+	//SDL_GetWindowSize(windowHandle_, &_w, &_h);
+	SDL_GL_GetDrawableSize(windowHandle_, &x.x, &x.y);
 
 	return JseResult::SUCCESS;
 }

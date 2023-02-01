@@ -108,7 +108,7 @@ private:
 
 	virtual JseResult SetVSyncInterval_impl(int interval) override;
 
-	virtual JseResult GetSurfaceDimension_impl(JseRect2D& x) override;
+	virtual JseResult GetSurfaceDimension_impl(glm::ivec2& x) override;
 
 	virtual void Shutdown_impl() override;
 
@@ -169,6 +169,8 @@ private:
 		GLuint indexBuffer;
 		GLuint program;
 		glm::vec4 clearColor;
+		float clearDepth;
+		int clearStencil;
 	} stateCache_{};
 
 	struct ActivePipelineData {

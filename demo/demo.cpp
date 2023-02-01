@@ -8,6 +8,7 @@
 #define SCREEN_HEIGHT 900
 #define FULLSCREEN false
 
+using namespace glm;
 
 void demo_1();
 
@@ -57,12 +58,12 @@ JseFormat MapGLCompressedFmt(uint32_t f) {
     }
 }
 
-glm::vec3 gamma(glm::vec3 c) {
-    return glm::pow(c, glm::vec3(1.0f / 2.2f));
+glm::vec3 gamma(vec3 c) {
+    return pow(c, vec3(1.0f / 2.2f));
 }
 
-glm::vec4 gamma(glm::vec4 c) {
-    return glm::vec4( glm::pow(glm::vec3(c), glm::vec3(1.0f / 2.2f)), c.a );
+vec4 gamma(vec4 c) {
+    return vec4( pow(vec3(c), vec3(1.0f / 2.2f)), c.a );
 }
 
 KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
@@ -130,8 +131,12 @@ vec4 gamma(vec4 c) {
     return vec4(pow(c.rgb, vec3(1.0/2.2)), c.a);
 }
 
+float alpha = 0.05;
+vec3 blend = vec3(1.0, 1.0, 0.0);
+
 void main() {
-    fragColor = gamma( texture(samp0, vofi_TexCoord.xy) );
+    vec3 color = texture(samp0, vofi_TexCoord.xy).xyz;
+    fragColor = vec4( gamma( blend*alpha + color*(1.0-alpha) ), 1.0);
 }
 )" };
 
@@ -174,6 +179,10 @@ void main() {
 
         R.SetVSyncInterval(0);
 
+        /***********************************************************/
+        /* Creating shaders                                        */
+        /***********************************************************/
+
         auto vert = JseShaderID(R.NextID());
         auto frag = JseShaderID(R.NextID());
 
@@ -189,6 +198,10 @@ void main() {
         sp2.info.stage = JseShaderStage::FRAGMENT;
         wr1.command = sp1;
         wr2.command = sp2;
+
+        /***********************************************************/
+        /* Creating descriptorset layout */
+        /***********************************************************/
 
         auto texLayout = JseDescriptorSetLayoutID{ R.NextID() };
 
@@ -211,6 +224,9 @@ void main() {
         setBinding2.info.pBindings[0].descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
         setBinding2.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_ALL;
 
+        /***********************************************************/
+        /* Creating graphics pipeline
+        /***********************************************************/
         auto& p = *R.CreateCommand<JseCmdCreateGraphicsPipeline>();
         p.info.graphicsPipelineId = JseGrapicsPipelineID{ 1 };
         p.info.renderState = GLS_DEPTHFUNC_LESS;
@@ -230,11 +246,19 @@ void main() {
         xVertex::getBindings(p.info.pVertexInputState->pBindings);
         xVertex::getAttribs(p.info.pVertexInputState->pAttributes);
 
+        /***********************************************************/
+        /* Creating buffers */
+        /***********************************************************/
+
         auto& buf = *R.CreateCommand<JseCmdCreateBuffer>();
         buf.info.bufferId = JseBufferID{ 1 };
         buf.info.size = 64 * 1024;
-        //buf.info.storageFlags = JSE_BUFFER_STORAGE_DYNAMIC_BIT|JSE_BUFFER_STORAGE_COHERENT_BIT|JSE_BUFFER_STORAGE_PERSISTENT_BIT|JSE_BUFFER_STORAGE_WRITE_BIT;
         buf.info.target = JseBufferTarget::VERTEX;
+
+        auto& ubuf = *R.CreateCommand<JseCmdCreateBuffer>();
+        ubuf.info.bufferId = JseBufferID{ 2 };
+        ubuf.info.size = 64 * 1024;
+        ubuf.info.target = JseBufferTarget::UNIFORM_DYNAMIC;
 
         auto& upd = *R.CreateCommand<JseCmdUpdateBuffer>();
         upd.info.bufferId = JseBufferID{ 1 };
@@ -243,11 +267,15 @@ void main() {
 
         R.Frame();
 
+        /***********************************************************/
+        /* Creating textures */
+        /***********************************************************/
+
         {
             ktxTexture* kTexture;
             KTX_error_code ktxresult;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                JseResourceManager::get_resource("textures/test/PaintedMetal02_2048.ktx2").c_str(),
+                JseResourceManager::get_resource("textures/test/WoodenPlanks01_2048.ktx2").c_str(),
 //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);
@@ -283,6 +311,15 @@ void main() {
             img.info.srgb = kt2->vkFormat == VK_FORMAT_BC7_SRGB_BLOCK;
             img.info.compressed = kt2->isCompressed;
             img.info.immutable = 1;
+            img.info.samplerDescription = R.FrameAlloc<JseSamplerDescription>();
+            img.info.samplerDescription->minFilter = JseFilter::LINEAR_MIPMAP_LINEAR;
+            img.info.samplerDescription->magFilter = JseFilter::NEAREST;
+            img.info.samplerDescription->lodBias = 0.f;
+            img.info.samplerDescription->maxAnisotropy = 1.0f;
+            img.info.samplerDescription->maxLod = kt2->numLevels;
+            img.info.samplerDescription->tilingS = JseImageTiling::REPEAT;
+            img.info.samplerDescription->tilingT = JseImageTiling::REPEAT;
+            img.info.samplerDescription->tilingR = JseImageTiling::REPEAT;
 
             R.Frame();
 
@@ -329,58 +366,98 @@ void main() {
         R.Frame();
 
 
-        JseRect2D screen{};
+        ivec2 screen{};
         R.GetCore()->GetSurfaceDimension(screen);
-        auto scissor_w = screen.w / 2;
-        auto scissor_h = screen.h / 2;
+        auto scissor_w = screen.x / 2;
+        auto scissor_h = screen.y / 2;
 
         auto renderPass = JseCmdBeginRenderpass{};
         renderPass.info.colorClearEnable = true;
         renderPass.info.colorClearValue.color = glm::vec4{ 0.4f,0.0f,0.4f,1.0f };
+        renderPass.info.depthClearEnable = true;
+        renderPass.info.depthClearValue.depth = 1.0f;
         renderPass.info.scissorEnable = false;
         renderPass.info.framebuffer = JseFrameBufferID{ 0 };
-        renderPass.info.viewport = screen;
-        renderPass.info.scissor.x = (screen.w - scissor_w) / 2;
-        renderPass.info.scissor.y = (screen.h - scissor_h) / 2;
+        renderPass.info.viewport = JseRect2D{ 0,0,screen.x,screen.y };
+        renderPass.info.scissor.x = (screen.x - scissor_w) / 2;
+        renderPass.info.scissor.y = (screen.y - scissor_h) / 2;
         renderPass.info.scissor.w = scissor_w;
         renderPass.info.scissor.h = scissor_h;
 
         R.SetVSyncInterval(1);
 
-        float tick = SCAST(float, SDL_GetTicks64()) / 1000;
+        float tick = SCAST(float, SDL_GetTicks64()) / 1000.f;
         float angle = 0.f;
         float time1 = tick;
+
+        vec3 viewOrigin{ 0.f,0.f,-2.f };
+
+        mat4 W(1.0f), V, P;
 
         while(running) {
 
             R.SubmitCommand(renderPass);
 
-            auto* wrdset = R.CreateCommand<JseCmdWriteDescriptorSet>();
 
-            wrdset->info.descriptorCount = 1;
-            wrdset->info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
-            wrdset->info.dstBinding = 100;
-            wrdset->info.setId = uniformSet;
-            wrdset->info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>(wrdset->info.descriptorCount);
+            viewOrigin.z = 0.1f + (2.0f + 2.0f * std::sinf(radians(angle)));
 
-            glm::mat4 W(1.0f);
-            W = glm::rotate(W, glm::radians(angle/2.f), glm::vec3(0, 0, 1));
-            W = glm::scale(W, glm::vec3(2.f + 0.5f * std::sinf(glm::radians(angle))));
-            std::strcpy(wrdset->info.pUniformInfo[0].name, "g_W");
-            wrdset->info.pUniformInfo[0].value = W;
+            {
+                auto& descWriter = *R.CreateCommand<JseCmdWriteDescriptorSet>();
 
-            auto* bindset = R.CreateCommand<JseCmdBindDescriptorSets>();
-            bindset->descriptorSetCount = 1;
-            bindset->firstSet = 0;
-            bindset->pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
-            bindset->pDescriptorSets[0] = uniformSet;
+                descWriter.info.descriptorCount = 1;
+                descWriter.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
+                descWriter.info.dstBinding = 100;
+                descWriter.info.setId = uniformSet;
 
-            auto* draw = R.CreateCommand<JseCmdDraw>();
-            draw->firstInstance = 0;
-            draw->firstVertex = 0;
-            draw->instanceCount = 1;
-            draw->mode = JseTopology::Triangles;
-            draw->vertexCount = 6;
+                W = mat4(1.0f);
+                W = rotate(W, radians(angle), vec3(0.f, 1.f, 0.f));
+                W = rotate(W, radians(00.0f), vec3(1.f, 0.f, 0.f));
+                V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
+                P = perspective(radians(75.0f), (float)screen.x / screen.y, 0.01f, 100.f);
+                descWriter.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>();
+                descWriter.info.pUniformInfo[0].value = P * V * W;
+                std::strcpy(descWriter.info.pUniformInfo[0].name, "g_W");
+
+                auto* bindset = R.CreateCommand<JseCmdBindDescriptorSets>();
+                bindset->descriptorSetCount = 1;
+                bindset->firstSet = 0;
+                bindset->pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
+                bindset->pDescriptorSets[0] = uniformSet;
+
+                auto* draw = R.CreateCommand<JseCmdDraw>();
+                draw->instanceCount = 1;
+                draw->mode = JseTopology::Triangles;
+                draw->vertexCount = 6;
+            }
+            {
+                auto& descWriter = *R.CreateCommand<JseCmdWriteDescriptorSet>();
+
+                descWriter.info.descriptorCount = 1;
+                descWriter.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
+                descWriter.info.dstBinding = 100;
+                descWriter.info.setId = uniformSet;
+
+                W = mat4(1.0f);
+                W = rotate(W, radians(90.0f+angle), vec3(0.f, 1.f, 0.f));
+                W = rotate(W, radians(00.0f), vec3(1.f, 0.f, 0.f));
+                V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
+                P = perspective(radians(75.0f), (float)screen.x / screen.y, 0.01f, 100.f);
+                descWriter.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>();
+                descWriter.info.pUniformInfo[0].value = P * V * W;
+                std::strcpy(descWriter.info.pUniformInfo[0].name, "g_W");
+
+                auto* bindset = R.CreateCommand<JseCmdBindDescriptorSets>();
+                bindset->descriptorSetCount = 1;
+                bindset->firstSet = 0;
+                bindset->pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
+                bindset->pDescriptorSets[0] = uniformSet;
+
+                auto* draw = R.CreateCommand<JseCmdDraw>();
+                draw->instanceCount = 1;
+                draw->mode = JseTopology::Triangles;
+                draw->vertexCount = 6;
+            }
+
 
             R.Frame();
 
@@ -391,6 +468,7 @@ void main() {
             tick = now;
 
             angle += 30.f * dt;
+            if (angle > 360.f) angle -= 360.f;
         }
     }
     catch (std::exception e) { Error("error=%s", e.what()); }
