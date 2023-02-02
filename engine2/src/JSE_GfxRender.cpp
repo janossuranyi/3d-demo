@@ -300,7 +300,7 @@ JseResult JseGfxRenderer::InitCore(int w, int h, bool fs, bool useThread)
 	sci.stencilBits = 8;
 	sci.swapInterval = 1;
 	sci.width = w;
-	sci.srgb = false;
+	sci.srgb = true;
 
 	auto res = core_->CreateSurface(sci);
 

@@ -18,6 +18,23 @@ struct UniformMatrixes {
     mat4 P;
 };
 
+static const int ON_FLIGHT_FRAME = 2;
+
+struct RenderContext {
+
+    JseBufferID buf_Vertex;
+    JseBufferID buf_UbMatrix;
+    JseDescriptorSetLayoutID layout_Img_Unibuf;
+    JseDescriptorSetLayoutID layout_Uniform;    
+    JseGrapicsPipelineID pipeline;
+    JseShaderID shader_vertex;
+    JseShaderID shader_fragment;
+    JseImageID texture;
+    JseDescriptorSetID set_texture;
+    JseDescriptorSetID set_uniform;
+    int frame;
+} ctx;
+
 struct xVertex {
     glm::vec3 pos;
     glm::vec2 uv;
@@ -72,39 +89,7 @@ vec4 gamma(vec4 c) {
     return vec4( pow(vec3(c), vec3(1.0f / 2.2f)), c.a );
 }
 
-KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
-{
-    JseGfxRenderer* R = RCAST(JseGfxRenderer*, userdata);
-    
-    JseCmdUploadImage c = JseCmdUploadImage();
-
-    //c.info.data = R->FrameAlloc<uint8_t>(faceLodSize);
-    //std::memcpy(c.info.data, pixels, faceLodSize);
-
-    c.info.data = (uint8_t*)pixels;
-    c.info.imageId = JseImageID{ 1 };
-    c.info.face = face;
-    c.info.width = width;
-    c.info.height = height;
-    c.info.level = miplevel;
-    c.info.depth = 1;
-    c.info.imageSize = faceLodSize;
-
-    Info("level %d, face %d, width %d, height %d, depth %d, size %d", miplevel, face, width, height, depth, faceLodSize);
-    R->UploadImage(c.info);
-
-    return KTX_SUCCESS;
-}
-
-int main(int argc, char** argv)
-{
-    using namespace nv_dds;
-
-    JseInit(argc, argv);
-
-    bool running = true;
-
-    const char* vtxshader{ R"(
+static const char* vtxshader{ R"(
 #version 450
 
 layout(location = 0) in vec3 in_Position;
@@ -122,17 +107,19 @@ uniform mat4 g_W;
 
 void main() {
 
-    gl_Position = g_W * vec4(in_Position, 1.0);
+    gl_Position = matrix.P * matrix.V * matrix.W * vec4(in_Position, 1.0);
     vofi_TexCoord = in_TexCoord;
 }
 )" };
 
-    const char* fragshader{ R"(
+static const char* fragshader{ R"(
 #version 450
 
 in vec2 vofi_TexCoord;
 
 layout(binding = 0) uniform sampler2D samp0;
+layout(binding = 1) uniform sampler2D samp1;
+layout(binding = 2) uniform sampler2D samp2;
 
 out vec4 fragColor;
 
@@ -143,14 +130,45 @@ vec4 gamma(vec4 c) {
     return vec4(pow(c.rgb, vec3(1.0/2.2)), c.a);
 }
 
-float alpha = 0.05;
-vec3 blend = vec3(0.0, 0.0, 1.0);
-
 void main() {
     vec3 color = texture(samp0, vofi_TexCoord.xy).xyz;
-    fragColor = vec4( gamma( blend*alpha + color*(1.0-alpha) ), 1.0);
+    fragColor = vec4( color, 1.0 );
 }
 )" };
+
+KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
+{
+    JseGfxRenderer* R = RCAST(JseGfxRenderer*, userdata);
+    
+    JseCmdUploadImage c = JseCmdUploadImage();
+
+    //c.info.data = R->FrameAlloc<uint8_t>(faceLodSize);
+    //std::memcpy(c.info.data, pixels, faceLodSize);
+
+    c.info.data = (uint8_t*)pixels;
+    c.info.imageId = ctx.texture;
+    c.info.face = face;
+    c.info.width = width;
+    c.info.height = height;
+    c.info.level = miplevel;
+    c.info.depth = 1;
+    c.info.imageSize = faceLodSize;
+
+    Info("level %d, face %d, width %d, height %d, depth %d, size %d", miplevel, face, width, height, depth, faceLodSize);
+    R->UploadImage(c.info);
+
+    return KTX_SUCCESS;
+}
+
+
+int main(int argc, char** argv)
+{
+    using namespace nv_dds;
+
+    JseInit(argc, argv);
+
+    bool running = true;
+
 
     namespace fs = std::filesystem;
     JseFileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
@@ -195,18 +213,18 @@ void main() {
         /* Creating shaders                                        */
         /***********************************************************/
 
-        auto vert = JseShaderID(R.NextID());
-        auto frag = JseShaderID(R.NextID());
+        ctx.shader_vertex = JseShaderID(R.NextID());
+        ctx.shader_fragment = JseShaderID(R.NextID());
 
         auto& wr1 = *R.GetCommandBuffer();
         auto& wr2 = *R.GetCommandBuffer();
         JseCmdCreateShader sp1{};
         sp1.info.pCode = vtxshader;
-        sp1.info.shaderId = vert;
+        sp1.info.shaderId = ctx.shader_vertex;
         sp1.info.stage = JseShaderStage::VERTEX;
         JseCmdCreateShader sp2{};
         sp2.info.pCode = fragshader;
-        sp2.info.shaderId = frag;
+        sp2.info.shaderId = ctx.shader_fragment;
         sp2.info.stage = JseShaderStage::FRAGMENT;
         wr1.command = sp1;
         wr2.command = sp2;
@@ -215,44 +233,41 @@ void main() {
         /* Creating descriptorset layout */
         /***********************************************************/
 
-        auto texLayout = JseDescriptorSetLayoutID{ R.NextID() };
+        ctx.layout_Img_Unibuf = JseDescriptorSetLayoutID{ R.NextID() };
 
         auto& setBinding = *R.CreateCommand<JseCmdCreateDescriptorSetLayoutBindind>();
-        setBinding.info.setLayoutId = texLayout;
-        setBinding.info.bindingCount = 2;
-        setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(2);
+        setBinding.info.setLayoutId = ctx.layout_Img_Unibuf;
+        setBinding.info.bindingCount = 1;
+        setBinding.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(1);
         setBinding.info.pBindings[0].binding = 0;
         setBinding.info.pBindings[0].descriptorCount = 1;
         setBinding.info.pBindings[0].descriptorType = JseDescriptorType::SAMPLED_IMAGE;
         setBinding.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_FRAGMENT;
-        setBinding.info.pBindings[1].binding = 1;
-        setBinding.info.pBindings[1].descriptorCount = 1;
-        setBinding.info.pBindings[1].descriptorType = JseDescriptorType::UNIFORM_BUFFER_DYNAMIC;
-        setBinding.info.pBindings[1].stageFlags = JSE_STAGE_FLAG_VERTEX;
 
-        auto uniformLayout = JseDescriptorSetLayoutID{ R.NextID() };
+        ctx.layout_Uniform = JseDescriptorSetLayoutID{ R.NextID() };
         auto& setBinding2 = *R.CreateCommand<JseCmdCreateDescriptorSetLayoutBindind>();
-        setBinding2.info.setLayoutId = uniformLayout;
+        setBinding2.info.setLayoutId = ctx.layout_Uniform;
         setBinding2.info.bindingCount = 1;
         setBinding2.info.pBindings = R.FrameAlloc<JseDescriptorSetLayoutBinding>(setBinding2.info.bindingCount);
-        setBinding2.info.pBindings[0].binding = 100;
+        setBinding2.info.pBindings[0].binding = 1;
         setBinding2.info.pBindings[0].descriptorCount = 1;
-        setBinding2.info.pBindings[0].descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
-        setBinding2.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_ALL;
+        setBinding2.info.pBindings[0].descriptorType = JseDescriptorType::UNIFORM_BUFFER_DYNAMIC;
+        setBinding2.info.pBindings[0].stageFlags = JSE_STAGE_FLAG_VERTEX;
 
         /***********************************************************/
         /* Creating graphics pipeline
         /***********************************************************/
         auto& p = *R.CreateCommand<JseCmdCreateGraphicsPipeline>();
-        p.info.graphicsPipelineId = JseGrapicsPipelineID{ 1 };
+        ctx.pipeline = JseGrapicsPipelineID{ R.NextID() };
+        p.info.graphicsPipelineId = ctx.pipeline;
         p.info.renderState = GLS_DEPTHFUNC_LESS;
         p.info.setLayoutId = JseDescriptorSetLayoutID{};
         p.info.stageCount = 2;
         p.info.pStages = R.FrameAlloc<JsePipelineShaderStageCreateInfo>(2);
         p.info.pStages[0].stage = JseShaderStage::VERTEX;
-        p.info.pStages[0].shader = vert;
+        p.info.pStages[0].shader = ctx.shader_vertex;
         p.info.pStages[1].stage = JseShaderStage::FRAGMENT;
-        p.info.pStages[1].shader = frag;
+        p.info.pStages[1].shader = ctx.shader_fragment;
 
         p.info.pVertexInputState = R.FrameAlloc<JsePipelineVertexInputStateCreateInfo>();
         p.info.pVertexInputState->attributeCount = xVertex::attributeCount();
@@ -266,18 +281,20 @@ void main() {
         /* Creating buffers */
         /***********************************************************/
 
+        ctx.buf_Vertex = JseBufferID{ R.NextID() };
+        ctx.buf_UbMatrix = JseBufferID{ R.NextID() };
         auto& buf = *R.CreateCommand<JseCmdCreateBuffer>();
-        buf.info.bufferId = JseBufferID{ 1 };
+        buf.info.bufferId = ctx.buf_Vertex;
         buf.info.size = 64 * 1024;
         buf.info.target = JseBufferTarget::VERTEX;
 
         auto& ubuf = *R.CreateCommand<JseCmdCreateBuffer>();
-        ubuf.info.bufferId = JseBufferID{ 2 };
+        ubuf.info.bufferId = ctx.buf_UbMatrix;
         ubuf.info.size = 64 * 1024;
         ubuf.info.target = JseBufferTarget::UNIFORM_DYNAMIC;
 
         auto& upd = *R.CreateCommand<JseCmdUpdateBuffer>();
-        upd.info.bufferId = JseBufferID{ 1 };
+        upd.info.bufferId = ctx.buf_Vertex;
         upd.info.size = sizeof(rect);
         upd.info.data = (uint8_t*)&rect[0];
 
@@ -317,7 +334,8 @@ void main() {
             }
 
             auto& img = *R.CreateCommand<JseCmdCreateImage>();
-            img.info.imageId = JseImageID{ 1 };
+            ctx.texture = JseImageID{ R.NextID() };
+            img.info.imageId = ctx.texture;
             img.info.format = JseFormat::RGBA_BPTC;
             img.info.target = target;
             img.info.height = kt2->baseHeight;
@@ -343,41 +361,50 @@ void main() {
         }
 
         auto& bind = *R.CreateCommand<JseCmdBindGraphicsPipeline>();
-        bind.pipeline = JseGrapicsPipelineID{ 1 };
+        bind.pipeline = ctx.pipeline;
 
         auto& bb = *R.CreateCommand<JseCmdBindVertexBuffers>();
         bb.bindingCount = 1;
         bb.firstBinding = 0;
         bb.pBuffers = R.FrameAlloc<JseBufferID>(1);
-        bb.pBuffers[0] = JseBufferID{ 1 };
+        bb.pBuffers[0] = ctx.buf_Vertex;
         bb.pOffsets = R.FrameAlloc<JseDeviceSize>(1);
         bb.pOffsets[0] = 0;
-        bb.pipeline = JseGrapicsPipelineID{ 1 };
+        bb.pipeline = ctx.pipeline;
 
-        auto texSet = JseDescriptorSetID(R.NextID());
+        ctx.set_texture = JseDescriptorSetID(R.NextID());
         auto& crdset = *R.CreateCommand<JseCmdCreateDescriptorSet>();
-        crdset.info.setId = texSet;
-        crdset.info.setLayoutId = texLayout;
+        crdset.info.setId = ctx.set_texture;
+        crdset.info.setLayoutId = ctx.layout_Img_Unibuf;
 
-        auto uniformSet = JseDescriptorSetID(R.NextID());
+        ctx.set_uniform = JseDescriptorSetID(R.NextID());
         auto& crdset2 = *R.CreateCommand<JseCmdCreateDescriptorSet>();
-        crdset2.info.setId = uniformSet;
-        crdset2.info.setLayoutId = uniformLayout;
+        crdset2.info.setId = ctx.set_uniform;
+        crdset2.info.setLayoutId = ctx.layout_Uniform;
 
         auto* wrdset = R.CreateCommand<JseCmdWriteDescriptorSet>();
         wrdset->info.descriptorCount = 1;
         wrdset->info.descriptorType = JseDescriptorType::SAMPLED_IMAGE;
         wrdset->info.dstBinding = 0;
-        wrdset->info.setId = texSet;
+        wrdset->info.setId = ctx.set_texture;
         wrdset->info.pImageInfo = R.FrameAlloc<JseDescriptorImageInfo>();
-        wrdset->info.pImageInfo[0].image = JseImageID{ 1 };
+        wrdset->info.pImageInfo[0].image = ctx.texture;
 
         auto& bindset = *R.CreateCommand<JseCmdBindDescriptorSets>();
         bindset.descriptorSetCount = 2;
         bindset.firstSet = 0;
         bindset.pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(2);
-        bindset.pDescriptorSets[0] = texSet;
-        bindset.pDescriptorSets[1] = uniformSet;
+        bindset.pDescriptorSets[0] = ctx.set_texture;
+        bindset.pDescriptorSets[1] = ctx.set_uniform;
+
+        auto* write1 = R.CreateCommand<JseCmdWriteDescriptorSet>();
+        write1->info.setId = ctx.set_uniform;
+        write1->info.descriptorCount = 1;
+        write1->info.descriptorType = JseDescriptorType::UNIFORM_BUFFER_DYNAMIC;
+        write1->info.dstBinding = 1;
+        write1->info.pBufferInfo = R.FrameAlloc<JseDescriptorBufferInfo>();
+        write1->info.pBufferInfo[0].buffer = ctx.buf_UbMatrix;
+        write1->info.pBufferInfo[0].size = sizeof(UniformMatrixes);
 
         R.Frame();
 
@@ -389,7 +416,7 @@ void main() {
 
         auto renderPass = JseCmdBeginRenderpass{};
         renderPass.info.colorClearEnable = true;
-        renderPass.info.colorClearValue.color = glm::vec4{ 0.4f,0.0f,0.4f,1.0f };
+        renderPass.info.colorClearValue.color = glm::vec4{ 0.1f,0.0f,0.1f,1.0f };
         renderPass.info.depthClearEnable = true;
         renderPass.info.depthClearValue.depth = 1.0f;
         renderPass.info.scissorEnable = false;
@@ -409,71 +436,48 @@ void main() {
         vec3 viewOrigin{ 0.f,0.f,-2.f };
 
         mat4 W(1.0f), V, P;
+        P = perspective(radians(75.0f), (float)screen.x / screen.y, 0.01f, 100.f);
+
+        UniformMatrixes ub_mtx;
 
         while(running) {
 
             R.SubmitCommand(renderPass);
 
-
-            viewOrigin.z = 0.1f + (2.0f + 2.0f * std::sinf(radians(angle)));
+            viewOrigin.z = 0.2f + (2.0f + 2.0f * std::sinf(radians(angle)));
 
             {
-                auto& descWriter = *R.CreateCommand<JseCmdWriteDescriptorSet>();
-
-                descWriter.info.descriptorCount = 1;
-                descWriter.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
-                descWriter.info.dstBinding = 100;
-                descWriter.info.setId = uniformSet;
 
                 W = mat4(1.0f);
                 W = rotate(W, radians(angle), vec3(0.f, 1.f, 0.f));
                 W = rotate(W, radians(00.0f), vec3(1.f, 0.f, 0.f));
                 V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
-                P = perspective(radians(75.0f), (float)screen.x / screen.y, 0.01f, 100.f);
-                descWriter.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>();
-                descWriter.info.pUniformInfo[0].value = P * V * W;
-                std::strcpy(descWriter.info.pUniformInfo[0].name, "g_W");
+                
+                auto* ub_update = R.CreateCommand<JseCmdUpdateBuffer>();
+                ub_update->info.bufferId = ctx.buf_UbMatrix;
+                ub_update->info.offset = ctx.frame * 256;
+                ub_update->info.size = sizeof(ub_mtx);
+                UniformMatrixes* mtx = R.FrameAlloc<UniformMatrixes>();
+                ub_update->info.data = (uint8_t*)mtx;
+                mtx->P = P;
+                mtx->V = V;
+                mtx->W = W;
 
                 auto* bindset = R.CreateCommand<JseCmdBindDescriptorSets>();
                 bindset->descriptorSetCount = 1;
                 bindset->firstSet = 0;
                 bindset->pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
-                bindset->pDescriptorSets[0] = uniformSet;
+                bindset->pDescriptorSets[0] = ctx.set_uniform;
+                bindset->dynamicOffsetCount = 1;
+                bindset->pDynamicOffsets = R.FrameAlloc<uint32_t>();
+                bindset->pDynamicOffsets[0] = ctx.frame * 256;
+
 
                 auto* draw = R.CreateCommand<JseCmdDraw>();
                 draw->instanceCount = 1;
                 draw->mode = JseTopology::Triangles;
                 draw->vertexCount = 6;
             }
-            {
-                auto& descWriter = *R.CreateCommand<JseCmdWriteDescriptorSet>();
-
-                descWriter.info.descriptorCount = 1;
-                descWriter.info.descriptorType = JseDescriptorType::INLINE_UNIFORM_BLOCK;
-                descWriter.info.dstBinding = 100;
-                descWriter.info.setId = uniformSet;
-
-                W = mat4(1.0f);
-                W = rotate(W, radians(90.0f+angle), vec3(0.f, 1.f, 0.f));
-                W = rotate(W, radians(00.0f), vec3(1.f, 0.f, 0.f));
-                V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
-                P = perspective(radians(75.0f), (float)screen.x / screen.y, 0.01f, 100.f);
-                descWriter.info.pUniformInfo = R.FrameAlloc<JseDescriptorUniformInfo>();
-                descWriter.info.pUniformInfo[0].value = P * V * W;
-                std::strcpy(descWriter.info.pUniformInfo[0].name, "g_W");
-
-                auto* bindset = R.CreateCommand<JseCmdBindDescriptorSets>();
-                bindset->descriptorSetCount = 1;
-                bindset->firstSet = 0;
-                bindset->pDescriptorSets = R.FrameAlloc<JseDescriptorSetID>(1);
-                bindset->pDescriptorSets[0] = uniformSet;
-
-                auto* draw = R.CreateCommand<JseCmdDraw>();
-                draw->instanceCount = 1;
-                draw->mode = JseTopology::Triangles;
-                draw->vertexCount = 6;
-            }
-
 
             R.Frame();
 
@@ -485,6 +489,9 @@ void main() {
 
             angle += 30.f * dt;
             if (angle > 360.f) angle -= 360.f;
+
+            ctx.frame = (ctx.frame + 1) % ON_FLIGHT_FRAME;
+
         }
     }
     catch (std::exception e) { Error("error=%s", e.what()); }

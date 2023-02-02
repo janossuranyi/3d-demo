@@ -299,7 +299,6 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 		glEnable(GL_FRAMEBUFFER_SRGB);
 	}
 
-
 	deviceCapabilities_.pRenderer			= (const char*)glGetString(GL_RENDERER);
 	deviceCapabilities_.pRendererVersion	= (const char*)glGetString(GL_VERSION);
 	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &deviceCapabilities_.maxArrayTextureLayers);
