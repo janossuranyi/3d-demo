@@ -180,9 +180,12 @@ int main(int argc, char** argv)
     float dt{};
     bool t{};
 
+    appCtx.registerModule<JseInputManager>();
+    //appCtx.registerModule<JseGfxRenderer>();
+
     try {
-        JseInputManager I;
-        JseGfxRenderer R;
+        JseInputManager& I = *appCtx.module<JseInputManager>();
+        JseGfxRenderer& R = *appCtx.module<JseGfxRenderer>();
 
 
         I.SetOnExitEvent([&]

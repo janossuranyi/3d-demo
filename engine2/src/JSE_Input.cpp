@@ -25,3 +25,8 @@ void JseInputManager::ProcessEvents()
         }
     }
 }
+
+Type JseInputManager::typeIndex() const
+{
+    return std::type_index(typeid(JseInputManager));
+}

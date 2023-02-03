@@ -12,7 +12,7 @@ using JseEvent = SDL_Event;
 #define JSE_RELEASED SDL_RELEASED
 #define JSE_PRESSED SDL_PRESSED
 
-class JseInputManager 
+class JseInputManager : public JseModule
 {
 private:
 	std::function<void(JseKeyboardEvent)> onKeyboard_;
@@ -24,6 +24,9 @@ public:
 	void ProcessEvents();
 
 	virtual ~JseInputManager() {}
+
+	// Inherited via JseModule
+	virtual Type typeIndex() const override;
 };
 
 #endif
