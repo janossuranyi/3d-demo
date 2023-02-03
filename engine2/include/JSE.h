@@ -29,6 +29,8 @@
 #include <glm/gtx/hash.hpp>
 
 #include "JSE_Core.h"
+#include "JSE_Module.h"
+#include "JSE_Context.h"
 #include "JSE_Log.h"
 #include "JSE_Containers.h"
 #include "JSE_Sys.h"
