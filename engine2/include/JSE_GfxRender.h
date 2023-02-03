@@ -113,7 +113,7 @@ struct JseCmdWrapper {
 	JseCmdWrapper* next;
 };
 
-class JseGfxRenderer {
+class JseGfxRenderer : public JseModule {
 public:
 	static const size_t DEFAULT_FRAME_MEM_SIZE = 64 * 1024 * 1024;
 	static const size_t ON_FLIGHT_FRAMES = 2;
@@ -175,6 +175,8 @@ public:
 	JseGfxRenderer(int frameMemorySize);
 	~JseGfxRenderer();
 	
+	Type typeIndex() const override;
+
 	uint32_t NextID();
 	
 	JseGfxCore* GetCore();

@@ -369,3 +369,8 @@ JseCmdWrapper* JseGfxRenderer::GetCommandBuffer()
 void JseGfxRenderer::SetVSyncInterval(int x) {
 	Invoke([this,x] {core_->SetVSyncInterval(x); });
 }
+
+Type JseGfxRenderer::typeIndex() const
+{
+	return std::type_index(typeid(JseGfxRenderer));
+}
