@@ -4,7 +4,7 @@
 #include <ktx.h>
 #include <gl_format.h>
 
-#define SCREEN_WIDTH 14401
+#define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
 #define FULLSCREEN false
 
