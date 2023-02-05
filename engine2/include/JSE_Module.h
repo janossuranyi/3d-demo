@@ -3,12 +3,12 @@
 
 #include <typeindex>
 
-using Type = std::type_index;
+using JseType = std::type_index;
 
 class JseModule {
 public:
 	virtual ~JseModule() {}
-	virtual Type typeIndex() const = 0;
+	virtual JseType typeIndex() const = 0;
 };
 
 #endif

@@ -26,7 +26,7 @@ public:
 	virtual ~JseInputManager() {}
 
 	// Inherited via JseModule
-	virtual Type typeIndex() const override;
+	virtual JseType typeIndex() const override;
 };
 
 #endif

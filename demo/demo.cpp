@@ -181,7 +181,7 @@ int main(int argc, char** argv)
     bool t{};
 
     appCtx.registerModule<JseInputManager>();
-    //appCtx.registerModule<JseGfxRenderer>();
+    appCtx.registerModule<JseGfxRenderer>();
 
     try {
         JseInputManager& I = *appCtx.module<JseInputManager>();

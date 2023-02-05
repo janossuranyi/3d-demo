@@ -24,7 +24,7 @@ public:
 	}
 
 private:
-	std::unordered_map<Type, std::unique_ptr<JseModule>> map_;
+	std::unordered_map<JseType, std::unique_ptr<JseModule>> map_;
 };
 
 extern JseContext appCtx;

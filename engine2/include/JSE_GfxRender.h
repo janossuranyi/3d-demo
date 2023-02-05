@@ -175,7 +175,7 @@ public:
 	JseGfxRenderer(int frameMemorySize);
 	~JseGfxRenderer();
 	
-	Type typeIndex() const override;
+	JseType typeIndex() const override;
 
 	uint32_t NextID();
 	
