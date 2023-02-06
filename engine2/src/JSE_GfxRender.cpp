@@ -136,6 +136,27 @@ void JseGfxRenderer::operator()(const JseCmdBindDescriptorSets& cmd)
 	lastResult_ = core_->BindDescriptorSet(cmd.firstSet, cmd.descriptorSetCount, cmd.pDescriptorSets, cmd.dynamicOffsetCount, cmd.pDynamicOffsets);
 }
 
+void JseGfxRenderer::operator()(const JseCreateFenceCmd& cmd)
+{
+	if (core_->CreateFence(cmd.id) != JseResult::SUCCESS) {
+		Error("CreateFence failed");
+	}
+}
+
+void JseGfxRenderer::operator()(const JseDeleteFenceCmd& cmd)
+{
+	if (core_->DeleteFence(cmd.id) != JseResult::SUCCESS) {
+		Error("DeleteFence failed");
+	}
+}
+
+void JseGfxRenderer::operator()(const JseWaitSyncCmd& cmd)
+{
+	if (core_->WaitSync(cmd.id, cmd.timeout) != JseResult::SUCCESS) {
+		Error("WaitSync failed");
+	}
+}
+
 void JseGfxRenderer::ProcessCommandList(frameData_t* frameData)
 {
 	for (JseCmdWrapper* cmd = frameData->cmdHead; cmd; cmd = cmd->next) {
@@ -358,7 +379,7 @@ uint8_t* JseGfxRenderer::R_FrameAlloc(uint32_t bytes)
 JseCmdWrapper* JseGfxRenderer::GetCommandBuffer()
 {
 	JseCmdWrapper* cmd;
-	cmd = new (R_FrameAlloc(sizeof(JseCmd))) JseCmdWrapper();
+	cmd = new (R_FrameAlloc(sizeof(*cmd))) JseCmdWrapper();
 	cmd->next = nullptr;
 	frameData_->cmdTail->next = cmd;
 	frameData_->cmdTail = cmd;
@@ -373,4 +394,11 @@ void JseGfxRenderer::SetVSyncInterval(int x) {
 JseType JseGfxRenderer::typeIndex() const
 {
 	return std::type_index(typeid(JseGfxRenderer));
+}
+
+JseResult JseGfxRenderer::WaitSync(JseFenceID id, uint64_t timeout) {
+	JseResult r{};
+	Invoke([id, timeout, this, &r] {r = core_->WaitSync(id, timeout); });
+
+	return r;
 }

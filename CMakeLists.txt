@@ -10,6 +10,7 @@ find_package(SDL2 REQUIRED)
 
 add_definitions(
   -DGLEW_STATIC
+  -DUSE_INTRINSICS_SSE
 )
 
 # specify the C++ standard

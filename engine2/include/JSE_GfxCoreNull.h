@@ -31,6 +31,10 @@ private:
 	virtual JseResult EndRenderPass_impl() override;
 	virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) override;
 	virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) override;
+	virtual JseResult CreateFence_impl(JseFenceID id) override;
+	virtual JseResult DeleteFence_impl(JseFenceID id) override;
+	virtual JseResult WaitSync_impl(JseFenceID id, uint64_t time) override;
+
 	virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) override;
 	virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) override;
 	virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) override;

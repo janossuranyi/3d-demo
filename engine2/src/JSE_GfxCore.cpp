@@ -109,6 +109,21 @@ JseResult JseGfxCore::BindDescriptorSet(uint32_t firstSet, uint32_t descriptorSe
     return BindDescriptorSet_impl(firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 }
 
+JseResult JseGfxCore::CreateFence(JseFenceID id)
+{
+    return CreateFence_impl(id);
+}
+
+JseResult JseGfxCore::DeleteFence(JseFenceID id)
+{
+    return DeleteFence_impl(id);
+}
+
+JseResult JseGfxCore::WaitSync(JseFenceID id, uint64_t timeout)
+{
+    return WaitSync_impl(id, timeout);
+}
+
 void JseGfxCore::SwapChainNextImage()
 {
     SwapChainNextImage_impl();

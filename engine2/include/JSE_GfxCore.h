@@ -12,7 +12,9 @@ struct JseVertexInputTag{};
 struct JseGraphicsPipelineTag{};
 struct JseDescriptorSetLayoutTag{};
 struct JseDescriptorSetTag {};
+struct JseFenceTag {};
 
+using JseFenceID = JseHandle<JseFenceTag, -1>;
 using JseDescriptorSetLayoutID = JseHandle<JseDescriptorSetLayoutTag, -1>;
 using JseDescriptorSetID = JseHandle<JseDescriptorSetTag, -1>;
 using JseBufferID = JseHandle<JseBufferTag, -1>;
@@ -247,7 +249,6 @@ enum class JseFormat {
 /******************************************
 Create info structs
 *******************************************/
-
 struct JseSurfaceCreateInfo {
 	int width;
 	int height;
@@ -652,7 +653,10 @@ public:
     JseResult CreateDescriptorSet(const JseDescriptorSetCreateInfo& cmd);
     JseResult WriteDescriptorSet(const JseWriteDescriptorSet& cmd);
     JseResult BindDescriptorSet(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets);
-    
+    JseResult CreateFence(JseFenceID id);
+    JseResult DeleteFence(JseFenceID id);
+    JseResult WaitSync(JseFenceID id, uint64_t timeout);
+
     void SwapChainNextImage();
     void BeginRendering();
     void EndRendering();
@@ -697,6 +701,9 @@ private:
     virtual JseResult EndRenderPass_impl() = 0;
     virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) = 0;
     virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) = 0;
+    virtual JseResult CreateFence_impl(JseFenceID id) = 0;
+    virtual JseResult DeleteFence_impl(JseFenceID id) = 0;
+    virtual JseResult WaitSync_impl(JseFenceID id, uint64_t time) = 0;
 
     virtual void SwapChainNextImage_impl() = 0;
     virtual void BeginRendering_impl() = 0;

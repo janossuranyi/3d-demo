@@ -126,7 +126,7 @@ std::vector<std::string> JseFileSystem::get_directory_entries(const std::string&
 	return result;
 }
 
-void JseFileSystem::get_directory_entries(const std::string& dirname, const std::function<void(const std::string&)>& fn, const char* filter)
+void JseFileSystem::get_directory_entries(const std::string& dirname, const std::function<void(const std::string&)> fn, const char* filter)
 {
 	for (auto e : get_directory_entries(dirname, filter)) {
 		fn(e);

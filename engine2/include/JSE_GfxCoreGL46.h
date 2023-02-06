@@ -83,6 +83,10 @@ private:
 	virtual JseResult EndRenderPass_impl() override;
 
 	virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) override;
+	virtual JseResult CreateFence_impl(JseFenceID id) override;
+	virtual JseResult DeleteFence_impl(JseFenceID id) override;
+	virtual JseResult WaitSync_impl(JseFenceID id, uint64_t time) override;
+
 
 	virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) override;
 
@@ -226,6 +230,7 @@ private:
 	JseHashMap<JseFrameBufferID, FrameBufferData> framebuffer_map_;
 	JseHashMap<JseDescriptorSetLayoutID, SetLayoutData> set_layout_map_;
 	JseHashMap<JseDescriptorSetID, DescriptorSetData> set_data_map_;
+	JseHashMap<JseFenceID, GLsync> fence_map_;
 
 	JseResult UpdateImageData_mutable(const JseImageUploadInfo& imgageUploadInfo, const ImageData& data);
 	JseResult UpdateImageData_immutable(const JseImageUploadInfo& imgageUploadInfo, const ImageData& data);

@@ -115,6 +115,21 @@ JseResult JseGfxCoreNull::WriteDescriptorSet_impl(const JseWriteDescriptorSet& c
     return JseResult();
 }
 
+JseResult JseGfxCoreNull::CreateFence_impl(JseFenceID id)
+{
+    return JseResult();
+}
+
+JseResult JseGfxCoreNull::DeleteFence_impl(JseFenceID id)
+{
+    return JseResult();
+}
+
+JseResult JseGfxCoreNull::WaitSync_impl(JseFenceID id, uint64_t time)
+{
+    return JseResult();
+}
+
 void JseGfxCoreNull::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets)
 {
 }

@@ -1069,6 +1069,59 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 	return JseResult::SUCCESS;
 }
 
+JseResult JseGfxCoreGL::CreateFence_impl(JseFenceID id)
+{
+	auto it = fence_map_.find(id);
+
+	if (it != fence_map_.end()) {
+		return JseResult::ALREADY_EXISTS;
+	}
+
+	GLsync sync{};
+	GL_CHECK(sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
+
+	if (sync) {
+		fence_map_.emplace(id, sync);
+		return JseResult::SUCCESS;
+	}
+
+	return JseResult::GENERIC_ERROR;
+}
+
+JseResult JseGfxCoreGL::DeleteFence_impl(JseFenceID id)
+{
+	auto it = fence_map_.find(id);
+
+	if (it == fence_map_.end()) {
+		return JseResult::NOT_EXISTS;
+	}
+
+	GL_CHECK(glDeleteSync(it->second));
+	fence_map_.erase(id);
+
+	return JseResult::SUCCESS;
+}
+
+JseResult JseGfxCoreGL::WaitSync_impl(JseFenceID id, uint64_t timeout)
+{
+	auto it = fence_map_.find(id);
+
+	if (it == fence_map_.end()) {
+		return JseResult::NOT_EXISTS;
+	}
+	if (timeout > 0) {		
+		GLenum waitReturn = GL_UNSIGNALED;
+		while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
+		{
+			waitReturn = glClientWaitSync(it->second, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
+		}
+	}
+	else {
+		glWaitSync(it->second, 0, GL_TIMEOUT_IGNORED);
+	}
+	return JseResult::SUCCESS;
+}
+
 void JseGfxCoreGL::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets)
 {
 	if (activePipelineData_.pData) {

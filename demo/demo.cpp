@@ -18,7 +18,9 @@ struct UniformMatrixes {
     mat4 P;
 };
 
-static const int ON_FLIGHT_FRAME = 2;
+UniformMatrixes* uniformMatrixes{};
+
+static const int ON_FLIGHT_FRAME = 3;
 
 struct RenderContext {
 
@@ -81,7 +83,7 @@ JseFormat MapGLCompressedFmt(uint32_t f) {
     }
 }
 
-glm::vec3 gamma(vec3 c) {
+vec3 gamma(vec3 c) {
     return pow(c, vec3(1.0f / 2.2f));
 }
 
@@ -295,6 +297,7 @@ int main(int argc, char** argv)
         ubuf.info.bufferId = ctx.buf_UbMatrix;
         ubuf.info.size = 64 * 1024;
         ubuf.info.target = JseBufferTarget::UNIFORM_DYNAMIC;
+        ubuf.info.storageFlags = JSE_BUFFER_STORAGE_COHERENT_BIT | JSE_BUFFER_STORAGE_PERSISTENT_BIT | JSE_BUFFER_STORAGE_WRITE_BIT;
 
         auto& upd = *R.CreateCommand<JseCmdUpdateBuffer>();
         upd.info.bufferId = ctx.buf_Vertex;
@@ -302,6 +305,9 @@ int main(int argc, char** argv)
         upd.info.data = (uint8_t*)&rect[0];
 
         R.Frame();
+
+        uniformMatrixes = RCAST(UniformMatrixes*, R.GetMappedBufferPointer(ctx.buf_UbMatrix));
+
 
         /***********************************************************/
         /* Creating textures */
@@ -443,6 +449,13 @@ int main(int argc, char** argv)
 
         UniformMatrixes ub_mtx;
 
+        JseFenceID syncId[ON_FLIGHT_FRAME]; 
+        for (int i = 0; i < ON_FLIGHT_FRAME; ++i) { 
+            syncId[i] = JseFenceID{ R.NextID() };
+            auto* sync1 = R.CreateCommand<JseCreateFenceCmd>();
+            sync1->id = syncId[i];
+        };
+
         while(running) {
 
             R.SubmitCommand(renderPass);
@@ -455,7 +468,10 @@ int main(int argc, char** argv)
                 W = rotate(W, radians(angle), vec3(0.f, 1.f, 0.f));
                 W = rotate(W, radians(00.0f), vec3(1.f, 0.f, 0.f));
                 V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
-                
+
+                R.WaitSync(syncId[ctx.frame], 1);
+
+#if 0
                 auto* ub_update = R.CreateCommand<JseCmdUpdateBuffer>();
                 ub_update->info.bufferId = ctx.buf_UbMatrix;
                 ub_update->info.offset = ctx.frame * 256;
@@ -465,6 +481,11 @@ int main(int argc, char** argv)
                 mtx->P = P;
                 mtx->V = V;
                 mtx->W = W;
+#endif
+                uniformMatrixes[ctx.frame].P = P;
+                uniformMatrixes[ctx.frame].V = V;
+                uniformMatrixes[ctx.frame].W = W;
+
 
                 auto* bindset = R.CreateCommand<JseCmdBindDescriptorSets>();
                 bindset->descriptorSetCount = 1;
@@ -475,16 +496,25 @@ int main(int argc, char** argv)
                 bindset->pDynamicOffsets = R.FrameAlloc<uint32_t>();
                 bindset->pDynamicOffsets[0] = ctx.frame * 256;
 
-
+                
                 auto* draw = R.CreateCommand<JseCmdDraw>();
                 draw->instanceCount = 1;
                 draw->mode = JseTopology::Triangles;
                 draw->vertexCount = 6;
+
+                auto* delsync = R.CreateCommand<JseDeleteFenceCmd>();
+                delsync->id = syncId[ctx.frame];
+
+                auto* sync1 = R.CreateCommand<JseCreateFenceCmd>();
+                sync1->id = syncId[ctx.frame];
+
             }
 
             R.Frame();
 
             I.ProcessEvents();
+
+            ctx.frame = (ctx.frame + 1) % ON_FLIGHT_FRAME;
 
             float now = SCAST(float, SDL_GetTicks64()) / 1000.f;
             dt = now - tick;
@@ -493,7 +523,6 @@ int main(int argc, char** argv)
             angle += 30.f * dt;
             if (angle > 360.f) angle -= 360.f;
 
-            ctx.frame = (ctx.frame + 1) % ON_FLIGHT_FRAME;
 
         }
     }

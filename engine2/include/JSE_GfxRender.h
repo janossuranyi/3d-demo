@@ -87,6 +87,16 @@ struct JseCmdBindDescriptorSets {
 	uint32_t* pDynamicOffsets;
 	JseDescriptorSetID* pDescriptorSets;
 };
+struct JseCreateFenceCmd {
+	JseFenceID id;
+};
+struct JseDeleteFenceCmd {
+	JseFenceID id;
+};
+struct JseWaitSyncCmd {
+	JseFenceID id;
+	uint64_t timeout;
+};
 
 using JseCmd = std::variant<
 	JseCmdEmpty,
@@ -105,7 +115,10 @@ using JseCmd = std::variant<
 	JseCmdViewport,
 	JseCmdCreateDescriptorSetLayoutBindind,
 	JseCmdCreateGraphicsPipeline,
-	JseCmdBeginRenderpass
+	JseCmdBeginRenderpass,
+	JseCreateFenceCmd,
+	JseDeleteFenceCmd,
+	JseWaitSyncCmd
 >;
 
 struct JseCmdWrapper {
@@ -166,7 +179,10 @@ public:
 	void operator()(const JseCmdCreateDescriptorSet& cmd);
 	void operator()(const JseCmdWriteDescriptorSet& cmd);
 	void operator()(const JseCmdBindDescriptorSets& cmd);
-	
+	void operator()(const JseCreateFenceCmd& cmd);
+	void operator()(const JseDeleteFenceCmd& cmd);
+	void operator()(const JseWaitSyncCmd& cmd);
+
 	template <typename T> void operator()(const T& c) {
 		static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
 	}
@@ -196,6 +212,8 @@ public:
 	void ProcessCommandList(frameData_t* frameData);
 	void RenderThread();
 	void SetVSyncInterval(int x);
+	JseResult WaitSync(JseFenceID id, uint64_t timeout);
+
 	static int RenderThreadWrapper(void* data);
 
 	template<typename _Ty>
