@@ -306,7 +306,7 @@ int main(int argc, char** argv)
 
         R.Frame();
 
-        uint8_t* ptr = (uint8_t*)R.GetMappedBufferPointer(ctx.buf_UbMatrix);
+        uint8_t* ptr = SCAST(uint8_t*, R.GetMappedBufferPointer(ctx.buf_UbMatrix));
 
 
         /***********************************************************/
