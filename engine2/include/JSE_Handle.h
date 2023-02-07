@@ -21,6 +21,10 @@ public:
         return internal();
     }
 
+    explicit operator bool() const {
+        return isValid();
+    }
+
     base_type internal() const {
         return internal_handle_;
     }

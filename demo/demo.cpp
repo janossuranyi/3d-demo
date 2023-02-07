@@ -16,11 +16,12 @@ struct UniformMatrixes {
     mat4 W;
     mat4 V;
     mat4 P;
+    mat4 WVP;
 };
 
 UniformMatrixes* uniformMatrixes{};
 
-static const int ON_FLIGHT_FRAME = 3;
+static const int ON_FLIGHT_FRAME = 2;
 
 struct RenderContext {
 
@@ -76,7 +77,7 @@ JseFormat MapGLCompressedFmt(uint32_t f) {
     case 0x83F1: return JseFormat::RGBA_DXT1;
     case 0x83F2: return JseFormat::RGBA_DXT3;
     case 0x83F3: return JseFormat::RGBA_DXT5;
-    case 0x8E8D: return JseFormat::RGBA_BPTC;
+    case 0x8E8D:
     case 0x8E8E: return JseFormat::RGBA_BPTC;
     default:
         return JseFormat::RGBA8;
@@ -103,13 +104,12 @@ layout(binding = 1, std140) uniform UniformMatrixes {
     mat4 W;
     mat4 V;
     mat4 P;
+    mat4 WVP;
 } matrix;
-
-uniform mat4 g_W;
 
 void main() {
 
-    gl_Position = matrix.P * matrix.V * matrix.W * vec4(in_Position, 1.0);
+    gl_Position = matrix.WVP * vec4(in_Position, 1.0);
     vofi_TexCoord = in_TexCoord;
 }
 )" };
@@ -306,7 +306,7 @@ int main(int argc, char** argv)
 
         R.Frame();
 
-        uniformMatrixes = RCAST(UniformMatrixes*, R.GetMappedBufferPointer(ctx.buf_UbMatrix));
+        uint8_t* ptr = (uint8_t*)R.GetMappedBufferPointer(ctx.buf_UbMatrix);
 
 
         /***********************************************************/
@@ -449,12 +449,7 @@ int main(int argc, char** argv)
 
         UniformMatrixes ub_mtx;
 
-        JseFenceID syncId[ON_FLIGHT_FRAME]; 
-        for (int i = 0; i < ON_FLIGHT_FRAME; ++i) { 
-            syncId[i] = JseFenceID{ R.NextID() };
-            auto* sync1 = R.CreateCommand<JseCreateFenceCmd>();
-            sync1->id = syncId[i];
-        };
+        JseFenceID syncId[ON_FLIGHT_FRAME]{};
 
         while(running) {
 
@@ -466,26 +461,18 @@ int main(int argc, char** argv)
 
                 W = mat4(1.0f);
                 W = rotate(W, radians(angle), vec3(0.f, 1.f, 0.f));
-                W = rotate(W, radians(00.0f), vec3(1.f, 0.f, 0.f));
+                W = rotate(W, radians(angle*2), vec3(0.f, 0.f, 1.f));
                 V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
 
-                R.WaitSync(syncId[ctx.frame], 1);
+                if (syncId[ctx.frame]) {
+                    R.WaitSync(syncId[ctx.frame], 1000*1000);
+                }
 
-#if 0
-                auto* ub_update = R.CreateCommand<JseCmdUpdateBuffer>();
-                ub_update->info.bufferId = ctx.buf_UbMatrix;
-                ub_update->info.offset = ctx.frame * 256;
-                ub_update->info.size = sizeof(ub_mtx);
-                UniformMatrixes* mtx = R.FrameAlloc<UniformMatrixes>();
-                ub_update->info.data = (uint8_t*)mtx;
-                mtx->P = P;
-                mtx->V = V;
-                mtx->W = W;
-#endif
-                uniformMatrixes[ctx.frame].P = P;
-                uniformMatrixes[ctx.frame].V = V;
-                uniformMatrixes[ctx.frame].W = W;
-
+                UniformMatrixes* uf = RCAST(UniformMatrixes*, ptr + ctx.frame * 256);
+                uf->P = P;
+                uf->V = V;
+                uf->W = W;
+                uf->WVP = P * V * W;
 
                 auto* bindset = R.CreateCommand<JseCmdBindDescriptorSets>();
                 bindset->descriptorSetCount = 1;
@@ -502,12 +489,13 @@ int main(int argc, char** argv)
                 draw->mode = JseTopology::Triangles;
                 draw->vertexCount = 6;
 
-                auto* delsync = R.CreateCommand<JseDeleteFenceCmd>();
-                delsync->id = syncId[ctx.frame];
-
-                auto* sync1 = R.CreateCommand<JseCreateFenceCmd>();
-                sync1->id = syncId[ctx.frame];
-
+                if (syncId[ctx.frame]) {
+                    R.CreateCommand<JseDeleteFenceCmd>()->id = syncId[ctx.frame];
+                }
+                else {
+                    syncId[ctx.frame] = JseFenceID{ R.NextID() };
+                }
+                R.CreateCommand<JseCreateFenceCmd>()->id = syncId[ctx.frame];
             }
 
             R.Frame();
@@ -522,8 +510,6 @@ int main(int argc, char** argv)
 
             angle += 30.f * dt;
             if (angle > 360.f) angle -= 360.f;
-
-
         }
     }
     catch (std::exception e) { Error("error=%s", e.what()); }

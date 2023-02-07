@@ -1074,6 +1074,10 @@ JseResult JseGfxCoreGL::CreateFence_impl(JseFenceID id)
 	auto it = fence_map_.find(id);
 
 	if (it != fence_map_.end()) {
+#ifdef _DEBUG
+		Info("Fence %d already exists", id.internal());
+#endif // DEBUG
+
 		return JseResult::ALREADY_EXISTS;
 	}
 
@@ -1093,6 +1097,9 @@ JseResult JseGfxCoreGL::DeleteFence_impl(JseFenceID id)
 	auto it = fence_map_.find(id);
 
 	if (it == fence_map_.end()) {
+#ifdef _DEBUG
+		Info("Fence %d not exists", id.internal());
+#endif
 		return JseResult::NOT_EXISTS;
 	}
 
@@ -1107,14 +1114,24 @@ JseResult JseGfxCoreGL::WaitSync_impl(JseFenceID id, uint64_t timeout)
 	auto it = fence_map_.find(id);
 
 	if (it == fence_map_.end()) {
+#ifdef _DEBUG
+		Info("Fence %d not exists", id.internal());
+#endif
 		return JseResult::NOT_EXISTS;
 	}
-	if (timeout > 0) {		
+	if (timeout > 0) {
 		GLenum waitReturn = GL_UNSIGNALED;
+		int loop{};
 		while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
 		{
 			waitReturn = glClientWaitSync(it->second, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
+			++loop;
 		}
+#ifdef _DEBUG
+		if (loop > 1) {
+			Info("WaitSync loop > 1 (%d)", loop);
+		}
+#endif
 	}
 	else {
 		glWaitSync(it->second, 0, GL_TIMEOUT_IGNORED);
