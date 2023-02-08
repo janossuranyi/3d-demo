@@ -234,6 +234,7 @@ enum class JseFormat {
     RGBA_DXT3,
     RGBA_DXT5,
     RGBA_BPTC,
+    RGB_ASTC_6x6,
     // Depth formats.
     D16,
     D24,

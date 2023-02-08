@@ -13,10 +13,10 @@ using namespace glm;
 void demo_1();
 
 struct UniformMatrixes {
-    mat4 W;
-    mat4 V;
-    mat4 P;
-    mat4 WVP;
+    alignas(16) mat4 W;
+    alignas(16) mat4 V;
+    alignas(16) mat4 P;
+    alignas(16) mat4 WVP;
 };
 
 UniformMatrixes* uniformMatrixes{};
@@ -133,8 +133,11 @@ vec4 gamma(vec4 c) {
 }
 
 void main() {
-    vec3 color = texture(samp0, vofi_TexCoord.xy).xyz;
-    fragColor = vec4( color, 1.0 );
+    vec3 nml;
+
+    nml = texture(samp0, vofi_TexCoord.xy).rgb;
+    
+    fragColor = vec4( nml, 1.0 );
 }
 )" };
 
@@ -162,6 +165,26 @@ KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth,
     return KTX_SUCCESS;
 }
 
+struct JseFormat_t {
+    JseFormat fmt;
+    bool srgb;
+    JseFormat_t() = default;
+};
+
+static const std::unordered_map<ktx_uint32_t, JseFormat_t> s_vkf2jse_map {
+    {VK_FORMAT_BC1_RGB_UNORM_BLOCK,         {JseFormat::RGB_DXT1,    false}},
+    {VK_FORMAT_BC1_RGBA_UNORM_BLOCK,        {JseFormat::RGBA_DXT1,   false}},
+    {VK_FORMAT_BC1_RGB_SRGB_BLOCK,          {JseFormat::RGB_DXT1,    true}},
+    {VK_FORMAT_BC1_RGBA_SRGB_BLOCK,         {JseFormat::RGBA_DXT1,   true}},
+    {VK_FORMAT_BC2_UNORM_BLOCK,             {JseFormat::RGBA_DXT3,   false}},
+    {VK_FORMAT_BC2_SRGB_BLOCK,              {JseFormat::RGBA_DXT3,   true}},
+    {VK_FORMAT_BC3_UNORM_BLOCK,             {JseFormat::RGBA_DXT5,   false}},
+    {VK_FORMAT_BC3_SRGB_BLOCK,              {JseFormat::RGBA_DXT5,   true}},
+    {VK_FORMAT_BC7_UNORM_BLOCK,             {JseFormat::RGBA_BPTC,   false}},
+    {VK_FORMAT_BC7_SRGB_BLOCK,              {JseFormat::RGBA_BPTC,   true}},
+    {VK_FORMAT_ASTC_6x6_UNORM_BLOCK,        {JseFormat::RGB_ASTC_6x6, false}},
+    {VK_FORMAT_ASTC_6x6_SRGB_BLOCK,         {JseFormat::RGB_ASTC_6x6, true}}
+};
 
 int main(int argc, char** argv)
 {
@@ -316,9 +339,11 @@ int main(int argc, char** argv)
         {
             ktxTexture* kTexture;
             KTX_error_code ktxresult;
+            bool tex_not_loaded = true;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                JseResourceManager::get_resource("textures/test/WoodenPlanks01_2048.ktx2").c_str(),
-//                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
+                //JseResourceManager::get_resource("textures/test/WoodenPlanks01_2048.ktx2").c_str(),
+                JseResourceManager::get_resource("textures/concrete/test_astc.ktx2").c_str(),
+                //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);
 
@@ -329,8 +354,27 @@ int main(int argc, char** argv)
             assert(kTexture->classId == ktxTexture2_c);
             ktxTexture2* kt2 = (ktxTexture2*)kTexture;
             Info("isCompressed: %d", kt2->isCompressed);
+            if (ktxTexture2_NeedsTranscoding(kt2)) {
+                ktx_texture_transcode_fmt_e tf = KTX_TTF_BC7_RGBA;
 
-            JseImageTarget target{JseImageTarget::D2};
+                ktxresult = ktxTexture2_TranscodeBasis(kt2, tf, 0);
+
+                // Then use VkUpload or GLUpload to create a texture object on the GPU.
+                if (ktxresult != KTX_SUCCESS) {
+                    exit(255);
+                }
+                tex_not_loaded = false;
+            }
+
+            
+            auto& fmt = s_vkf2jse_map.find(kt2->vkFormat);
+
+            if (fmt == s_vkf2jse_map.end()) {
+                Info("Unknown texture format !");
+                exit(255);
+            }
+
+            JseImageTarget target{ JseImageTarget::D2 };
 
             if (kt2->isCubemap) {
                 target = JseImageTarget::CUBEMAP;
@@ -345,13 +389,13 @@ int main(int argc, char** argv)
             auto& img = *R.CreateCommand<JseCmdCreateImage>();
             ctx.texture = JseImageID{ R.NextID() };
             img.info.imageId = ctx.texture;
-            img.info.format = JseFormat::RGBA_BPTC;
+            img.info.format = fmt->second.fmt;
             img.info.target = target;
             img.info.height = kt2->baseHeight;
             img.info.width = kt2->baseWidth;
             img.info.depth = kt2->baseDepth;
             img.info.levelCount = kt2->numLevels;
-            img.info.srgb = kt2->vkFormat == VK_FORMAT_BC7_SRGB_BLOCK;
+            img.info.srgb = fmt->second.srgb;
             img.info.compressed = kt2->isCompressed;
             img.info.immutable = 1;
             img.info.samplerDescription = R.FrameAlloc<JseSamplerDescription>();
@@ -366,9 +410,22 @@ int main(int argc, char** argv)
 
             R.Frame();
 
-            ktxTexture_IterateLoadLevelFaces(kTexture, imageCB, &R);
+            if (tex_not_loaded) {
+                ktxresult = ktxTexture_IterateLoadLevelFaces(kTexture, imageCB, &R);
+            }
+            else {
+                ktxresult = ktxTexture_IterateLevelFaces(kTexture, imageCB, &R);
+            }
+
+            ktxTexture_Destroy(kTexture);
+
+            if (ktxresult != KTX_SUCCESS) {
+                Info("Cannot load texture");
+                exit(255);
+            }
         }
 
+        
         auto& bind = *R.CreateCommand<JseCmdBindGraphicsPipeline>();
         bind.pipeline = ctx.pipeline;
 
@@ -460,8 +517,8 @@ int main(int argc, char** argv)
             {
 
                 W = mat4(1.0f);
-                W = rotate(W, radians(angle), vec3(0.f, 1.f, 0.f));
-                W = rotate(W, radians(angle*2), vec3(0.f, 0.f, 1.f));
+                //W = rotate(W, radians(angle), vec3(0.f, 1.f, 0.f));
+                W = rotate(W, radians(angle), vec3(0.f, 0.f, 1.f));
                 V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
 
                 if (syncId[ctx.frame]) {
