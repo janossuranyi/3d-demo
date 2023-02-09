@@ -133,9 +133,10 @@ vec4 gamma(vec4 c) {
 }
 
 void main() {
-    vec3 nml;
+    
+    vec4 c0 = texture(samp0, vofi_TexCoord.xy);
 
-    nml = texture(samp0, vofi_TexCoord.xy).rgb;
+    vec3 nml = vec3(1.0) -c0.g;
     
     fragColor = vec4( nml, 1.0 );
 }
@@ -181,9 +182,7 @@ static const std::unordered_map<ktx_uint32_t, JseFormat_t> s_vkf2jse_map {
     {VK_FORMAT_BC3_UNORM_BLOCK,             {JseFormat::RGBA_DXT5,   false}},
     {VK_FORMAT_BC3_SRGB_BLOCK,              {JseFormat::RGBA_DXT5,   true}},
     {VK_FORMAT_BC7_UNORM_BLOCK,             {JseFormat::RGBA_BPTC,   false}},
-    {VK_FORMAT_BC7_SRGB_BLOCK,              {JseFormat::RGBA_BPTC,   true}},
-    {VK_FORMAT_ASTC_6x6_UNORM_BLOCK,        {JseFormat::RGB_ASTC_6x6, false}},
-    {VK_FORMAT_ASTC_6x6_SRGB_BLOCK,         {JseFormat::RGB_ASTC_6x6, true}}
+    {VK_FORMAT_BC7_SRGB_BLOCK,              {JseFormat::RGBA_BPTC,   true}}
 };
 
 int main(int argc, char** argv)
@@ -341,8 +340,7 @@ int main(int argc, char** argv)
             KTX_error_code ktxresult;
             bool tex_not_loaded = true;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                //JseResourceManager::get_resource("textures/test/WoodenPlanks01_2048.ktx2").c_str(),
-                JseResourceManager::get_resource("textures/concrete/test_astc.ktx2").c_str(),
+                JseResourceManager::get_resource("textures/test/PaintedMetal02_2048_bump.ktx2").c_str(),
                 //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);
@@ -403,7 +401,7 @@ int main(int argc, char** argv)
             img.info.samplerDescription->magFilter = JseFilter::NEAREST;
             img.info.samplerDescription->lodBias = 0.f;
             img.info.samplerDescription->maxAnisotropy = 1.0f;
-            img.info.samplerDescription->maxLod = kt2->numLevels;
+            img.info.samplerDescription->maxLod = SCAST(float, kt2->numLevels);
             img.info.samplerDescription->tilingS = JseImageTiling::REPEAT;
             img.info.samplerDescription->tilingT = JseImageTiling::REPEAT;
             img.info.samplerDescription->tilingR = JseImageTiling::REPEAT;

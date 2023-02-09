@@ -5,27 +5,6 @@
 
 using Invokable = std::function<void()>;
 
-
-enum RenderCommand {
-	RC_NOP = 0,
-	RC_BEGIN_RENDERPASS,
-	RC_CREATE_GRAPHICS_PIPELINE,
-	RC_VIEWPORT,
-	RC_SCISSOR,
-	RC_CREATE_SHADER,
-	RC_CREATE_DESCRIPTOR_SET_LAYOUT_BINDING,
-	RC_CREATE_DESCRIPTOR_SET,
-	RC_WRITE_DESCRIPTOR_SET,
-	RC_BIND_DESCRIPTOR_SETS,
-	RC_CREATE_BUFFER,
-	RC_UPDATE_BUFFER,
-	RC_CREATE_IMAGE,
-	RC_UPLOAD_IMAGE,
-	RC_BIND_GRAPHICS_PIPELINE,
-	RC_BIND_VERTEX_BUFFERS,
-	RC_DRAW
-};
-
 struct JseCmdEmpty {};
 struct JseCmdBeginRenderpass {
 	JseRenderPassInfo info;
@@ -146,7 +125,7 @@ private:
 	bool					renderThreadDoWork_;
 	JseAtomicInt			shouldTerminate_{ 0 };
 	JseAtomicInt			nextId_{ 1 };
-	size_t					frameMemorySize_{};
+	size_t					frameMemorySize_{ 0 };
 	int						maxFrameMemUsage_{ 0 };
 	frameData_t				frames_[ON_FLIGHT_FRAMES];
 	int						activeFrame_;
@@ -195,23 +174,23 @@ public:
 
 	uint32_t NextID();
 	
-	JseGfxCore* GetCore();
-	JseResult CreateImage(const JseImageCreateInfo& x);
-	JseResult UploadImage(const JseImageUploadInfo& x);
-	JseResult InitCore(int w, int h, bool fs, bool useThread);
+	JseGfxCore*		GetCore();
+	JseResult		CreateImage(const JseImageCreateInfo& x);
+	JseResult		UploadImage(const JseImageUploadInfo& x);
+	JseResult		InitCore(int w, int h, bool fs, bool useThread);
 	
-	uint8_t* R_FrameAlloc(uint32_t bytes);
-	JseCmdWrapper* GetCommandBuffer();
+	uint8_t*		R_FrameAlloc(uint32_t bytes);
+	JseCmdWrapper*	GetCommandBuffer();
 
-	void Invoke(Invokable func);
-	void* GetMappedBufferPointer(JseBufferID id);
-	void SubmitCommand(const JseCmd& cmd);
-	void SetCore(JseGfxCore* core);
-	void Frame();
-	void RenderFrame(frameData_t* renderData);
-	void ProcessCommandList(frameData_t* frameData);
-	void RenderThread();
-	void SetVSyncInterval(int x);
+	void	Invoke(Invokable func);
+	void*	GetMappedBufferPointer(JseBufferID id);
+	void	SubmitCommand(const JseCmd& cmd);
+	void	SetCore(JseGfxCore* core);
+	void	Frame();
+	void	RenderFrame(frameData_t* renderData);
+	void	ProcessCommandList(frameData_t* frameData);
+	void	RenderThread();
+	void	SetVSyncInterval(int x);
 	JseResult WaitSync(JseFenceID id, uint64_t timeout);
 
 	static int RenderThreadWrapper(void* data);
