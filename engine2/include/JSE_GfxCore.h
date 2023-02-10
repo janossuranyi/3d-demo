@@ -26,6 +26,15 @@ using JseGrapicsPipelineID = JseHandle<JseGraphicsPipelineTag, -1>;
 using JseShaderID = JseHandle<JseShaderTag, -1>;
 using JseRenderState = uint64_t;
 using JseDeviceSize = uint64_t;
+using vec2 = glm::vec2;
+using vec3 = glm::vec3;
+using vec4 = glm::vec4;
+using ivec2 = glm::ivec2;
+using ivec3 = glm::ivec3;
+using ivec4 = glm::ivec4;
+using mat3 = glm::mat3;
+using mat4 = glm::mat4;
+using mat3x4 = glm::mat3x4;
 
 using JseUniformData = std::variant<int, float, glm::ivec2, glm::ivec3, glm::ivec4, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, JseVector<float>, JseVector<glm::vec4>>;
 using JseUniformMap = JseHashMap<JseString, JseUniformData>;
@@ -58,6 +67,8 @@ typedef union JseClearValue {
 } JseClearValue;
 
 enum class JseAccess { READ, WRITE, READ_WRITE };
+// alpha mode
+enum class JseAlphaMode { Opaque, Mask, Blend };
 
 // Primitives
 enum class JseTopology { Point, Lines, LineStrip, LineLoop, Triangles, TriangleFan, TriangleStrip };

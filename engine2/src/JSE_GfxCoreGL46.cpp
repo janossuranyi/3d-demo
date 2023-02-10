@@ -528,8 +528,13 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 			* when using CompressedTex*Subimage* functions, the format must be the exact internal format
 			*/
 			GLint format{SCAST(GLint, data.internal_format)};
+			GLint compressed{-1};
 			GLenum const target = data.target != GL_TEXTURE_CUBE_MAP ? data.target : GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 			glGetTexLevelParameteriv(target, 0, GL_TEXTURE_INTERNAL_FORMAT, &format); glGetError();
+
+			glGetTexLevelParameteriv(target, 0, GL_TEXTURE_COMPRESSED, &compressed); glGetError();
+			Info("%d isCompressed: %d", cmd.imageId, compressed);
+
 			data.format = format;
 		}
 	}

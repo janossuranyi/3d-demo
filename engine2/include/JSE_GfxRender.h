@@ -195,19 +195,19 @@ public:
 
 	static int RenderThreadWrapper(void* data);
 
-	template<typename _Ty>
-	_Ty* FrameAlloc(int count = 1) {
-		uint32_t bytes = sizeof(_Ty) * count;
+	template<typename T>
+	T* FrameAlloc(int count = 1) {
+		uint32_t bytes = sizeof(T) * count;
 		uint8_t* pData = R_FrameAlloc(bytes);
 
-		return reinterpret_cast<_Ty*>(pData);
+		return reinterpret_cast<T*>(pData);
 	}
 
-	template<typename _Ty> _Ty* CreateCommand() {
+	template<typename T> T* CreateCommand() {
 		auto* ptr = GetCommandBuffer();
-		ptr->command.emplace<_Ty>();
+		ptr->command.emplace<T>();
 		
-		return RCAST(_Ty*, &ptr->command);
+		return RCAST(T*, &ptr->command);
 	}
 };
 

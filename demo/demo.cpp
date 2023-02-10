@@ -135,10 +135,8 @@ vec4 gamma(vec4 c) {
 void main() {
     
     vec4 c0 = texture(samp0, vofi_TexCoord.xy);
-
-    vec3 nml = vec3(1.0) -c0.g;
     
-    fragColor = vec4( nml, 1.0 );
+    fragColor = vec4( c0.xyz, 1.0 );
 }
 )" };
 
@@ -340,7 +338,7 @@ int main(int argc, char** argv)
             KTX_error_code ktxresult;
             bool tex_not_loaded = true;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                JseResourceManager::get_resource("textures/test/PaintedMetal02_2048_bump.ktx2").c_str(),
+                JseResourceManager::get_resource("textures/test/PaintedMetal02_2048.ktx2").c_str(),
                 //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);

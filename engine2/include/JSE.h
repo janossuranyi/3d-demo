@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <set>
 #include <unordered_set>
+#include <array>
 #include <fstream>
 #include <istream>
 #include <regex>
@@ -44,7 +45,7 @@
 #include "JSE_GfxCore.h"
 #include "JSE_Input.h"
 #include "JSE_Updatable.h"
-
+#include "JSE_Material.h"
 //#include "JSE_GfxCoreGL46.h"
 #include "JSE_GfxRender.h"
 #endif
