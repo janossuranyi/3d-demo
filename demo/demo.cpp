@@ -191,13 +191,12 @@ int main(int argc, char** argv)
 
     bool running = true;
 
-
     namespace fs = std::filesystem;
     JseFileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
 
-    JseResourceManager::add_resource_path("../assets/shaders");
-    JseResourceManager::add_resource_path("../assets/textures");
-    JseResourceManager::add_resource_path("../assets/models");
+    JseFilesystem::add_resource_path("../assets/shaders");
+    JseFilesystem::add_resource_path("../assets/textures");
+    JseFilesystem::add_resource_path("../assets/models");
 
     float dt{};
     bool t{};
@@ -338,7 +337,7 @@ int main(int argc, char** argv)
             KTX_error_code ktxresult;
             bool tex_not_loaded = true;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                JseResourceManager::get_resource("textures/test/PaintedMetal02_2048.ktx2").c_str(),
+                JseFilesystem::get_resource("textures/test/PaintedMetal02_2048.ktx2").c_str(),
                 //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);

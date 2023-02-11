@@ -35,6 +35,7 @@ using ivec4 = glm::ivec4;
 using mat3 = glm::mat3;
 using mat4 = glm::mat4;
 using mat3x4 = glm::mat3x4;
+using quat = glm::quat;
 
 using JseUniformData = std::variant<int, float, glm::ivec2, glm::ivec3, glm::ivec4, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, JseVector<float>, JseVector<glm::vec4>>;
 using JseUniformMap = JseHashMap<JseString, JseUniformData>;

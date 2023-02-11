@@ -1,6 +1,6 @@
 @set SDL2DIR=d:\lib\SDL2-2.0.22
 
-rem rd /S /Q build
+rd /S /Q build
 REM pause
 md build
 

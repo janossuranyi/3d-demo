@@ -45,7 +45,10 @@
 #include "JSE_GfxCore.h"
 #include "JSE_Input.h"
 #include "JSE_Updatable.h"
+#include "JSE_Texture.h"
 #include "JSE_Material.h"
+#include "JSE_PointLight.h"
 //#include "JSE_GfxCoreGL46.h"
 #include "JSE_GfxRender.h"
+#include "JSE_Node.h"
 #endif

@@ -1,7 +1,7 @@
 #include "JSE.h"
 
-std::unordered_map<std::string, std::string> JseResourceManager::resource_map_;
-std::set<std::string> JseResourceManager::sources_;
+std::unordered_map<std::string, std::string> JseFilesystem::resource_map_;
+std::set<std::string> JseFilesystem::sources_;
 
 namespace fs = std::filesystem;
 
@@ -21,7 +21,7 @@ static void dir_traversal(const fs::path& start, std::function<void(const fs::pa
     }
 }
 
-bool JseResourceManager::add_resource_path(const std::string& path)
+bool JseFilesystem::add_resource_path(const std::string& path)
 {
     const auto src = fs::absolute(fs::path(path));
     const auto rel = src.filename();
@@ -45,7 +45,7 @@ bool JseResourceManager::add_resource_path(const std::string& path)
     return true;
 }
 
-std::string JseResourceManager::get_text_resource(const std::string& name)
+std::string JseFilesystem::get_text_resource(const std::string& name)
 {
     if (resource_map_.count(name) == 0) return "";
 
@@ -57,7 +57,7 @@ std::string JseResourceManager::get_text_resource(const std::string& name)
     return result;
 }
 
-std::string JseResourceManager::get_text_resource_with_includes(const std::string& name, int depth)
+std::string JseFilesystem::get_text_resource_with_includes(const std::string& name, int depth)
 {
     static const std::regex include_regex("^#include[ ]*\"(.+)\"");
     std::string output;
@@ -96,7 +96,7 @@ std::string JseResourceManager::get_text_resource_with_includes(const std::strin
     return output;
 }
 
-std::vector<unsigned char> JseResourceManager::get_binary_resource(const std::string& name)
+std::vector<unsigned char> JseFilesystem::get_binary_resource(const std::string& name)
 {
     if (resource_map_.count(name) == 0)
         return std::vector<unsigned char>{};
@@ -106,7 +106,7 @@ std::vector<unsigned char> JseResourceManager::get_binary_resource(const std::st
     return JseFileSystem::read_binary_file(fn);
 }
 
-std::string JseResourceManager::get_resource(const std::string& name)
+std::string JseFilesystem::get_resource(const std::string& name)
 {
     if (resource_map_.count(name) == 0) return "";
 

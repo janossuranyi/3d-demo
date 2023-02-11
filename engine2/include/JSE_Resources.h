@@ -2,7 +2,7 @@
 #define JSE_RESOURCES_H
 
 
-class JseResourceManager
+class JseFilesystem
 {
 public:
 	static bool add_resource_path(const std::string& path);
