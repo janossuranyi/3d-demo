@@ -3,6 +3,7 @@
 #include <nv_dds.h>
 #include <ktx.h>
 #include <gl_format.h>
+#include <chrono>
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -142,7 +143,7 @@ void main() {
 
 KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
 {
-    JseGfxRenderer* R = RCAST(JseGfxRenderer*, userdata);
+    auto* R = RCAST(JseGfxRenderer*, userdata);
     
     JseCmdUploadImage c = JseCmdUploadImage();
 
@@ -197,6 +198,7 @@ int main(int argc, char** argv)
     JseFilesystem::add_resource_path("../assets/shaders");
     JseFilesystem::add_resource_path("../assets/textures");
     JseFilesystem::add_resource_path("../assets/models");
+    JseFilesystem::add_resource_path("../assets/buildings");
 
     float dt{};
     bool t{};
@@ -337,7 +339,7 @@ int main(int argc, char** argv)
             KTX_error_code ktxresult;
             bool tex_not_loaded = true;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                JseFilesystem::get_resource("textures/test/PaintedMetal02_2048.ktx2").c_str(),
+                JseFilesystem::get_resource("textures/trees/trees_stem_02.ktx2").c_str(),
                 //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);
@@ -350,9 +352,17 @@ int main(int argc, char** argv)
             ktxTexture2* kt2 = (ktxTexture2*)kTexture;
             Info("isCompressed: %d", kt2->isCompressed);
             if (ktxTexture2_NeedsTranscoding(kt2)) {
-                ktx_texture_transcode_fmt_e tf = KTX_TTF_BC7_RGBA;
+                ktx_texture_transcode_fmt_e tf = KTX_TTF_BC1_OR_3;
+
+                auto start = std::chrono::steady_clock::now();
 
                 ktxresult = ktxTexture2_TranscodeBasis(kt2, tf, 0);
+
+                auto end = std::chrono::steady_clock::now();
+                auto diff = end - start;
+
+                using namespace std::literals;
+                Info("Transcode took %d us", (end-start) / 1us);
 
                 // Then use VkUpload or GLUpload to create a texture object on the GPU.
                 if (ktxresult != KTX_SUCCESS) {
@@ -561,7 +571,7 @@ int main(int argc, char** argv)
             tick = now;
 
             angle += 30.f * dt;
-            if (angle > 360.f) angle -= 360.f;
+            angle = std::fmodf(angle, 360.f);
         }
     }
     catch (std::exception e) { Error("error=%s", e.what()); }
