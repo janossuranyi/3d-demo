@@ -339,7 +339,7 @@ int main(int argc, char** argv)
             KTX_error_code ktxresult;
             bool tex_not_loaded = true;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                JseFilesystem::get_resource("textures/trees/trees_stem_02.ktx2").c_str(),
+                JseFilesystem::get_resource("textures/concrete/ConcreteWall02_2K_Normal_BC7.ktx2").c_str(),
                 //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);
@@ -352,14 +352,14 @@ int main(int argc, char** argv)
             ktxTexture2* kt2 = (ktxTexture2*)kTexture;
             Info("isCompressed: %d", kt2->isCompressed);
             if (ktxTexture2_NeedsTranscoding(kt2)) {
-                ktx_texture_transcode_fmt_e tf = KTX_TTF_BC1_OR_3;
+                ktx_texture_transcode_fmt_e tf = KTX_TTF_BC7_RGBA;
 
-                auto start = std::chrono::steady_clock::now();
+                const auto start = std::chrono::steady_clock::now();
 
                 ktxresult = ktxTexture2_TranscodeBasis(kt2, tf, 0);
 
-                auto end = std::chrono::steady_clock::now();
-                auto diff = end - start;
+                const auto end = std::chrono::steady_clock::now();
+                const auto diff = end - start;
 
                 using namespace std::literals;
                 Info("Transcode took %d us", (end-start) / 1us);
