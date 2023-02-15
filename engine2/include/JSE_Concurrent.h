@@ -31,7 +31,6 @@ class JseMutex : public JseNonMovable {
         explicit operator bool() const noexcept;
 private:
         SDL_mutex* m_pMutex;
-        int m_lockCount{};
 };
 
 class JseLockGuard : public JseNonMovable {

@@ -128,10 +128,10 @@ private:
 	size_t					frameMemorySize_{ 0 };
 	int						maxFrameMemUsage_{ 0 };
 	frameData_t				frames_[ON_FLIGHT_FRAMES];
-	int						activeFrame_;
-	int						renderFrame_;
 	frameData_t*			frameData_;
 	frameData_t*			renderData_;
+	int						activeFrame_;
+	int						renderFrame_;
 	bool					useThread_{};
 	bool					threadRunning_{};
 	bool					initialized_{};

@@ -13,7 +13,6 @@ JseMutex::~JseMutex()
 int JseMutex::lock()
 {
 	int r = SDL_LockMutex(m_pMutex);
-	++m_lockCount;
 
 	return r;
 }
@@ -21,9 +20,6 @@ int JseMutex::lock()
 int JseMutex::tryLock()
 {
 	int r = SDL_TryLockMutex(m_pMutex);
-	if (r != SDL_MUTEX_TIMEDOUT) {
-		++m_lockCount;
-	}
 
 	return r;
 }
@@ -31,10 +27,8 @@ int JseMutex::tryLock()
 int JseMutex::unlock()
 {
 	int r = -1;
-	assert(m_lockCount > 0);
 
 	r = SDL_UnlockMutex(m_pMutex);
-	--m_lockCount;
 	
 	return r;
 }
