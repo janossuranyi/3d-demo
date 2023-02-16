@@ -221,6 +221,7 @@ private:
 	std::vector<GLsizei>	vertex_buffer_strides_;
 	GLintptr				active_index_offset_{};
 	GLenum					active_index_type_{};
+	JseGrapicsPipelineID	active_pipeline_{};
 	bool					scissorEnabled_{};
 
 	JseHashMap<JseBufferID, BufferData> buffer_data_map_;

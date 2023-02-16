@@ -154,6 +154,7 @@ TextureFormatInfo s_texture_format[] = {
 JseGfxCoreGL::~JseGfxCoreGL()
 {
 	Shutdown_impl();
+	Info("OpenGL core deinitialized.");
 }
 
 JseGfxCoreGL::JseGfxCoreGL() : 
@@ -434,7 +435,7 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 	}
 
 	ImageData data{};
-	TextureFormatInfo formatInfo = s_texture_format[static_cast<size_t>(cmd.format)];
+	TextureFormatInfo formatInfo = s_texture_format[SCAST(size_t, cmd.format)];
 
 	data.target = MapJseImageTargetGl(cmd.target);
 	if (data.target == 0) {
@@ -474,7 +475,7 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 		GLenum magFilter = MapJseFilterGl(JseFilter::LINEAR);
 		GLfloat maxAnisotropy = 1.0f;
 		GLfloat minLod = 0.0f;
-		GLfloat maxLod = 1000.0f;
+		GLfloat maxLod = SCAST(float, cmd.levelCount);
 		GLfloat lodBias = 0.0f;
 		JseColor4f borderColor{ 0.0f,0.0f,0.0f,1.0f };
 
@@ -578,7 +579,7 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 
 	for (int i = 0; i < cmd.pVertexInputState->attributeCount; ++i) {
 		auto& attr = attrDesc[i];
-		auto& fmt = s_texture_format[static_cast<size_t>(attr.format)];
+		auto& fmt = s_texture_format[SCAST(size_t, attr.format)];
 		GL_CHECK(glEnableVertexAttribArray(attr.location));
 		GL_CHECK(glVertexAttribFormat(attr.location, fmt.componentCount, fmt.type, fmt.normalized, attr.offset));
 		GL_CHECK(glVertexAttribBinding(attr.location, bindDesc[attr.bindig].binding));
@@ -643,11 +644,15 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 
 JseResult JseGfxCoreGL::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
 {
+	if (active_pipeline_ == pipelineId) 
+		return JseResult::SUCCESS;
+
 	auto find = pipeline_data_map_.find(pipelineId);
 	if (find == std::end(pipeline_data_map_)) {
 		return JseResult::NOT_EXISTS;
 	}
 
+	active_pipeline_ = pipelineId;
 	const auto& data = find->second;
 	activePipelineData_.pData = &find->second;
 	SetRenderState(data.renderState);
@@ -687,7 +692,7 @@ JseResult JseGfxCoreGL::CreateShader_impl(const JseShaderCreateInfo& cmd, std::s
 		return JseResult::GENERIC_ERROR;
 	}
 
-	const GLchar* tmp = reinterpret_cast<const GLchar*>(cmd.pCode);
+	const GLchar* tmp = static_cast<const GLchar*>(cmd.pCode);
 	GL_CHECK(glShaderSource(shader, 1, &tmp, nullptr));
 
 	GLint result = GL_FALSE;
@@ -730,7 +735,7 @@ JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& c
 	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer));
 	std::vector<GLenum> draw_buffers;
 	for (int i = 0; i < cmd.colorAttachmentCount; ++i) {
-		auto& img = texture_data_map_.at(cmd.pColorAttachments[i].image);
+		const auto& img = texture_data_map_.at(cmd.pColorAttachments[i].image);
 		draw_buffers.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 
 		if (img.target == GL_TEXTURE_CUBE_MAP) {

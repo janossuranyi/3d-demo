@@ -31,7 +31,6 @@
 
 #include "JSE_Core.h"
 #include "JSE_Module.h"
-#include "JSE_Context.h"
 #include "JSE_Log.h"
 #include "JSE_Containers.h"
 #include "JSE_Sys.h"
@@ -39,6 +38,7 @@
 #include "JSE_Resources.h"
 #include "JSE_Concurrent.h"
 #include "JSE_Thread.h"
+#include "JSE_Context.h"
 #include "JSE_Handle.h"
 #include "JSE_Heap.h"
 #include "JSE_Memory.h"
@@ -48,6 +48,7 @@
 #include "JSE_Texture.h"
 #include "JSE_Material.h"
 #include "JSE_PointLight.h"
+#include "JSE_GfxDrawVert.h"
 //#include "JSE_GfxCoreGL46.h"
 #include "JSE_GfxRender.h"
 #include "JSE_Node.h"

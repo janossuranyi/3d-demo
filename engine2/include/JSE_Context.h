@@ -1,4 +1,3 @@
-#include <memory>
 #ifndef JSE_CONTEXT_H
 #define JSE_CONTEXT_H
 
@@ -6,7 +5,7 @@ class JseContext {
 public:
 	JseContext() = default;
 	~JseContext();
-	JseModule* addModule(std::unique_ptr<JseModule> m);
+	JseModule* addModule(JseUniquePtr<JseModule> m);
 
 	template <typename T>
 	T* module() {
@@ -24,7 +23,7 @@ public:
 	}
 
 private:
-	std::unordered_map<JseType, std::unique_ptr<JseModule>> map_;
+	JseHashMap<JseType, JseUniquePtr<JseModule>> map_;
 };
 
 extern JseContext appCtx;

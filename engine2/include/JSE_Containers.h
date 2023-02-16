@@ -11,7 +11,7 @@ using JseSet = std::unordered_set<T>;
 template<typename T, size_t cap>
 using JseArray = std::array<T, cap>;
 template<typename T>
-using JseUniqePtr = std::unique_ptr<T>;
+using JseUniquePtr = std::unique_ptr<T>;
 template<typename T>
 using JseSharedPtr = std::shared_ptr<T>;
 

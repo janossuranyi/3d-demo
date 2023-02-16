@@ -225,7 +225,7 @@ JseGfxRenderer::JseGfxRenderer() : JseGfxRenderer(DEFAULT_FRAME_MEM_SIZE)
 
 JseGfxRenderer::JseGfxRenderer(int frameMemorySize)
 {
-	core_ = new JseGfxCoreNull();
+	core_ = std::make_shared<JseGfxCoreNull>();
 	frameMemorySize_ = frameMemorySize;
 	assert(CACHE_LINE_SIZE == JseGetCPUCacheLineSize());
 
@@ -263,7 +263,7 @@ uint32_t JseGfxRenderer::NextID()
 
 JseGfxCore* JseGfxRenderer::GetCore()
 {
-	return core_;
+	return core_.get();
 }
 
 void JseGfxRenderer::Invoke(Invokable func)
@@ -302,7 +302,7 @@ JseResult JseGfxRenderer::UploadImage(const JseImageUploadInfo& x)
 	return r;
 }
 
-void JseGfxRenderer::SetCore(JseGfxCore* core)
+void JseGfxRenderer::SetCore(JseSharedPtr<JseGfxCore> core)
 {
 	if (initialized_) {
 		throw std::runtime_error("Cannot change the Core after initialization!!!");

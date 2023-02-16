@@ -117,7 +117,7 @@ private:
 		JseCmdWrapper*				cmdHead;
 	};
 
-	JseGfxCore*				core_;
+	JseSharedPtr<JseGfxCore> core_;
 	JseThread				renderThread_;
 	JseMutex				renderThreadMtx_;
 	JseConditionVariable	renderThreadSync_;
@@ -185,7 +185,7 @@ public:
 	void	Invoke(Invokable func);
 	void*	GetMappedBufferPointer(JseBufferID id);
 	void	SubmitCommand(const JseCmd& cmd);
-	void	SetCore(JseGfxCore* core);
+	void	SetCore(JseSharedPtr<JseGfxCore> core);
 	void	Frame();
 	void	RenderFrame(frameData_t* renderData);
 	void	ProcessCommandList(frameData_t* frameData);

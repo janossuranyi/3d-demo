@@ -50,7 +50,7 @@ struct xVertex {
         p->inputRate = JseVertexInputRate::VERTEX;
         p->stride = 3 * 4 + 2 * 4;
     }
-    static void getAttribs(JseVertexInputAttributeDescription* p) {
+    static void getAttributes(JseVertexInputAttributeDescription* p) {
         p[0].bindig = 0;
         p[0].location = 0;
         p[0].format = JseFormat::RGB32F;
@@ -230,7 +230,7 @@ int main(int argc, char** argv)
                 }
             });
 
-        R.SetCore(new JseGfxCoreGL());
+        R.SetCore(std::make_shared<JseGfxCoreGL>());
         R.InitCore(1024, 768, false, true);
 
         R.SetVSyncInterval(0);
@@ -301,7 +301,7 @@ int main(int argc, char** argv)
         p.info.pVertexInputState->bindingCount = xVertex::bindingCount();
         p.info.pVertexInputState->pBindings = R.FrameAlloc<JseVertexInputBindingDescription>(xVertex::bindingCount());
         xVertex::getBindings(p.info.pVertexInputState->pBindings);
-        xVertex::getAttribs(p.info.pVertexInputState->pAttributes);
+        xVertex::getAttributes(p.info.pVertexInputState->pAttributes);
 
         /***********************************************************/
         /* Creating buffers */
@@ -339,7 +339,7 @@ int main(int argc, char** argv)
             KTX_error_code ktxresult;
             bool tex_not_loaded = true;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                JseFilesystem::get_resource("textures/concrete/ConcreteWall02_2K_Normal_BC7.ktx2").c_str(),
+                JseFilesystem::get_resource("textures/concrete/ConcreteWall02_2K_BaseColor_ect1s.ktx2").c_str(),
                 //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);
@@ -352,7 +352,7 @@ int main(int argc, char** argv)
             ktxTexture2* kt2 = (ktxTexture2*)kTexture;
             Info("isCompressed: %d", kt2->isCompressed);
             if (ktxTexture2_NeedsTranscoding(kt2)) {
-                ktx_texture_transcode_fmt_e tf = KTX_TTF_BC7_RGBA;
+                ktx_texture_transcode_fmt_e tf = KTX_TTF_BC1_OR_3;
 
                 const auto start = std::chrono::steady_clock::now();
 
