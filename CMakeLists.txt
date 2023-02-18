@@ -20,24 +20,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 file(GLOB DEMO_H demo/*.h)
 file(GLOB DEMO_C demo/*.cpp)
 
-file(GLOB DEMO_OGL_H demo/opengl/*.h)
-file(GLOB DEMO_OGL_C demo/opengl/*.cpp)
-
-file(GLOB ENGINE_GFX_H engine/gfx/*.h)
-file(GLOB ENGINE_GFX_C engine/gfx/*.cpp)
-
-file(GLOB ENGINE_GFX_OGL_H engine/gfx/opengl/*.h)
-file(GLOB ENGINE_GFX_OGL_C engine/gfx/opengl/*.cpp)
-
-file(GLOB ENGINE_INPUT_H engine/input/*.h)
-file(GLOB ENGINE_INPUT_C engine/input/*.cpp)
-file(GLOB ENGINE_RSRC_H engine/resource/*.h)
-file(GLOB ENGINE_RSRC_C engine/resource/*.cpp)
-file(GLOB ENGINE_SCENE_H engine/scene/*.h)
-file(GLOB ENGINE_SCENE_C engine/scene/*.cpp)
-file(GLOB ENGINE_MATH_H engine/math/*.h)
-file(GLOB ENGINE_MATH_C engine/math/*.cpp)
-
 file(GLOB ENGINE2_INCLUDE engine2/include/*.h)
 file(GLOB ENGINE2_SOURCES engine2/src/*.cpp)
 
@@ -46,57 +28,10 @@ set(ENGINE2_FILES
   ${ENGINE2_SOURCES}
 )
 
-set(ENGINE_GFX
-  ${ENGINE_GFX_H}
-  ${ENGINE_GFX_C}
-)
-
-set(ENGINE_INPUT
-  ${ENGINE_INPUT_H}
-  ${ENGINE_INPUT_C}
-)
-
-set(ENGINE_RSRC
-  ${ENGINE_RSRC_H}
-  ${ENGINE_RSRC_C}
-)
-
-set(ENGINE_SCENE
-  ${ENGINE_SCENE_H}
-  ${ENGINE_SCENE_C}
-)
-
-set(ENGINE_MATH
-  ${ENGINE_MATH_H}
-  ${ENGINE_MATH_C}
-)
-
-set(ENGINE_FILES
-  ${ENGINE_GFX_H}
-  ${ENGINE_GFX_C}
-  ${ENGINE_GFX_OGL_H}
-  ${ENGINE_GFX_OGL_C}
-  ${ENGINE_INPUT_H}
-  ${ENGINE_INPUT_C}
-  ${ENGINE_RSRC_H}
-  ${ENGINE_RSRC_C}
-  ${ENGINE_SCENE_H}
-  ${ENGINE_SCENE_C}
-  ${ENGINE_MATH_H}
-  ${ENGINE_MATH_C}
-  engine/engine.h
-  engine/common.h
-)
 
 set(DEMO_FILES
   ${DEMO_H}
   ${DEMO_C}
-  ${DEMO_OGL_H}
-  ${DEMO_OGL_C}
-)
-
-add_library(engine STATIC
-  ${ENGINE_FILES}
 )
 
 add_library(engine2 STATIC
@@ -128,8 +63,6 @@ add_library(tinygltf STATIC
 include_directories(
   ./
   demo/
-  demo/opengl/
-  engine/
   engine2/include/
   external/glew-2.1.0/include/
   external/glm/
@@ -157,7 +90,6 @@ target_link_libraries(demo
   glew
   stb_image
   tinygltf
-  engine
   engine2
   nv_dds
   ../lib/ktx/ktx
@@ -193,10 +125,4 @@ set(ENGINE_OGL
   ${ENGINE_GFX_OGL_C}
 )
 
-source_group("gfx/OpenGL" FILES ${ENGINE_OGL} )
-source_group("gfx" FILES ${ENGINE_GFX} )
 source_group("Shaders" FILES ${SHADERS} )
-source_group("input" FILES ${ENGINE_INPUT} )
-source_group("scene" FILES ${ENGINE_SCENE} )
-source_group("resource" FILES ${ENGINE_RSRC} )
-source_group("math" FILES ${ENGINE_MATH} )

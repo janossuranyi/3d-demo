@@ -1,7 +1,7 @@
 #ifndef JSE_GFX_DRAW_VERT_H
 #define JSE_GFX_DRAW_VERT_H
 
-#include "draw_vert.h"
+#include "JSE_Converters.h"
 
 struct JseGfxDrawVert {
 	vec3 xyz;

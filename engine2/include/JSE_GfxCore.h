@@ -542,8 +542,8 @@ static const JseRenderState GLS_STENCIL_FUNC_REF_BITS = 0xFFll << GLS_STENCIL_FU
 static const JseRenderState GLS_STENCIL_FUNC_MASK_SHIFT = 28;
 static const JseRenderState GLS_STENCIL_FUNC_MASK_BITS = 0xFFll << GLS_STENCIL_FUNC_MASK_SHIFT;
 
-#define GLS_STENCIL_MAKE_REF( x ) ( ( (JseRenderState)(x) << GLS_STENCIL_FUNC_REF_SHIFT ) & GLS_STENCIL_FUNC_REF_BITS )
-#define GLS_STENCIL_MAKE_MASK( x ) ( ( (JseRenderState)(x) << GLS_STENCIL_FUNC_MASK_SHIFT ) & GLS_STENCIL_FUNC_MASK_BITS )
+#define _GLS_STENCIL_MAKE_REF( x ) ( ( (JseRenderState)(x) << GLS_STENCIL_FUNC_REF_SHIFT ) & GLS_STENCIL_FUNC_REF_BITS )
+#define _GLS_STENCIL_MAKE_MASK( x ) ( ( (JseRenderState)(x) << GLS_STENCIL_FUNC_MASK_SHIFT ) & GLS_STENCIL_FUNC_MASK_BITS )
 
 // Next 12 bits act as front+back unless GLS_SEPARATE_STENCIL is set, in which case it acts as front.
 static const JseRenderState GLS_STENCIL_FUNC_ALWAYS = 0ull << 36;

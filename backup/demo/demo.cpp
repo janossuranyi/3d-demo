@@ -11,6 +11,8 @@
 
 using namespace glm;
 
+void demo_1();
+
 struct UniformMatrixes {
     alignas(16) mat4 W;
     alignas(16) mat4 V;
