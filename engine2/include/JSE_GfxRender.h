@@ -47,6 +47,14 @@ struct JseCmdDraw {
 	uint32_t firstVertex;
 	uint32_t firstInstance;
 };
+struct JseCmdDrawIndexed {
+	JseTopology mode;
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t vertexOffset;
+	uint32_t firstIndex;
+	uint32_t firstInstance;
+};
 struct JseCmdCreateImage {
 	JseImageCreateInfo info;
 };
@@ -85,6 +93,7 @@ using JseCmd = std::variant<
 	JseCmdUploadImage,
 	JseCmdCreateImage,
 	JseCmdDraw,
+	JseCmdDrawIndexed,
 	JseCmdBindVertexBuffers,
 	JseCmdBindGraphicsPipeline,
 	JseCmdUpdateBuffer,
@@ -153,6 +162,7 @@ public:
 	void operator()(const JseCmdBindVertexBuffers& cmd);
 	void operator()(const JseCmdBindGraphicsPipeline& cmd);
 	void operator()(const JseCmdDraw& cmd);
+	void operator()(const JseCmdDrawIndexed& cmd);
 	void operator()(const JseCmdCreateImage& cmd);
 	void operator()(const JseCmdUploadImage& cmd);
 	void operator()(const JseCmdCreateDescriptorSet& cmd);

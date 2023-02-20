@@ -111,6 +111,11 @@ void JseGfxRenderer::operator()(const JseCmdDraw& cmd)
 	core_->Draw(cmd.mode, cmd.vertexCount, cmd.instanceCount, cmd.firstVertex, cmd.firstInstance);
 }
 
+void JseGfxRenderer::operator()(const JseCmdDrawIndexed& cmd)
+{
+	core_->DrawIndexed(cmd.mode, cmd.indexCount, cmd.instanceCount, cmd.firstIndex, cmd.vertexOffset, cmd.firstInstance);
+}
+
 void JseGfxRenderer::operator()(const JseCmdCreateImage& cmd)
 {
 	lastResult_ = core_->CreateImage(cmd.info);
