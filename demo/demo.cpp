@@ -169,7 +169,7 @@ struct JseFormat_t {
     JseFormat_t() = default;
 };
 
-static const std::unordered_map<ktx_uint32_t, JseFormat_t> s_vkf2jse_map {
+static const JseHashMap<ktx_uint32_t, JseFormat_t> s_vkf2jse_map {
     {VK_FORMAT_BC1_RGB_UNORM_BLOCK,         {JseFormat::RGB_DXT1,    false}},
     {VK_FORMAT_BC1_RGBA_UNORM_BLOCK,        {JseFormat::RGBA_DXT1,   false}},
     {VK_FORMAT_BC1_RGB_SRGB_BLOCK,          {JseFormat::RGB_DXT1,    true}},

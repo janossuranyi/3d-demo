@@ -84,7 +84,7 @@ private:
 };
 
 
-TextureFormatInfo s_texture_format[] = {
+static TextureFormatInfo s_texture_format[] = {
 	{GL_ALPHA,              GL_ZERO,         GL_ALPHA,            GL_UNSIGNED_BYTE,                true,  1}, // A8
 	{GL_R8,                 GL_ZERO,         GL_RED,              GL_UNSIGNED_BYTE,                true,  1}, // R8
 	{GL_R8I,                GL_ZERO,         GL_RED,              GL_BYTE,                         true,  1}, // R8I

@@ -2,6 +2,9 @@
 #define JSE_GFX_CORE_GL_H
 
 #include <GL/glew.h>
+#include <cinttypes>
+#include <set>
+#include "SDL.h"
 
 #ifdef _DEBUG
 #define GL_FLUSH_ERRORS() while(glGetError() != GL_NO_ERROR) {}
