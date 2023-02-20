@@ -391,6 +391,14 @@ void JseGfxRenderer::SetVSyncInterval(int x) {
 	Invoke([this,x] {core_->SetVSyncInterval(x); });
 }
 
+void JseGfxRenderer::WaitForGpuReady()
+{
+	if (useThread_) {
+		JseUniqueLock lck(renderThreadMtx_);
+		renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
+	}
+}
+
 JseType JseGfxRenderer::typeIndex() const
 {
 	return std::type_index(typeid(JseGfxRenderer));

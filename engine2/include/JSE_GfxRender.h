@@ -191,6 +191,7 @@ public:
 	void	ProcessCommandList(frameData_t* frameData);
 	void	RenderThread();
 	void	SetVSyncInterval(int x);
+	void	WaitForGpuReady();
 	JseResult WaitSync(JseFenceID id, uint64_t timeout);
 
 	static int RenderThreadWrapper(void* data);
