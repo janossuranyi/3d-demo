@@ -36,23 +36,10 @@ using mat3 = glm::mat3;
 using mat4 = glm::mat4;
 using mat3x4 = glm::mat3x4;
 using quat = glm::quat;
+using JseColor4f = glm::vec4;
 
 using JseUniformData = std::variant<int, float, glm::ivec2, glm::ivec3, glm::ivec4, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, JseVector<float>, JseVector<glm::vec4>>;
 using JseUniformMap = JseHashMap<JseString, JseUniformData>;
-
-struct JseColor4f {
-    float r, g, b, a;
-    bool operator==(const JseColor4f& x) {
-        if (r != x.r) return false;
-        if (g != x.g) return false;
-        if (b != x.b) return false;
-        if (a != x.a) return false;
-        return true;
-    }
-    bool operator!=(const JseColor4f& x) {
-        return !operator==(x);
-    }
-};
 
 struct JseRect2D {
     int x;

@@ -46,37 +46,37 @@ JseBoundingSphere JseMeshGeometry::sphere() const
 	return sphereBV_;
 }
 
-void JseMeshGeometry::setMaterial(const JseMaterial* pMat)
+void JseMeshGeometry::SetMaterial(const JseMaterial* pMat)
 {
 	material_ = pMat;
 }
 
-void JseMeshGeometry::setVertexCount(int x)
+void JseMeshGeometry::SetVertexCount(int x)
 {
 	vertexCount_ = x;
 }
 
-void JseMeshGeometry::setIndexCount(int x)
+void JseMeshGeometry::SetIndexCount(int x)
 {
 	indexCount_ = x;
 }
 
-void JseMeshGeometry::setLocalTransform(const mat4& mtx)
+void JseMeshGeometry::SetLocalTransform(const mat4& mtx)
 {
 	localTransform_ = mtx;
 }
 
-void JseMeshGeometry::setAabb(const JseBoundingBox& aabb)
+void JseMeshGeometry::SetAabb(const JseBoundingBox& aabb)
 {
 	boxBV_ = aabb;
 }
 
-void JseMeshGeometry::setSphere(const JseBoundingSphere& sph)
+void JseMeshGeometry::SetSphere(const JseBoundingSphere& sph)
 {
 	sphereBV_ = sph;
 }
 
-void JseMeshGeometry::setVertexBuffer(const JseVertexBuffer& vb)
+void JseMeshGeometry::SetVertexBuffer(const JseVertexBuffer& vb)
 {
 	vertexBuffer_ = vb;
 }

@@ -14,13 +14,13 @@ public:
 	JseBoundingBox aabb() const;
 	JseBoundingSphere sphere() const;
 
-	void setMaterial(const JseMaterial* pMat);
-	void setVertexCount(int x);
-	void setIndexCount(int x);
-	void setLocalTransform(const mat4& mtx);
-	void setAabb(const JseBoundingBox& aabb);
-	void setSphere(const JseBoundingSphere& sph);
-	void setVertexBuffer(const JseVertexBuffer& vb);
+	void SetMaterial(const JseMaterial* pMat);
+	void SetVertexCount(int x);
+	void SetIndexCount(int x);
+	void SetLocalTransform(const mat4& mtx);
+	void SetAabb(const JseBoundingBox& aabb);
+	void SetSphere(const JseBoundingSphere& sph);
+	void SetVertexBuffer(const JseVertexBuffer& vb);
 private:
 	int vertexCount_;
 	int indexCount_;

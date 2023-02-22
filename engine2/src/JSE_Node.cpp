@@ -1,33 +1,21 @@
 #include "JSE.h"
+#include <glm/gtx/matrix_decompose.hpp>
 
 void JseNode::make_dirty()
 {
 	dirty_ = true;
 }
 
-JseNode::JseNode() : JseNode(JseNodeType::EMPTY)
+JseNode::JseNode() : pParent_(), name_()
 {
 }
 
-JseNode::JseNode(JseNodeType type)
-{
-	type_ = JseNodeType::EMPTY;
-	parent_ = -1;
-	parent_inst_ = nullptr;
-	name_ = "noname";
-}
 
-JseNode::JseNode(JseNodeType type, const JseString& name)
+JseNode::JseNode(JseNodeType type, const JseString& name, JseNode* pParent)
 {
-	name_ = name;
 	type_ = type;
-}
-
-JseNode::JseNode(JseNodeType type, const JseString& name, int parent)
-{
 	name_ = name;
-	parent_ = parent;
-	parent_inst_ = nullptr;
+	pParent_ = pParent;
 }
 
 JseString JseNode::name() const
@@ -35,28 +23,36 @@ JseString JseNode::name() const
 	return name_;
 }
 
-int JseNode::parent() const
-{
-	return parent_;
-}
-
 JseNode* JseNode::parentNode()
 {
-	return parent_inst_;
+	return pParent_;
 }
 
-void JseNode::setParent(int x, JseNode* n)
+void JseNode::SetMatrix(const mat4& m)
 {
-	parent_ = x;
-	parent_inst_ = n;
+	vec3 scale{}, translation{}, skew{};
+	vec4 persp{};
+	quat orient{};
+
+	if (glm::decompose(m, scale, orient, translation, skew, persp))
+	{
+		scale_ = scale;
+		translation_ = translation;
+		rotation_ = orient;
+	}
 }
 
-void JseNode::setIndex(int x)
+void JseNode::SetParent(JseNode* n)
+{
+	pParent_ = n;
+}
+
+void JseNode::SetIndex(int x)
 {
 	index_ = x;
 }
 
-void JseNode::setType(JseNodeType t)
+void JseNode::SetType(JseNodeType t)
 {
 	type_ = t;
 }
@@ -66,7 +62,7 @@ const JseVector<int>& JseNode::children() const
 	return children_;
 }
 
-void JseNode::addChild(int x)
+void JseNode::AddChild(int x)
 {
 	children_.push_back(x);
 }
@@ -91,7 +87,7 @@ bool JseNode::animated() const
 	return animated_;
 }
 
-void JseNode::beginAnimate()
+void JseNode::BeginAnimate()
 {
 	if (!animated_) {
 		animated_ = true;
@@ -101,7 +97,7 @@ void JseNode::beginAnimate()
 	}
 }
 
-void JseNode::endAnimate()
+void JseNode::EndAnimate()
 {
 	if (animated_) {
 		translation_ = saved_translation_;
@@ -111,46 +107,47 @@ void JseNode::endAnimate()
 	}
 }
 
-void JseNode::scale(const vec3& v)
+void JseNode::Scale(const vec3& v)
 {
 	scale_ = v;
 	make_dirty();
 }
 
-void JseNode::translate(const vec3& v)
+void JseNode::Translate(const vec3& v)
 {
 	translation_ = v;
 	make_dirty();
 }
 
-void JseNode::rotate(const quat& v)
+void JseNode::Rotate(const quat& v)
 {
 	rotation_ = v;
 	make_dirty();
 }
 
-void JseNode::rotateX(float rad)
+void JseNode::RotateX(float rad)
 {
 	rotation_ = glm::rotate(rotation_, rad, vec3(1.0f, 0.0f, 0.0f));
 	make_dirty();
 }
 
-void JseNode::rotateY(float rad)
+void JseNode::RotateY(float rad)
 {
 	rotation_ = glm::rotate(rotation_, rad, vec3(0.0f, 1.0f, 0.0f));
 	make_dirty();
 }
 
-void JseNode::rotateZ(float rad)
+void JseNode::RotateZ(float rad)
 {
 	rotation_ = glm::rotate(rotation_, rad, vec3(0.0f, 0.0f, 1.0f));
 	make_dirty();
 }
 
-mat4 JseNode::getTransform()
+mat4 JseNode::GetTransform()
 {
 	if (dirty_) {
-		transformMatrixCache_ = glm::translate(mat4(1.0f), translation_);
+		transformMatrixCache_ = pParent_ ? pParent_->GetTransform() : mat4(1.0f);
+		transformMatrixCache_ = glm::translate(transformMatrixCache_, translation_);
 		transformMatrixCache_ *= mat4(rotation_);
 		transformMatrixCache_ = glm::scale(transformMatrixCache_, scale_);
 		dirty_ = false;

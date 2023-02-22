@@ -12,6 +12,9 @@
 #include <algorithm>
 #include <vector>
 #include <future>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
 #include <unordered_map>
 #include <set>
 #include <unordered_set>

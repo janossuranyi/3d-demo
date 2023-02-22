@@ -5,7 +5,7 @@ class JseMesh {
 public:
 	JseMesh();
 	~JseMesh();
-	void addGeometry(
+	void AddGeometry(
 		const JseVector<vec3> positions,
 		const JseVector<vec2> texCoords,
 		const JseVector<vec4> tangents,

@@ -945,7 +945,7 @@ JseResult JseGfxCoreGL::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descr
 		for (const auto& elem : data.buffers) {
 			switch (elem.type) {
 			case JseDescriptorType::UNIFORM_BUFFER:
-				if (elem.size == 0) {
+				if (elem.size == 0ULL) {
 					GL_CHECK(glBindBufferBase(GL_UNIFORM_BUFFER, elem.binding, elem.buffer));
 				}
 				else {
@@ -955,12 +955,12 @@ JseResult JseGfxCoreGL::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descr
 
 			case JseDescriptorType::UNIFORM_BUFFER_DYNAMIC:
 				if (dynamicOffsetCount > 0 && dynamicOffsetCount > dynIndex) {
-					GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, elem.binding, elem.buffer, elem.offset + static_cast<GLsizeiptr>(pDynamicOffsets[dynIndex++]), elem.size));
+					GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, elem.binding, elem.buffer, elem.offset + static_cast<GLintptr>(pDynamicOffsets[dynIndex++]), elem.size));
 				}
 				break;
 
 			case JseDescriptorType::STORAGE_BUFFER:
-				if (elem.size == 0) {
+				if (elem.size == 0ULL) {
 					GL_CHECK(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, elem.binding, elem.buffer));
 				}
 				else {
@@ -970,7 +970,7 @@ JseResult JseGfxCoreGL::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descr
 
 				case JseDescriptorType::STORAGE_BUFFER_DYNAMIC:
 				if (dynamicOffsetCount > 0 && dynamicOffsetCount > dynIndex) {
-					GL_CHECK(glBindBufferRange(GL_SHADER_STORAGE_BUFFER, elem.binding, elem.buffer, elem.offset + static_cast<GLsizeiptr>(pDynamicOffsets[dynIndex++]), elem.size));
+					GL_CHECK(glBindBufferRange(GL_SHADER_STORAGE_BUFFER, elem.binding, elem.buffer, elem.offset + static_cast<GLintptr>(pDynamicOffsets[dynIndex++]), elem.size));
 					++dynIndex;
 				}
 			}
@@ -1175,7 +1175,7 @@ void JseGfxCoreGL::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindin
 void JseGfxCoreGL::BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offset)
 {
 	const auto& data = buffer_data_map_.at(buffer);
-	if (activePipelineData_.pData != nullptr) {
+	if (activePipelineData_.pData) {
 		GL_CHECK(glBindVertexBuffer(binding, data.buffer, offset, activePipelineData_.pData->binding[binding].stride));
 	}
 }

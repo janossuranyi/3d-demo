@@ -2,6 +2,16 @@
 #include "JSE_GfxCoreNull.h"
 
 #define CACHE_LINE_ALIGN(bytes) (((bytes) + CACHE_LINE_SIZE - 1) & ~(CACHE_LINE_SIZE - 1))
+#define RUN_CORE_CMD(stmt) do {\
+if (useThread_) {\
+	WaitForRenderThreadReady();\
+	core_->BeginRendering();\
+	stmt;\
+	core_->EndRendering();\
+} else {\
+	stmt;\
+}\
+} while(0)
 
 void JseGfxRenderer::Frame()
 {
@@ -14,10 +24,10 @@ void JseGfxRenderer::Frame()
 	}
 	else {
 		
-		JseUniqueLock lck(renderThreadMtx_);
+		std::unique_lock<std::mutex> lck(renderThreadMtx_);
 		renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
 
-		if (shouldTerminate_.Get()) {
+		if (shouldTerminate_.load(std::memory_order_relaxed)) {
 			return;
 		}
 
@@ -177,14 +187,14 @@ void JseGfxRenderer::RenderThread()
 
 	while (running) {
 
-		JseUniqueLock lck(renderThreadMtx_);
+		std::unique_lock<std::mutex> lck(renderThreadMtx_);
 		renderThreadSync_.wait(lck, [this] {return renderThreadDoWork_; });
 
 		// Critical section 1
 		renderThreadReady_ = false;
 
 		lck.unlock();
-		running = ! shouldTerminate_.Get();
+		running = !shouldTerminate_.load(std::memory_order_relaxed);
 
 		if (running) {
 			core_->BeginRendering();
@@ -250,9 +260,9 @@ JseGfxRenderer::~JseGfxRenderer()
 	Info("Max frame mem usage: %d", maxFrameMemUsage_);
 	if (useThread_) {
 		{
-			JseUniqueLock lck(renderThreadMtx_);
+			std::unique_lock<std::mutex> lck(renderThreadMtx_);
 			renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
-			shouldTerminate_.Set(true);
+			shouldTerminate_.store(true, std::memory_order_relaxed);
 			renderThreadDoWork_ = true;
 		}
 		renderThreadSync_.notify_all();
@@ -263,10 +273,10 @@ JseGfxRenderer::~JseGfxRenderer()
 
 uint32_t JseGfxRenderer::NextID()
 {
-	return SCAST(uint32_t, nextId_.Add(1));
+	return SCAST(uint32_t, nextId_.fetch_add(1));
 }
 
-JseGfxCore* JseGfxRenderer::GetCore()
+JseGfxCore* JseGfxRenderer::core()
 {
 	return core_.get();
 }
@@ -276,7 +286,7 @@ void JseGfxRenderer::Invoke(Invokable func)
 	if (!func) return;
 
 	if (useThread_) {
-		JseUniqueLock lck(renderThreadMtx_);
+		std::unique_lock<std::mutex> lck(renderThreadMtx_);
 		renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
 		core_->BeginRendering();
 		{
@@ -291,18 +301,16 @@ void JseGfxRenderer::Invoke(Invokable func)
 
 JseResult JseGfxRenderer::CreateImage(const JseImageCreateInfo& x)
 {
-	JseResult r{};
-
-	Invoke([this, &r, x] {r = core_->CreateImage(x); });
-
+	JseResult r;
+	RUN_CORE_CMD(r = core_->CreateImage(x));
+	
 	return r;
 }
 
 JseResult JseGfxRenderer::UploadImage(const JseImageUploadInfo& x)
 {
-	JseResult r{};
-
-	Invoke([this, &r, x] {r = core_->UpdateImageData(x); });
+	JseResult r;
+	RUN_CORE_CMD(r = core_->UpdateImageData(x));
 
 	return r;
 }
@@ -347,9 +355,8 @@ JseResult JseGfxRenderer::InitCore(int w, int h, bool fs, bool useThread)
 
 void* JseGfxRenderer::GetMappedBufferPointer(JseBufferID id)
 {
-	void* ptr{};
-
-	Invoke([this,&ptr,id] {ptr = core_->GetMappedBufferPointer(id); });
+	void* ptr;
+	RUN_CORE_CMD(ptr = core_->GetMappedBufferPointer(id));
 
 	return ptr;
 }
@@ -393,13 +400,13 @@ JseCmdWrapper* JseGfxRenderer::GetCommandBuffer()
 }
 
 void JseGfxRenderer::SetVSyncInterval(int x) {
-	Invoke([this,x] {core_->SetVSyncInterval(x); });
+	RUN_CORE_CMD(core_->SetVSyncInterval(x));
 }
 
-void JseGfxRenderer::WaitForGpuReady()
+void JseGfxRenderer::WaitForRenderThreadReady()
 {
 	if (useThread_) {
-		JseUniqueLock lck(renderThreadMtx_);
+		std::unique_lock<std::mutex> lck(renderThreadMtx_);
 		renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
 	}
 }
@@ -410,8 +417,8 @@ JseType JseGfxRenderer::typeIndex() const
 }
 
 JseResult JseGfxRenderer::WaitSync(JseFenceID id, uint64_t timeout) {
-	JseResult r{};
-	Invoke([id, timeout, this, &r] {r = core_->WaitSync(id, timeout); });
+	JseResult r;
+	RUN_CORE_CMD(r = core_->WaitSync(id, timeout));
 
 	return r;
 }

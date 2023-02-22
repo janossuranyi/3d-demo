@@ -9,8 +9,7 @@ class JseNode
 {
 private:
 	JseString name_;
-	int parent_{ -1 };
-	JseNode* parent_inst_;
+	JseNode* pParent_;
 	JseVector<int> children_;
 	vec3 translation_{ 0.0f };
 	vec3 scale_{ 1.0f };
@@ -33,30 +32,28 @@ public:
 	JseNode& operator=(const JseNode& other) = default;
 	JseNode& operator=(JseNode&& other) = default;
 
-	JseNode(JseNodeType type);
-	JseNode(JseNodeType type, const JseString& name);
-	JseNode(JseNodeType type, const JseString& name, int parent);
+	JseNode(JseNodeType type, const JseString& name, JseNode* pParent);
 	JseString name() const;
-	int parent() const;
 	JseNode* parentNode();
-	void setParent(int x, JseNode* n);
-	void setIndex(int x);
-	void setType(JseNodeType t);
+	void SetMatrix(const mat4& m);
+	void SetParent(JseNode* n);
+	void SetIndex(int x);
+	void SetType(JseNodeType t);
 	const JseVector<int>& children() const;
-	void addChild(int x);
+	void AddChild(int x);
 	vec3 translation() const;
 	vec3 scale() const;
 	quat rotation() const;
 	bool animated() const;
-	void beginAnimate();
-	void endAnimate();
-	void scale(const vec3& v);
-	void translate(const vec3& v);
-	void rotate(const quat& v);
-	void rotateX(float rad);
-	void rotateY(float rad);
-	void rotateZ(float rad);
-	mat4 getTransform();
+	void BeginAnimate();
+	void EndAnimate();
+	void Scale(const vec3& v);
+	void Translate(const vec3& v);
+	void Rotate(const quat& v);
+	void RotateX(float rad);
+	void RotateY(float rad);
+	void RotateZ(float rad);
+	mat4 GetTransform();
 	int index() const;
 	JseNodeType type() const;
 	bool isCamera() const;

@@ -97,26 +97,30 @@ static const char* vtxshader{ R"(
 layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 
-out vec2 vofi_TexCoord;
+out INTERFACE { 
+    vec2 TexCoord;
+} Out;
 
 layout(binding = 1, std140) uniform UniformMatrixes {
     mat4 W;
     mat4 V;
     mat4 P;
     mat4 WVP;
-} matrix;
+};
 
 void main() {
 
-    gl_Position = matrix.WVP * vec4(in_Position, 1.0);
-    vofi_TexCoord = in_TexCoord;
+    gl_Position = WVP * vec4(in_Position, 1.0);
+    Out.TexCoord = in_TexCoord;
 }
 )" };
 
 static const char* fragshader{ R"(
 #version 450
 
-in vec2 vofi_TexCoord;
+in INTERFACE { 
+    vec2 TexCoord;
+} In;
 
 layout(binding = 0) uniform sampler2D samp0;
 layout(binding = 1) uniform sampler2D samp1;
@@ -133,7 +137,7 @@ vec4 gamma(vec4 c) {
 
 void main() {
     
-    vec4 c0 = texture(samp0, vofi_TexCoord.xy);
+    vec4 c0 = texture(samp0, In.TexCoord.xy);
     
     fragColor = vec4( c0.xyz, 1.0 );
 }
@@ -230,7 +234,6 @@ int main(int argc, char** argv)
 
         R.SetCore(std::make_shared<JseGfxCoreGL>());
         R.InitCore(1024, 768, false, true);
-
         R.SetVSyncInterval(0);
 
         /***********************************************************/
@@ -324,7 +327,6 @@ int main(int argc, char** argv)
         upd.info.data = (uint8_t*)&rect[0];
 
         R.Frame();
-
         uint8_t* ptr = SCAST(uint8_t*, R.GetMappedBufferPointer(ctx.buf_UbMatrix));
 
 
@@ -479,7 +481,7 @@ int main(int argc, char** argv)
 
 
         ivec2 screen{};
-        R.GetCore()->GetSurfaceDimension(screen);
+        R.core()->GetSurfaceDimension(screen);
         auto scissor_w = screen.x / 2;
         auto scissor_h = screen.y / 2;
 
@@ -523,12 +525,11 @@ int main(int argc, char** argv)
                 //W = rotate(W, radians(angle), vec3(0.f, 1.f, 0.f));
                 W = rotate(W, radians(angle), vec3(0.f, 0.f, 1.f));
                 V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
-
                 if (syncId[ctx.frame]) {
                     R.WaitSync(syncId[ctx.frame], 1000*1000);
                 }
 
-                UniformMatrixes* uf = RCAST(UniformMatrixes*, ptr + ctx.frame * 256);
+                auto* uf = RCAST(UniformMatrixes*, ptr + ctx.frame * 256);
                 uf->P = P;
                 uf->V = V;
                 uf->W = W;

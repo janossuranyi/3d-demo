@@ -128,12 +128,12 @@ private:
 
 	JseSharedPtr<JseGfxCore> core_;
 	JseThread				renderThread_;
-	JseMutex				renderThreadMtx_;
-	JseConditionVariable	renderThreadSync_;
+	std::mutex				renderThreadMtx_;
+	std::condition_variable	renderThreadSync_;
 	bool					renderThreadReady_;
 	bool					renderThreadDoWork_;
-	JseAtomicInt			shouldTerminate_{ 0 };
-	JseAtomicInt			nextId_{ 1 };
+	std::atomic_int			shouldTerminate_{ 0 };
+	std::atomic_int			nextId_{ 1 };
 	size_t					frameMemorySize_{ 0 };
 	int						maxFrameMemUsage_{ 0 };
 	frameData_t				frames_[ON_FLIGHT_FRAMES];
@@ -184,7 +184,7 @@ public:
 
 	uint32_t NextID();
 	
-	JseGfxCore*		GetCore();
+	JseGfxCore*		core();
 	JseResult		CreateImage(const JseImageCreateInfo& x);
 	JseResult		UploadImage(const JseImageUploadInfo& x);
 	JseResult		InitCore(int w, int h, bool fs, bool useThread);
@@ -201,7 +201,7 @@ public:
 	void	ProcessCommandList(frameData_t* frameData);
 	void	RenderThread();
 	void	SetVSyncInterval(int x);
-	void	WaitForGpuReady();
+	void	WaitForRenderThreadReady();
 	JseResult WaitSync(JseFenceID id, uint64_t timeout);
 
 	static int RenderThreadWrapper(void* data);
