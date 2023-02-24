@@ -57,7 +57,7 @@ vec3 DeGamma ( vec3 color ) {
 
 float light_radiance(float d, float r, float cutoff)
 {
-    float denom = d/r + 1;
+    float denom = 1.0 + d/r;
     float attenuation = 1.0 / (denom * denom);
 
     attenuation = (attenuation - cutoff) / (1 - cutoff);

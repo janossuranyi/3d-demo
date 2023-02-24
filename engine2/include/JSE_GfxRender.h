@@ -120,8 +120,8 @@ public:
 	static const size_t ON_FLIGHT_FRAMES = 2;
 private:
 	struct frameData_t {
-		JseAtomicInt				frameMemoryPtr;
-		std::shared_ptr<uint8_t>	frameMemory;
+		std::atomic_int				frameMemoryPtr;
+		JseSharedPtr<uint8_t>		frameMemory;
 		JseCmdWrapper*				cmdTail;
 		JseCmdWrapper*				cmdHead;
 	};

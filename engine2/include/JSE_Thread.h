@@ -30,8 +30,8 @@ public:
 	static uint32_t current_id();
 
 private:
-	SDL_Thread* m_pThread;
-	bool m_bJoinable;
+	SDL_Thread* pThread_;
+	bool joinable_;
 };
 
 

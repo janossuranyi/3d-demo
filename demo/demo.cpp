@@ -170,7 +170,7 @@ KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth,
 struct JseFormat_t {
     JseFormat fmt;
     bool srgb;
-    JseFormat_t() = default;
+    //JseFormat_t() = default;
 };
 
 static const JseHashMap<ktx_uint32_t, JseFormat_t> s_vkf2jse_map {

@@ -225,7 +225,7 @@ void JseGfxRenderer::ResetCommandBuffer()
 	const uintptr_t bytesNeededForAlignment = CACHE_LINE_SIZE - ((uintptr_t)frameData_->frameMemory.get() & (CACHE_LINE_SIZE - 1));
 	int size = bytesNeededForAlignment + CACHE_LINE_ALIGN(sizeof(JseCmdWrapper));
 
-	frameData_->frameMemoryPtr.Set(size);
+	frameData_->frameMemoryPtr.store(size, std::memory_order_relaxed);
 	JseCmdWrapper* cmd = RCAST(JseCmdWrapper*, frameData_->frameMemory.get() + bytesNeededForAlignment);
 	cmd->command = JseCmdEmpty{};
 	cmd->next = nullptr;
@@ -246,7 +246,7 @@ JseGfxRenderer::JseGfxRenderer(int frameMemorySize)
 
 	for (int i = 0; i < ON_FLIGHT_FRAMES; ++i) {
 		frameData_ = &frames_[i];
-		frameData_->frameMemory.reset(RCAST(uint8_t*, JseMemAlloc16(frameMemorySize_)), JseMemFree16);
+		frameData_->frameMemory.reset(static_cast<uint8_t*>(JseMemAlloc16(frameMemorySize_)), JseMemFree16);
 		ResetCommandBuffer();
 	}
 	activeFrame_ = 0;
@@ -368,7 +368,7 @@ uint8_t* JseGfxRenderer::R_FrameAlloc(uint32_t bytes)
 	int			end{};
 	uint8_t*	ret{};
 
-	end = frameData_->frameMemoryPtr.Add(bytes) + bytes;
+	end = frameData_->frameMemoryPtr.fetch_add(bytes, std::memory_order_relaxed) + bytes;
 
 	if (end > frameMemorySize_) {
 		throw std::runtime_error("Out of frame memory");

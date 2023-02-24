@@ -2,78 +2,78 @@
 
 JseThread::JseThread(JseThreadFunction func, const char* name, void* data)
 {
-	m_bJoinable = true;
-	m_pThread = SDL_CreateThread(func, name, data);
+	joinable_ = true;
+	pThread_ = SDL_CreateThread(func, name, data);
 }
 
 JseThread::JseThread()
 {
-	m_pThread = nullptr;
-	m_bJoinable = false;
+	pThread_ = nullptr;
+	joinable_ = false;
 }
 
 JseThread::JseThread(JseThread&& other) noexcept
 {
-	m_pThread = other.m_pThread;
-	m_bJoinable = other.m_bJoinable;
-	other.m_pThread = nullptr;
-	other.m_bJoinable = false;
+	pThread_ = other.pThread_;
+	joinable_ = other.joinable_;
+	other.pThread_ = nullptr;
+	other.joinable_ = false;
 }
 
 JseThread& JseThread::operator=(JseThread&& other) noexcept
 {
-	m_pThread = other.m_pThread;
-	m_bJoinable = other.m_bJoinable;
-	other.m_pThread = nullptr;
-	other.m_bJoinable = false;
+	pThread_ = other.pThread_;
+	joinable_ = other.joinable_;
+	other.pThread_ = nullptr;
+	other.joinable_ = false;
 
 	return *this;
 }
 
 JseThread::~JseThread()
 {
-	if (m_bJoinable) {
-		SDL_WaitThread(m_pThread, nullptr);
+	if (joinable_) {
+		SDL_WaitThread(pThread_, nullptr);
 	}
-	m_pThread = nullptr;
+	pThread_ = nullptr;
 }
 
 void JseThread::swap(JseThread& other)
 {
-	std::swap(m_pThread, other.m_pThread);
-	std::swap(m_bJoinable, other.m_bJoinable);
+	std::swap(pThread_, other.pThread_);
+	std::swap(joinable_, other.joinable_);
 }
 
 void JseThread::detach() noexcept
 {
-	SDL_DetachThread(m_pThread);
-	m_pThread = nullptr;
-	m_bJoinable = false;
+	SDL_DetachThread(pThread_);
+	pThread_ = nullptr;
+	joinable_ = false;
 }
 
 bool JseThread::joinable() const
 {
-	return m_bJoinable;
+	return joinable_;
 }
 
 int JseThread::join()
 {
 	int result;
-	SDL_WaitThread(m_pThread, &result);
-	m_pThread = nullptr;
-	m_bJoinable = false;
+	SDL_WaitThread(pThread_, &result);
+	pThread_ = nullptr;
+	joinable_ = false;
 
 	return result;
 }
 
 uint32_t JseThread::native_id() const
 {
-	return SDL_static_cast(uint32_t, SDL_GetThreadID(m_pThread));
+	return SDL_static_cast(uint32_t, SDL_GetThreadID(pThread_));
 }
 
 const char* JseThread::name() const
 {
-	return SDL_GetThreadName(m_pThread);
+	return SDL_GetThreadName(pThread_);
 }
 
 uint32_t JseThread::current_id()
