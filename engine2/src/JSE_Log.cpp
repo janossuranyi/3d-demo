@@ -1,55 +1,57 @@
 #include "JSE.h"
 
-static JseLogWriter gLogWriter("demo.log");
+static js::LogWriter gLogWriter("demo.log");
 
-void JseLogWriter::Write(const std::string& msg)
-{
-	if (!file) ReopenFile();
-	if (file)
+namespace js {
+	void LogWriter::Write(const std::string& msg)
 	{
-		fprintf(file, "%s\n", msg.c_str());
-		fprintf(stderr, "%s\n", msg.c_str());
-		fflush(file);
+		if (!file) ReopenFile();
+		if (file)
+		{
+			fprintf(file, "%s\n", msg.c_str());
+			fprintf(stderr, "%s\n", msg.c_str());
+			fflush(file);
+		}
 	}
-}
 
-JseLogWriter::JseLogWriter(const std::string& fileName_)
-{
-	fileName = fileName_;
-	file = nullptr;
-}
-
-JseLogWriter::~JseLogWriter()
-{
-	if (file) {
-		fclose(file);
-	}
-}
-
-void JseLogWriter::Clear()
-{
-	ReopenFile();
-	if (file) fflush(file);
-}
-
-void JseLogWriter::ReopenFile()
-{
-	if (file) {
-		fclose(file);
+	LogWriter::LogWriter(const std::string& fileName_)
+	{
+		fileName = fileName_;
 		file = nullptr;
 	}
 
-	//file = fopen(fileName.c_str(), "a");
-	file = fopen(fileName.c_str(), "a");
-}
+	LogWriter::~LogWriter()
+	{
+		if (file) {
+			fclose(file);
+		}
+	}
 
-void JseLogWriter::SetFileName(const std::string& fileName_)
-{
-	if (fileName_ == fileName)
-		return;
+	void LogWriter::Clear()
+	{
+		ReopenFile();
+		if (file) fflush(file);
+	}
 
-	fileName = fileName_;
-	if (file) ReopenFile();
+	void LogWriter::ReopenFile()
+	{
+		if (file) {
+			fclose(file);
+			file = nullptr;
+		}
+
+		//file = fopen(fileName.c_str(), "a");
+		file = fopen(fileName.c_str(), "a");
+	}
+
+	void LogWriter::SetFileName(const std::string& fileName_)
+	{
+		if (fileName_ == fileName)
+			return;
+
+		fileName = fileName_;
+		if (file) ReopenFile();
+	}
 }
 
 static std::string jse_get_time()

@@ -69,10 +69,10 @@ public:
 	void operator()(const glm::mat4& value) {
 		GL_CHECK(glUniformMatrix4fv(uniform_location_, 1, GL_FALSE, &value[0][0]));
 	}
-	void operator()(const JseVector<float>& value) {
+	void operator()(const JsVector<float>& value) {
 		GL_CHECK(glUniform1fv(uniform_location_, value.size(), (const GLfloat*)value.data()));
 	}
-	void operator()(const JseVector<glm::vec4>& value) {
+	void operator()(const JsVector<glm::vec4>& value) {
 		GL_CHECK(glUniform4fv(uniform_location_, value.size(), (const GLfloat*)value.data()));
 	}
 	void update(GLint location, const JseUniformData& value) {
@@ -151,43 +151,45 @@ static TextureFormatInfo s_texture_format[] = {
 	{GL_STENCIL_INDEX8,     GL_ZERO,         GL_STENCIL_INDEX,    GL_UNSIGNED_BYTE,                true,  1}, // D0S8
 };
 
-JseGfxCoreGL::~JseGfxCoreGL()
+namespace js {
+
+GfxCoreGL::~GfxCoreGL()
 {
 	Shutdown_impl();
 	Info("OpenGL core deinitialized.");
 }
 
-JseGfxCoreGL::JseGfxCoreGL() : 
+GfxCoreGL::GfxCoreGL() : 
 	windowHandle_(nullptr),
 	useDebugMode_(false),
 	glcontext_(0),
 	glVersion_(0)
 {
-	Info("JseGfxCore OpenGL 4.6 Driver v1.0");
+	Info("GfxCore OpenGL 4.6 Driver v1.0");
 }
 
-void* JseGfxCoreGL::GetMappedBufferPointer_impl(JseBufferID id)
+void* GfxCoreGL::GetMappedBufferPointer_impl(JseBufferID id)
 {
 	auto find = buffer_data_map_.find(id);
 
 	return find != std::end(buffer_data_map_) ? find->second.mapptr : nullptr;
 }
 
-JseResult JseGfxCoreGL::Init_impl(bool debugMode)
+Result GfxCoreGL::Init_impl(bool debugMode)
 {
     useDebugMode_ = debugMode;
 
-    return JseResult::SUCCESS;
+    return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo)
+Result GfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo)
 {
 
 	int err;
 
 	if ((err = SDL_Init(SDL_INIT_VIDEO) < 0)) {
 		Error("ERROR: %s", SDL_GetError());
-		return JseResult::GENERIC_ERROR;
+		return Result::GENERIC_ERROR;
 	}
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -223,11 +225,11 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	}
 
 	Info("SDL_CreateWindow start");
-	windowHandle_ = SDL_CreateWindow("JseGfxCoreGL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, createSurfaceInfo.width, createSurfaceInfo.height, flags);
+	windowHandle_ = SDL_CreateWindow("GfxCoreGL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, createSurfaceInfo.width, createSurfaceInfo.height, flags);
 	if (!windowHandle_)
 	{
 		Error("Cannot create window - %s", SDL_GetError());
-		return JseResult::GENERIC_ERROR;
+		return Result::GENERIC_ERROR;
 	}
 
 	Info("SDL_CreateWindow done");
@@ -236,7 +238,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	if (!glcontext_)
 	{
 		Error("Cannot create GL context - %s", SDL_GetError());
-		return JseResult::GENERIC_ERROR;
+		return Result::GENERIC_ERROR;
 	}
 
 	//SDL_GL_MakeCurrent(windowHandle_, glcontext_);
@@ -247,7 +249,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	glewExperimental = true; // Needed for core profile
 	if (glewInit() != GLEW_OK) {
 		Error("Cannot initialize GLEW");
-		return JseResult::GENERIC_ERROR;
+		return Result::GENERIC_ERROR;
 	}
 
 	Info("Using GLEW %s", glewGetString(GLEW_VERSION));
@@ -259,7 +261,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 
 	Info("OpenGL extensions");
 	GLint numExts; glGetIntegerv(GL_NUM_EXTENSIONS, &numExts);
-	JseString exts;
+	JsString exts;
 
 	for (int ext_ = 0; ext_ < numExts; ++ext_)
 	{
@@ -274,7 +276,7 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 	if (glVersion_ < 450)
 	{
 		Error("GL_VERSION < 4.5");
-		return JseResult::GENERIC_ERROR;
+		return Result::GENERIC_ERROR;
 	}
 
 	Info("extensions: %s", exts.c_str());
@@ -342,15 +344,15 @@ JseResult JseGfxCoreGL::CreateSurface_impl(const JseSurfaceCreateInfo& createSur
 #endif
 	}
 #endif
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateBuffer_impl(const JseBufferCreateInfo& cmd)
+Result GfxCoreGL::CreateBuffer_impl(const JseBufferCreateInfo& cmd)
 {
 	auto find = buffer_data_map_.find(cmd.bufferId);
 
 	// buffer exists
-	if (find != std::end(buffer_data_map_)) return JseResult::ALREADY_EXISTS;
+	if (find != std::end(buffer_data_map_)) return Result::ALREADY_EXISTS;
 	BufferData bufferData{};
 
 	GLbitfield flags{};
@@ -381,29 +383,29 @@ JseResult JseGfxCoreGL::CreateBuffer_impl(const JseBufferCreateInfo& cmd)
 
 	buffer_data_map_.emplace(cmd.bufferId, bufferData);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::UpdateBuffer_impl(const JseBufferUpdateInfo& cmd)
+Result GfxCoreGL::UpdateBuffer_impl(const JseBufferUpdateInfo& cmd)
 {
 	auto find = buffer_data_map_.find(cmd.bufferId);
 
 	if (find != std::end(buffer_data_map_)) {
 		if (find->second.size < (cmd.offset + cmd.size)) {
-			return JseResult::INTERVAL_EXCEEDED;
+			return Result::INTERVAL_EXCEEDED;
 		}
 		if (find->second.mapptr) {
 			std::memcpy(reinterpret_cast<char*>(find->second.mapptr) + cmd.offset, cmd.data, cmd.size);
 		} else {
 			GL_CHECK(glNamedBufferSubData(find->second.buffer, cmd.offset, cmd.size, cmd.data));
 		}
-		return JseResult::SUCCESS;
+		return Result::SUCCESS;
 	}
 
-	return JseResult::NOT_EXISTS;
+	return Result::NOT_EXISTS;
 }
 
-JseResult JseGfxCoreGL::DestroyBuffer_impl(JseBufferID bufferId)
+Result GfxCoreGL::DestroyBuffer_impl(JseBufferID bufferId)
 {
 	auto find = buffer_data_map_.find(bufferId);
 
@@ -415,23 +417,23 @@ JseResult JseGfxCoreGL::DestroyBuffer_impl(JseBufferID bufferId)
 
 		buffer_data_map_.erase(bufferId);
 
-		return JseResult::SUCCESS;
+		return Result::SUCCESS;
 	}
 	
-	return JseResult::NOT_EXISTS;
+	return Result::NOT_EXISTS;
 
 }
 
-JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
+Result GfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 {
 	auto find = texture_data_map_.find(cmd.imageId);
 
 	if (find != std::end(texture_data_map_)) {
-		return JseResult::ALREADY_EXISTS;
+		return Result::ALREADY_EXISTS;
 	}
 	
 	if (cmd.target == JseImageTarget::BUFFER && !cmd.buffer.isValid()) {
-		return JseResult::INVALID_VALUE;
+		return Result::INVALID_VALUE;
 	}
 
 	ImageData data{};
@@ -439,7 +441,7 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 
 	data.target = MapJseImageTargetGl(cmd.target);
 	if (data.target == 0) {
-		return JseResult::INVALID_VALUE;
+		return Result::INVALID_VALUE;
 	}
 
 	GLenum const internalFormat = cmd.srgb ? formatInfo.internal_format_srgb : formatInfo.internal_format;
@@ -477,7 +479,7 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 		GLfloat minLod = 0.0f;
 		GLfloat maxLod = SCAST(float, cmd.levelCount);
 		GLfloat lodBias = 0.0f;
-		JseColor4f borderColor{ 0.0f,0.0f,0.0f,1.0f };
+		Color4f borderColor{ 0.0f,0.0f,0.0f,1.0f };
 
 		if (cmd.samplerDescription) {
 
@@ -545,30 +547,30 @@ JseResult JseGfxCoreGL::CreateImage_impl(const JseImageCreateInfo& cmd)
 	data.compressed = cmd.compressed;
 	texture_data_map_.emplace(cmd.imageId, data);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::DeleteImage_impl(JseImageID imageId)
+Result GfxCoreGL::DeleteImage_impl(JseImageID imageId)
 {
 	auto find = texture_data_map_.find(imageId);
 
-	if (find == std::end(texture_data_map_)) return JseResult::NOT_EXISTS;
+	if (find == std::end(texture_data_map_)) return Result::NOT_EXISTS;
 
 	GL_CHECK(glDeleteTextures(1, &find->second.texture));
 
 	texture_data_map_.erase(imageId);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& cmd)
+Result GfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& cmd)
 {
 
 	if (pipeline_data_map_.count(cmd.graphicsPipelineId) > 0) {
-		return JseResult::ALREADY_EXISTS;
+		return Result::ALREADY_EXISTS;
 	}
 
-	JseResult res{ JseResult::SUCCESS };
+	Result res{ Result::SUCCESS };
 
 	GfxPipelineData data{};
 	GL_CHECK(glCreateVertexArrays(1, &data.vao));
@@ -612,7 +614,7 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 			std::vector<char> logBuf(infologLen);
 			GL_CHECK(glGetProgramInfoLog(data.program, infologLen, nullptr, logBuf.data()));
 			Error("Linking of shader program failed: %s", logBuf.data());
-			res = JseResult::GENERIC_ERROR;
+			res = Result::GENERIC_ERROR;
 		}
 	}
 
@@ -622,7 +624,7 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 	}
 
 
-	if (res != JseResult::SUCCESS) {
+	if (res != Result::SUCCESS) {
 		glDeleteProgram(data.program);
 		glDeleteVertexArrays(1, &data.vao);
 	}
@@ -642,14 +644,14 @@ JseResult JseGfxCoreGL::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCre
 	return res;
 }
 
-JseResult JseGfxCoreGL::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
+Result GfxCoreGL::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
 {
 	if (active_pipeline_ == pipelineId) 
-		return JseResult::SUCCESS;
+		return Result::SUCCESS;
 
 	auto find = pipeline_data_map_.find(pipelineId);
 	if (find == std::end(pipeline_data_map_)) {
-		return JseResult::NOT_EXISTS;
+		return Result::NOT_EXISTS;
 	}
 
 	active_pipeline_ = pipelineId;
@@ -660,14 +662,14 @@ JseResult JseGfxCoreGL::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineI
 	GL_CHECK(glUseProgram(data.program));
 	stateCache_.program = data.program;
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
+Result GfxCoreGL::DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
 {
 	auto find = pipeline_data_map_.find(pipelineId);
 	if (find == std::end(pipeline_data_map_)) {
-		return JseResult::NOT_EXISTS;
+		return Result::NOT_EXISTS;
 	}
 
 	auto& data = find->second;
@@ -676,20 +678,20 @@ JseResult JseGfxCoreGL::DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelin
 
 	pipeline_data_map_.erase(pipelineId);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateShader_impl(const JseShaderCreateInfo& cmd, std::string& errorOutput)
+Result GfxCoreGL::CreateShader_impl(const JseShaderCreateInfo& cmd, std::string& errorOutput)
 {
 	if (shader_map_.count(cmd.shaderId) > 0)
-		return JseResult::NOT_EXISTS;
+		return Result::NOT_EXISTS;
 
 
 	GLuint shader = 0xffff;
 	GL_CHECK(shader = glCreateShader(MapJseShaderStageGl(cmd.stage)));
 
 	if (shader == 0xffff) {
-		return JseResult::GENERIC_ERROR;
+		return Result::GENERIC_ERROR;
 	}
 
 	const GLchar* tmp = static_cast<const GLchar*>(cmd.pCode);
@@ -711,20 +713,20 @@ JseResult JseGfxCoreGL::CreateShader_impl(const JseShaderCreateInfo& cmd, std::s
 		}
 
 		GL_CHECK(glDeleteShader(shader));
-		return JseResult::GENERIC_ERROR;
+		return Result::GENERIC_ERROR;
 	}
 
 	shader_map_.emplace(cmd.shaderId, ShaderData{ shader, cmd.stage });
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& cmd)
+Result GfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& cmd)
 {
 	auto find = framebuffer_map_.find(cmd.frameBufferId);
 
 	if (find != std::end(framebuffer_map_)) {
-		return JseResult::ALREADY_EXISTS;
+		return Result::ALREADY_EXISTS;
 	}
 
 	GLint bound{};
@@ -793,29 +795,29 @@ JseResult JseGfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& c
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
 		GL_CHECK(glDeleteFramebuffers(1, &data.framebuffer));
-		return JseResult::FRAMEBUFFER_INCOMPLETE;
+		return Result::FRAMEBUFFER_INCOMPLETE;
 	}
 
 	framebuffer_map_.emplace(cmd.frameBufferId, data);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::DeleteFrameBuffer_impl(JseFrameBufferID framebufferId)
+Result GfxCoreGL::DeleteFrameBuffer_impl(JseFrameBufferID framebufferId)
 {
 	auto find = framebuffer_map_.find(framebufferId);
 
 	if (find == std::end(framebuffer_map_)) {
-		return JseResult::NOT_EXISTS;
+		return Result::NOT_EXISTS;
 	}
 
 	GL_CHECK(glDeleteFramebuffers(1, &find->second.framebuffer));
 	framebuffer_map_.erase(framebufferId);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo)
+Result GfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo)
 {
 
 	GLuint fb{ 0 };
@@ -857,14 +859,14 @@ JseResult JseGfxCoreGL::BeginRenderPass_impl(const JseRenderPassInfo& renderPass
 		GL_CHECK(glClear(clearBits));
 	}
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd)
+Result GfxCoreGL::CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd)
 {
 	auto find = set_layout_map_.find(cmd.setLayoutId);
 	if (find != std::end(set_layout_map_)) {
-		return JseResult::ALREADY_EXISTS;
+		return Result::ALREADY_EXISTS;
 	}
 
 	SetLayoutData data{};
@@ -875,21 +877,21 @@ JseResult JseGfxCoreGL::CreateDescriptorSetLayout_impl(const JseDescriptorSetLay
 
 	set_layout_map_.emplace(cmd.setLayoutId, data);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::EndRenderPass_impl()
+Result GfxCoreGL::EndRenderPass_impl()
 {
 	_glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd)
+Result GfxCoreGL::CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd)
 {
 	auto find = set_data_map_.find(cmd.setId);
 
 	if (find != std::end(set_data_map_)) {
-		return JseResult::ALREADY_EXISTS;
+		return Result::ALREADY_EXISTS;
 	}
 
 	const auto& layout = set_layout_map_.at(cmd.setLayoutId);
@@ -928,10 +930,10 @@ JseResult JseGfxCoreGL::CreateDescriptorSet_impl(const JseDescriptorSetCreateInf
 	}
 	set_data_map_.emplace(cmd.setId, data);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets)
+Result GfxCoreGL::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets)
 {
 	for (int i = 0; i < descriptorSetCount; ++i) {
 		auto find = set_data_map_.find(pDescriptorSets[i]);
@@ -992,20 +994,20 @@ JseResult JseGfxCoreGL::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descr
 		}
 	}
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd)
+Result GfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd)
 {
 	auto find = set_data_map_.find(cmd.setId);
 	if (find == std::end(set_data_map_)) {
-		return JseResult::NOT_EXISTS;
+		return Result::NOT_EXISTS;
 	}
 
 	auto& data = find->second;
 	auto binding = data.pLayoutData->bindings.find(cmd.dstBinding);
 	if (binding == std::end(data.pLayoutData->bindings)) {
-		return JseResult::INVALID_VALUE;
+		return Result::INVALID_VALUE;
 	}
 
 	assert(cmd.descriptorType == binding->second.descriptorType);
@@ -1057,7 +1059,7 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 		case JseDescriptorType::INLINE_UNIFORM_BLOCK:
 		{
 			data.uniforms.clear();
-			JseVector<glm::vec4> tmp;
+			JsVector<glm::vec4> tmp;
 			for (int i = 0; i < cmd.descriptorCount; ++i) {
 				auto& uniforms = cmd.pUniformInfo[i];
 				if (uniforms.vectorCount) {
@@ -1076,10 +1078,10 @@ JseResult JseGfxCoreGL::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd
 
 		
 	}
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::CreateFence_impl(JseFenceID id)
+Result GfxCoreGL::CreateFence_impl(JseFenceID id)
 {
 	auto it = fence_map_.find(id);
 
@@ -1088,7 +1090,7 @@ JseResult JseGfxCoreGL::CreateFence_impl(JseFenceID id)
 		Info("Fence %d already exists", id.internal());
 #endif // DEBUG
 
-		return JseResult::ALREADY_EXISTS;
+		return Result::ALREADY_EXISTS;
 	}
 
 	GLsync sync{};
@@ -1096,13 +1098,13 @@ JseResult JseGfxCoreGL::CreateFence_impl(JseFenceID id)
 
 	if (sync) {
 		fence_map_.emplace(id, sync);
-		return JseResult::SUCCESS;
+		return Result::SUCCESS;
 	}
 
-	return JseResult::GENERIC_ERROR;
+	return Result::GENERIC_ERROR;
 }
 
-JseResult JseGfxCoreGL::DeleteFence_impl(JseFenceID id)
+Result GfxCoreGL::DeleteFence_impl(JseFenceID id)
 {
 	auto it = fence_map_.find(id);
 
@@ -1110,16 +1112,16 @@ JseResult JseGfxCoreGL::DeleteFence_impl(JseFenceID id)
 #ifdef _DEBUG
 		Info("Fence %d not exists", id.internal());
 #endif
-		return JseResult::NOT_EXISTS;
+		return Result::NOT_EXISTS;
 	}
 
 	GL_CHECK(glDeleteSync(it->second));
 	fence_map_.erase(id);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::WaitSync_impl(JseFenceID id, uint64_t timeout)
+Result GfxCoreGL::WaitSync_impl(JseFenceID id, uint64_t timeout)
 {
 	auto it = fence_map_.find(id);
 
@@ -1127,7 +1129,7 @@ JseResult JseGfxCoreGL::WaitSync_impl(JseFenceID id, uint64_t timeout)
 #ifdef _DEBUG
 		Info("Fence %d not exists", id.internal());
 #endif
-		return JseResult::NOT_EXISTS;
+		return Result::NOT_EXISTS;
 	}
 	if (timeout > 0) {
 		GLenum waitReturn = GL_UNSIGNALED;
@@ -1146,10 +1148,10 @@ JseResult JseGfxCoreGL::WaitSync_impl(JseFenceID id, uint64_t timeout)
 	else {
 		glWaitSync(it->second, 0, GL_TIMEOUT_IGNORED);
 	}
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-void JseGfxCoreGL::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets)
+void GfxCoreGL::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets)
 {
 	if (activePipelineData_.pData) {
 		if (bindingCount == 1) {
@@ -1172,7 +1174,7 @@ void JseGfxCoreGL::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindin
 	}
 }
 
-void JseGfxCoreGL::BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offset)
+void GfxCoreGL::BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offset)
 {
 	const auto& data = buffer_data_map_.at(buffer);
 	if (activePipelineData_.pData) {
@@ -1180,7 +1182,7 @@ void JseGfxCoreGL::BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, J
 	}
 }
 
-void JseGfxCoreGL::BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type)
+void GfxCoreGL::BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type)
 {
 	const auto& data = buffer_data_map_.at(buffer);
 	active_index_offset_ = static_cast<GLintptr>(offset);
@@ -1191,12 +1193,12 @@ void JseGfxCoreGL::BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, Jse
 	}
 }
 
-void JseGfxCoreGL::Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+void GfxCoreGL::Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
 	GL_CHECK(glDrawArraysInstancedBaseInstance(MapJseTopologyGl(mode), firstVertex, vertexCount, instanceCount, firstInstance));
 }
 
-void JseGfxCoreGL::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+void GfxCoreGL::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
 	if (activePipelineData_.pData) {
 		const uint32_t mult = active_index_type_ == GL_UNSIGNED_SHORT ? 2 : 4;
@@ -1211,57 +1213,57 @@ void JseGfxCoreGL::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint3
 	}
 }
 
-void JseGfxCoreGL::Viewport_impl(const JseRect2D& x)
+void GfxCoreGL::Viewport_impl(const JseRect2D& x)
 {
 	_glViewport(x.x, x.y, x.w, x.h);
 }
 
-void JseGfxCoreGL::Scissor_impl(const JseRect2D& x)
+void GfxCoreGL::Scissor_impl(const JseRect2D& x)
 {
 	_glScissor(x.x, x.y, x.w, x.h);
 }
 
-void JseGfxCoreGL::BeginRendering_impl()
+void GfxCoreGL::BeginRendering_impl()
 {
 	SDL_GL_MakeCurrent(windowHandle_, glcontext_);
 }
 
-void JseGfxCoreGL::EndRendering_impl()
+void GfxCoreGL::EndRendering_impl()
 {
 	SDL_GL_MakeCurrent(windowHandle_, NULL);
 }
 
-void JseGfxCoreGL::SwapChainNextImage_impl()
+void GfxCoreGL::SwapChainNextImage_impl()
 {
 	SDL_GL_SwapWindow(windowHandle_);
 }
 
-JseResult JseGfxCoreGL::GetDeviceCapabilities_impl(JseDeviceCapabilities& dest)
+Result GfxCoreGL::GetDeviceCapabilities_impl(JseDeviceCapabilities& dest)
 {
 	dest = deviceCapabilities_;
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::SetVSyncInterval_impl(int interval)
+Result GfxCoreGL::SetVSyncInterval_impl(int interval)
 {
 	if (SDL_GL_SetSwapInterval(interval) == -1) {
 		Error("%s", SDL_GetError());
-		return JseResult::GENERIC_ERROR;
+		return Result::GENERIC_ERROR;
 	}
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::GetSurfaceDimension_impl(glm::ivec2& x)
+Result GfxCoreGL::GetSurfaceDimension_impl(glm::ivec2& x)
 {
 	//SDL_GetWindowSize(windowHandle_, &_w, &_h);
 	SDL_GL_GetDrawableSize(windowHandle_, &x.x, &x.y);
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-void JseGfxCoreGL::Shutdown_impl()
+void GfxCoreGL::Shutdown_impl()
 {
 	if (glcontext_) {
 		SDL_GL_DeleteContext(glcontext_);
@@ -1273,7 +1275,7 @@ void JseGfxCoreGL::Shutdown_impl()
 	}
 }
 
-void JseGfxCoreGL::SetRenderState(JseRenderState state, bool force)
+void GfxCoreGL::SetRenderState(JseRenderState state, bool force)
 {
 	uint64_t diff = state ^ gl_state_;
 
@@ -1617,7 +1619,7 @@ void JseGfxCoreGL::SetRenderState(JseRenderState state, bool force)
 	gl_state_ = state;
 }
 
-void JseGfxCoreGL::SetUniforms(DescriptorSetData& set, const JseUniformMap& uniforms)
+void GfxCoreGL::SetUniforms(DescriptorSetData& set, const JseUniformMap& uniforms)
 {
 	if (activePipelineData_.pData == nullptr) return;
 
@@ -1649,7 +1651,7 @@ void JseGfxCoreGL::SetUniforms(DescriptorSetData& set, const JseUniformMap& unif
 	}
 }
 
-void JseGfxCoreGL::_glBindFramebuffer(GLenum a, GLuint b)
+void GfxCoreGL::_glBindFramebuffer(GLenum a, GLuint b)
 {
 	if (stateCache_.framebuffer != b) {
 		stateCache_.framebuffer = b;
@@ -1657,7 +1659,7 @@ void JseGfxCoreGL::_glBindFramebuffer(GLenum a, GLuint b)
 	}
 }
 
-void JseGfxCoreGL::_glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
+void GfxCoreGL::_glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 {
 	if (stateCache_.viewport.x != x || stateCache_.viewport.y != y || stateCache_.viewport.w != w || stateCache_.viewport.h != h) {
 		stateCache_.viewport.x = x;
@@ -1668,7 +1670,7 @@ void JseGfxCoreGL::_glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 	}
 }
 
-void JseGfxCoreGL::_glScissor(GLint x, GLint y, GLsizei w, GLsizei h)
+void GfxCoreGL::_glScissor(GLint x, GLint y, GLsizei w, GLsizei h)
 {
 	if (stateCache_.scissor.x != x || stateCache_.scissor.y != y || stateCache_.scissor.w != w || stateCache_.scissor.h != h) {
 		stateCache_.scissor.x = x;
@@ -1680,7 +1682,7 @@ void JseGfxCoreGL::_glScissor(GLint x, GLint y, GLsizei w, GLsizei h)
 
 }
 
-void JseGfxCoreGL::_glScissorEnabled(bool b)
+void GfxCoreGL::_glScissorEnabled(bool b)
 {
 	if (scissorEnabled_ != b) {
 		scissorEnabled_ = b;
@@ -1689,7 +1691,7 @@ void JseGfxCoreGL::_glScissorEnabled(bool b)
 	}
 }
 
-JseResult JseGfxCoreGL::UpdateImageData_mutable(const JseImageUploadInfo& cmd, const ImageData& iData)
+Result GfxCoreGL::UpdateImageData_mutable(const JseImageUploadInfo& cmd, const ImageData& iData)
 {
 
 	if (stateCache_.unpackAlignment != 1) {
@@ -1734,10 +1736,10 @@ JseResult JseGfxCoreGL::UpdateImageData_mutable(const JseImageUploadInfo& cmd, c
 
 	GL_CHECK(glBindTexture(iData.target, bound));
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::UpdateImageData_immutable(const JseImageUploadInfo& cmd, const ImageData& data)
+Result GfxCoreGL::UpdateImageData_immutable(const JseImageUploadInfo& cmd, const ImageData& data)
 {
 	if (stateCache_.unpackAlignment != 1) {
 		GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
@@ -1772,14 +1774,14 @@ JseResult JseGfxCoreGL::UpdateImageData_immutable(const JseImageUploadInfo& cmd,
 		break;
 	}
 
-	return JseResult::SUCCESS;
+	return Result::SUCCESS;
 }
 
-JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
+Result GfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 {
 	auto find = texture_data_map_.find(cmd.imageId);
 
-	if (find == std::end(texture_data_map_)) return JseResult::NOT_EXISTS;
+	if (find == std::end(texture_data_map_)) return Result::NOT_EXISTS;
 
 	auto& iData = find->second;
 	
@@ -1789,6 +1791,7 @@ JseResult JseGfxCoreGL::UpdateImageData_impl(const JseImageUploadInfo& cmd)
 	else {
 		return UpdateImageData_mutable(cmd, iData);
 	}
+}
 }
 
 static void GLAPIENTRY JSE_DebugMessageCallback(GLenum source,

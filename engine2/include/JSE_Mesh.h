@@ -6,18 +6,18 @@ public:
 	JseMesh();
 	~JseMesh();
 	void AddGeometry(
-		const JseVector<vec3> positions,
-		const JseVector<vec2> texCoords,
-		const JseVector<vec4> tangents,
-		const JseVector<vec3> normals,
-		const JseVector<vec4> colors,
-		const JseVector<uint16_t> indices,
+		const JsVector<vec3> positions,
+		const JsVector<vec2> texCoords,
+		const JsVector<vec4> tangents,
+		const JsVector<vec3> normals,
+		const JsVector<vec4> colors,
+		const JsVector<uint16_t> indices,
 		const JseMaterial* material);
 
 private:
-	JseVector<JseMeshGeometry*> geom_;
-	JseBoundingBox aabb_;
-	JseBoundingSphere sphereBV_;
+	JsVector<js::MeshGeometry*> geom_;
+	js::BoundingBox aabb_;
+	js::BoundingSphere sphereBV_;
 };
 #endif // !JSE_MESH_H
 

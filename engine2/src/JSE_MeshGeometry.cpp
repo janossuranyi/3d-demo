@@ -1,87 +1,89 @@
 #include "JSE.h"
 
-JseMeshGeometry::JseMeshGeometry() :
-	vertexCount_(0),
-	indexCount_(0),
-	material_(),
-	sphereBV_(),
-	boxBV_(),
-	localTransform_(1.f),
-	vertexBuffer_()
-{
-}
+namespace js {
+	MeshGeometry::MeshGeometry() :
+		vertexCount_(0),
+		indexCount_(0),
+		material_(),
+		sphereBV_(),
+		boxBV_(),
+		localTransform_(1.f),
+		vertexBuffer_()
+	{
+	}
 
-const JseVector<vec3>& JseMeshGeometry::faceNormals() const
-{
-	return faceNormals_;
-}
+	const JsVector<vec3>& MeshGeometry::faceNormals() const
+	{
+		return faceNormals_;
+	}
 
-const JseVertexBuffer& JseMeshGeometry::vertexBuffer() const
-{
-	return vertexBuffer_;
-}
+	const VertexBuffer& MeshGeometry::vertexBuffer() const
+	{
+		return vertexBuffer_;
+	}
 
-const mat4& JseMeshGeometry::localTransform() const
-{
-	return localTransform_;
-}
+	const mat4& MeshGeometry::localTransform() const
+	{
+		return localTransform_;
+	}
 
-int JseMeshGeometry::vertexCount() const
-{
-	return vertexCount_;
-}
+	int MeshGeometry::vertexCount() const
+	{
+		return vertexCount_;
+	}
 
-int JseMeshGeometry::indexCount() const
-{
-	return indexCount_;
-}
+	int MeshGeometry::indexCount() const
+	{
+		return indexCount_;
+	}
 
-JseBoundingBox JseMeshGeometry::aabb() const
-{
-	return boxBV_;
-}
+	BoundingBox MeshGeometry::aabb() const
+	{
+		return boxBV_;
+	}
 
-JseBoundingSphere JseMeshGeometry::sphere() const
-{
-	return sphereBV_;
-}
+	BoundingSphere MeshGeometry::sphere() const
+	{
+		return sphereBV_;
+	}
 
-void JseMeshGeometry::SetMaterial(const JseMaterial* pMat)
-{
-	material_ = pMat;
-}
+	void MeshGeometry::SetMaterial(const JseMaterial* pMat)
+	{
+		material_ = pMat;
+	}
 
-void JseMeshGeometry::SetVertexCount(int x)
-{
-	vertexCount_ = x;
-}
+	void MeshGeometry::SetVertexCount(int x)
+	{
+		vertexCount_ = x;
+	}
 
-void JseMeshGeometry::SetIndexCount(int x)
-{
-	indexCount_ = x;
-}
+	void MeshGeometry::SetIndexCount(int x)
+	{
+		indexCount_ = x;
+	}
 
-void JseMeshGeometry::SetLocalTransform(const mat4& mtx)
-{
-	localTransform_ = mtx;
-}
+	void MeshGeometry::SetLocalTransform(const mat4& mtx)
+	{
+		localTransform_ = mtx;
+	}
 
-void JseMeshGeometry::SetAabb(const JseBoundingBox& aabb)
-{
-	boxBV_ = aabb;
-}
+	void MeshGeometry::SetAabb(const BoundingBox& aabb)
+	{
+		boxBV_ = aabb;
+	}
 
-void JseMeshGeometry::SetSphere(const JseBoundingSphere& sph)
-{
-	sphereBV_ = sph;
-}
+	void MeshGeometry::SetSphere(const BoundingSphere& sph)
+	{
+		sphereBV_ = sph;
+	}
 
-void JseMeshGeometry::SetVertexBuffer(const JseVertexBuffer& vb)
-{
-	vertexBuffer_ = vb;
-}
+	void MeshGeometry::SetVertexBuffer(const VertexBuffer& vb)
+	{
+		vertexBuffer_ = vb;
+	}
 
-const JseMaterial* JseMeshGeometry::material() const
-{
-	return material_;
+	const JseMaterial* MeshGeometry::material() const
+	{
+		return material_;
+	}
 }

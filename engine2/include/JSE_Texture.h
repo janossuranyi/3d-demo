@@ -3,7 +3,7 @@
 
 class JseTexture {
 public:
-	JseString name;
+	JsString name;
 	JseImageID imageId;
 	JseFormat format;
 	int width, height;

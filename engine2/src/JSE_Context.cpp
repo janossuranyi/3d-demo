@@ -1,16 +1,18 @@
 #include "JSE.h"
 
-JseContext appCtx;
+js::Context appCtx;
 
-JseContext::~JseContext()
-{
-}
+namespace js {
+	Context::~Context()
+	{
+	}
 
-JseModule* JseContext::addModule(JseUniquePtr<JseModule> m)
-{
-	JseModule* ml = m.get();
-	map_.emplace(m->typeIndex(), std::move(m));
+	Module* Context::addModule(JsUniquePtr<Module> m)
+	{
+		Module* ml = m.get();
+		map_.emplace(m->typeIndex(), std::move(m));
 
-	return ml;
+		return ml;
+	}
 }
 

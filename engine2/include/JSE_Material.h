@@ -22,7 +22,7 @@ enum class JseTexBinding {
 };
 
 struct JseMaterial {
-	JseString name;
+	JsString name;
 	JseRenderState rState;
 	JseAlphaMode alphaMode{ JseAlphaMode::Opaque };
 	bool doubleSided{ false };
@@ -35,17 +35,17 @@ struct JseMaterial {
 	vec4 baseColorFactor{ 1.0f };
 	vec3 emissiveFactor{ 0.0f };
 	JseGrapicsPipelineID pipeline;
-	JseArray<JseImageID, static_cast<size_t>(JseTexBinding::COUNT)> texture_units;
-	JseHashMap<JseString, JseString> defines;
+	JsArray<JseImageID, static_cast<size_t>(JseTexBinding::COUNT)> texture_units;
+	JsHashMap<JsString, JsString> defines;
 
-	JseString vertexShader;
-	JseString fragmentShader;
-	JseString geometryShader;
-	JseString baseColorTex;
-	JseString normalTex;
-	JseString occlusionTex;
-	JseString emissiveTex;
-	JseString pbrTex;
+	JsString vertexShader;
+	JsString fragmentShader;
+	JsString geometryShader;
+	JsString baseColorTex;
+	JsString normalTex;
+	JsString occlusionTex;
+	JsString emissiveTex;
+	JsString pbrTex;
 };
 
 #endif // !JSE_MATERIAL_H

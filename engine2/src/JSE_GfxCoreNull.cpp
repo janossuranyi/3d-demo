@@ -1,185 +1,187 @@
 #include "JSE_GfxCoreNull.h"
 
-JseGfxCoreNull::JseGfxCoreNull()
-{
-    Info("JseGfxCore NULL Driver v0.1");
-}
+namespace js {
+    GfxCoreNull::GfxCoreNull()
+    {
+        Info("GfxCore NULL Driver v0.1");
+    }
 
-void* JseGfxCoreNull::GetMappedBufferPointer_impl(JseBufferID id)
-{
-    return nullptr;
-}
+    void* GfxCoreNull::GetMappedBufferPointer_impl(JseBufferID id)
+    {
+        return nullptr;
+    }
 
-JseResult JseGfxCoreNull::Init_impl(bool debugMode)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::Init_impl(bool debugMode)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateBuffer_impl(const JseBufferCreateInfo& createBufferInfo)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateBuffer_impl(const JseBufferCreateInfo& createBufferInfo)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::UpdateBuffer_impl(const JseBufferUpdateInfo& bufferUpdateInfo)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::UpdateBuffer_impl(const JseBufferUpdateInfo& bufferUpdateInfo)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::DestroyBuffer_impl(JseBufferID bufferId)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::DestroyBuffer_impl(JseBufferID bufferId)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateImage_impl(const JseImageCreateInfo& createImageInfo)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateImage_impl(const JseImageCreateInfo& createImageInfo)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::DeleteImage_impl(JseImageID imageId)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::DeleteImage_impl(JseImageID imageId)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::GetDeviceCapabilities_impl(JseDeviceCapabilities& dest)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::GetDeviceCapabilities_impl(JseDeviceCapabilities& dest)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::DeleteFrameBuffer_impl(JseFrameBufferID framebufferId)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::DeleteFrameBuffer_impl(JseFrameBufferID framebufferId)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::EndRenderPass_impl()
-{
-    return JseResult();
-}
+    Result GfxCoreNull::EndRenderPass_impl()
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::CreateFence_impl(JseFenceID id)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::CreateFence_impl(JseFenceID id)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::DeleteFence_impl(JseFenceID id)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::DeleteFence_impl(JseFenceID id)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::WaitSync_impl(JseFenceID id, uint64_t time)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::WaitSync_impl(JseFenceID id, uint64_t time)
+    {
+        return Result();
+    }
 
-void JseGfxCoreNull::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets)
-{
-}
+    void GfxCoreNull::BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets)
+    {
+    }
 
-void JseGfxCoreNull::BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets)
-{
-}
+    void GfxCoreNull::BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets)
+    {
+    }
 
-void JseGfxCoreNull::BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type)
-{
-}
+    void GfxCoreNull::BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type)
+    {
+    }
 
-void JseGfxCoreNull::Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
-{
-}
+    void GfxCoreNull::Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+    {
+    }
 
-void JseGfxCoreNull::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
-{
-}
+    void GfxCoreNull::DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+    {
+    }
 
-void JseGfxCoreNull::Viewport_impl(const JseRect2D& x)
-{
-}
+    void GfxCoreNull::Viewport_impl(const JseRect2D& x)
+    {
+    }
 
-void JseGfxCoreNull::Scissor_impl(const JseRect2D& x)
-{
-}
+    void GfxCoreNull::Scissor_impl(const JseRect2D& x)
+    {
+    }
 
-void JseGfxCoreNull::BeginRendering_impl()
-{
-}
+    void GfxCoreNull::BeginRendering_impl()
+    {
+    }
 
-void JseGfxCoreNull::EndRendering_impl()
-{
-}
+    void GfxCoreNull::EndRendering_impl()
+    {
+    }
 
-void JseGfxCoreNull::SwapChainNextImage_impl()
-{
-}
+    void GfxCoreNull::SwapChainNextImage_impl()
+    {
+    }
 
-JseResult JseGfxCoreNull::SetVSyncInterval_impl(int interval)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::SetVSyncInterval_impl(int interval)
+    {
+        return Result();
+    }
 
-JseResult JseGfxCoreNull::GetSurfaceDimension_impl(glm::ivec2& x)
-{
-    return JseResult();
-}
+    Result GfxCoreNull::GetSurfaceDimension_impl(glm::ivec2& x)
+    {
+        return Result();
+    }
 
-void JseGfxCoreNull::Shutdown_impl()
-{
+    void GfxCoreNull::Shutdown_impl()
+    {
+    }
 }

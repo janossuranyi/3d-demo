@@ -1,195 +1,199 @@
 #include "JSE.h"
 #include <glm/gtx/matrix_decompose.hpp>
 
-void JseNode::make_dirty()
-{
-	dirty_ = true;
-}
+namespace js {
 
-JseNode::JseNode() : pParent_(), name_()
-{
-}
-
-
-JseNode::JseNode(JseNodeType type, const JseString& name, JseNode* pParent)
-{
-	type_ = type;
-	name_ = name;
-	pParent_ = pParent;
-}
-
-JseString JseNode::name() const
-{
-	return name_;
-}
-
-JseNode* JseNode::parentNode()
-{
-	return pParent_;
-}
-
-void JseNode::SetMatrix(const mat4& m)
-{
-	vec3 scale{}, translation{}, skew{};
-	vec4 persp{};
-	quat orient{};
-
-	if (glm::decompose(m, scale, orient, translation, skew, persp))
+	void Node::make_dirty()
 	{
-		scale_ = scale;
-		translation_ = translation;
-		rotation_ = orient;
+		dirty_ = true;
 	}
-}
 
-void JseNode::SetParent(JseNode* n)
-{
-	pParent_ = n;
-}
-
-void JseNode::SetIndex(int x)
-{
-	index_ = x;
-}
-
-void JseNode::SetType(JseNodeType t)
-{
-	type_ = t;
-}
-
-const JseVector<int>& JseNode::children() const
-{
-	return children_;
-}
-
-void JseNode::AddChild(int x)
-{
-	children_.push_back(x);
-}
-
-vec3 JseNode::translation() const
-{
-	return translation_;
-}
-
-vec3 JseNode::scale() const
-{
-	return scale_;
-}
-
-quat JseNode::rotation() const
-{
-	return rotation_;
-}
-
-bool JseNode::animated() const
-{
-	return animated_;
-}
-
-void JseNode::BeginAnimate()
-{
-	if (!animated_) {
-		animated_ = true;
-		saved_rotation_ = rotation_;
-		saved_scale_ = scale_;
-		saved_translation_ = translation_;
+	Node::Node() : pParent_(), name_()
+	{
 	}
-}
 
-void JseNode::EndAnimate()
-{
-	if (animated_) {
-		translation_ = saved_translation_;
-		scale_ = saved_scale_;
-		rotation_ = saved_rotation_;
-		animated_ = false;
+
+	Node::Node(Type type, const JsString& name, Node* pParent)
+	{
+		type_ = type;
+		name_ = name;
+		pParent_ = pParent;
 	}
-}
 
-void JseNode::Scale(const vec3& v)
-{
-	scale_ = v;
-	make_dirty();
-}
-
-void JseNode::Translate(const vec3& v)
-{
-	translation_ = v;
-	make_dirty();
-}
-
-void JseNode::Rotate(const quat& v)
-{
-	rotation_ = v;
-	make_dirty();
-}
-
-void JseNode::RotateX(float rad)
-{
-	rotation_ = glm::rotate(rotation_, rad, vec3(1.0f, 0.0f, 0.0f));
-	make_dirty();
-}
-
-void JseNode::RotateY(float rad)
-{
-	rotation_ = glm::rotate(rotation_, rad, vec3(0.0f, 1.0f, 0.0f));
-	make_dirty();
-}
-
-void JseNode::RotateZ(float rad)
-{
-	rotation_ = glm::rotate(rotation_, rad, vec3(0.0f, 0.0f, 1.0f));
-	make_dirty();
-}
-
-mat4 JseNode::GetTransform()
-{
-	if (dirty_) {
-		transformMatrixCache_ = pParent_ ? pParent_->GetTransform() : mat4(1.0f);
-		transformMatrixCache_ = glm::translate(transformMatrixCache_, translation_);
-		transformMatrixCache_ *= mat4(rotation_);
-		transformMatrixCache_ = glm::scale(transformMatrixCache_, scale_);
-		dirty_ = false;
+	JsString Node::name() const
+	{
+		return name_;
 	}
-	return transformMatrixCache_;
-}
 
-int JseNode::index() const
-{
-	return index_;
-}
+	Node* Node::parentNode()
+	{
+		return pParent_;
+	}
 
-JseNodeType JseNode::type() const
-{
-	return type_;
-}
+	void Node::SetMatrix(const mat4& m)
+	{
+		vec3 scale{}, translation{}, skew{};
+		vec4 persp{};
+		quat orient{};
 
-bool JseNode::isCamera() const
-{
-	return type_ == JseNodeType::CAMERA;
-}
+		if (glm::decompose(m, scale, orient, translation, skew, persp))
+		{
+			scale_ = scale;
+			translation_ = translation;
+			rotation_ = orient;
+		}
+	}
 
-bool JseNode::isLight() const
-{
-	return type_ == JseNodeType::LIGHT;
-}
+	void Node::SetParent(Node* n)
+	{
+		pParent_ = n;
+	}
 
-bool JseNode::isMesh() const
-{
-	return type_ == JseNodeType::MESH;
-}
+	void Node::SetIndex(int x)
+	{
+		index_ = x;
+	}
 
-bool JseNode::empty() const
-{
-	if (isCamera()) return false;
-	else if (isLight()) return false;
-	else if (isMesh()) return false;
+	void Node::SetType(Type t)
+	{
+		type_ = t;
+	}
 
-	return true;
-}
+	const JsVector<int>& Node::children() const
+	{
+		return children_;
+	}
 
-int JseNode::operator[](size_t x) const
-{
-	return children_.at(x);
+	void Node::AddChild(int x)
+	{
+		children_.push_back(x);
+	}
+
+	vec3 Node::translation() const
+	{
+		return translation_;
+	}
+
+	vec3 Node::scale() const
+	{
+		return scale_;
+	}
+
+	quat Node::rotation() const
+	{
+		return rotation_;
+	}
+
+	bool Node::animated() const
+	{
+		return animated_;
+	}
+
+	void Node::BeginAnimate()
+	{
+		if (!animated_) {
+			animated_ = true;
+			saved_rotation_ = rotation_;
+			saved_scale_ = scale_;
+			saved_translation_ = translation_;
+		}
+	}
+
+	void Node::EndAnimate()
+	{
+		if (animated_) {
+			translation_ = saved_translation_;
+			scale_ = saved_scale_;
+			rotation_ = saved_rotation_;
+			animated_ = false;
+		}
+	}
+
+	void Node::Scale(const vec3& v)
+	{
+		scale_ = v;
+		make_dirty();
+	}
+
+	void Node::Translate(const vec3& v)
+	{
+		translation_ = v;
+		make_dirty();
+	}
+
+	void Node::Rotate(const quat& v)
+	{
+		rotation_ = v;
+		make_dirty();
+	}
+
+	void Node::RotateX(float rad)
+	{
+		rotation_ = glm::rotate(rotation_, rad, vec3(1.0f, 0.0f, 0.0f));
+		make_dirty();
+	}
+
+	void Node::RotateY(float rad)
+	{
+		rotation_ = glm::rotate(rotation_, rad, vec3(0.0f, 1.0f, 0.0f));
+		make_dirty();
+	}
+
+	void Node::RotateZ(float rad)
+	{
+		rotation_ = glm::rotate(rotation_, rad, vec3(0.0f, 0.0f, 1.0f));
+		make_dirty();
+	}
+
+	mat4 Node::GetTransform()
+	{
+		if (dirty_) {
+			transformMatrixCache_ = pParent_ ? pParent_->GetTransform() : mat4(1.0f);
+			transformMatrixCache_ = glm::translate(transformMatrixCache_, translation_);
+			transformMatrixCache_ *= mat4(rotation_);
+			transformMatrixCache_ = glm::scale(transformMatrixCache_, scale_);
+			dirty_ = false;
+		}
+		return transformMatrixCache_;
+	}
+
+	int Node::index() const
+	{
+		return index_;
+	}
+
+	Node::Type Node::type() const
+	{
+		return type_;
+	}
+
+	bool Node::isCamera() const
+	{
+		return type_ == Type::CAMERA;
+	}
+
+	bool Node::isLight() const
+	{
+		return type_ == Type::LIGHT;
+	}
+
+	bool Node::isMesh() const
+	{
+		return type_ == Type::MESH;
+	}
+
+	bool Node::empty() const
+	{
+		if (isCamera()) return false;
+		else if (isLight()) return false;
+		else if (isMesh()) return false;
+
+		return true;
+	}
+
+	int Node::operator[](size_t x) const
+	{
+		return children_.at(x);
+	}
+
 }

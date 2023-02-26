@@ -32,213 +32,214 @@ struct TextureFormatInfo {
 	uint16_t componentCount;
 };
 
+namespace js
+{
+	class GfxCoreGL : public js::GfxCore {
+	public:
+		~GfxCoreGL() override;
+		GfxCoreGL();
+	private:
+		bool useDebugMode_{};
+		SDL_Window* windowHandle_;
+		SDL_GLContext glcontext_;
+		std::set<std::string> gl_extensions_;
+		int glVersion_;
 
-class JseGfxCoreGL : public JseGfxCore {
-public:
-	~JseGfxCoreGL() override;
-	JseGfxCoreGL();
-private:
-	bool useDebugMode_{};
-	SDL_Window* windowHandle_;
-	SDL_GLContext glcontext_;
-	std::set<std::string> gl_extensions_;
-	int glVersion_;
+		// Inherited via JseGfxCore
+		virtual void* GetMappedBufferPointer_impl(JseBufferID id) override;
 
-	// Inherited via JseGfxCore
-	virtual void* GetMappedBufferPointer_impl(JseBufferID id) override;
-	
-	virtual JseResult Init_impl(bool debugMode) override;
+		virtual Result Init_impl(bool debugMode) override;
 
-	virtual JseResult CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo) override;
+		virtual Result CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo) override;
 
-	virtual JseResult CreateBuffer_impl(const JseBufferCreateInfo& createBufferInfo) override;
+		virtual Result CreateBuffer_impl(const JseBufferCreateInfo& createBufferInfo) override;
 
-	virtual JseResult UpdateBuffer_impl(const JseBufferUpdateInfo& bufferUpdateInfo) override;
+		virtual Result UpdateBuffer_impl(const JseBufferUpdateInfo& bufferUpdateInfo) override;
 
-	virtual JseResult DestroyBuffer_impl(JseBufferID bufferId) override;
+		virtual Result DestroyBuffer_impl(JseBufferID bufferId) override;
 
-	virtual JseResult CreateImage_impl(const JseImageCreateInfo& createImageInfo) override;
+		virtual Result CreateImage_impl(const JseImageCreateInfo& createImageInfo) override;
 
-	virtual JseResult UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) override;
+		virtual Result UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) override;
 
-	virtual JseResult DeleteImage_impl(JseImageID imageId) override;
+		virtual Result DeleteImage_impl(JseImageID imageId) override;
 
-	virtual JseResult CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) override;
+		virtual Result CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) override;
 
-	virtual JseResult BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
+		virtual Result BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
 
-	virtual JseResult DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
+		virtual Result DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) override;
 
-	virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) override;
+		virtual Result CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) override;
 
-	virtual JseResult CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo) override;
+		virtual Result CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo) override;
 
-	virtual JseResult DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) override;
+		virtual Result DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) override;
 
-	virtual JseResult BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) override;
+		virtual Result BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) override;
 
-	virtual JseResult CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) override;
+		virtual Result CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) override;
 
-	virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) override;
+		virtual Result CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) override;
 
-	virtual JseResult BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) override;
+		virtual Result BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) override;
 
-	virtual JseResult EndRenderPass_impl() override;
+		virtual Result EndRenderPass_impl() override;
 
-	virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) override;
-	virtual JseResult CreateFence_impl(JseFenceID id) override;
-	virtual JseResult DeleteFence_impl(JseFenceID id) override;
-	virtual JseResult WaitSync_impl(JseFenceID id, uint64_t time) override;
-
-
-	virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) override;
-
-	virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) override;
-
-	virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) override;
-
-	virtual void Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
-
-	virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
-
-	virtual void Viewport_impl(const JseRect2D& x) override;
-
-	virtual void Scissor_impl(const JseRect2D& x) override;
-
-	virtual void BeginRendering_impl() override;
-
-	virtual void EndRendering_impl() override;
-
-	virtual void SwapChainNextImage_impl() override;
-
-	virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;
-
-	virtual JseResult SetVSyncInterval_impl(int interval) override;
-
-	virtual JseResult GetSurfaceDimension_impl(glm::ivec2& x) override;
-
-	virtual void Shutdown_impl() override;
-
-	void SetRenderState(JseRenderState state, bool force = false);
-	
-	struct DescriptorSetData;
-	void SetUniforms(DescriptorSetData& set, const JseUniformMap& uniforms);
-
-	void _glBindFramebuffer(GLenum a, GLuint b);
-	void _glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
-	void _glScissor(GLint x, GLint y, GLsizei w, GLsizei h);
-	void _glScissorEnabled(bool b);
+		virtual Result WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) override;
+		virtual Result CreateFence_impl(JseFenceID id) override;
+		virtual Result DeleteFence_impl(JseFenceID id) override;
+		virtual Result WaitSync_impl(JseFenceID id, uint64_t time) override;
 
 
-	JseDeviceCapabilities deviceCapabilities_{};
+		virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) override;
 
-	struct BufferData {
-		GLuint buffer;
-		GLenum target;
-		uint32_t size;
-		void* mapptr;
+		virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) override;
+
+		virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) override;
+
+		virtual void Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
+
+		virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
+
+		virtual void Viewport_impl(const JseRect2D& x) override;
+
+		virtual void Scissor_impl(const JseRect2D& x) override;
+
+		virtual void BeginRendering_impl() override;
+
+		virtual void EndRendering_impl() override;
+
+		virtual void SwapChainNextImage_impl() override;
+
+		virtual Result GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) override;
+
+		virtual Result SetVSyncInterval_impl(int interval) override;
+
+		virtual Result GetSurfaceDimension_impl(glm::ivec2& x) override;
+
+		virtual void Shutdown_impl() override;
+
+		void SetRenderState(JseRenderState state, bool force = false);
+
+		struct DescriptorSetData;
+		void SetUniforms(DescriptorSetData& set, const JseUniformMap& uniforms);
+
+		void _glBindFramebuffer(GLenum a, GLuint b);
+		void _glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
+		void _glScissor(GLint x, GLint y, GLsizei w, GLsizei h);
+		void _glScissorEnabled(bool b);
+
+
+		JseDeviceCapabilities deviceCapabilities_{};
+
+		struct BufferData {
+			GLuint buffer;
+			GLenum target;
+			uint32_t size;
+			void* mapptr;
+		};
+
+		struct ImageData {
+			GLuint texture;
+			GLenum target;
+			GLenum format;
+			GLenum internal_format;
+			GLenum type;
+			GLuint buffer;
+			bool compressed;
+			bool immutable;
+		};
+
+		struct SetLayoutData;
+		struct GfxPipelineData {
+			GLuint vao;
+			GLuint program;
+			std::vector<JseVertexInputBindingDescription> binding;
+			JseRenderState renderState;
+			//const SetLayoutData* setLayout;
+		};
+
+		struct ShaderData {
+			GLuint shader;
+			JseShaderStage stage;
+		};
+
+		struct FrameBufferData {
+			GLuint framebuffer;
+		};
+
+		struct glStateCache {
+			GLint unpackAlignment;
+			GLuint framebuffer;
+			JseRect2D viewport;
+			JseRect2D scissor;
+			GLuint indexBuffer;
+			GLuint program;
+			glm::vec4 clearColor;
+			float clearDepth;
+			int clearStencil;
+		} stateCache_{};
+
+		struct ActivePipelineData {
+			GfxPipelineData* pData;
+		} activePipelineData_;
+
+		struct SetLayoutData {
+			JsHashMap<uint32_t, JseDescriptorSetLayoutBinding> bindings;
+		};
+
+		struct DescriptorImageData {
+			uint32_t binding;
+			JseDescriptorType type;
+			GLuint texture;
+			GLenum target;
+			GLint level;
+			GLboolean layered;
+			GLint layer;
+			GLenum access;
+			GLenum format;
+		};
+		struct DescriptorBufferData {
+			JseDescriptorType type;
+			uint32_t binding;
+			GLuint buffer;
+			GLintptr offset;
+			GLsizeiptr size;
+		};
+
+		struct DescriptorSetData {
+			JseDescriptorSetLayoutID setLayout;
+			const SetLayoutData* pLayoutData;
+			JsVector<DescriptorImageData> images;
+			JsVector<DescriptorBufferData> buffers;
+			JseUniformMap uniforms;
+			JsHashMap<JsString, GLint> uniform_location_map;
+		};
+
+		JseRenderState gl_state_{};
+		GLfloat polyOfsScale_{}, polyOfsBias_{};
+
+		std::vector<GLuint>		vertex_buffer_bindings_;
+		std::vector<GLintptr>	vertex_buffer_offsets_;
+		std::vector<GLsizei>	vertex_buffer_strides_;
+		GLintptr				active_index_offset_{};
+		GLenum					active_index_type_{};
+		JseGrapicsPipelineID	active_pipeline_{};
+		bool					scissorEnabled_{};
+
+		JsHashMap<JseBufferID, BufferData> buffer_data_map_;
+		JsHashMap<JseImageID, ImageData> texture_data_map_;
+		JsHashMap<JseGrapicsPipelineID, GfxPipelineData> pipeline_data_map_;
+		JsHashMap<JseShaderID, ShaderData> shader_map_;
+		JsHashMap<JseFrameBufferID, FrameBufferData> framebuffer_map_;
+		JsHashMap<JseDescriptorSetLayoutID, SetLayoutData> set_layout_map_;
+		JsHashMap<JseDescriptorSetID, DescriptorSetData> set_data_map_;
+		JsHashMap<JseFenceID, GLsync> fence_map_;
+
+		Result UpdateImageData_mutable(const JseImageUploadInfo& imgageUploadInfo, const ImageData& data);
+		Result UpdateImageData_immutable(const JseImageUploadInfo& imgageUploadInfo, const ImageData& data);
+
 	};
-
-	struct ImageData {
-		GLuint texture;
-		GLenum target;
-		GLenum format;
-		GLenum internal_format;
-		GLenum type;
-		GLuint buffer;
-		bool compressed;
-		bool immutable;
-	};
-
-	struct SetLayoutData;
-	struct GfxPipelineData {
-		GLuint vao;
-		GLuint program;
-		std::vector<JseVertexInputBindingDescription> binding;
-		JseRenderState renderState;
-		//const SetLayoutData* setLayout;
-	};
-
-	struct ShaderData {
-		GLuint shader;
-		JseShaderStage stage;
-	};
-
-	struct FrameBufferData {
-		GLuint framebuffer;
-	};
-
-	struct glStateCache {
-		GLint unpackAlignment;
-		GLuint framebuffer;
-		JseRect2D viewport;
-		JseRect2D scissor;
-		GLuint indexBuffer;
-		GLuint program;
-		glm::vec4 clearColor;
-		float clearDepth;
-		int clearStencil;
-	} stateCache_{};
-
-	struct ActivePipelineData {
-		GfxPipelineData* pData;
-	} activePipelineData_;
-
-	struct SetLayoutData {
-		JseHashMap<uint32_t, JseDescriptorSetLayoutBinding> bindings;
-	};
-
-	struct DescriptorImageData {
-		uint32_t binding;
-		JseDescriptorType type;
-		GLuint texture;
-		GLenum target;
-		GLint level;
-		GLboolean layered;
-		GLint layer;
-		GLenum access;
-		GLenum format;
-	};
-	struct DescriptorBufferData {
-		JseDescriptorType type;
-		uint32_t binding;
-		GLuint buffer;
-		GLintptr offset;
-		GLsizeiptr size;
-	};
-
-	struct DescriptorSetData {
-		JseDescriptorSetLayoutID setLayout;
-		const SetLayoutData* pLayoutData;
-		JseVector<DescriptorImageData> images;
-		JseVector<DescriptorBufferData> buffers;
-		JseUniformMap uniforms;
-		JseHashMap<JseString, GLint> uniform_location_map;
-	};
-
-	JseRenderState gl_state_{};
-	GLfloat polyOfsScale_{}, polyOfsBias_{};
-	
-	std::vector<GLuint>		vertex_buffer_bindings_;
-	std::vector<GLintptr>	vertex_buffer_offsets_;
-	std::vector<GLsizei>	vertex_buffer_strides_;
-	GLintptr				active_index_offset_{};
-	GLenum					active_index_type_{};
-	JseGrapicsPipelineID	active_pipeline_{};
-	bool					scissorEnabled_{};
-
-	JseHashMap<JseBufferID, BufferData> buffer_data_map_;
-	JseHashMap<JseImageID, ImageData> texture_data_map_;
-	JseHashMap<JseGrapicsPipelineID, GfxPipelineData> pipeline_data_map_;
-	JseHashMap<JseShaderID, ShaderData> shader_map_;
-	JseHashMap<JseFrameBufferID, FrameBufferData> framebuffer_map_;
-	JseHashMap<JseDescriptorSetLayoutID, SetLayoutData> set_layout_map_;
-	JseHashMap<JseDescriptorSetID, DescriptorSetData> set_data_map_;
-	JseHashMap<JseFenceID, GLsync> fence_map_;
-
-	JseResult UpdateImageData_mutable(const JseImageUploadInfo& imgageUploadInfo, const ImageData& data);
-	JseResult UpdateImageData_immutable(const JseImageUploadInfo& imgageUploadInfo, const ImageData& data);
-
-};
-
+}
 #endif

@@ -11,22 +11,22 @@ using JseEvent = SDL_Event;
 
 #define JSE_RELEASED SDL_RELEASED
 #define JSE_PRESSED SDL_PRESSED
+namespace js {
+	class InputManager : public js::Module
+	{
+	private:
+		std::function<void(JseKeyboardEvent)> onKeyboard_;
+		std::function<void()> onExit_;
+	public:
 
-class JseInputManager : public JseModule
-{
-private:
-	std::function<void(JseKeyboardEvent)> onKeyboard_;
-	std::function<void()> onExit_;
-public:
+		void SetOnExitEvent(const std::function<void()> onexit);
+		void SetOnKeyboardEvent(const std::function<void(JseKeyboardEvent)> onkey);
+		void ProcessEvents();
 
-	void SetOnExitEvent(const std::function<void()> onexit);
-	void SetOnKeyboardEvent(const std::function<void(JseKeyboardEvent)> onkey);
-	void ProcessEvents();
+		virtual ~InputManager() {}
 
-	virtual ~JseInputManager() {}
-
-	// Inherited via JseModule
-	virtual JseType typeIndex() const override;
-};
-
+		// Inherited via JseModule
+		virtual JsType typeIndex() const override;
+	};
+}
 #endif

@@ -36,10 +36,10 @@ using mat3 = glm::mat3;
 using mat4 = glm::mat4;
 using mat3x4 = glm::mat3x4;
 using quat = glm::quat;
-using JseColor4f = glm::vec4;
+using Color4f = glm::vec4;
 
-using JseUniformData = std::variant<int, float, glm::ivec2, glm::ivec3, glm::ivec4, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, JseVector<float>, JseVector<glm::vec4>>;
-using JseUniformMap = JseHashMap<JseString, JseUniformData>;
+using JseUniformData = std::variant<int, float, glm::ivec2, glm::ivec3, glm::ivec4, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, JsVector<float>, JsVector<glm::vec4>>;
+using JseUniformMap = JsHashMap<JsString, JseUniformData>;
 
 struct JseRect2D {
     int x;
@@ -285,7 +285,7 @@ struct JseSamplerDescription {
     float minLod;
     float maxLod;
     float maxAnisotropy;
-    JseColor4f borderColor;
+    Color4f borderColor;
 };
 
 struct JseSamplerCreateInfo {
@@ -627,98 +627,98 @@ static const JseRenderState GLS_DEFAULT = 0;
 
 #define STENCIL_SHADOW_TEST_VALUE		128
 #define STENCIL_SHADOW_MASK_VALUE		255
+namespace js
+{
+    class GfxCore {
+    public:
+        Result Init(bool debugMode);
+        Result CreateSurface(const JseSurfaceCreateInfo& createSurfaceInfo);
+        Result CreateBuffer(const JseBufferCreateInfo& createBufferInfo);
+        Result UpdateBuffer(const JseBufferUpdateInfo& bufferUpdateInfo);
+        Result DestroyBuffer(JseBufferID bufferId);
+        Result CreateImage(const JseImageCreateInfo& createImageInfo);
+        Result CreateTexture(const JseImageCreateInfo& createImageInfo); // Alias for CreateImage
+        Result UpdateImageData(const JseImageUploadInfo& imgageUploadInfo);
+        Result DeleteImage(JseImageID imageId);
+        Result CreateGraphicsPipeline(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo);
+        Result DeleteGraphicsPipeline(JseGrapicsPipelineID pipelineId);
+        Result BindGraphicsPipeline(JseGrapicsPipelineID pipelineId);
+        Result CreateFrameBuffer(const JseFrameBufferCreateInfo& frameBufferCreateInfo);
+        Result DeleteFrameBuffer(JseFrameBufferID framebufferId);
+        Result CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
+        Result BeginRenderPass(const JseRenderPassInfo& renderPassInfo);
+        Result CreateDescriptorSetLayout(const JseDescriptorSetLayoutCreateInfo& cmd);
+        Result EndRenderPass();
+        Result CreateDescriptorSet(const JseDescriptorSetCreateInfo& cmd);
+        Result WriteDescriptorSet(const JseWriteDescriptorSet& cmd);
+        Result BindDescriptorSet(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets);
+        Result CreateFence(JseFenceID id);
+        Result DeleteFence(JseFenceID id);
+        Result WaitSync(JseFenceID id, uint64_t timeout);
 
+        void SwapChainNextImage();
+        void BeginRendering();
+        void EndRendering();
 
-class JseGfxCore {
-public:
-	JseResult Init(bool debugMode);
-	JseResult CreateSurface(const JseSurfaceCreateInfo& createSurfaceInfo);
-    JseResult CreateBuffer(const JseBufferCreateInfo& createBufferInfo);
-    JseResult UpdateBuffer(const JseBufferUpdateInfo& bufferUpdateInfo);
-    JseResult DestroyBuffer(JseBufferID bufferId);
-    JseResult CreateImage(const JseImageCreateInfo& createImageInfo);
-    JseResult CreateTexture(const JseImageCreateInfo& createImageInfo); // Alias for CreateImage
-    JseResult UpdateImageData(const JseImageUploadInfo& imgageUploadInfo);
-    JseResult DeleteImage(JseImageID imageId);
-    JseResult CreateGraphicsPipeline(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo);
-    JseResult DeleteGraphicsPipeline(JseGrapicsPipelineID pipelineId);
-    JseResult BindGraphicsPipeline(JseGrapicsPipelineID pipelineId);
-    JseResult CreateFrameBuffer(const JseFrameBufferCreateInfo& frameBufferCreateInfo);
-    JseResult DeleteFrameBuffer(JseFrameBufferID framebufferId);
-    JseResult CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
-    JseResult BeginRenderPass(const JseRenderPassInfo& renderPassInfo);
-    JseResult CreateDescriptorSetLayout(const JseDescriptorSetLayoutCreateInfo& cmd);
-    JseResult EndRenderPass();
-    JseResult CreateDescriptorSet(const JseDescriptorSetCreateInfo& cmd);
-    JseResult WriteDescriptorSet(const JseWriteDescriptorSet& cmd);
-    JseResult BindDescriptorSet(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets);
-    JseResult CreateFence(JseFenceID id);
-    JseResult DeleteFence(JseFenceID id);
-    JseResult WaitSync(JseFenceID id, uint64_t timeout);
+        void BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets);
+        void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets);
+        void BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type);
+        void Draw(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
+        void DrawIndexed(JseTopology mode, uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
+        void Viewport(const JseRect2D& x);
+        void Scissor(const JseRect2D& x);
+        Result GetDeviceCapabilities(JseDeviceCapabilities& dest);
+        Result SetVSyncInterval(int interval);
+        Result GetSurfaceDimension(glm::ivec2& x);
 
-    void SwapChainNextImage();
-    void BeginRendering();
-    void EndRendering();
+        void* GetMappedBufferPointer(JseBufferID id);
 
-    void BindVertexBuffer(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets);
-    void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets);
-    void BindIndexBuffer(JseBufferID buffer, uint32_t offset, JseIndexType type);
-    void Draw(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
-    void DrawIndexed(JseTopology mode, uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
-    void Viewport(const JseRect2D& x);
-    void Scissor(const JseRect2D& x);
-    JseResult GetDeviceCapabilities(JseDeviceCapabilities& dest);
-    JseResult SetVSyncInterval(int interval);
-    JseResult GetSurfaceDimension(glm::ivec2& x);
+        void Shutdown();
 
-    void* GetMappedBufferPointer(JseBufferID id);
+        virtual ~GfxCore() {}
+    private:
+        // data & virtual implementations
+        virtual void* GetMappedBufferPointer_impl(JseBufferID id) = 0;
+        virtual Result Init_impl(bool debugMode) = 0;
+        virtual Result CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo) = 0;
+        virtual Result CreateBuffer_impl(const JseBufferCreateInfo& createBufferInfo) = 0;
+        virtual Result UpdateBuffer_impl(const JseBufferUpdateInfo& bufferUpdateInfo) = 0;
+        virtual Result DestroyBuffer_impl(JseBufferID bufferId) = 0;
+        virtual Result CreateImage_impl(const JseImageCreateInfo& createImageInfo) = 0;
+        virtual Result DeleteImage_impl(JseImageID imageId) = 0;
+        virtual Result CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) = 0;
+        virtual Result BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) = 0;
+        virtual Result DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) = 0;
+        virtual Result GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) = 0;
+        virtual Result UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) = 0;
+        virtual Result CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) = 0;
+        virtual Result CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo) = 0;
+        virtual Result DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) = 0;
+        virtual Result BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) = 0;
+        virtual Result CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) = 0;
+        virtual Result BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) = 0;
+        virtual Result EndRenderPass_impl() = 0;
+        virtual Result CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) = 0;
+        virtual Result WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) = 0;
+        virtual Result CreateFence_impl(JseFenceID id) = 0;
+        virtual Result DeleteFence_impl(JseFenceID id) = 0;
+        virtual Result WaitSync_impl(JseFenceID id, uint64_t time) = 0;
 
-	void Shutdown();
+        virtual void SwapChainNextImage_impl() = 0;
+        virtual void BeginRendering_impl() = 0;
+        virtual void EndRendering_impl() = 0;
 
-	virtual ~JseGfxCore() {}
-private:
-	// data & virtual implementations
-    virtual void* GetMappedBufferPointer_impl(JseBufferID id) = 0;
-	virtual JseResult Init_impl(bool debugMode) = 0;
-	virtual JseResult CreateSurface_impl(const JseSurfaceCreateInfo& createSurfaceInfo) = 0;
-    virtual JseResult CreateBuffer_impl(const JseBufferCreateInfo& createBufferInfo) = 0;
-    virtual JseResult UpdateBuffer_impl(const JseBufferUpdateInfo& bufferUpdateInfo) = 0;
-    virtual JseResult DestroyBuffer_impl(JseBufferID bufferId) = 0;
-    virtual JseResult CreateImage_impl(const JseImageCreateInfo& createImageInfo) = 0;
-    virtual JseResult DeleteImage_impl(JseImageID imageId) = 0;
-    virtual JseResult CreateGraphicsPipeline_impl(const JseGraphicsPipelineCreateInfo& graphicsPipelineCreateInfo) = 0;
-    virtual JseResult BindGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) = 0;
-    virtual JseResult DeleteGraphicsPipeline_impl(JseGrapicsPipelineID pipelineId) = 0;
-    virtual JseResult GetDeviceCapabilities_impl(JseDeviceCapabilities& dest) = 0;
-    virtual JseResult UpdateImageData_impl(const JseImageUploadInfo& imgageUploadInfo) = 0;
-    virtual JseResult CreateShader_impl(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput) = 0;
-    virtual JseResult CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& frameBufferCreateInfo) = 0;
-    virtual JseResult DeleteFrameBuffer_impl(JseFrameBufferID framebufferId) = 0;
-    virtual JseResult BeginRenderPass_impl(const JseRenderPassInfo& renderPassInfo) = 0;
-    virtual JseResult CreateDescriptorSetLayout_impl(const JseDescriptorSetLayoutCreateInfo& cmd) = 0;
-    virtual JseResult BindDescriptorSet_impl(uint32_t firstSet, uint32_t descriptorSetCount, const JseDescriptorSetID* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) = 0;
-    virtual JseResult EndRenderPass_impl() = 0;
-    virtual JseResult CreateDescriptorSet_impl(const JseDescriptorSetCreateInfo& cmd) = 0;
-    virtual JseResult WriteDescriptorSet_impl(const JseWriteDescriptorSet& cmd) = 0;
-    virtual JseResult CreateFence_impl(JseFenceID id) = 0;
-    virtual JseResult DeleteFence_impl(JseFenceID id) = 0;
-    virtual JseResult WaitSync_impl(JseFenceID id, uint64_t time) = 0;
+        virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) = 0;
+        virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) = 0;
+        virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) = 0;
+        virtual void Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
+        virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
+        virtual void Viewport_impl(const JseRect2D& x) = 0;
+        virtual void Scissor_impl(const JseRect2D& x) = 0;
+        virtual Result SetVSyncInterval_impl(int interval) = 0;
+        virtual Result GetSurfaceDimension_impl(glm::ivec2&) = 0;
 
-    virtual void SwapChainNextImage_impl() = 0;
-    virtual void BeginRendering_impl() = 0;
-    virtual void EndRendering_impl() = 0;
-
-    virtual void BindVertexBuffers_impl(uint32_t firstBinding, uint32_t bindingCount, const JseBufferID* pBuffers, const JseDeviceSize* pOffsets) = 0;
-    virtual void BindVertexBuffer_impl(uint32_t binding, JseBufferID buffer, JseDeviceSize offsets) = 0;
-    virtual void BindIndexBuffer_impl(JseBufferID buffer, uint32_t offset, JseIndexType type) = 0;
-    virtual void Draw_impl(JseTopology mode, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
-    virtual void DrawIndexed_impl(JseTopology mode, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
-    virtual void Viewport_impl(const JseRect2D& x) = 0;
-    virtual void Scissor_impl(const JseRect2D& x) = 0;
-    virtual JseResult SetVSyncInterval_impl(int interval) = 0;
-    virtual JseResult GetSurfaceDimension_impl(glm::ivec2&) = 0;
-
-	virtual void Shutdown_impl() = 0;
-};
-
+        virtual void Shutdown_impl() = 0;
+    };
+}
 #endif

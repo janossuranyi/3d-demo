@@ -1,21 +1,23 @@
 #ifndef JSE_CONCURRENT_H
 #define JSE_CONCURRENT_H
 
-class JseMutex : public JseNonMovable {
-    friend class JseConditionVariable;
+namespace js
+{
+    class Mutex : public NonMovable {
+        friend class ConditionVariable;
     public:
         /// <summary>
         /// Creates a mutex
         /// </summary>
-        JseMutex();
-        ~JseMutex();
+        Mutex();
+        ~Mutex();
 
         /// <summary>
         /// Lock the mutex.
         /// </summary>
         /// <returns>Return 0, or -1 on error.</returns>
         int lock();
-        
+
         /// <summary>
         /// Try to lock a mutex without blocking.
         /// </summary>
@@ -29,186 +31,186 @@ class JseMutex : public JseNonMovable {
         int unlock();
 
         explicit operator bool() const noexcept;
-private:
+    private:
         SDL_mutex* m_pMutex;
-};
+    };
 
-class JseLockGuard : public JseNonMovable {
-public:
-    JseLockGuard() = delete;
-    JseLockGuard(JseMutex& mutex);
-    ~JseLockGuard();
-private:
-    JseMutex& m_mutex;
-};
+    class JseLockGuard : public NonMovable {
+    public:
+        JseLockGuard() = delete;
+        JseLockGuard(Mutex& mutex);
+        ~JseLockGuard();
+    private:
+        Mutex& m_mutex;
+    };
 
-class JseUniqueLock : public JseNonCopyable {
-public:
-    JseUniqueLock() = delete;
-    ~JseUniqueLock();
-    JseUniqueLock(JseMutex& mutex, bool defer_lock = false);
-    void swap(JseUniqueLock& other);
-    void release();
-    JseUniqueLock& operator=(JseUniqueLock&& other) noexcept;
-    JseMutex* mutex();
-    explicit operator bool() const noexcept;
-    /// <summary>
-    /// Lock the mutex.
-    /// </summary>
-    /// <returns>Return 0, or -1 on error.</returns>
-    int lock();
+    class UniqueLock : public NonCopyable {
+    public:
+        UniqueLock() = delete;
+        ~UniqueLock();
+        UniqueLock(Mutex& mutex, bool defer_lock = false);
+        void swap(UniqueLock& other);
+        void release();
+        UniqueLock& operator=(UniqueLock&& other) noexcept;
+        Mutex* mutex();
+        explicit operator bool() const noexcept;
+        /// <summary>
+        /// Lock the mutex.
+        /// </summary>
+        /// <returns>Return 0, or -1 on error.</returns>
+        int lock();
 
-    /// <summary>
-    /// Try to lock a mutex without blocking.
-    /// </summary>
-    /// <returns>Returns 0, SDL_MUTEX_TIMEDOUT, or -1 on error</returns>
-    int tryLock();
+        /// <summary>
+        /// Try to lock a mutex without blocking.
+        /// </summary>
+        /// <returns>Returns 0, SDL_MUTEX_TIMEDOUT, or -1 on error</returns>
+        int tryLock();
 
-    /// <summary>
-    /// Unlock the mutex.
-    /// </summary>
-    /// <returns>0, or -1 on error.</returns>
-    int unlock();
+        /// <summary>
+        /// Unlock the mutex.
+        /// </summary>
+        /// <returns>0, or -1 on error.</returns>
+        int unlock();
 
-private:
-    JseMutex* m_pMutex;
-};
+    private:
+        Mutex* m_pMutex;
+    };
 
-class JseSemaphore : public JseNonMovable {
-public:
-    JseSemaphore() : JseSemaphore(0) {}
-    JseSemaphore(uint32_t aInitValue);
-    ~JseSemaphore() noexcept;
-    int wait();
-    int waitTimeout(uint32_t ms);
-    int tryWait();
-    void post();
-private:
-    SDL_sem* m_pSem;
-};
+    class Semaphore : public NonMovable {
+    public:
+        Semaphore() : Semaphore(0) {}
+        Semaphore(uint32_t aInitValue);
+        ~Semaphore() noexcept;
+        int wait();
+        int waitTimeout(uint32_t ms);
+        int tryWait();
+        void post();
+    private:
+        SDL_sem* m_pSem;
+    };
 
-class JseConditionVariable : public JseNonMovable {
-public:
-    JseConditionVariable();
-    ~JseConditionVariable() noexcept;
-    void wait(JseUniqueLock& lck, std::function<bool()> predicate);
-    void wait_for(JseUniqueLock& lck, uint32_t ms, std::function<bool()> predicate);
-    void notify_one() noexcept;
-    void notify_all() noexcept;
-private:
-    SDL_cond* m_pCond;
-};
+    class ConditionVariable : public js::NonMovable {
+    public:
+        ConditionVariable();
+        ~ConditionVariable() noexcept;
+        void wait(UniqueLock& lck, std::function<bool()> predicate);
+        void wait_for(UniqueLock& lck, uint32_t ms, std::function<bool()> predicate);
+        void notify_one() noexcept;
+        void notify_all() noexcept;
+    private:
+        SDL_cond* m_pCond;
+    };
 
-class JseAtomicInt
-{
-private:
-    SDL_atomic_t    value_;
-public:
-    JseAtomicInt();
-    JseAtomicInt(int v);
-    void Set(int x);
-    int Get() const;
-    int Add(int x);
-    int Inc();
-    int Dec();
-    bool CompareAndSet(int oldval, int newval);
-    static bool CompareAndSetPtr(void** a, void* oldval, void* newval);
-    static void* SetPtr(void** a, void* v);
-    static void* GetPtr(void** a);
-    int value() const;
-    void operator=(int v);
-    int operator+=(int v);
-    int operator-=(int v);
-    int operator+(int v);
-    int operator-(int v);
-    int operator++();
-    int operator--();
-    operator int() const;
-};
+    class AtomicInt
+    {
+    private:
+        SDL_atomic_t    value_;
+    public:
+        AtomicInt();
+        AtomicInt(int v);
+        void Set(int x);
+        int Get() const;
+        int Add(int x);
+        int Inc();
+        int Dec();
+        bool CompareAndSet(int oldval, int newval);
+        static bool CompareAndSetPtr(void** a, void* oldval, void* newval);
+        static void* SetPtr(void** a, void* v);
+        static void* GetPtr(void** a);
+        int value() const;
+        void operator=(int v);
+        int operator+=(int v);
+        int operator-=(int v);
+        int operator+(int v);
+        int operator-(int v);
+        int operator++();
+        int operator--();
+        operator int() const;
+    };
 
-inline JseAtomicInt::JseAtomicInt(int v)
-{
-    Set(v);
+    inline AtomicInt::AtomicInt(int v)
+    {
+        Set(v);
+    }
+
+    inline AtomicInt::AtomicInt() : AtomicInt(0) {}
+
+    inline int AtomicInt::Get() const
+    {
+        return SDL_AtomicGet(const_cast<SDL_atomic_t*>(&value_));
+    }
+    inline void AtomicInt::Set(int v)
+    {
+        SDL_AtomicSet(&value_, v);
+    }
+    inline int AtomicInt::Add(int v)
+    {
+        return SDL_AtomicAdd(&value_, v);
+    }
+    inline int AtomicInt::Inc()
+    {
+        return Add(1);
+    }
+    inline bool AtomicInt::CompareAndSet(int oldval, int newval)
+    {
+        return SDL_AtomicCAS(&value_, oldval, newval) == SDL_TRUE;
+    }
+    inline bool AtomicInt::CompareAndSetPtr(void** a, void* oldval, void* newval)
+    {
+        return SDL_AtomicCASPtr(a, oldval, newval) == SDL_TRUE;
+    }
+    inline void* AtomicInt::SetPtr(void** a, void* v)
+    {
+        return SDL_AtomicSetPtr(a, v);
+    }
+    inline void* AtomicInt::GetPtr(void** a)
+    {
+        return SDL_AtomicGetPtr(a);
+    }
+    inline int AtomicInt::value() const
+    {
+        return Get();
+    }
+
+    inline void AtomicInt::operator=(int v)
+    {
+        Set(v);
+    }
+
+    inline int AtomicInt::operator+=(int v)
+    {
+        return Add(v) + v;
+    }
+
+    inline int AtomicInt::operator-=(int v)
+    {
+        return Add(-v) - v;
+    }
+
+    inline int AtomicInt::operator+(int v)
+    {
+        return Get() + v;
+    }
+
+    inline int AtomicInt::operator-(int v)
+    {
+        return Get() - v;
+    }
+
+    inline int AtomicInt::operator++()
+    {
+        return Add(1);
+    }
+
+    inline int AtomicInt::operator--()
+    {
+        return Add(-1);
+    }
+
+    inline AtomicInt::operator int() const
+    {
+        return Get();
+    }
+
 }
-
-inline JseAtomicInt::JseAtomicInt() : JseAtomicInt(0) {}
-
-inline int JseAtomicInt::Get() const
-{
-    return SDL_AtomicGet(const_cast<SDL_atomic_t*>(&value_));
-}
-inline void JseAtomicInt::Set(int v)
-{
-    SDL_AtomicSet(&value_, v);
-}
-inline int JseAtomicInt::Add(int v)
-{
-    return SDL_AtomicAdd(&value_, v);
-}
-inline int JseAtomicInt::Inc()
-{
-    return Add(1);
-}
-inline bool JseAtomicInt::CompareAndSet(int oldval, int newval)
-{
-    return SDL_AtomicCAS(&value_, oldval, newval) == SDL_TRUE;
-}
-inline bool JseAtomicInt::CompareAndSetPtr(void** a, void* oldval, void* newval)
-{
-    return SDL_AtomicCASPtr(a, oldval, newval) == SDL_TRUE;
-}
-inline void* JseAtomicInt::SetPtr(void** a, void* v)
-{
-    return SDL_AtomicSetPtr(a, v);
-}
-inline void* JseAtomicInt::GetPtr(void** a)
-{
-    return SDL_AtomicGetPtr(a);
-}
-inline int JseAtomicInt::value() const
-{
-    return Get();
-}
-
-inline void JseAtomicInt::operator=(int v)
-{
-    Set(v);
-}
-
-inline int JseAtomicInt::operator+=(int v)
-{
-    return Add(v) + v;
-}
-
-inline int JseAtomicInt::operator-=(int v)
-{
-    return Add(-v) - v;
-}
-
-inline int JseAtomicInt::operator+(int v)
-{
-    return Get() + v;
-}
-
-inline int JseAtomicInt::operator-(int v)
-{
-    return Get() - v;
-}
-
-inline int JseAtomicInt::operator++()
-{
-    return Add(1);
-}
-
-inline int JseAtomicInt::operator--()
-{
-    return Add(-1);
-}
-
-inline JseAtomicInt::operator int() const
-{
-    return Get();
-}
-
-
 #endif

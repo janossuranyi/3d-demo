@@ -10,6 +10,7 @@
 #define FULLSCREEN false
 
 using namespace glm;
+using namespace js;
 
 struct UniformMatrixes {
     alignas(16) mat4 W;
@@ -145,7 +146,7 @@ void main() {
 
 KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
 {
-    auto* R = RCAST(JseGfxRenderer*, userdata);
+    auto* R = RCAST(GfxRenderer*, userdata);
     
     JseCmdUploadImage c = JseCmdUploadImage();
 
@@ -173,7 +174,7 @@ struct JseFormat_t {
     //JseFormat_t() = default;
 };
 
-static const JseHashMap<ktx_uint32_t, JseFormat_t> s_vkf2jse_map {
+static const JsHashMap<ktx_uint32_t, JseFormat_t> s_vkf2jse_map {
     {VK_FORMAT_BC1_RGB_UNORM_BLOCK,         {JseFormat::RGB_DXT1,    false}},
     {VK_FORMAT_BC1_RGBA_UNORM_BLOCK,        {JseFormat::RGBA_DXT1,   false}},
     {VK_FORMAT_BC1_RGB_SRGB_BLOCK,          {JseFormat::RGB_DXT1,    true}},
@@ -195,22 +196,22 @@ int main(int argc, char** argv)
     bool running = true;
 
     namespace fs = std::filesystem;
-    JseFileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
+    FileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
 
-    JseFilesystem::add_resource_path("../assets/shaders");
-    JseFilesystem::add_resource_path("../assets/textures");
-    JseFilesystem::add_resource_path("../assets/models");
-    JseFilesystem::add_resource_path("../assets/buildings");
+    Filesystem::add_resource_path("../assets/shaders");
+    Filesystem::add_resource_path("../assets/textures");
+    Filesystem::add_resource_path("../assets/models");
+    Filesystem::add_resource_path("../assets/buildings");
 
     float dt{};
     bool t{};
 
-    appCtx.registerModule<JseInputManager>();
-    appCtx.registerModule<JseGfxRenderer>();
+    appCtx.registerModule<InputManager>();
+    appCtx.registerModule<GfxRenderer>();
 
     try {
-        JseInputManager& I = *appCtx.module<JseInputManager>();
-        JseGfxRenderer& R = *appCtx.module<JseGfxRenderer>();
+        InputManager& I = *appCtx.module<InputManager>();
+        GfxRenderer& R = *appCtx.module<GfxRenderer>();
 
 
         I.SetOnExitEvent([&]
@@ -232,7 +233,7 @@ int main(int argc, char** argv)
                 }
             });
 
-        R.SetCore(std::make_shared<JseGfxCoreGL>());
+        R.SetCore(std::make_shared<GfxCoreGL>());
         R.InitCore(1024, 768, false, true);
         R.SetVSyncInterval(0);
 
@@ -339,7 +340,7 @@ int main(int argc, char** argv)
             KTX_error_code ktxresult;
             bool tex_not_loaded = true;
             ktxresult = ktxTexture_CreateFromNamedFile(
-                JseFilesystem::get_resource("textures/concrete/ConcreteWall02_2K_BaseColor_ect1s.ktx2").c_str(),
+                Filesystem::get_resource("textures/concrete/ConcreteWall02_2K_BaseColor_ect1s.ktx2").c_str(),
                 //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
                 KTX_TEXTURE_CREATE_NO_FLAGS,
                 &kTexture);

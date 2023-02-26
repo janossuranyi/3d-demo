@@ -12,12 +12,12 @@ JseMesh::~JseMesh()
 	}
 }
 
-void JseMesh::AddGeometry(const JseVector<vec3> positions, const JseVector<vec2> texCoords, const JseVector<vec4> tangents, const JseVector<vec3> normals, const JseVector<vec4> colors, const JseVector<uint16_t> indices, const JseMaterial* material)
+void JseMesh::AddGeometry(const JsVector<vec3> positions, const JsVector<vec2> texCoords, const JsVector<vec4> tangents, const JsVector<vec3> normals, const JsVector<vec4> colors, const JsVector<uint16_t> indices, const JseMaterial* material)
 {
-	JseMeshGeometry* geom = new JseMeshGeometry();
+	js::MeshGeometry* geom = new js::MeshGeometry();
 	geom->SetVertexCount(SCAST(int, positions.size()));
 	geom->SetIndexCount(SCAST(int, indices.size()));
 	
-	JseGfxRenderer* hwr = appCtx.module<JseGfxRenderer>();
+	js::GfxRenderer* hwr = appCtx.module<js::GfxRenderer>();
 
 }

@@ -1,38 +1,39 @@
 #ifndef JSE_THREAD_H
 #define JSE_THREAD_H
 
-typedef SDL_ThreadFunction JseThreadFunction;
+namespace js
+{
+	typedef SDL_ThreadFunction ThreadFunction;
+	class Thread : public NonCopyable {
+	public:
+		Thread(ThreadFunction func, const char* name, void* data);
 
-class JseThread : public JseNonCopyable {
-public:
-	JseThread(JseThreadFunction func, const char* name, void* data);
+		Thread();
 
-	JseThread();
+		Thread(Thread&& other) noexcept;
 
-	JseThread(JseThread&& other) noexcept;
+		Thread& operator=(Thread&& other) noexcept;
 
-	JseThread& operator=(JseThread&& other) noexcept;
+		~Thread();
 
-	~JseThread();
+		void swap(Thread& other);
 
-	void swap(JseThread& other);
+		void detach() noexcept;
 
-	void detach() noexcept;
+		bool joinable() const;
 
-	bool joinable() const;
+		int join();
 
-	int join();
+		uint32_t native_id() const;
 
-	uint32_t native_id() const;
+		const char* name() const;
 
-	const char* name() const;
+		static uint32_t current_id();
 
-	static uint32_t current_id();
-
-private:
-	SDL_Thread* pThread_;
-	bool joinable_;
-};
-
+	private:
+		SDL_Thread* pThread_;
+		bool joinable_;
+	};
+}
 
 #endif // !JseTHREAD_H

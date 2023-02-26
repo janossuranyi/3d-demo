@@ -1,20 +1,22 @@
 #ifndef JSE_LOG_H
 #define JSE_LOG_H
 
-class JseLogWriter
-{
-public:
-	JseLogWriter(const std::string& pFilename);
-	~JseLogWriter();
+namespace js {
+	class LogWriter
+	{
+	public:
+		LogWriter(const std::string& pFilename);
+		~LogWriter();
 
-	void Write(const std::string& pMessage);
-	void SetFileName(const std::string& pFilename);
-	void Clear();
-private:
-	void ReopenFile();
-	FILE* file;
-	std::string fileName;
-};
+		void Write(const std::string& pMessage);
+		void SetFileName(const std::string& pFilename);
+		void Clear();
+	private:
+		void ReopenFile();
+		FILE* file;
+		std::string fileName;
+	};
+}
 
 void Info(const char* fmt, ...);
 void Warning(const char* fmt, ...);
