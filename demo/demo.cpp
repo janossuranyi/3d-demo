@@ -206,8 +206,8 @@ int main(int argc, char** argv)
     float dt{};
     bool t{};
 
-    appCtx.registerModule<InputManager>();
-    appCtx.registerModule<GfxRenderer>();
+    appCtx.RegisterModule<InputManager>();
+    appCtx.RegisterModule<GfxRenderer>();
 
     try {
         InputManager& I = *appCtx.module<InputManager>();

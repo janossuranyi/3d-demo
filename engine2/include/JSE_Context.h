@@ -6,7 +6,7 @@ namespace js {
 	public:
 		Context() = default;
 		~Context();
-		Module* addModule(JsUniquePtr<Module> m);
+		Module* AddModule(JsUniquePtr<Module> m);
 
 		template <typename T>
 		T* module() {
@@ -19,8 +19,8 @@ namespace js {
 		}
 
 		template <typename T, typename... Args>
-		T* registerModule(Args... args) {
-			return static_cast<T*>(addModule(std::make_unique<T>(std::forward<Args>(args)...)));
+		T* RegisterModule(Args... args) {
+			return static_cast<T*>(AddModule(std::make_unique<T>(std::forward<Args>(args)...)));
 		}
 
 	private:
