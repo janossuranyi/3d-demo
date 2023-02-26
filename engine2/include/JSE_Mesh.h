@@ -12,7 +12,7 @@ public:
 		const JsVector<vec3> normals,
 		const JsVector<vec4> colors,
 		const JsVector<uint16_t> indices,
-		const JseMaterial* material);
+		const js::Material* material);
 
 private:
 	JsVector<js::MeshGeometry*> geom_;

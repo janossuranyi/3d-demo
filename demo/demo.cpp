@@ -393,7 +393,7 @@ int main(int argc, char** argv)
             }
 
             auto& img = *R.CreateCommand<JseCmdCreateImage>();
-            ctx.texture = JseImageID{ R.NextID() };
+            ctx.texture = R.CreateImage();
             img.info.imageId = ctx.texture;
             img.info.format = fmt->second.fmt;
             img.info.target = target;

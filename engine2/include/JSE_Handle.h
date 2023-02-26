@@ -64,7 +64,7 @@ public:
     }
 
     JseHandle<Tag, Invalid> operator++(int) {
-        Handle<Tag, Invalid> tmp{ *this };
+        JseHandle<Tag, Invalid> tmp{ *this };
         ++internal_handle_;
         return tmp;
     }

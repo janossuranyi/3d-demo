@@ -150,6 +150,8 @@ namespace js
 		void ResetCommandBuffer();
 
 		Result lastResult_;
+		JseHandleGenerator<JseShaderID> shaderGenerator_;
+		JseHandleGenerator<JseImageID> imageGenerator_;
 	public:
 
 		void operator()(const JseCmdEmpty& cmd);
@@ -186,7 +188,10 @@ namespace js
 
 		uint32_t NextID();
 
-		js::GfxCore*	core();
+		JseShaderID CreateShader();
+		JseImageID	CreateImage();
+
+		JsSharedPtr<js::GfxCore> core();
 		js::Result		CreateImage(const JseImageCreateInfo& x);
 		js::Result		UploadImage(const JseImageUploadInfo& x);
 		js::Result		InitCore(int w, int h, bool fs, bool useThread);

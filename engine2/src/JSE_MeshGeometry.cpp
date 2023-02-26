@@ -47,7 +47,7 @@ namespace js {
 		return sphereBV_;
 	}
 
-	void MeshGeometry::SetMaterial(const JseMaterial* pMat)
+	void MeshGeometry::SetMaterial(const Material* pMat)
 	{
 		material_ = pMat;
 	}
@@ -82,7 +82,7 @@ namespace js {
 		vertexBuffer_ = vb;
 	}
 
-	const JseMaterial* MeshGeometry::material() const
+	const Material* MeshGeometry::material() const
 	{
 		return material_;
 	}

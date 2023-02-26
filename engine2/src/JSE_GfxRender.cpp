@@ -278,9 +278,19 @@ namespace js
 		return SCAST(uint32_t, nextId_.fetch_add(1));
 	}
 
-	GfxCore* GfxRenderer::core()
+	JseShaderID GfxRenderer::CreateShader()
 	{
-		return core_.get();
+		return shaderGenerator_.next();
+	}
+
+	JseImageID GfxRenderer::CreateImage()
+	{
+		return imageGenerator_.next();
+	}
+
+	JsSharedPtr<GfxCore> GfxRenderer::core()
+	{
+		return core_;
 	}
 
 	void GfxRenderer::Invoke(Invokable func)

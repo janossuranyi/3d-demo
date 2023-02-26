@@ -7,7 +7,7 @@ namespace js {
 		MeshGeometry();
 		~MeshGeometry() {}
 		const mat4& localTransform() const;
-		const JseMaterial* material() const;
+		const Material* material() const;
 		const JsVector<vec3>& faceNormals() const;
 		const VertexBuffer& vertexBuffer() const;
 		int vertexCount() const;
@@ -15,7 +15,7 @@ namespace js {
 		BoundingBox aabb() const;
 		BoundingSphere sphere() const;
 
-		void SetMaterial(const JseMaterial* pMat);
+		void SetMaterial(const Material* pMat);
 		void SetVertexCount(int x);
 		void SetIndexCount(int x);
 		void SetLocalTransform(const mat4& mtx);
@@ -27,7 +27,7 @@ namespace js {
 		int indexCount_;
 		mat4 localTransform_;
 		JsVector<vec3> faceNormals_;
-		JseMaterial const* material_;
+		Material const* material_;
 		BoundingSphere sphereBV_;
 		BoundingBox boxBV_;
 		VertexBuffer vertexBuffer_;
