@@ -27,7 +27,8 @@ ivec4 asint ( vec4 x ) { return floatBitsToInt( x ); }
 float fmax3 ( float f1, float f2, float f3 ) { return max( f1, max( f2, f3 ) ); }
 float fmin3 ( float f1, float f2, float f3 ) { return min( f1, min( f2, f3 ) ); }
 
-float SRGBlinear ( float value ) { if ( value <= 0.04045 ) {
+float SRGBlinear ( float value ) { 
+    if ( value <= 0.04045 ) {
 		return ( value / 12.92 );
 	} else {
 		return pow( ( value / 1.055 ) + 0.0521327, 2.4 );
