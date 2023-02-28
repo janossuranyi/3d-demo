@@ -15,17 +15,17 @@ if (useThread_) {\
 
 namespace js
 {
-	void GfxRenderer::Frame()
+	void GfxRenderer::Frame(bool swapBuffers)
 	{
 		if (!initialized_) return;
 
 		if (!useThread_) {
 			RenderFrame(frameData_);
-			core_->SwapChainNextImage();
+			if (swapBuffers) core_->SwapChainNextImage();
 			ResetCommandBuffer();
 		}
-		else {
-
+		else
+		{
 			std::unique_lock<std::mutex> lck(renderThreadMtx_);
 			renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
 
@@ -42,6 +42,7 @@ namespace js
 
 			renderThreadDoWork_ = true;
 			renderThreadReady_ = false;
+			renderThreadSwapBuffers_.store(swapBuffers, std::memory_order_relaxed);
 			renderThreadSync_.notify_all();
 		}
 	}
@@ -202,7 +203,8 @@ namespace js
 				core_->BeginRendering();
 				{
 					RenderFrame(renderData_);
-					core_->SwapChainNextImage();
+					//core_->FlushCommandBuffers();
+					if (renderThreadSwapBuffers_.load(std::memory_order_relaxed)) core_->SwapChainNextImage();
 				}
 				core_->EndRendering();
 			}

@@ -136,6 +136,7 @@ namespace js
 		bool					renderThreadDoWork_;
 		std::atomic_int			shouldTerminate_{ 0 };
 		std::atomic_int			nextId_{ 1 };
+		std::atomic_bool		renderThreadSwapBuffers_{ true };
 		size_t					frameMemorySize_{ 0 };
 		int						maxFrameMemUsage_{ 0 };
 		frameData_t				frames_[ON_FLIGHT_FRAMES];
@@ -203,7 +204,7 @@ namespace js
 		void*	GetMappedBufferPointer(JseBufferID id);
 		void	SubmitCommand(const JseCmd& cmd);
 		void	SetCore(JsSharedPtr<js::GfxCore> core);
-		void	Frame();
+		void	Frame(bool swapBuffers = true);
 		void	RenderFrame(frameData_t* renderData);
 		void	ProcessCommandList(frameData_t* frameData);
 		void	RenderThread();
