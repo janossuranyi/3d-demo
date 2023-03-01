@@ -2,66 +2,67 @@
 
 namespace js {
 
-	VertexCache::VertexCache() : 
-		VertexCache(DEFAULT_MAX_STATIC_CACHE, DEFAULT_MAX_TRANSIENT_CACHE)
+	VertexCache::VertexCache(GfxRenderer* hwr) : 
+		VertexCache(hwr, DEFAULT_MAX_STATIC_CACHE, DEFAULT_MAX_TRANSIENT_CACHE)
 	{
 	}
 
-	VertexCache::VertexCache(int maxStaticCache, int maxTransientCache)
+	VertexCache::VertexCache(GfxRenderer* hwr, int maxStaticCache, int maxTransientCache)
 	{
 		staticCacheSize_ = maxStaticCache;
 		transientCacheSize_ = maxTransientCache;
+		hwr_ = hwr;
 	}
 
 	VertexCache::~VertexCache()
 	{
 	}
 
-	void VertexCache::Init(GfxRenderer* hwr)
+	void VertexCache::Init()
 	{
-		staticBufferSet_.vertexBuffer = hwr->CreateBuffer();
-		staticBufferSet_.indexBuffer = hwr->CreateBuffer();
+		staticBufferSet_.vertexBuffer = hwr_->CreateBuffer();
+		staticBufferSet_.indexBuffer = hwr_->CreateBuffer();
 		for (int k = 0; k < 2; ++k) {
-			transientBufferSet_[k].vertexBuffer = hwr->CreateBuffer();
-			transientBufferSet_[k].indexBuffer = hwr->CreateBuffer();
+			transientBufferSet_[k].vertexBuffer = hwr_->CreateBuffer();
+			transientBufferSet_[k].indexBuffer = hwr_->CreateBuffer();
 
-			auto* i = hwr->CreateCommand<JseCmdCreateBuffer>();
+			auto* i = hwr_->CreateCommand<JseCmdCreateBuffer>();
 			i->info.bufferId = transientBufferSet_[k].vertexBuffer;
 			i->info.size = transientCacheSize_;
 			i->info.storageFlags = JSE_BUFFER_STORAGE_DYNAMIC_BIT;
 			i->info.target = JseBufferTarget::VERTEX;
 
-			i = hwr->CreateCommand<JseCmdCreateBuffer>();
+			i = hwr_->CreateCommand<JseCmdCreateBuffer>();
 			i->info.bufferId = transientBufferSet_[k].indexBuffer;
 			i->info.size = transientCacheSize_;
 			i->info.storageFlags = JSE_BUFFER_STORAGE_DYNAMIC_BIT;
 			i->info.target = JseBufferTarget::INDEX;
 		}
 
-		auto* i = hwr->CreateCommand<JseCmdCreateBuffer>();
+		auto* i = hwr_->CreateCommand<JseCmdCreateBuffer>();
 		i->info.bufferId = staticBufferSet_.vertexBuffer;
 		i->info.size = staticCacheSize_;
 		i->info.storageFlags = {};
 		i->info.target = JseBufferTarget::VERTEX;
 
-		i = hwr->CreateCommand<JseCmdCreateBuffer>();
+		i = hwr_->CreateCommand<JseCmdCreateBuffer>();
 		i->info.bufferId = staticBufferSet_.indexBuffer;
 		i->info.size = staticCacheSize_;
 		i->info.storageFlags = {};
 		i->info.target = JseBufferTarget::INDEX;
 	}
 
-	void VertexCache::ShutDown(GfxRenderer* hwr)
+	void VertexCache::ShutDown()
 	{
-		auto* i = hwr->CreateCommand<JseCmdDeleteBuffer>();
+		auto* i = hwr_->CreateCommand<JseCmdDeleteBuffer>();
 		i->buffer = staticBufferSet_.vertexBuffer;
-		i = hwr->CreateCommand<JseCmdDeleteBuffer>();
+		i = hwr_->CreateCommand<JseCmdDeleteBuffer>();
 		i->buffer = staticBufferSet_.indexBuffer;
 		for (int k = 0; k < 2; ++k) 
 		{
-			i = hwr->CreateCommand<JseCmdDeleteBuffer>();
+			i = hwr_->CreateCommand<JseCmdDeleteBuffer>();
 			i->buffer = transientBufferSet_[k].vertexBuffer;			
-			i = hwr->CreateCommand<JseCmdDeleteBuffer>();
+			i = hwr_->CreateCommand<JseCmdDeleteBuffer>();
 			i->buffer = transientBufferSet_[k].indexBuffer;
 		}
 	}

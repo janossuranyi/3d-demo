@@ -158,7 +158,6 @@ namespace js
 		JseHandleGenerator<JseShaderID> shaderGenerator_;
 		JseHandleGenerator<JseImageID> imageGenerator_;
 		JseHandleGenerator<JseBufferID> bufferGenerator_;
-		VertexCache geoCache_;
 	public:
 
 		void operator()(const JseCmdEmpty& cmd);

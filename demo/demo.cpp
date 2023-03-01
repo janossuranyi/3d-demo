@@ -211,15 +211,13 @@ int main(int argc, char** argv)
         Context appCtx;
         appCtx.RegisterModule<InputManager>();
         appCtx.RegisterModule<GfxRenderer>();
+        appCtx.RegisterModule<VertexCache>(appCtx.module<GfxRenderer>());
 
         InputManager& I = *appCtx.module<InputManager>();
         GfxRenderer& R = *appCtx.module<GfxRenderer>();
 
 
-        I.SetOnExitEvent([&]
-            {
-                running = false;
-            });
+        I.SetOnExitEvent([&]{ running = false; });
 
         I.SetOnKeyboardEvent([&](JseKeyboardEvent e)
             {

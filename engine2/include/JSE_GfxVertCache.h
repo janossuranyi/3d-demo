@@ -14,11 +14,12 @@ namespace js {
 	class GfxRenderer;
 	class VertexCache {
 	public:
-		VertexCache();
-		VertexCache(int maxStaticCache, int maxTransientCache);
+		VertexCache() = delete;
+		VertexCache(GfxRenderer* hwr);
+		VertexCache(GfxRenderer* hwr, int maxStaticCache, int maxTransientCache);
 		~VertexCache();
-		void Init(GfxRenderer* hwr);
-		void ShutDown(GfxRenderer* hwr);
+		void Init();
+		void ShutDown();
 		void Frame();
 		CacheHandle AllocStaticVertex(int vertexCount, int vertexSize = sizeof(GfxDrawVert));
 		CacheHandle AllocStaticIndex(int indexCount, int indexSize = 2);
@@ -38,12 +39,13 @@ namespace js {
 
 		int staticCacheSize_{};
 		int transientCacheSize_{};
-		geoBufferSet_t staticBufferSet_{};
-		geoBufferSet_t transientBufferSet_[2]{};
 		int activeFrame_{ 0 };
 		int renderFrame_{ 1 };
+		geoBufferSet_t staticBufferSet_{};
+		geoBufferSet_t transientBufferSet_[2]{};
 		CacheHandle RealAllocVertex(geoBufferSet_t& geoset, int size);
 		CacheHandle RealAllocIndex(geoBufferSet_t& geoset, int size);
+		GfxRenderer* hwr_;
 	};
 }
 #endif // !JSE_VERT_CACHE_H

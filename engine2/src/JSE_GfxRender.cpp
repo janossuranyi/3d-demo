@@ -282,7 +282,6 @@ namespace js
 
 		core_->BeginRendering();
 		/* final GPU works */
-		geoCache_.ShutDown(this);
 		Frame(false);
 
 		core_->Shutdown();
@@ -381,9 +380,7 @@ namespace js
 				renderThread_ = Thread(RenderThreadWrapper, "JseRender-Thread", this);
 			}
 		}
-	
-		geoCache_.Init(this);
-
+		
 		return res;
 	}
 
