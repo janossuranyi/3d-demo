@@ -4,22 +4,18 @@ namespace js {
 	MeshGeometry::MeshGeometry() :
 		vertexCount_(0),
 		indexCount_(0),
-		material_(),
-		sphereBV_(),
-		boxBV_(),
-		localTransform_(1.f),
-		vertexBuffer_()
+		material_{},
+		sphereBV_{},
+		boxBV_{},
+		localTransform_(glm::identity<mat4>()),
+		vertexCache_{},
+		indexCache_{}
 	{
 	}
 
 	const JsVector<vec3>& MeshGeometry::faceNormals() const
 	{
 		return faceNormals_;
-	}
-
-	const VertexBuffer& MeshGeometry::vertexBuffer() const
-	{
-		return vertexBuffer_;
 	}
 
 	const mat4& MeshGeometry::localTransform() const
@@ -47,7 +43,7 @@ namespace js {
 		return sphereBV_;
 	}
 
-	void MeshGeometry::SetMaterial(const Material* pMat)
+	void MeshGeometry::SetMaterial(JsSharedPtr<Material>& pMat)
 	{
 		material_ = pMat;
 	}
@@ -77,12 +73,7 @@ namespace js {
 		sphereBV_ = sph;
 	}
 
-	void MeshGeometry::SetVertexBuffer(const VertexBuffer& vb)
-	{
-		vertexBuffer_ = vb;
-	}
-
-	const Material* MeshGeometry::material() const
+	const JsSharedPtr<Material> MeshGeometry::material() const
 	{
 		return material_;
 	}

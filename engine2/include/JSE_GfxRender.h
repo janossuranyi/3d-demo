@@ -74,6 +74,9 @@ struct JseCmdBindDescriptorSets {
 	uint32_t* pDynamicOffsets;
 	JseDescriptorSetID* pDescriptorSets;
 };
+struct JseCmdDeleteBuffer {
+	JseBufferID buffer;
+};
 struct JseCreateFenceCmd {
 	JseFenceID id;
 };
@@ -98,6 +101,7 @@ using JseCmd = std::variant<
 	JseCmdBindGraphicsPipeline,
 	JseCmdUpdateBuffer,
 	JseCmdCreateBuffer,
+	JseCmdDeleteBuffer,
 	JseCmdCreateShader,
 	JseCmdScissor,
 	JseCmdViewport,
@@ -153,6 +157,8 @@ namespace js
 		Result lastResult_;
 		JseHandleGenerator<JseShaderID> shaderGenerator_;
 		JseHandleGenerator<JseImageID> imageGenerator_;
+		JseHandleGenerator<JseBufferID> bufferGenerator_;
+		VertexCache geoCache_;
 	public:
 
 		void operator()(const JseCmdEmpty& cmd);
@@ -164,6 +170,7 @@ namespace js
 		void operator()(const JseCmdCreateDescriptorSetLayoutBindind& cmd);
 		void operator()(const JseCmdCreateBuffer& cmd);
 		void operator()(const JseCmdUpdateBuffer& cmd);
+		void operator()(const JseCmdDeleteBuffer& cmd);
 		void operator()(const JseCmdBindVertexBuffers& cmd);
 		void operator()(const JseCmdBindGraphicsPipeline& cmd);
 		void operator()(const JseCmdDraw& cmd);
@@ -191,8 +198,9 @@ namespace js
 
 		JseShaderID CreateShader();
 		JseImageID	CreateImage();
+		JseBufferID	CreateBuffer();
 
-		JsSharedPtr<js::GfxCore> core();
+		JsSharedPtr<GfxCore> core();
 		js::Result		CreateImage(const JseImageCreateInfo& x);
 		js::Result		UploadImage(const JseImageUploadInfo& x);
 		js::Result		InitCore(int w, int h, bool fs, bool useThread);
@@ -203,14 +211,14 @@ namespace js
 		void	Invoke(Invokable func);
 		void*	GetMappedBufferPointer(JseBufferID id);
 		void	SubmitCommand(const JseCmd& cmd);
-		void	SetCore(JsSharedPtr<js::GfxCore> core);
+		void	SetCore(JsSharedPtr<GfxCore> core);
 		void	Frame(bool swapBuffers = true);
 		void	RenderFrame(frameData_t* renderData);
 		void	ProcessCommandList(frameData_t* frameData);
 		void	RenderThread();
 		void	SetVSyncInterval(int x);
 		void	WaitForRenderThreadReady();
-		js::Result WaitSync(JseFenceID id, uint64_t timeout);
+		Result	WaitSync(JseFenceID id, uint64_t timeout);
 
 		static int RenderThreadWrapper(void* data);
 

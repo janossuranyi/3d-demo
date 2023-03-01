@@ -206,10 +206,12 @@ int main(int argc, char** argv)
     float dt{};
     bool t{};
 
-    appCtx.RegisterModule<InputManager>();
-    appCtx.RegisterModule<GfxRenderer>();
 
     try {
+        Context appCtx;
+        appCtx.RegisterModule<InputManager>();
+        appCtx.RegisterModule<GfxRenderer>();
+
         InputManager& I = *appCtx.module<InputManager>();
         GfxRenderer& R = *appCtx.module<GfxRenderer>();
 
@@ -309,8 +311,8 @@ int main(int argc, char** argv)
         /* Creating buffers */
         /***********************************************************/
 
-        ctx.buf_Vertex = JseBufferID{ R.NextID() };
-        ctx.buf_UbMatrix = JseBufferID{ R.NextID() };
+        ctx.buf_Vertex = R.CreateBuffer();
+        ctx.buf_UbMatrix = R.CreateBuffer();
         auto& buf = *R.CreateCommand<JseCmdCreateBuffer>();
         buf.info.bufferId = ctx.buf_Vertex;
         buf.info.size = 64 * 1024;
@@ -363,7 +365,7 @@ int main(int argc, char** argv)
                 const auto diff = end - start;
 
                 using namespace std::literals;
-                Info("Transcode took %d us", (end-start) / 1us);
+                Info("Transcode took %d us", (end - start) / 1us);
 
                 // Then use VkUpload or GLUpload to create a texture object on the GPU.
                 if (ktxresult != KTX_SUCCESS) {
@@ -372,7 +374,7 @@ int main(int argc, char** argv)
                 tex_not_loaded = false;
             }
 
-            
+
             auto& fmt = s_vkf2jse_map.find(kt2->vkFormat);
 
             if (fmt == s_vkf2jse_map.end()) {
@@ -431,7 +433,7 @@ int main(int argc, char** argv)
             }
         }
 
-        
+
         auto& bind = *R.CreateCommand<JseCmdBindGraphicsPipeline>();
         bind.pipeline = ctx.pipeline;
 
@@ -514,7 +516,7 @@ int main(int argc, char** argv)
 
         JseFenceID syncId[ON_FLIGHT_FRAME]{};
 
-        while(running) {
+        while (running) {
 
             R.SubmitCommand(renderPass);
 
@@ -527,7 +529,7 @@ int main(int argc, char** argv)
                 W = rotate(W, radians(angle), vec3(0.f, 0.f, 1.f));
                 V = lookAt(viewOrigin, vec3{ 0.f,0.f,0.f }, vec3{ 0.f,1.f,0.f });
                 if (syncId[ctx.frame]) {
-                    R.WaitSync(syncId[ctx.frame], 1000*1000);
+                    R.WaitSync(syncId[ctx.frame], 1000 * 1000);
                 }
 
                 auto* uf = RCAST(UniformMatrixes*, ptr + ctx.frame * 256);
@@ -545,7 +547,7 @@ int main(int argc, char** argv)
                 bindset->pDynamicOffsets = R.FrameAlloc<uint32_t>();
                 bindset->pDynamicOffsets[0] = ctx.frame * 256;
 
-                
+
                 auto* draw = R.CreateCommand<JseCmdDraw>();
                 draw->instanceCount = 1;
                 draw->mode = JseTopology::Triangles;
@@ -575,10 +577,10 @@ int main(int argc, char** argv)
         }
     }
     catch (std::exception e) { Error("error=%s", e.what()); }
-    
+
     JseShutdown();
+    
+    Info("Program terminated");
 
-	Info("Program terminated");
-
-	return 0;
+    return 0;
 }

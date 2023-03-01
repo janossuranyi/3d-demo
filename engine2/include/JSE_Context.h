@@ -28,5 +28,4 @@ namespace js {
 	};
 }
 
-extern js::Context appCtx;
 #endif

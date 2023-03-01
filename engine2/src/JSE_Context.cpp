@@ -1,7 +1,5 @@
 #include "JSE.h"
 
-js::Context appCtx;
-
 namespace js {
 	Context::~Context()
 	{

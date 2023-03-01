@@ -57,6 +57,7 @@
 #include "JSE_MeshGeometry.h"
 #include "JSE_Mesh.h"
 //#include "JSE_GfxCoreGL46.h"
+#include "JSE_GfxVertCache.h"
 #include "JSE_GfxRender.h"
 #include "JSE_Node.h"
 #endif

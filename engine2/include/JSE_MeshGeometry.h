@@ -7,30 +7,31 @@ namespace js {
 		MeshGeometry();
 		~MeshGeometry() {}
 		const mat4& localTransform() const;
-		const Material* material() const;
+		const JsSharedPtr<Material> material() const;
 		const JsVector<vec3>& faceNormals() const;
-		const VertexBuffer& vertexBuffer() const;
 		int vertexCount() const;
 		int indexCount() const;
 		BoundingBox aabb() const;
 		BoundingSphere sphere() const;
 
-		void SetMaterial(const Material* pMat);
+		void SetMaterial(JsSharedPtr<Material>& pMat);
 		void SetVertexCount(int x);
 		void SetIndexCount(int x);
 		void SetLocalTransform(const mat4& mtx);
 		void SetAabb(const BoundingBox& aabb);
 		void SetSphere(const BoundingSphere& sph);
-		void SetVertexBuffer(const VertexBuffer& vb);
 	private:
 		int vertexCount_;
 		int indexCount_;
 		mat4 localTransform_;
-		JsVector<vec3> faceNormals_;
-		Material const* material_;
+		JsSharedPtr<Material> material_;
 		BoundingSphere sphereBV_;
 		BoundingBox boxBV_;
-		VertexBuffer vertexBuffer_;
+		CacheHandle vertexCache_;
+		CacheHandle indexCache_;
+		JsVector<GfxDrawVert> vertices_;
+		JsVector<int16_t> indices_;
+		JsVector<vec3> faceNormals_;
 	};
 }
 #endif // !JSE_MESH_GEOMETRY_H

@@ -409,8 +409,10 @@ Result GfxCoreGL::DestroyBuffer_impl(JseBufferID bufferId)
 {
 	auto find = buffer_data_map_.find(bufferId);
 
-	if (find != std::end(buffer_data_map_)) {
-		if (find->second.mapptr) {
+	if (find != std::end(buffer_data_map_))
+	{
+		if (find->second.mapptr)
+		{
 			GL_CHECK(glUnmapNamedBuffer(find->second.buffer));
 		}
 		GL_CHECK(glDeleteBuffers(1, &find->second.buffer));

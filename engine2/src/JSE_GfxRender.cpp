@@ -109,6 +109,11 @@ namespace js
 		lastResult_ = r;
 	}
 
+	void GfxRenderer::operator()(const JseCmdDeleteBuffer& cmd)
+	{
+		core_->DestroyBuffer(cmd.buffer);
+	}
+
 	void GfxRenderer::operator()(const JseCmdBindVertexBuffers& cmd)
 	{
 		core_->BindVertexBuffers(cmd.firstBinding, cmd.bindingCount, cmd.pBuffers, cmd.pOffsets);
@@ -219,7 +224,7 @@ namespace js
 
 	int GfxRenderer::RenderThreadWrapper(void* data)
 	{
-		RCAST(GfxRenderer*, data)->RenderThread();
+		reinterpret_cast<GfxRenderer*>(data)->RenderThread();
 
 		return 0;
 	}
@@ -262,7 +267,8 @@ namespace js
 	GfxRenderer::~GfxRenderer()
 	{
 		Info("Max frame mem usage: %d", maxFrameMemUsage_);
-		if (useThread_) {
+		if (useThread_)
+		{
 			{
 				std::unique_lock<std::mutex> lck(renderThreadMtx_);
 				renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
@@ -271,7 +277,14 @@ namespace js
 			}
 			renderThreadSync_.notify_all();
 			renderThread_.join();
+			useThread_ = false;
 		}
+
+		core_->BeginRendering();
+		/* final GPU works */
+		geoCache_.ShutDown(this);
+		Frame(false);
+
 		core_->Shutdown();
 	}
 
@@ -288,6 +301,11 @@ namespace js
 	JseImageID GfxRenderer::CreateImage()
 	{
 		return imageGenerator_.next();
+	}
+
+	JseBufferID GfxRenderer::CreateBuffer()
+	{
+		return bufferGenerator_.next();
 	}
 
 	JsSharedPtr<GfxCore> GfxRenderer::core()
@@ -363,6 +381,8 @@ namespace js
 				renderThread_ = Thread(RenderThreadWrapper, "JseRender-Thread", this);
 			}
 		}
+	
+		geoCache_.Init(this);
 
 		return res;
 	}
