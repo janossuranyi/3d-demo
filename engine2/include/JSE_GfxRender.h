@@ -132,8 +132,8 @@ namespace js
 			JseCmdWrapper* cmdHead;
 		};
 
-		JsSharedPtr<GfxCore> core_;
-		js::Thread				renderThread_;
+		GfxCore*				core_;
+		Thread					renderThread_;
 		std::mutex				renderThreadMtx_;
 		std::condition_variable	renderThreadSync_;
 		bool					renderThreadReady_;
@@ -187,8 +187,13 @@ namespace js
 			static_assert(!std::is_same<T, T>::value, "Unimplemented RenderCommand");
 		}
 
-		GfxRenderer();
-		GfxRenderer(int frameMemorySize);
+		GfxRenderer() = delete;
+		GfxRenderer(GfxCore* core, int frameMemorySize);
+		GfxRenderer(GfxCore* core);
+		GfxRenderer(const GfxRenderer&) = delete;
+		GfxRenderer(const GfxRenderer&&) = delete;
+		GfxRenderer& operator=(GfxRenderer&) = delete;
+		GfxRenderer& operator=(GfxRenderer&&) = delete;
 		~GfxRenderer();
 
 		JsType typeIndex() const override;
@@ -199,10 +204,10 @@ namespace js
 		JseImageID	CreateImage();
 		JseBufferID	CreateBuffer();
 
-		JsSharedPtr<GfxCore> core();
-		js::Result		CreateImage(const JseImageCreateInfo& x);
-		js::Result		UploadImage(const JseImageUploadInfo& x);
-		js::Result		InitCore(int w, int h, bool fs, bool useThread);
+		GfxCore*	core();
+		Result		CreateImage(const JseImageCreateInfo& x);
+		Result		UploadImage(const JseImageUploadInfo& x);
+		Result		InitCore(int w, int h, bool fs, bool useThread);
 
 		uint8_t* R_FrameAlloc(uint32_t bytes);
 		JseCmdWrapper* GetCommandBuffer();
@@ -210,7 +215,6 @@ namespace js
 		void	Invoke(Invokable func);
 		void*	GetMappedBufferPointer(JseBufferID id);
 		void	SubmitCommand(const JseCmd& cmd);
-		void	SetCore(JsSharedPtr<GfxCore> core);
 		void	Frame(bool swapBuffers = true);
 		void	RenderFrame(frameData_t* renderData);
 		void	ProcessCommandList(frameData_t* frameData);

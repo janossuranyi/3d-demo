@@ -243,13 +243,10 @@ namespace js
 	}
 
 
-	GfxRenderer::GfxRenderer() : GfxRenderer(DEFAULT_FRAME_MEM_SIZE)
+	GfxRenderer::GfxRenderer(GfxCore* core) : GfxRenderer(core, DEFAULT_FRAME_MEM_SIZE) {}
+	GfxRenderer::GfxRenderer(GfxCore* core, int frameMemorySize)
 	{
-	}
-
-	GfxRenderer::GfxRenderer(int frameMemorySize)
-	{
-		core_ = std::make_shared<GfxCoreNull>();
+		core_ = core;
 		frameMemorySize_ = frameMemorySize;
 		assert(CACHE_LINE_SIZE == JseGetCPUCacheLineSize());
 
@@ -307,7 +304,7 @@ namespace js
 		return bufferGenerator_.next();
 	}
 
-	JsSharedPtr<GfxCore> GfxRenderer::core()
+	GfxCore* GfxRenderer::core()
 	{
 		return core_;
 	}
@@ -344,14 +341,6 @@ namespace js
 		RUN_CORE_CMD(r = core_->UpdateImageData(x));
 
 		return r;
-	}
-
-	void GfxRenderer::SetCore(JsSharedPtr<GfxCore> core)
-	{
-		if (initialized_) {
-			throw std::runtime_error("Cannot change the Core after initialization!!!");
-		}
-		core_ = core;
 	}
 
 	Result GfxRenderer::InitCore(int w, int h, bool fs, bool useThread)

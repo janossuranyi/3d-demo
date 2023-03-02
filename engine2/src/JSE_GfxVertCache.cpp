@@ -12,10 +12,12 @@ namespace js {
 		staticCacheSize_ = maxStaticCache;
 		transientCacheSize_ = maxTransientCache;
 		hwr_ = hwr;
+		Init();
 	}
 
 	VertexCache::~VertexCache()
 	{
+		ShutDown();
 	}
 
 	void VertexCache::Init()
@@ -50,6 +52,7 @@ namespace js {
 		i->info.size = staticCacheSize_;
 		i->info.storageFlags = {};
 		i->info.target = JseBufferTarget::INDEX;
+		hwr_->Frame(false);
 	}
 
 	void VertexCache::ShutDown()
@@ -65,6 +68,7 @@ namespace js {
 			i = hwr_->CreateCommand<JseCmdDeleteBuffer>();
 			i->buffer = transientBufferSet_[k].indexBuffer;
 		}
+		hwr_->Frame(false);
 	}
 
 	void VertexCache::Frame()
