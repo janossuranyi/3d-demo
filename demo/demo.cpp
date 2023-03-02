@@ -404,13 +404,13 @@ bool Demo::Init() {
         img.info.immutable = 1;
         img.info.samplerDescription = R.FrameAlloc<JseSamplerDescription>();
         img.info.samplerDescription->minFilter = JseFilter::LINEAR_MIPMAP_LINEAR;
-        img.info.samplerDescription->magFilter = JseFilter::NEAREST;
+        img.info.samplerDescription->magFilter = JseFilter::LINEAR;
         img.info.samplerDescription->lodBias = 0.f;
         img.info.samplerDescription->maxAnisotropy = 1.0f;
         img.info.samplerDescription->maxLod = SCAST(float, kt2->numLevels);
-        img.info.samplerDescription->tilingS = JseImageTiling::REPEAT;
-        img.info.samplerDescription->tilingT = JseImageTiling::REPEAT;
-        img.info.samplerDescription->tilingR = JseImageTiling::REPEAT;
+        img.info.samplerDescription->tilingS = JseImageTiling::CLAMP_TO_BORDER;
+        img.info.samplerDescription->tilingT = JseImageTiling::CLAMP_TO_BORDER;
+        img.info.samplerDescription->tilingR = JseImageTiling::CLAMP_TO_BORDER;
 
         R.Frame();
 
@@ -543,7 +543,6 @@ void Demo::Run() {
             bindset->pDynamicOffsets = R.FrameAlloc<uint32_t>();
             bindset->pDynamicOffsets[0] = ctx.frame * 256;
 
-
             auto* draw = R.CreateCommand<JseCmdDraw>();
             draw->instanceCount = 1;
             draw->mode = JseTopology::Triangles;
@@ -564,11 +563,11 @@ void Demo::Run() {
 
         ctx.frame = (ctx.frame + 1) % ON_FLIGHT_FRAME;
 
-        float now = SCAST(float, SDL_GetTicks64()) / 1000.f;
+        float now = static_cast<float>(SDL_GetTicks64()) / 1000.f;
         dt = now - tick;
         tick = now;
 
-        angle += 30.f * dt;
+        angle += 15.f * dt;
         angle = std::fmodf(angle, 360.f);
     }
 }
