@@ -771,7 +771,7 @@ Result GfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& cmd)
 		GL_CHECK(glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data()));
 	}
 
-	if (cmd.pDepthAttachment && cmd.pDepthAttachment->image.isValid()) {
+	if (cmd.pDepthAttachment && cmd.pDepthAttachment->image) {
 		auto& img = texture_data_map_.at(cmd.pDepthAttachment->image);
 
 		if (img.target == GL_TEXTURE_CUBE_MAP) {
@@ -786,7 +786,7 @@ Result GfxCoreGL::CreateFrameBuffer_impl(const JseFrameBufferCreateInfo& cmd)
 			GL_CHECK(glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, img.texture, cmd.pDepthAttachment->level));
 		}
 	}
-	if (cmd.pStencilAttachment && cmd.pStencilAttachment->image.isValid()) {
+	if (cmd.pStencilAttachment && cmd.pStencilAttachment->image) {
 		auto& img = texture_data_map_.at(cmd.pStencilAttachment->image);
 		GL_CHECK(glFramebufferTexture(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, img.texture, cmd.pStencilAttachment->level));
 	}

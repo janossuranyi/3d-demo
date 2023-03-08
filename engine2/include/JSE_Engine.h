@@ -12,7 +12,7 @@ namespace js {
 
 		virtual bool Init() { return false; };
 		virtual void Run() {};
-		virtual void Done() {};
+		virtual void Shutdown() {};
 
 		GfxRenderer* GetRenderer();
 		InputManager* GetInputManager();

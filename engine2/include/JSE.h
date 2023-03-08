@@ -25,7 +25,6 @@
 #include <variant>
 #include <filesystem>
 #include <SDL.h>
-#include <stb_image.h>
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -61,5 +60,6 @@
 #include "JSE_GfxRender.h"
 #include "JSE_Node.h"
 #include "JSE_Config.h"
+#include "JSE_TextureManager.h"
 #include "JSE_Engine.h"
 #endif

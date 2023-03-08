@@ -21,7 +21,7 @@ namespace js {
 	Engine::~Engine()
 	{
 		Info("Engine shutting down...");
-		Done();
+		Shutdown();
 
 		delete vertexCache_;
 		delete render_backend_;
