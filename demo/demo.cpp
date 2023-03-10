@@ -55,20 +55,6 @@ const xVertex rect[]{
     {{-0.5f,  -0.5f, 0.0f},{0.0f, 0.0f}}
 };
 
-JseFormat MapGLCompressedFmt(uint32_t f) {
-    switch (f)
-    {
-    case 0x83F0: return JseFormat::RGB_DXT1;
-    case 0x83F1: return JseFormat::RGBA_DXT1;
-    case 0x83F2: return JseFormat::RGBA_DXT3;
-    case 0x83F3: return JseFormat::RGBA_DXT5;
-    case 0x8E8D:
-    case 0x8E8E: return JseFormat::RGBA_BPTC;
-    default:
-        return JseFormat::RGBA8;
-    }
-}
-
 vec3 gamma(vec3 c) {
     return pow(c, vec3(1.0f / 2.2f));
 }
@@ -130,25 +116,6 @@ void main() {
 )" };
 
 
-struct JseFormat_t {
-    JseFormat fmt;
-    bool srgb;
-    //JseFormat_t() = default;
-};
-
-static const JsHashMap<ktx_uint32_t, JseFormat_t> s_vkf2jse_map {
-    {VK_FORMAT_BC1_RGB_UNORM_BLOCK,         {JseFormat::RGB_DXT1,    false}},
-    {VK_FORMAT_BC1_RGBA_UNORM_BLOCK,        {JseFormat::RGBA_DXT1,   false}},
-    {VK_FORMAT_BC1_RGB_SRGB_BLOCK,          {JseFormat::RGB_DXT1,    true}},
-    {VK_FORMAT_BC1_RGBA_SRGB_BLOCK,         {JseFormat::RGBA_DXT1,   true}},
-    {VK_FORMAT_BC2_UNORM_BLOCK,             {JseFormat::RGBA_DXT3,   false}},
-    {VK_FORMAT_BC2_SRGB_BLOCK,              {JseFormat::RGBA_DXT3,   true}},
-    {VK_FORMAT_BC3_UNORM_BLOCK,             {JseFormat::RGBA_DXT5,   false}},
-    {VK_FORMAT_BC3_SRGB_BLOCK,              {JseFormat::RGBA_DXT5,   true}},
-    {VK_FORMAT_BC7_UNORM_BLOCK,             {JseFormat::RGBA_BPTC,   false}},
-    {VK_FORMAT_BC7_SRGB_BLOCK,              {JseFormat::RGBA_BPTC,   true}}
-};
-
 class Demo :public Engine {
 public:
     Demo() = default;
@@ -186,30 +153,6 @@ private:
     uint8_t* ptr{};
 };
 
-KTX_error_code imageCB(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
-{
-    auto* D = reinterpret_cast<Demo*>(userdata);
-    auto* R = D->GetRenderer();
-    JseCmdUploadImage c = JseCmdUploadImage();
-
-    //c.info.data = R->FrameAlloc<uint8_t>(faceLodSize);
-    //std::memcpy(c.info.data, pixels, faceLodSize);
-
-    c.info.data = (uint8_t*)pixels;
-    c.info.imageId = D->ctx.texture;
-    c.info.face = face;
-    c.info.width = width;
-    c.info.height = height;
-    c.info.level = miplevel;
-    c.info.depth = 1;
-    c.info.imageSize = faceLodSize;
-
-    Info("level %d, face %d, width %d, height %d, depth %d, size %d", miplevel, face, width, height, depth, faceLodSize);
-    R->UploadImage(c.info);
-
-    return KTX_SUCCESS;
-}
-
 bool Demo::Init() {
     namespace fs = std::filesystem;
     FileSystem::set_working_dir(fs::absolute(fs::path("../")).generic_string());
@@ -218,6 +161,8 @@ bool Demo::Init() {
     Filesystem::add_resource_path("../assets/textures");
     Filesystem::add_resource_path("../assets/models");
     Filesystem::add_resource_path("../assets/buildings");
+
+    TextureManager* tm = GetTextureManager();
 
     GetInputManager()->SetOnExitEvent([&] { running = false; });
     GetInputManager()->SetOnKeyboardEvent([&](JseKeyboardEvent e)
@@ -325,7 +270,7 @@ bool Demo::Init() {
     upd.info.size = sizeof(rect);
     upd.info.data = (uint8_t*)&rect[0];
 
-    R.Frame();
+    R.Frame(false);
     ptr = SCAST(uint8_t*, R.GetMappedBufferPointer(ctx.buf_UbMatrix));
 
 
@@ -334,99 +279,26 @@ bool Demo::Init() {
     /***********************************************************/
 
     {
-        ktxTexture* kTexture;
-        KTX_error_code ktxresult;
-        bool tex_not_loaded = true;
-        ktxresult = ktxTexture_CreateFromNamedFile(
-            Filesystem::get_resource("textures/concrete/ConcreteWall02_2K_BaseColor_ect1s.ktx2").c_str(),
-            //                JseResourceManager::get_resource("textures/cubemaps/skybox.ktx2").c_str(),
-            KTX_TEXTURE_CREATE_NO_FLAGS,
-            &kTexture);
 
-        if (ktxresult != KTX_SUCCESS) {
-            exit(255);
-        }
-
-        assert(kTexture->classId == ktxTexture2_c);
-        ktxTexture2* kt2 = (ktxTexture2*)kTexture;
-        Info("isCompressed: %d", kt2->isCompressed);
-        if (ktxTexture2_NeedsTranscoding(kt2)) {
-            ktx_texture_transcode_fmt_e tf = KTX_TTF_BC1_OR_3;
-
-            const auto start = std::chrono::steady_clock::now();
-
-            ktxresult = ktxTexture2_TranscodeBasis(kt2, tf, 0);
-
-            const auto end = std::chrono::steady_clock::now();
-            const auto diff = end - start;
-
-            using namespace std::literals;
-            Info("Transcode took %d us", (end - start) / 1us);
-
-            // Then use VkUpload or GLUpload to create a texture object on the GPU.
-            if (ktxresult != KTX_SUCCESS) {
-                exit(255);
-            }
-            tex_not_loaded = false;
-        }
-
-
-        auto& fmt = s_vkf2jse_map.find(kt2->vkFormat);
-
-        if (fmt == s_vkf2jse_map.end()) {
-            Info("Unknown texture format !");
-            exit(255);
-        }
-
-        JseImageTarget target{ JseImageTarget::D2 };
-
-        if (kt2->isCubemap) {
-            target = JseImageTarget::CUBEMAP;
-        }
-        else if (kt2->numDimensions == 1) {
-            target = JseImageTarget::D1;
-        }
-        else if (kt2->numDimensions == 3) {
-            target = JseImageTarget::D3;
-        }
-
-        auto& img = *R.CreateCommand<JseCmdCreateImage>();
-        ctx.texture = R.CreateImage();
-        img.info.imageId = ctx.texture;
-        img.info.format = fmt->second.fmt;
-        img.info.target = target;
-        img.info.height = kt2->baseHeight;
-        img.info.width = kt2->baseWidth;
-        img.info.depth = kt2->baseDepth;
-        img.info.levelCount = kt2->numLevels;
-        img.info.srgb = fmt->second.srgb;
-        img.info.compressed = kt2->isCompressed;
-        img.info.immutable = 1;
-        img.info.samplerDescription = R.FrameAlloc<JseSamplerDescription>();
-        img.info.samplerDescription->minFilter = JseFilter::LINEAR_MIPMAP_LINEAR;
-        img.info.samplerDescription->magFilter = JseFilter::LINEAR;
-        img.info.samplerDescription->lodBias = 0.f;
-        img.info.samplerDescription->maxAnisotropy = 1.0f;
-        img.info.samplerDescription->maxLod = SCAST(float, kt2->numLevels);
-        img.info.samplerDescription->tilingS = JseImageTiling::CLAMP_TO_BORDER;
-        img.info.samplerDescription->tilingT = JseImageTiling::CLAMP_TO_BORDER;
-        img.info.samplerDescription->tilingR = JseImageTiling::CLAMP_TO_BORDER;
-
-        R.Frame();
-
-        if (tex_not_loaded) {
-            ktxresult = ktxTexture_IterateLoadLevelFaces(kTexture, imageCB, this);
-        }
-        else {
-            ktxresult = ktxTexture_IterateLevelFaces(kTexture, imageCB, this);
-        }
-
-        ktxTexture_Destroy(kTexture);
-
-        if (ktxresult != KTX_SUCCESS) {
+        js::Texture tex;        
+        JseSamplerDescription sampler{};
+        sampler.minFilter = JseFilter::LINEAR_MIPMAP_LINEAR;
+        sampler.magFilter = JseFilter::LINEAR;
+        sampler.lodBias = 0.f;
+        sampler.maxAnisotropy = 1.0f;
+        sampler.minLod = 0.f;
+        sampler.maxLod = 1000.f;
+        sampler.tilingS = JseImageTiling::CLAMP_TO_BORDER;
+        sampler.tilingT = JseImageTiling::CLAMP_TO_BORDER;
+        sampler.tilingR = JseImageTiling::CLAMP_TO_BORDER;
+        sampler.borderColor = Color4f{ 0.0f };
+        if (tm->LoadTexture("textures/concrete/ConcreteWall02_2K_BaseColor_ect1s.ktx2", sampler, &tex) != Result::SUCCESS) {
             Info("Cannot load texture");
             exit(255);
         }
+
+        ctx.texture = tex.imageId;
+        //R.Frame();
     }
 
 
@@ -476,7 +348,7 @@ bool Demo::Init() {
     write1->info.pBufferInfo[0].buffer = ctx.buf_UbMatrix;
     write1->info.pBufferInfo[0].size = sizeof(UniformMatrixes);
 
-    R.Frame();
+//    R.Frame();
 
 
     ivec2 screen{};
@@ -582,7 +454,7 @@ int main(int argc, char** argv)
         auto demo = std::make_unique<Demo>();
         demo->Init();
         demo->Run();
-        demo->Done();
+        demo->Shutdown();
     }
     catch (std::exception e) { Error("error=%s", e.what()); }
 

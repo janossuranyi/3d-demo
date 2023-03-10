@@ -9,10 +9,11 @@ namespace js {
 	private:
 		TextureByIdMap	texture_map_;
 		GfxRenderer*	hwr_;
+		Result load_ktx(JsString filename, JseImageID image, const JseSamplerDescription& sampler, Texture* resTex);
 	public:
 		TextureManager() = delete;
 		TextureManager(GfxRenderer* gfxRenderer);
-		Result LoadTexture(JsString fileName, Texture** tex);
+		Result LoadTexture(JsString resourceName, const JseSamplerDescription& sampler, Texture* resTex);
 	};
 }
 #endif // !JSE_TEXTURE_MANAGER_H

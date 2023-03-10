@@ -128,24 +128,24 @@ namespace js
 		struct frameData_t {
 			std::atomic_int				frameMemoryPtr;
 			JsSharedPtr<uint8_t>		frameMemory;
-			JseCmdWrapper* cmdTail;
-			JseCmdWrapper* cmdHead;
+			JseCmdWrapper*				cmdTail;
+			JseCmdWrapper*				cmdHead;
 		};
 
 		GfxCore*				core_;
 		Thread					renderThread_;
 		std::mutex				renderThreadMtx_;
 		std::condition_variable	renderThreadSync_;
+		std::atomic_bool		renderThreadSwapBuffers_{ true };
 		bool					renderThreadReady_;
 		bool					renderThreadDoWork_;
 		std::atomic_int			shouldTerminate_{ 0 };
 		std::atomic_int			nextId_{ 1 };
-		std::atomic_bool		renderThreadSwapBuffers_{ true };
+		std::atomic_int			maxFrameMemUsage_{ 0 };
 		size_t					frameMemorySize_{ 0 };
-		int						maxFrameMemUsage_{ 0 };
 		frameData_t				frames_[ON_FLIGHT_FRAMES];
-		frameData_t* frameData_;
-		frameData_t* renderData_;
+		frameData_t*			frameData_;
+		frameData_t*			renderData_;
 		int						activeFrame_;
 		int						renderFrame_;
 		bool					useThread_{};
@@ -158,6 +158,8 @@ namespace js
 		JseHandleGenerator<JseShaderID> shaderGenerator_;
 		JseHandleGenerator<JseImageID> imageGenerator_;
 		JseHandleGenerator<JseBufferID> bufferGenerator_;
+		Result		CreateImage(const JseImageCreateInfo& x);
+		Result		UploadImage(const JseImageUploadInfo& x);
 	public:
 
 		void operator()(const JseCmdEmpty& cmd);
@@ -205,8 +207,6 @@ namespace js
 		JseBufferID	CreateBuffer();
 
 		GfxCore*	core();
-		Result		CreateImage(const JseImageCreateInfo& x);
-		Result		UploadImage(const JseImageUploadInfo& x);
 		Result		InitCore(int w, int h, bool fs, bool useThread);
 
 		uint8_t* R_FrameAlloc(uint32_t bytes);

@@ -14,18 +14,20 @@ namespace js {
 		virtual void Run() {};
 		virtual void Shutdown() {};
 
-		GfxRenderer* GetRenderer();
-		InputManager* GetInputManager();
-		const Config* GetConfig() const;
-		GfxCore* GetCore();
-		VertexCache* GetVertexCache();
+		GfxRenderer*	GetRenderer();
+		InputManager*	GetInputManager();
+		const Config*	GetConfig() const;
+		GfxCore*		GetCore();
+		VertexCache*	GetVertexCache();
+		TextureManager* GetTextureManager();
 	private:
-		void init_();
-		GfxCore* gfxCore_;
-		GfxRenderer* render_backend_;
-		InputManager* inputManager_;
-		VertexCache* vertexCache_;
-		Config* config_;
+		void			init();
+		GfxCore*		gfxCore_;
+		GfxRenderer*	render_backend_;
+		InputManager*	inputManager_;
+		VertexCache*	vertexCache_;
+		TextureManager*	textureManager_;
+		Config*			config_;
 	};
 
 }

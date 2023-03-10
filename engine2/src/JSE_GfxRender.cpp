@@ -263,7 +263,7 @@ namespace js
 
 	GfxRenderer::~GfxRenderer()
 	{
-		Info("Max frame mem usage: %d", maxFrameMemUsage_);
+		Info("Max frame mem usage: %d", maxFrameMemUsage_.load());
 		if (useThread_)
 		{
 			{
@@ -385,7 +385,7 @@ namespace js
 	{
 		bytes = CACHE_LINE_ALIGN(bytes);
 
-		int			end{};
+		int	end{};
 		uint8_t* ret{};
 
 		end = frameData_->frameMemoryPtr.fetch_add(bytes, std::memory_order_relaxed) + bytes;
@@ -396,8 +396,9 @@ namespace js
 
 		ret = frameData_->frameMemory.get() + end - bytes;
 
-		if (end > maxFrameMemUsage_) {
-			maxFrameMemUsage_ = end;
+		int x = maxFrameMemUsage_.load(std::memory_order_relaxed);
+		if (end > x) {
+			maxFrameMemUsage_.compare_exchange_weak(x, end);
 		}
 
 		for (uint32_t offset = 0; offset < bytes; offset += CACHE_LINE_SIZE) {
