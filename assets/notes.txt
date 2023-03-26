@@ -1,7 +1,7 @@
 Metro exodus bump file channels
 
 R: height
-G: roughness
+G: roughness (specular)
 B: metalness
 A: ambient occlusion
 
