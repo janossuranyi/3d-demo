@@ -186,7 +186,7 @@ namespace js {
 
         namespace fs = std::filesystem;
         JsString extension = fs::path(resourceName).extension().generic_string();
-        JseImageID image = hwr_->CreateImage();
+        JseImageID image = hwr_->GenImage();
 
         resTex->imageId = image;
 

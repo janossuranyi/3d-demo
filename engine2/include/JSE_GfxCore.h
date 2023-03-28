@@ -648,7 +648,7 @@ namespace js
         Result BindGraphicsPipeline(JseGrapicsPipelineID pipelineId);
         Result CreateFrameBuffer(const JseFrameBufferCreateInfo& frameBufferCreateInfo);
         Result DeleteFrameBuffer(JseFrameBufferID framebufferId);
-        Result CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
+        Result GenShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput);
         Result BeginRenderPass(const JseRenderPassInfo& renderPassInfo);
         Result CreateDescriptorSetLayout(const JseDescriptorSetLayoutCreateInfo& cmd);
         Result EndRenderPass();

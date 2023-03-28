@@ -202,9 +202,9 @@ namespace js
 
 		uint32_t NextID();
 
-		JseShaderID CreateShader();
-		JseImageID	CreateImage();
-		JseBufferID	CreateBuffer();
+		JseShaderID GenShader();
+		JseImageID	GenImage();
+		JseBufferID	GenBuffer();
 
 		GfxCore*	core();
 		Result		InitCore(int w, int h, bool fs, bool useThread);
@@ -220,7 +220,7 @@ namespace js
 		void	ProcessCommandList(frameData_t* frameData);
 		void	RenderThread();
 		void	SetVSyncInterval(int x);
-		void	WaitForRenderThreadReady();
+		void	WaitForRenderFinish();
 		Result	WaitSync(JseFenceID id, uint64_t timeout);
 
 		static int RenderThreadWrapper(void* data);

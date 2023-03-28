@@ -4,7 +4,7 @@
 #define CACHE_LINE_ALIGN(bytes) (((bytes) + CACHE_LINE_SIZE - 1) & ~(CACHE_LINE_SIZE - 1))
 #define RUN_CORE_CMD(stmt) do {\
 if (useThread_) {\
-	WaitForRenderThreadReady();\
+	WaitForRenderFinish();\
 	core_->BeginRendering();\
 	stmt;\
 	core_->EndRendering();\
@@ -26,6 +26,7 @@ namespace js
 		}
 		else
 		{
+			//WaitForRenderFinish();
 			std::unique_lock<std::mutex> lck(renderThreadMtx_);
 			renderThreadSync_.wait(lck, [this] {return renderThreadReady_; });
 
@@ -79,7 +80,7 @@ namespace js
 	{
 		std::string err;
 		Result r{};
-		if ((r = core_->CreateShader(cmd.info, err)) != Result::SUCCESS) {
+		if ((r = core_->GenShader(cmd.info, err)) != Result::SUCCESS) {
 			Error("Shader %d error: %d - %s", cmd.info.shaderId, r, err.c_str());
 		}
 
@@ -289,17 +290,17 @@ namespace js
 		return SCAST(uint32_t, nextId_.fetch_add(1));
 	}
 
-	JseShaderID GfxRenderer::CreateShader()
+	JseShaderID GfxRenderer::GenShader()
 	{
 		return shaderGenerator_.next();
 	}
 
-	JseImageID GfxRenderer::CreateImage()
+	JseImageID GfxRenderer::GenImage()
 	{
 		return imageGenerator_.next();
 	}
 
-	JseBufferID GfxRenderer::CreateBuffer()
+	JseBufferID GfxRenderer::GenBuffer()
 	{
 		return bufferGenerator_.next();
 	}
@@ -424,7 +425,7 @@ namespace js
 		RUN_CORE_CMD(core_->SetVSyncInterval(x));
 	}
 
-	void GfxRenderer::WaitForRenderThreadReady()
+	void GfxRenderer::WaitForRenderFinish()
 	{
 		if (useThread_) {
 			std::unique_lock<std::mutex> lck(renderThreadMtx_);

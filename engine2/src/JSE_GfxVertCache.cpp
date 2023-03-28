@@ -22,11 +22,11 @@ namespace js {
 
 	void VertexCache::Init()
 	{
-		staticBufferSet_.vertexBuffer = hwr_->CreateBuffer();
-		staticBufferSet_.indexBuffer = hwr_->CreateBuffer();
+		staticBufferSet_.vertexBuffer = hwr_->GenBuffer();
+		staticBufferSet_.indexBuffer = hwr_->GenBuffer();
 		for (int k = 0; k < 2; ++k) {
-			transientBufferSet_[k].vertexBuffer = hwr_->CreateBuffer();
-			transientBufferSet_[k].indexBuffer = hwr_->CreateBuffer();
+			transientBufferSet_[k].vertexBuffer = hwr_->GenBuffer();
+			transientBufferSet_[k].indexBuffer = hwr_->GenBuffer();
 
 			auto* i = hwr_->CreateCommand<JseCmdCreateBuffer>();
 			i->info.bufferId = transientBufferSet_[k].vertexBuffer;

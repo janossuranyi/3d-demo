@@ -76,7 +76,7 @@ namespace js
         return DeleteFrameBuffer_impl(framebufferId);
     }
 
-    Result GfxCore::CreateShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput)
+    Result GfxCore::GenShader(const JseShaderCreateInfo& shaderCreateInfo, std::string& errorOutput)
     {
         return CreateShader_impl(shaderCreateInfo, errorOutput);
     }

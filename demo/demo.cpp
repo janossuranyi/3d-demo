@@ -184,8 +184,8 @@ bool Demo::Init() {
     /* Creating shaders                                        */
     /***********************************************************/
     GfxRenderer& R = *GetRenderer();
-    ctx.shader_vertex = R.CreateShader();
-    ctx.shader_fragment = R.CreateShader();
+    ctx.shader_vertex = R.GenShader();
+    ctx.shader_fragment = R.GenShader();
 
     auto& wr1 = *R.GetCommandBuffer();
     auto& wr2 = *R.GetCommandBuffer();
@@ -252,8 +252,8 @@ bool Demo::Init() {
     /* Creating buffers */
     /***********************************************************/
 
-    ctx.buf_Vertex = R.CreateBuffer();
-    ctx.buf_UbMatrix = R.CreateBuffer();
+    ctx.buf_Vertex = R.GenBuffer();
+    ctx.buf_UbMatrix = R.GenBuffer();
     auto& buf = *R.CreateCommand<JseCmdCreateBuffer>();
     buf.info.bufferId = ctx.buf_Vertex;
     buf.info.size = 64 * 1024;
