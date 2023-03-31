@@ -9,13 +9,13 @@
 
 namespace js {
 
-    struct JseFormat_t {
+    struct Format_t {
         JseFormat fmt;
         bool srgb;
         //JseFormat_t() = default;
     };
 
-	static JseFormat_t MapGLCompressedFmt(uint32_t f) {
+	static Format_t MapGLCompressedFmt(uint32_t f) {
         switch (f)
         {
         case 0x83F0: return { JseFormat::RGB_DXT1, true };
@@ -30,7 +30,7 @@ namespace js {
     }
 
 
-    static const JsHashMap<ktx_uint32_t, JseFormat_t> s_vkf2jse_map{
+    static const JsHashMap<ktx_uint32_t, Format_t> s_vkf2jse_map{
         {VK_FORMAT_BC1_RGB_UNORM_BLOCK,         {JseFormat::RGB_DXT1,    false}},
         {VK_FORMAT_BC1_RGBA_UNORM_BLOCK,        {JseFormat::RGBA_DXT1,   false}},
         {VK_FORMAT_BC1_RGB_SRGB_BLOCK,          {JseFormat::RGB_DXT1,    true}},
@@ -86,7 +86,7 @@ namespace js {
         }
 
         JseImageTarget target{ kTexture->isArray ? JseImageTarget::D2_ARRAY : JseImageTarget::D2 };
-        JseFormat_t format{};
+        Format_t format{};
 
         if (kTexture->classId == ktxTexture2_c)
         {
