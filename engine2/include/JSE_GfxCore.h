@@ -41,7 +41,7 @@ using mat3x4 = glm::mat3x4;
 using quat = glm::quat;
 using Color4f = glm::vec4;
 
-using JseUniformData = std::variant<int, float, glm::ivec2, glm::ivec3, glm::ivec4, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, JsVector<float>, JsVector<glm::vec4>>;
+using JseUniformData = std::variant<int, float, ivec2, ivec3, ivec4, vec2, vec3, vec4, mat3, mat4, JsVector<float>, JsVector<vec4>>;
 using JseUniformMap = JsHashMap<JsString, JseUniformData>;
 
 struct JseRect2D {
@@ -52,7 +52,7 @@ struct JseRect2D {
 };
 
 typedef union JseClearValue {
-    glm::vec4 color;
+    vec4 color;
     float depth;
     int stencil;
 } JseClearValue;
