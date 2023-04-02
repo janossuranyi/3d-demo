@@ -34,15 +34,19 @@ struct TextureFormatInfo {
 
 namespace js
 {
+
 	class GfxCoreGL : public js::GfxCore {
 	public:
 		~GfxCoreGL() override;
 		GfxCoreGL();
 	private:
+		using std_string_set = std::set<std::string>;
+
 		bool useDebugMode_{};
 		SDL_Window* windowHandle_;
 		SDL_GLContext glcontext_;
-		std::set<std::string> gl_extensions_;
+		std_string_set gl_extensions_;
+
 		int glVersion_;
 
 		// Inherited via JseGfxCore
