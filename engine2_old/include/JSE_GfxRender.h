@@ -142,7 +142,7 @@ namespace js
 		std::atomic_int			shouldTerminate_{ 0 };
 		std::atomic_int			nextId_{ 1 };
 		std::atomic_int			maxFrameMemUsage_{ 0 };
-		size_t					frameMemorySize_{ 0 };
+		std::size_t				frameMemorySize_{ 0 };
 		frameData_t				frames_[ON_FLIGHT_FRAMES];
 		frameData_t*			frameData_;
 		frameData_t*			renderData_;
