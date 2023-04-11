@@ -1,5 +1,5 @@
-#ifndef JSR_LOG_H
-#define JSR_LOG_H
+#ifndef JSR_LOGGER_H
+#define JSR_LOGGER_H
 
 #include <string>
 

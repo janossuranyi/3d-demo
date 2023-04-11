@@ -20,12 +20,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 file(GLOB DEMO_H demo/*.h)
 file(GLOB DEMO_C demo/*.cpp)
 
-file(GLOB ENGINE2_INCLUDE engine2/include/*.h)
-file(GLOB ENGINE2_SOURCES engine2/src/*.cpp)
+file(GLOB ENGINE2_I engine2/*.h)
+file(GLOB ENGINE2_S engine2/*.cpp)
 
 set(ENGINE2_FILES
-  ${ENGINE2_INCLUDE}
-  ${ENGINE2_SOURCES}
+  ${ENGINE2_I}
+  ${ENGINE2_S}
 )
 
 

@@ -3,7 +3,7 @@
 #include <time.h>
 #include <SDL.h>
 
-static jsr::LogWriter gLogWriter("demo.log");
+static jsr::LogWriter gLogWriter("jsr.log");
 
 namespace jsr {
 	void LogWriter::Write(const std::string& msg)
@@ -131,5 +131,5 @@ void FatalError(const char* fmt, ...)
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "JSE ERROR", text, NULL);
 	SDL_Quit();
 
-	exit(1);
+	abort();
 }
