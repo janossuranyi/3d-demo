@@ -9,3 +9,38 @@ A: ambient occlusion
 The textures for metalness and roughness properties are packed together in a single texture called metallicRoughnessTexture.
 Its green channel contains roughness values and its blue channel contains metalness values. 
 This texture MUST be encoded with linear transfer function and MAY use more than 8 bits per channel.
+
+
+World
+------
+
+RenderWorld
+: entityDefs: RenderEntity
+: lightDefs: RenderLight
+
+RenderEntity
+: RenderModel
+: modelMatrix
+: entityParms
+  : origin
+  : axis
+  : bounds
+  : noshadow
+
+RenderLight
+: origin
+: axis
+: noshadows
+: isProjected
+: lightRadius
+: lightCenter
+: material* shader
+: ??? shaderParams
+
+RenderModel
+: vector<ModelSurface> surfaces;
+: bounds
+: isStatic
+: Load
+: IsLoaded
+
