@@ -28,7 +28,7 @@ namespace jsr {
 		bool StartWorkerThread(const std::string& name);
 		bool IsWorkDone();
 		void WaitForThread();
-		void SignalWork();
+		virtual void SignalWork();
 
 	protected:
 		virtual int Run();
