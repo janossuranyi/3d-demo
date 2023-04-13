@@ -1,4 +1,4 @@
-#include "RenderSystem.h"
+#include "./RenderSystem.h"
 
 namespace jsr {
 	RenderSystem::RenderSystem()
@@ -16,7 +16,10 @@ namespace jsr {
 		}
 		delete vertexCache;
 		delete backend;
+
+		initialized = false;
 	}
+
 	bool RenderSystem::Init()
 	{
 		if (!backend->Init())
@@ -32,9 +35,6 @@ namespace jsr {
 	}
 	void RenderSystem::Shutdown()
 	{
-		vertexCache->Shutdown();
-		backend->Shutdown();
-		initialized = false;
 	}
 
 	bool RenderSystem::IsInitialized() const

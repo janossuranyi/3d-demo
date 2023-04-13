@@ -14,6 +14,10 @@
 #define JSE_VERTEX_CACHE_SIZE_SHIFT		21
 #define JSE_VERTEX_CACHE_FRAME_SHIFT	42
 
+#define JSE_VERTEX_CACHE_OFFSET_MASK	((1 << JSE_VERTEX_CACHE_OFFSET_BITS) - 1)
+#define JSE_VERTEX_CACHE_SIZE_MASK		((1 << JSE_VERTEX_CACHE_SIZE_BITS) - 1)
+#define JSE_VERTEX_CACHE_FRAME_MASK		((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1)
+#define VERTEX_CACHE_STATIC				(1)
 
 #include "./EngineTypes.h"
 #include "./DrawVert.h"
@@ -23,13 +27,24 @@
 namespace jsr {
 	using vertCacheHandle_t = uint64;
 
-	struct geoBufferSet_t {
+	enum eCacheType
+	{
+		CACHE_VERTEX,
+		CACHE_INDEX,
+		CACHE_UNIFORM
+	};
+
+	struct geoBufferSet_t
+	{
 		VertexBuffer		vertexBuffer;
 		IndexBuffer			indexBuffer;
 		UniformBuffer		uniformBuffer;
 		std::atomic_int		vertexAlloced;
 		std::atomic_int		indexAlloced;
 		std::atomic_int		uniformsAlloced;
+		int					vertexMaxSize;
+		int					indexMaxSize;
+		int					uniformMaxSize;
 		byte* vertexPtr;
 		byte* indexPtr;
 		byte* uniformsPtr;
@@ -48,15 +63,21 @@ namespace jsr {
 		void Shutdown();
 		void Restart();
 		void Frame();
-		vertCacheHandle_t AllocStaticVertex(int vertexCount, int vertexSize = sizeof(drawVert_t));
-		vertCacheHandle_t AllocStaticIndex(int indexCount, int indexSize = 2);
-		vertCacheHandle_t AllocTransientVertex(int vertexCount, int vertexSize = sizeof(drawVert_t));
-		vertCacheHandle_t AllocTransientIndex(int indexCount, int indexSize = 2);
-		vertCacheHandle_t AllocStaticUniform(int size);
-		vertCacheHandle_t AllocTransientUniform(int size);
+		void ClearStaticCache();
+		vertCacheHandle_t AllocStaticVertex(const void* data, int bytes);
+		vertCacheHandle_t AllocStaticIndex(const void* data, int bytes);
+		vertCacheHandle_t AllocStaticUniform(const void* data, int bytes);
+		vertCacheHandle_t AllocTransientVertex(const void* data, int bytes);
+		vertCacheHandle_t AllocTransientIndex(const void* data, int bytes);
+		vertCacheHandle_t AllocTransientUniform(const void* data, int bytes);
 		bool GetVertexBuffer(vertCacheHandle_t handle, VertexBuffer& vertexBuffer);
 		bool GetIndexBuffer(vertCacheHandle_t handle, IndexBuffer& indexBuffer);
 		bool GetUniformBuffer(vertCacheHandle_t handle, UniformBuffer& indexBuffer);
+		bool IsStatic(vertCacheHandle_t handle) const;
+		bool IsCurrent(vertCacheHandle_t handle) const;
+		byte* MappedVertex(vertCacheHandle_t handle) const;
+		byte* MappedIndex(vertCacheHandle_t handle) const;
+		byte* MappedUniform(vertCacheHandle_t handle) const;
 	private:
 
 		int staticCacheSize{};
@@ -71,9 +92,7 @@ namespace jsr {
 		bool initialized{};
 		geoBufferSet_t staticBufferSet{};
 		geoBufferSet_t transientBufferSet[JSE_VERTEX_CACHE_FRAMES]{};
-		vertCacheHandle_t RealAllocVertex(geoBufferSet_t& geoset, int size);
-		vertCacheHandle_t RealAllocIndex(geoBufferSet_t& geoset, int size);
-		vertCacheHandle_t RealAllocUniform(geoBufferSet_t& geoset, int size);
+		vertCacheHandle_t RealAlloc(geoBufferSet_t& gbs, const void* data, int size, eCacheType type);
 	};
 }
 #endif // !JSE_VERT_CACHE_H

@@ -63,8 +63,9 @@ namespace jsr {
 		void* MapBuffer(eBufferMapType mapType);
 		void UnmapBuffer();
 		void MakeView(const BufferObject& other, int refOffset = 0, int refSize = 0);
+		void Bind();
 	private:
-		void ClearWoFreeing()
+		void ClearWithoutFreeing()
 		{
 			offset = 0;
 			buffer = 0;

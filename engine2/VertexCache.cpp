@@ -1,5 +1,6 @@
 #include <cmath>
 #include "./VertexCache.h"
+#include "./Logger.h"
 
 namespace jsr {
 
@@ -7,11 +8,12 @@ namespace jsr {
 	{		
 		staticCacheSize = DEFAULT_MAX_STATIC_CACHE;
 		transientCacheSize = DEFAULT_MAX_TRANSIENT_CACHE;
-		staticUboCacheSize = 4 * 1024 * 1024;
-		transientUboCacheSize = 64 * 1024;
+		staticUboCacheSize = 64 * 1024;
+		transientUboCacheSize = 8 * 1024 * 1024;
 		uniformBufferAligment = 256;
 		uniformBufferAligmentBits = 8;
 	}
+
 	VertexCache::~VertexCache()
 	{
 		Shutdown();
@@ -76,12 +78,25 @@ namespace jsr {
 		for (int k = 0; k < JSE_VERTEX_CACHE_FRAMES; ++k)
 		{
 			AllocBufferSet(transientBufferSet[k], transientCacheSize, transientCacheSize, transientUboCacheSize, BU_DYNAMIC);
+			transientBufferSet[k].indexMaxSize = transientCacheSize;
+			transientBufferSet[k].vertexMaxSize = transientCacheSize;
+			transientBufferSet[k].uniformMaxSize = transientUboCacheSize;
 		}
 		AllocBufferSet(staticBufferSet, staticCacheSize, staticCacheSize, staticUboCacheSize, BU_STATIC);
+		staticBufferSet.indexMaxSize = staticCacheSize;
+		staticBufferSet.vertexMaxSize = staticCacheSize;
+		staticBufferSet.uniformMaxSize = staticUboCacheSize;
+
 		MapBufferSet(transientBufferSet[activeFrame]);
 		MapBufferSet(staticBufferSet);
 		
 		initialized = true;
+		Info("VertexCache initialized");
+		Info("================================================================");
+		Info("     tVert       tIdx       tUbo      sVert       sIdx       sUbo");
+		Info("%10d %10d %10d %10d %10d %10d", transientCacheSize, transientCacheSize, transientUboCacheSize, staticCacheSize, staticCacheSize, staticUboCacheSize);
+		Info("================================================================");
+
 	}
 
 	void VertexCache::Shutdown()
@@ -113,65 +128,62 @@ namespace jsr {
 
 		renderFrame = listNum;
 		listNum = activeFrame % JSE_VERTEX_CACHE_FRAMES;
+
 		MapBufferSet(transientBufferSet[listNum]);
+
 		ClearGeoBufferSet(transientBufferSet[listNum]);
 	}
 
-	vertCacheHandle_t VertexCache::AllocStaticVertex(int vertexCount, int vertexSize)
+	void VertexCache::ClearStaticCache()
 	{
-		vertCacheHandle_t r = (1 << JSE_VERTEX_CACHE_STATIC_SHIFT) | RealAllocVertex(staticBufferSet, vertexCount * vertexSize);
-
-		return r;
+		staticBufferSet.indexAlloced.store(0, std::memory_order_relaxed);
+		staticBufferSet.vertexAlloced.store(0, std::memory_order_relaxed);
+		staticBufferSet.uniformsAlloced.store(0, std::memory_order_relaxed);
 	}
 
-	vertCacheHandle_t VertexCache::AllocStaticIndex(int indexCount, int indexSize)
+	vertCacheHandle_t VertexCache::AllocStaticVertex(const void* data, int size)
 	{
-		vertCacheHandle_t r = (1 << JSE_VERTEX_CACHE_STATIC_SHIFT) | RealAllocIndex(staticBufferSet, indexCount * indexSize);
-
-		return r;
+		return RealAlloc(staticBufferSet, data, size, CACHE_VERTEX);
 	}
 
-	vertCacheHandle_t VertexCache::AllocTransientVertex(int vertexCount, int vertexSize)
+	vertCacheHandle_t VertexCache::AllocStaticIndex(const void* data, int size)
 	{
-		vertCacheHandle_t r = RealAllocVertex(transientBufferSet[listNum], vertexCount * vertexSize) | ((uint64)activeFrame & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1)) << JSE_VERTEX_CACHE_FRAME_SHIFT;
-
-		return r;
+		return RealAlloc(staticBufferSet, data, size, CACHE_INDEX);
 	}
 
-	vertCacheHandle_t VertexCache::AllocTransientIndex(int indexCount, int indexSize)
+	vertCacheHandle_t VertexCache::AllocStaticUniform(const void* data, int size)
 	{
-		vertCacheHandle_t r = RealAllocIndex(transientBufferSet[listNum], indexCount * indexSize) | ((uint64)activeFrame & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1)) << JSE_VERTEX_CACHE_FRAME_SHIFT;
-
-		return r;
+		return RealAlloc(staticBufferSet, data, size, CACHE_UNIFORM);
 	}
 
-	vertCacheHandle_t VertexCache::AllocStaticUniform(int size)
+	vertCacheHandle_t VertexCache::AllocTransientVertex(const void* data, int size)
 	{
-		vertCacheHandle_t r = (1 << JSE_VERTEX_CACHE_STATIC_SHIFT) | RealAllocUniform(staticBufferSet, size);
-
-		return r;
+		return RealAlloc(transientBufferSet[listNum], data, size, CACHE_VERTEX);
 	}
 
-	vertCacheHandle_t VertexCache::AllocTransientUniform(int size)
+	vertCacheHandle_t VertexCache::AllocTransientIndex(const void* data, int size)
 	{
-		vertCacheHandle_t r = RealAllocUniform(transientBufferSet[listNum], size) | ((uint64)activeFrame & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1)) << JSE_VERTEX_CACHE_FRAME_SHIFT;
+		return RealAlloc(transientBufferSet[listNum], data, size, CACHE_INDEX);
+	}
 
-		return r;
+	vertCacheHandle_t VertexCache::AllocTransientUniform(const void* data, int size)
+	{
+		return RealAlloc(transientBufferSet[listNum], data, size, CACHE_UNIFORM);
 	}
 
 	bool VertexCache::GetVertexBuffer(vertCacheHandle_t handle, VertexBuffer& dest)
 	{
 		const bool		isStatic = (handle >> JSE_VERTEX_CACHE_STATIC_SHIFT) & 1;
-		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & ((1 << JSE_VERTEX_CACHE_OFFSET_BITS) - 1));
-		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & ((1 << JSE_VERTEX_CACHE_SIZE_BITS) - 1));
-		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1));
+		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK);
+		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & JSE_VERTEX_CACHE_SIZE_MASK);
+		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK);
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.vertexBuffer, offset << 4, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1)))
+		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
 		{
 			return false;
 		}
@@ -181,16 +193,16 @@ namespace jsr {
 	bool VertexCache::GetIndexBuffer(vertCacheHandle_t handle, IndexBuffer& dest)
 	{
 		const bool		isStatic = (handle >> JSE_VERTEX_CACHE_STATIC_SHIFT) & 1;
-		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & ((1 << JSE_VERTEX_CACHE_OFFSET_BITS) - 1));
-		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & ((1 << JSE_VERTEX_CACHE_SIZE_BITS) - 1));
-		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1));
+		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK);
+		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & JSE_VERTEX_CACHE_SIZE_MASK);
+		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK);
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.indexBuffer, offset << 4, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1)))
+		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
 		{
 			return false;
 		}
@@ -199,56 +211,147 @@ namespace jsr {
 
 	bool VertexCache::GetUniformBuffer(vertCacheHandle_t handle, UniformBuffer& dest)
 	{
-		const bool		isStatic = (handle >> JSE_VERTEX_CACHE_STATIC_SHIFT) & 1;
-		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & ((1 << JSE_VERTEX_CACHE_OFFSET_BITS) - 1));
-		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & (1 << JSE_VERTEX_CACHE_SIZE_BITS - 1));
-		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1));
+		const bool		isStatic = (handle & VERTEX_CACHE_STATIC);
+		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK);
+		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & JSE_VERTEX_CACHE_SIZE_MASK);
+		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK);
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.uniformBuffer, offset << uniformBufferAligmentBits, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & ((1 << JSE_VERTEX_CACHE_FRAME_BITS) - 1)))
+		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
 		{
 			return false;
 		}
 		dest.MakeView(transientBufferSet[renderFrame].uniformBuffer, offset << uniformBufferAligmentBits, size);
 	}
 
-	vertCacheHandle_t VertexCache::RealAllocVertex(geoBufferSet_t& gbs, int size)
+	bool VertexCache::IsStatic(vertCacheHandle_t handle) const
 	{
-		int _size = (size + 15) & ~15;
-		int offset = gbs.vertexAlloced.fetch_add(_size, std::memory_order_relaxed);
-		offset >>= 4;
-
-		vertCacheHandle_t r = ((uint64)offset << JSE_VERTEX_CACHE_OFFSET_SHIFT) | ((uint64)size << JSE_VERTEX_CACHE_SIZE_SHIFT);
-
-		return r;
+		return handle & VERTEX_CACHE_STATIC;
 	}
 
-	vertCacheHandle_t VertexCache::RealAllocUniform(geoBufferSet_t& gbs, int size)
+	bool VertexCache::IsCurrent(vertCacheHandle_t handle) const
 	{
-
-		int align = uniformBufferAligment - 1;
-		int _size = (size + align) & ~align;
-		int offset = gbs.uniformsAlloced.fetch_add(_size, std::memory_order_relaxed);
-		offset >>= uniformBufferAligmentBits;
-
-		vertCacheHandle_t r = ((uint64)offset << JSE_VERTEX_CACHE_OFFSET_SHIFT) | ((uint64)size << JSE_VERTEX_CACHE_SIZE_SHIFT);
-
-		return r;
+		if (handle & VERTEX_CACHE_STATIC)
+		{
+			return true;
+		}
+		
+		return (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK) == (int)((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK);
 	}
 
-	vertCacheHandle_t VertexCache::RealAllocIndex(geoBufferSet_t& gbs, int size)
+	byte* VertexCache::MappedVertex(vertCacheHandle_t handle) const
 	{
-		int _size = (size + 15) & ~15;
-		int offset = gbs.indexAlloced.fetch_add(_size, std::memory_order_relaxed);
-		offset >>= 4;
+		assert(!IsStatic(handle));
+		const uint64 offset		= (handle << JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
+		const uint64 framenum	= (handle << JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
+		assert(framenum == (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK));
 
-		vertCacheHandle_t r = ((uint64)offset << JSE_VERTEX_CACHE_OFFSET_SHIFT) | ((uint64)size << JSE_VERTEX_CACHE_SIZE_SHIFT);
+		return transientBufferSet[listNum].vertexPtr + offset;
+	}
+	byte* VertexCache::MappedIndex(vertCacheHandle_t handle) const
+	{
+		assert(!IsStatic(handle));
+		const uint64 offset = (handle << JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle << JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
+		assert(framenum == (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK));
 
-		return r;
+		return transientBufferSet[listNum].indexPtr + offset;
+	}
+	byte* VertexCache::MappedUniform(vertCacheHandle_t handle) const
+	{
+		assert(!IsStatic(handle));
+		const uint64 offset = (handle << JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle << JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
+		assert(framenum == (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK));
+
+		return transientBufferSet[listNum].uniformsPtr + offset;
+	}
+
+	vertCacheHandle_t VertexCache::RealAlloc(geoBufferSet_t& gbs, const void* data, int bytes, eCacheType type)
+	{
+		if (bytes == 0)
+		{
+			return (vertCacheHandle_t)0;
+		}
+
+		assert((bytes & 15) == 0);
+
+		int	endPos = 0;
+		int offset = 0;
+
+		switch (type)
+		{
+		case CACHE_VERTEX:
+			endPos = gbs.vertexAlloced.fetch_add(bytes, std::memory_order_relaxed) + bytes;
+			if (endPos > gbs.vertexMaxSize)
+			{
+				Error("Out of vertex cache !");
+			}
+			offset = endPos - bytes;
+			if (data != nullptr)
+			{
+				if (gbs.vertexBuffer.GetUsage() == BU_DYNAMIC)
+				{
+					MapBufferSet(gbs);
+				}
+				gbs.vertexBuffer.Update(data, offset, bytes);
+				offset >>= 4;
+			}
+			break;
+
+		case CACHE_INDEX:
+			endPos = gbs.indexAlloced.fetch_add(bytes, std::memory_order_relaxed) + bytes;
+			if (endPos > gbs.indexMaxSize)
+			{
+				Error("Out of index cache !");
+			}
+			offset = endPos - bytes;
+			if (data != nullptr)
+			{
+				if (gbs.indexBuffer.GetUsage() == BU_DYNAMIC)
+				{
+					MapBufferSet(gbs);
+				}
+				gbs.indexBuffer.Update(data, offset, bytes);
+				offset >>= 4;
+			}
+			break;
+
+		case CACHE_UNIFORM:
+			endPos = gbs.uniformsAlloced.fetch_add(bytes, std::memory_order_relaxed) + bytes;
+			if (endPos > gbs.uniformMaxSize)
+			{
+				Error("Out of uniform cache !");
+			}
+			offset = endPos - bytes;
+			if (data != nullptr)
+			{
+				if (gbs.uniformBuffer.GetUsage() == BU_DYNAMIC)
+				{
+					MapBufferSet(gbs);
+				}
+				gbs.uniformBuffer.Update(data, offset, bytes);
+				offset >>= uniformBufferAligmentBits;
+			}
+			break;
+		default:
+			assert(false);
+		}
+
+		vertCacheHandle_t handle =	((uint64)(activeFrame & JSE_VERTEX_CACHE_FRAME_MASK) << JSE_VERTEX_CACHE_FRAME_SHIFT) |
+									((uint64)(offset & JSE_VERTEX_CACHE_OFFSET_MASK) << JSE_VERTEX_CACHE_OFFSET_SHIFT) |
+									((uint64)(bytes & JSE_VERTEX_CACHE_SIZE_MASK) << JSE_VERTEX_CACHE_SIZE_SHIFT);
+
+		if (&gbs == &staticBufferSet)
+		{
+			handle |= VERTEX_CACHE_STATIC;
+		}
+
+		return handle;
 	}
 
 }

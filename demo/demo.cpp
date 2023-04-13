@@ -8,6 +8,29 @@
 #include "engine2/BufferObject.h"
 #include "engine2/Image.h"
 #include "engine2/Logger.h"
+#include "engine2/ThreadWorker.h"
+
+using namespace std::chrono;
+
+class XWorker : public jsr::ThreadWorker
+{
+public:
+    XWorker(int x) { this->X = x; this->Y = 0; }
+    int GetX() const { return X; }
+    int GetY() const { return Y; }
+    int Run() override;
+private:
+    int X;
+    int Y;
+};
+
+int XWorker::Run()
+{
+    std::this_thread::sleep_for(milliseconds(X));
+    Y += X;
+
+    return 0;
+}
 
 int main(int argc, char** argv)
 {
@@ -48,9 +71,24 @@ int main(int argc, char** argv)
 
     SDL_Event e;
 
+    XWorker wk(20);
+    wk.StartWorkerThread("yuppi");
+
+    int y = wk.GetY();
     while (!quit)
     {
+        if (y != wk.GetY())
+        {
+            y = wk.GetY();
+            if ((y % 1000) == 0) {
+                Info("Y = %d", y);
+            }
+        }
+
+
         jsr::renderSystem.Frame();
+        wk.SignalWork();
+
         while (SDL_PollEvent(&e) != SDL_FALSE)
         {
             if (e.type == SDL_QUIT)
@@ -59,8 +97,9 @@ int main(int argc, char** argv)
                 break;
             }
         }
-        std::this_thread::sleep_for(1ms);
+        //wk.WaitForThread();
     }
+
 
     jsr::renderSystem.Shutdown();
 
