@@ -14,11 +14,11 @@
 
 using namespace std::chrono;
 
-int xdata[3] = { 1,2,3 };
+int xdata[] = { 1,2,3,4 };
 
 void task(int* data)
 {
-    std::cout << "data = " << *data << ", tid = " << std::this_thread::get_id() << std::endl;
+    std::cout << std::endl << "data = " << *data << ", tid = " << std::this_thread::get_id() << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -32,16 +32,24 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    jsr::TaskExecutor te;
-    te.Start(1);
-    te.SetSingleTask(true);
+    jsr::TaskExecutor t1;
+    jsr::TaskExecutor t2;
+
+    t1.Start(1);
+    t1.SetSingleTask(true);
+    t2.Start(2);
+    t2.SetSingleTask(true);
+    jsr::TaskExecutor* pool[]{ &t1,&t2 };
 
     jsr::TaskList tl(1);
     tl.AddTask((jsr::taskfun_t)task, &xdata[0]);
     tl.AddTask((jsr::taskfun_t)task, &xdata[1]);
     tl.AddTask((jsr::taskfun_t)task, &xdata[2]);
-    tl.Submit(&te);
+    tl.AddTask((jsr::taskfun_t)task, &xdata[3]);
+
+    tl.Submit(pool, 2);
     tl.Wait();
+    Info("TaskList finished");
 
     std::atomic_bool quit{};
     jsr::Image* im = new jsr::Image("imag1");

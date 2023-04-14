@@ -237,6 +237,7 @@ namespace jsr {
 
 		glBlendColor(0.f, 0.f, 0.f, 0.f);
 		glBlendFunc(GL_ONE, GL_ZERO);
+		glBlendEquation(GL_FUNC_ADD);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDepthMask(GL_TRUE);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

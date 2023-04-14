@@ -29,7 +29,7 @@ namespace jsr {
 		if (!renderSystem.IsInitialized()) return;
 
 		const int texunit = renderSystem.backend->GetCurrentTextureUnit();
-		tmu_t* tmu = renderSystem.backend->GetTextureUnit(texunit);
+		tmu_t* tmu = &glcontext.tmu[texunit];
 
 		bool dirty = false;
 
@@ -151,15 +151,19 @@ namespace jsr {
 	void Image::SetTextureParameters() const
 	{
 		if (!created) return;
+		const float borderColor[] = { 0.0f,0.0f,0.0f,1.0f };
 		//Bind();
 		GL_CHECK(glTexParameteri(apiTarget, GL_TEXTURE_WRAP_S, GL_map_texrepeat(wrapS)));
 		GL_CHECK(glTexParameteri(apiTarget, GL_TEXTURE_WRAP_T, GL_map_texrepeat(wrapT)));
 		GL_CHECK(glTexParameteri(apiTarget, GL_TEXTURE_MIN_FILTER, GL_map_texfilter(minFilter)));
 		GL_CHECK(glTexParameteri(apiTarget, GL_TEXTURE_MAG_FILTER, GL_map_texfilter(magFilter)));
 		//glTexParameteri(apiTarget, GL_TEXTURE_MAX_LEVEL, numLevel - 1);
-		//glTexParameteri(apiTarget, GL_TEXTURE_MAX_LOD, numLevel - 1);
-		//glTexParameteri(apiTarget, GL_TEXTURE_MIN_LOD, 0);
 		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_ANISOTROPY, opts.maxAnisotropy));
+		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MIN_LOD, 0.0f));
+		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_LOD, (float)(opts.numLevel - 1)));
+		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_LOD_BIAS, 0.0f));
+		GL_CHECK(glTexParameterfv(apiTarget, GL_TEXTURE_BORDER_COLOR, &borderColor[0]));
+
 	}
 
 	bool Image::AllocImage(const imageOpts_t& opts_, eImageFilter minFilter, eImageRepeat repeat)

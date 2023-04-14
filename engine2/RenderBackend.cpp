@@ -10,7 +10,7 @@ namespace jsr {
 	RenderBackend::RenderBackend()
 	{
 		glcontext.frameCounter = 0;
-		std::memset(glcontext.tmu, -1, sizeof(glcontext.tmu));
+		std::memset(glcontext.tmu, 0xffff, sizeof(glcontext.tmu));
 		currenttmu = 0;
 		currentLayout = VL_NONE;
 		currentFramebuffer = nullptr;
@@ -21,7 +21,7 @@ namespace jsr {
 		initialized = false;
 	}
 
-	bool jsr::RenderBackend::IsInitialized() const
+	bool RenderBackend::IsInitialized() const
 	{
 		return initialized;
 	}

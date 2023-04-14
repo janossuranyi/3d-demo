@@ -16,7 +16,7 @@ namespace jsr {
 	void TaskList::AddTask(taskfun_t fn, void* data)
 	{
 		taskList.emplace_back(fn, data, 0);
-		taskCount.fetch_add(1);
+		taskCount.fetch_add(1, std::memory_order_release);
 	}
 
 	void TaskList::Submit(TaskExecutor* executor)
@@ -41,6 +41,15 @@ namespace jsr {
 		{
 			executor->AddTaskList(this);
 			executor->SignalWork();
+		}
+	}
+
+	void TaskList::Submit(TaskExecutor** pool, int numPool)
+	{
+		for (int i = 0; i < numPool; ++i)
+		{
+			pool[i]->AddTaskList(this);
+			pool[i]->SignalWork();
 		}
 	}
 
@@ -100,14 +109,14 @@ namespace jsr {
 		int result = TASK_OK;
 
 		do {
-			if (listLock.fetch_add(1) == 0)
+			if (listLock.fetch_add(1, std::memory_order_acq_rel) == 0)
 			{
 				state.nextIndex = currentTask.fetch_add(1, std::memory_order_relaxed);
-				listLock.fetch_sub(1);
+				listLock.fetch_sub(1, std::memory_order_release);
 			}
 			else
 			{
-				listLock.fetch_sub(1);
+				listLock.fetch_sub(1, std::memory_order_release);
 				return result | TASK_STALLED;
 			}
 
@@ -193,7 +202,14 @@ namespace jsr {
 			int currentTaskList = 0;
 			if (lastStalledTaskList > -1)
 			{
-
+				// try to find another tasklist
+				for (int i = currentTaskList; i < numTaskLists; ++i)
+				{
+					if (lastStalledTaskList != i)
+					{
+						currentTaskList = i;
+					}
+				}
 			}
 
 			int result = localList[currentTaskList].taskList->RunTasks(threadNum, localList[currentTaskList], singleTask);

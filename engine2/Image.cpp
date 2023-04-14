@@ -53,7 +53,8 @@ namespace jsr {
 			KTX_TEXTURE_CREATE_NO_FLAGS,
 			&kTexture);
 
-		if (ktxresult != KTX_SUCCESS) {
+		if (ktxresult != KTX_SUCCESS)
+		{
 			Error("ktxTexture_CreateFromNamedFile failed!");
 			return false;
 		}
@@ -82,22 +83,26 @@ namespace jsr {
 		}
 
 		auto fmt = s_vkf2jse_map.find(ktxTexture_GetVkFormat(kTexture));
-		if (fmt == s_vkf2jse_map.end()) {
+		if (fmt == s_vkf2jse_map.end())
+		{
 			Error("KTX2::format %d not found!", ktxTexture_GetVkFormat(kTexture));
 			ktxTexture_Destroy(kTexture);
 			return false;
 		}
 
 		format = fmt->second;
-		if (kTexture->isCubemap) {
+		if (kTexture->isCubemap)
+		{
 			target = kTexture->isArray ? IMS_CUBEMAP_ARRAY : IMS_CUBEMAP;
 		}
-		else if (kTexture->numDimensions == 1) {
+		else if (kTexture->numDimensions == 1)
+		{
 			Error("1D texture not supported !");
 			ktxTexture_Destroy(kTexture);
 			return false;
 		}
-		else if (kTexture->numDimensions == 3) {
+		else if (kTexture->numDimensions == 3)
+		{
 			Error("3D texture not supported !");
 			ktxTexture_Destroy(kTexture);
 			return false;

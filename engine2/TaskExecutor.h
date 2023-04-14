@@ -53,6 +53,7 @@ namespace jsr {
 
 		void	AddTask(taskfun_t fn, void* data);
 		void	Submit(TaskExecutor* executor = nullptr);
+		void	Submit(TaskExecutor** pool, int numPool);
 		bool	IsSubmitted() const;
 		void	Wait();
 		int		GetId() const;
