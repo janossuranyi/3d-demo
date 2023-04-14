@@ -8,7 +8,7 @@
 
 namespace jsr {
 
-	const int MAX_TASK_NUM = 32;
+	const int MAX_TASK_NUM = 32;	// must be 2^n
 
 	typedef void(*taskfun_t)(void*);
 
@@ -37,7 +37,13 @@ namespace jsr {
 			nextIndex(0) {}
 	};
 
-	enum taskResult_t
+	enum eTaskListPriority 
+	{
+		PRIO_LOW,
+		PRIO_HIGH
+	};
+
+	enum eTaskResult
 	{
 		TASK_OK = 0,
 		TASK_PROGRESS = 1,
@@ -49,7 +55,7 @@ namespace jsr {
 	class TaskList
 	{
 	public:
-		TaskList(int id);
+		TaskList(int id, int prio);
 
 		void	AddTask(taskfun_t fn, void* data);
 		void	Submit(TaskExecutor* executor = nullptr);
@@ -58,12 +64,14 @@ namespace jsr {
 		void	Wait();
 		int		GetId() const;
 		int		GetVersion() const;
+		int		GetPriority() const;
 		int		RunTasks(int threadNum, taskListState_t& state, bool oneshot);
 
 	private:
 		int		InternalRunTasks(int threadNum, taskListState_t& state, bool oneshot);
 		int					id;
 		bool				done;
+		int					priority;
 		std::vector<task_t>	taskList;
 		std::atomic_int		taskCount;
 		std::atomic_int		listLock;
@@ -73,22 +81,19 @@ namespace jsr {
 
 	};
 
-	struct workerTask_t
-	{
-		TaskList* taskList;
-		int version;
-	};
-
 	class TaskExecutor : public ThreadWorker
 	{
 	public:
 		TaskExecutor();
 		void Start(unsigned int threadNum);
 		void AddTaskList(TaskList* p0);
-		void SetSingleTask(bool b);
-		bool GetSingleTask() const;
 	private:
-		bool singleTask;
+		struct workerTask_t
+		{
+			TaskList* taskList;
+			int version;
+		};
+
 		std::array<workerTask_t, MAX_TASK_NUM> taskList;
 		unsigned int first;
 		unsigned int last;
@@ -96,6 +101,19 @@ namespace jsr {
 		std::mutex mtx;
 
 		int Run() override;
+	};
+
+	class TaskListManager
+	{
+	public:
+		TaskListManager();
+		bool Init();
+		void Shutdown();
+		bool IsInitalized() const;
+		void Submit(TaskList* taskList);
+	private:
+		bool initialized;
+		std::vector<TaskExecutor> threadPool;
 	};
 }
 

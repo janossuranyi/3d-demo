@@ -4,11 +4,12 @@
 
 namespace jsr {
 
-	TaskList::TaskList(int id_) :
+	TaskList::TaskList(int id_, int prio) :
 		id(id_),
 		currentTask(0),
 		listLock(0),
-		done(true)
+		done(true),
+		priority(prio)
 	{
 		taskList.reserve(32);
 	}
@@ -90,6 +91,11 @@ namespace jsr {
 		return version.load(std::memory_order_acquire);
 	}
 
+	int TaskList::GetPriority() const
+	{
+		return priority;
+	}
+
 	int TaskList::RunTasks(int threadNum, taskListState_t& state, bool oneshot)
 	{
 		executorThreadCount.fetch_add(1, std::memory_order_release);
@@ -141,8 +147,7 @@ namespace jsr {
 		taskList(),
 		first(0),
 		last(0),
-		threadNum(0),
-		singleTask(true)
+		threadNum(0)
 	{
 	}
 
@@ -166,16 +171,6 @@ namespace jsr {
 		taskList[last & (MAX_TASK_NUM - 1)].taskList = p0;
 		taskList[last & (MAX_TASK_NUM - 1)].version = p0->GetVersion();
 		last++;
-	}
-
-	void TaskExecutor::SetSingleTask(bool b)
-	{
-		singleTask = b;
-	}
-
-	bool TaskExecutor::GetSingleTask() const
-	{
-		return singleTask;
 	}
 
 	int TaskExecutor::Run()
@@ -212,6 +207,7 @@ namespace jsr {
 				}
 			}
 
+			bool singleTask = localList[currentTaskList].taskList->GetPriority() == PRIO_HIGH ? true : false;
 			int result = localList[currentTaskList].taskList->RunTasks(threadNum, localList[currentTaskList], singleTask);
 
 			if ((result & TASK_DONE) != 0)
@@ -240,4 +236,8 @@ namespace jsr {
 		}
 		return 0;
 	}	
+	bool TaskListManager::IsInitalized() const
+	{
+		return initialized;
+	}
 }

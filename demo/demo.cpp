@@ -11,6 +11,7 @@
 #include "engine2/Logger.h"
 #include "engine2/ThreadWorker.h"
 #include "engine2/TaskExecutor.h"
+#include "engine2/System.h"
 
 using namespace std::chrono;
 
@@ -25,6 +26,8 @@ int main(int argc, char** argv)
 {
     using namespace std::chrono_literals;
 
+    jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
+
     std::cout << "tid = " << std::this_thread::get_id() << std::endl;
 
     if (!jsr::renderSystem.Init())
@@ -36,12 +39,10 @@ int main(int argc, char** argv)
     jsr::TaskExecutor t2;
 
     t1.Start(1);
-    t1.SetSingleTask(true);
     t2.Start(2);
-    t2.SetSingleTask(true);
     jsr::TaskExecutor* pool[]{ &t1,&t2 };
 
-    jsr::TaskList tl(1);
+    jsr::TaskList tl(1, jsr::PRIO_LOW);
     tl.AddTask((jsr::taskfun_t)task, &xdata[0]);
     tl.AddTask((jsr::taskfun_t)task, &xdata[1]);
     tl.AddTask((jsr::taskfun_t)task, &xdata[2]);
