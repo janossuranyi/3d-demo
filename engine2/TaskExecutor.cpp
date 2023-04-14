@@ -1,6 +1,8 @@
 #include <cassert>
 #include <thread>
 #include "./TaskExecutor.h"
+#include "./System.h"
+#include "./Logger.h"
 
 namespace jsr {
 
@@ -20,7 +22,7 @@ namespace jsr {
 		taskCount.fetch_add(1, std::memory_order_release);
 	}
 
-	void TaskList::Submit(TaskExecutor* executor)
+	void TaskList::Submit(TaskListExecutor* executor)
 	{
 		assert(done);
 		assert(listLock == 0);
@@ -45,7 +47,7 @@ namespace jsr {
 		}
 	}
 
-	void TaskList::Submit(TaskExecutor** pool, int numPool)
+	void TaskList::Submit(TaskListExecutor** pool, int numPool)
 	{
 		for (int i = 0; i < numPool; ++i)
 		{
@@ -70,7 +72,7 @@ namespace jsr {
 
 			version.fetch_add(1, std::memory_order_release);
 
-			while (executorThreadCount.load(std::memory_order_acquire) > 0)
+			while (executorThreadCount.load(std::memory_order_relaxed) > 0)
 			{
 				std::this_thread::yield();
 			}
@@ -98,9 +100,9 @@ namespace jsr {
 
 	int TaskList::RunTasks(int threadNum, taskListState_t& state, bool oneshot)
 	{
-		executorThreadCount.fetch_add(1, std::memory_order_release);
+		executorThreadCount.fetch_add(1, std::memory_order_relaxed);
 		int result = InternalRunTasks(threadNum, state, oneshot);
-		executorThreadCount.fetch_sub(1, std::memory_order_release);
+		executorThreadCount.fetch_sub(1, std::memory_order_relaxed);
 
 		return result;
 	}
@@ -115,14 +117,14 @@ namespace jsr {
 		int result = TASK_OK;
 
 		do {
-			if (listLock.fetch_add(1, std::memory_order_acq_rel) == 0)
+			if (listLock.fetch_add(1, std::memory_order_relaxed) == 0)
 			{
 				state.nextIndex = currentTask.fetch_add(1, std::memory_order_relaxed);
-				listLock.fetch_sub(1, std::memory_order_release);
+				listLock.fetch_sub(1, std::memory_order_relaxed);
 			}
 			else
 			{
-				listLock.fetch_sub(1, std::memory_order_release);
+				listLock.fetch_sub(1, std::memory_order_relaxed);
 				return result | TASK_STALLED;
 			}
 
@@ -133,7 +135,7 @@ namespace jsr {
 
 			taskList[state.nextIndex].function(taskList[state.nextIndex].payload);
 			taskList[state.nextIndex].executed = 1;
-			taskCount.fetch_sub(1, std::memory_order_release);
+			taskCount.fetch_sub(1, std::memory_order_relaxed);
 
 			result |= TASK_PROGRESS;
 
@@ -143,51 +145,58 @@ namespace jsr {
 	}
 
 
-	TaskExecutor::TaskExecutor() :
+	TaskListExecutor::TaskListExecutor() :
 		taskList(),
-		first(0),
-		last(0),
+		readIndex(0),
+		writeIndex(0),
 		threadNum(0)
 	{
 	}
+	TaskListExecutor::~TaskListExecutor()
+	{
+		StopThread(true);
+		//Info("TaskExecutor %s stopped", GetName().c_str());
+	}
 
-	void TaskExecutor::Start(unsigned int threadNum)
+	void TaskListExecutor::Start(unsigned int threadNum)
 	{
 		this->threadNum = threadNum;
 		char tmp[100];
-		snprintf(tmp, 100, "SJTask-%d", threadNum);
+		snprintf(tmp, 100, "jsrTask-%d", threadNum);
 		StartWorkerThread(tmp);
+		//Info("TaskExecutor %s started", tmp);
 	}
 
-	void TaskExecutor::AddTaskList(TaskList* p0)
+	void TaskListExecutor::AddTaskList(TaskList* p0)
 	{
 		std::lock_guard<std::mutex> lock(mtx);
 
-		while (last - first >= taskList.size())
+		while ( writeIndex - readIndex >= MAX_TASK_NUM )
 		{
+			// ring buffer is full
 			std::this_thread::yield();
 		}
 
-		taskList[last & (MAX_TASK_NUM - 1)].taskList = p0;
-		taskList[last & (MAX_TASK_NUM - 1)].version = p0->GetVersion();
-		last++;
+		taskList[ writeIndex & (MAX_TASK_NUM - 1) ].taskList = p0;
+		taskList[ writeIndex & (MAX_TASK_NUM - 1) ].version = p0->GetVersion();
+		writeIndex++;
 	}
 
-	int TaskExecutor::Run()
+	int TaskListExecutor::Run()
 	{
 		taskListState_t localList[MAX_TASK_NUM];
 
 		int numTaskLists = 0;
 		int lastStalledTaskList = -1;
-		while (!IsTerminating())
+		while ( !IsTerminating() )
 		{
-			if (numTaskLists < MAX_TASK_NUM && first < last)
+			if (numTaskLists < MAX_TASK_NUM && readIndex < writeIndex)
 			{
-				localList[numTaskLists].taskList = taskList[first & (MAX_TASK_NUM - 1)].taskList;
-				localList[numTaskLists].version = taskList[first & (MAX_TASK_NUM - 1)].version;
-				localList[numTaskLists].nextIndex = -1;
+				localList[ numTaskLists ].taskList	= taskList[ readIndex & (MAX_TASK_NUM - 1) ].taskList;
+				localList[ numTaskLists ].version	= taskList[ readIndex & (MAX_TASK_NUM - 1) ].version;
+				localList[ numTaskLists ].nextIndex	= -1;
 				numTaskLists++;
-				first++;
+				readIndex++;
 			}
 			if (numTaskLists == 0)
 			{
@@ -200,7 +209,7 @@ namespace jsr {
 				// try to find another tasklist
 				for (int i = currentTaskList; i < numTaskLists; ++i)
 				{
-					if (lastStalledTaskList != i)
+					if (lastStalledTaskList != i && localList[i].taskList->GetPriority() > localList[currentTaskList].taskList->GetPriority())
 					{
 						currentTaskList = i;
 					}
@@ -235,9 +244,76 @@ namespace jsr {
 			}
 		}
 		return 0;
-	}	
-	bool TaskListManager::IsInitalized() const
+	}
+
+
+	TaskManager::TaskManager() : initialized(false)
+	{
+	}
+
+	TaskManager::~TaskManager()
+	{
+		Shutdown();
+	}
+
+	bool TaskManager::Init()
+	{
+		int numCore = GetCpuCount();
+		if (numCore > 4)
+		{
+			numCore = 32;
+		}
+
+		Info("* TaskManager: Launching %d threads...", numCore);
+
+		for (int i = 0; i < numCore; ++i)
+		{
+			auto* t = threadPool.emplace_back(new TaskListExecutor());
+			t->Start(i);
+		}
+		initialized = true;
+
+		return true;
+	}
+
+	void TaskManager::Shutdown()
+	{
+		if (initialized)
+		{
+			initialized = false;
+			for (auto* t : threadPool)
+			{
+				delete t;
+			}
+			threadPool.clear();
+		}
+	}
+
+	bool TaskManager::IsInitalized() const
 	{
 		return initialized;
+	}
+	void TaskManager::Submit(TaskList* taskList, bool threaded)
+	{
+		if (!IsInitalized() || !threaded)
+		{
+			taskListState_t state{};
+			state.version = taskList->GetVersion();
+			taskList->RunTasks(0, state, false);
+		}
+		else if (taskList->GetPriority() == PRIO_HIGH)
+		{
+			for (auto* t : threadPool)
+			{
+				t->AddTaskList(taskList);
+				t->SignalWork();
+			}
+		}
+		else
+		{
+			unsigned int next = (unsigned int)nextThread.fetch_add(1, std::memory_order_relaxed);
+			threadPool[next % threadPool.size()]->AddTaskList(taskList);
+			threadPool[next % threadPool.size()]->SignalWork();
+		}
 	}
 }

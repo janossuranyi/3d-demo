@@ -24,32 +24,31 @@ void task(int* data)
 
 int main(int argc, char** argv)
 {
+    Info("JS Engine Demo v0.1");
+    Info("Platform: %s, PID: %d", jsr::GetPlatform(), std::this_thread::get_id());
+
     using namespace std::chrono_literals;
 
-    jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
+    //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 
-    std::cout << "tid = " << std::this_thread::get_id() << std::endl;
 
     if (!jsr::renderSystem.Init())
     {
         return 0;
     }
 
-    jsr::TaskExecutor t1;
-    jsr::TaskExecutor t2;
+    jsr::TaskManager tmgr;
+    tmgr.Init();
 
-    t1.Start(1);
-    t2.Start(2);
-    jsr::TaskExecutor* pool[]{ &t1,&t2 };
-
-    jsr::TaskList tl(1, jsr::PRIO_LOW);
+    jsr::TaskList tl(100, jsr::PRIO_HIGH);
     tl.AddTask((jsr::taskfun_t)task, &xdata[0]);
     tl.AddTask((jsr::taskfun_t)task, &xdata[1]);
     tl.AddTask((jsr::taskfun_t)task, &xdata[2]);
     tl.AddTask((jsr::taskfun_t)task, &xdata[3]);
 
-    tl.Submit(pool, 2);
+    tmgr.Submit(&tl);
     tl.Wait();
+
     Info("TaskList finished");
 
     std::atomic_bool quit{};
@@ -99,7 +98,7 @@ int main(int argc, char** argv)
     }
 
 
-    jsr::renderSystem.Shutdown();
+    //jsr::renderSystem.Shutdown();
 
     return 0;
 }

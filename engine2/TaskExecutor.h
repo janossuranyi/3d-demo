@@ -51,15 +51,15 @@ namespace jsr {
 		TASK_STALLED = 4
 	};
 
-	class TaskExecutor;
+	class TaskListExecutor;
 	class TaskList
 	{
 	public:
 		TaskList(int id, int prio);
 
 		void	AddTask(taskfun_t fn, void* data);
-		void	Submit(TaskExecutor* executor = nullptr);
-		void	Submit(TaskExecutor** pool, int numPool);
+		void	Submit(TaskListExecutor* executor = nullptr);
+		void	Submit(TaskListExecutor** pool, int numPool);
 		bool	IsSubmitted() const;
 		void	Wait();
 		int		GetId() const;
@@ -81,10 +81,11 @@ namespace jsr {
 
 	};
 
-	class TaskExecutor : public ThreadWorker
+	class TaskListExecutor : public ThreadWorker
 	{
 	public:
-		TaskExecutor();
+		TaskListExecutor();
+		~TaskListExecutor();
 		void Start(unsigned int threadNum);
 		void AddTaskList(TaskList* p0);
 	private:
@@ -94,26 +95,29 @@ namespace jsr {
 			int version;
 		};
 
-		std::array<workerTask_t, MAX_TASK_NUM> taskList;
-		unsigned int first;
-		unsigned int last;
+		// ringbuffer
+		workerTask_t taskList[ MAX_TASK_NUM ];
+		unsigned int readIndex;
+		unsigned int writeIndex;
 		unsigned int threadNum;
 		std::mutex mtx;
 
 		int Run() override;
 	};
 
-	class TaskListManager
+	class TaskManager
 	{
 	public:
-		TaskListManager();
+		TaskManager();
+		~TaskManager();
 		bool Init();
 		void Shutdown();
 		bool IsInitalized() const;
-		void Submit(TaskList* taskList);
+		void Submit(TaskList* taskList, bool threaded = true);
 	private:
 		bool initialized;
-		std::vector<TaskExecutor> threadPool;
+		std::atomic_int nextThread;
+		std::vector<TaskListExecutor*> threadPool;
 	};
 }
 
