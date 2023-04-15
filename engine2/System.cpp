@@ -18,7 +18,7 @@ namespace jsr {
         return SDL_GetSystemRAM();
     }
 
-    int MessageBox(uint32_t flags, const char* title, const char* message) {
+    int MessageBox(unsigned int flags, const char* title, const char* message) {
         Uint32 _flags{};
         switch (flags) {
         case MESSAGEBOX_ERROR:
@@ -34,5 +34,9 @@ namespace jsr {
 
         return SDL_ShowSimpleMessageBox(_flags, title, message, NULL);
 
+    }
+    uint64 GetTimeMillisecond()
+    {
+        return SDL_GetTicks64();
     }
 }

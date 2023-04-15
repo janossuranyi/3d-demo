@@ -24,14 +24,14 @@ namespace jsr {
 			executed(p2) {}
 	};
 
-	struct taskListState_t
+	struct taskListThreadState_t
 	{
 		class TaskList* taskList;
 		int version;
 		int nextIndex;
 
-		taskListState_t() = default;
-		taskListState_t(int version_) :
+		taskListThreadState_t() = default;
+		taskListThreadState_t(int version_) :
 			taskList(),
 			version(version_),
 			nextIndex(0) {}
@@ -56,7 +56,7 @@ namespace jsr {
 	{
 	public:
 		TaskList(int id, int prio);
-
+		~TaskList();
 		void	AddTask(taskfun_t fn, void* data);
 		void	Submit(TaskListExecutor* executor = nullptr);
 		void	Submit(TaskListExecutor** pool, int numPool);
@@ -65,10 +65,10 @@ namespace jsr {
 		int		GetId() const;
 		int		GetVersion() const;
 		int		GetPriority() const;
-		int		RunTasks(int threadNum, taskListState_t& state, bool oneshot);
+		int		RunTasks(int threadNum, taskListThreadState_t& state, bool oneshot);
 
 	private:
-		int		InternalRunTasks(int threadNum, taskListState_t& state, bool oneshot);
+		int		InternalRunTasks(int threadNum, taskListThreadState_t& state, bool oneshot);
 		int					id;
 		bool				done;
 		int					priority;
@@ -78,7 +78,6 @@ namespace jsr {
 		std::atomic_int		currentTask;
 		std::atomic_int		executorThreadCount;
 		std::atomic_int		version;
-
 	};
 
 	class TaskListExecutor : public ThreadWorker
@@ -100,6 +99,7 @@ namespace jsr {
 		unsigned int readIndex;
 		unsigned int writeIndex;
 		unsigned int threadNum;
+		unsigned int jobCount;
 		std::mutex mtx;
 
 		int Run() override;

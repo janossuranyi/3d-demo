@@ -16,10 +16,14 @@ namespace jsr {
 		taskList.reserve(32);
 	}
 
+	TaskList::~TaskList()
+	{
+	}
+
 	void TaskList::AddTask(taskfun_t fn, void* data)
 	{
 		taskList.emplace_back(fn, data, 0);
-		taskCount.fetch_add(1, std::memory_order_release);
+		taskCount++;
 	}
 
 	void TaskList::Submit(TaskListExecutor* executor)
@@ -37,7 +41,7 @@ namespace jsr {
 
 		if (!executor)
 		{
-			taskListState_t state(GetVersion());
+			taskListThreadState_t state(GetVersion());
 			RunTasks(0, state, false);
 		}
 		else
@@ -65,20 +69,21 @@ namespace jsr {
 	{
 		if (!taskList.empty())
 		{
-			while (taskCount.load(std::memory_order_acquire) > 0)
+			while (taskCount.load(std::memory_order_relaxed) > 0)
 			{
 				std::this_thread::yield();
 			}
 
-			version.fetch_add(1, std::memory_order_release);
+			version++;
 
+			// worker threads may still running
 			while (executorThreadCount.load(std::memory_order_relaxed) > 0)
 			{
 				std::this_thread::yield();
 			}
 
 			taskList.clear();
-			taskCount.store(0);
+			taskCount = 0;
 		}		
 		done = true;
 	}
@@ -90,7 +95,7 @@ namespace jsr {
 
 	int TaskList::GetVersion() const
 	{
-		return version.load(std::memory_order_acquire);
+		return version;
 	}
 
 	int TaskList::GetPriority() const
@@ -98,7 +103,7 @@ namespace jsr {
 		return priority;
 	}
 
-	int TaskList::RunTasks(int threadNum, taskListState_t& state, bool oneshot)
+	int TaskList::RunTasks(int threadNum, taskListThreadState_t& state, bool oneshot)
 	{
 		executorThreadCount.fetch_add(1, std::memory_order_relaxed);
 		int result = InternalRunTasks(threadNum, state, oneshot);
@@ -107,8 +112,10 @@ namespace jsr {
 		return result;
 	}
 
-	int TaskList::InternalRunTasks(int threadNum, taskListState_t& state, bool oneshot)
+	int TaskList::InternalRunTasks(int threadNum, taskListThreadState_t& state, bool oneshot)
 	{
+		assert(this == state.taskList);
+
 		if (state.version != GetVersion())
 		{
 			return TASK_DONE;
@@ -117,22 +124,26 @@ namespace jsr {
 		int result = TASK_OK;
 
 		do {
-			if (listLock.fetch_add(1, std::memory_order_relaxed) == 0)
+			state.nextIndex = currentTask.fetch_add(1, std::memory_order_relaxed);
+			/*
+			if (listLock++ == 0)
 			{
+				// lock aquaired (critical section)
 				state.nextIndex = currentTask.fetch_add(1, std::memory_order_relaxed);
-				listLock.fetch_sub(1, std::memory_order_relaxed);
+				listLock--;
 			}
 			else
 			{
-				listLock.fetch_sub(1, std::memory_order_relaxed);
+				// lock failed
+				listLock--;
 				return result | TASK_STALLED;
 			}
-
+			*/
 			if (state.nextIndex >= taskList.size())
 			{
 				return result | TASK_DONE;
 			}
-
+			
 			taskList[state.nextIndex].function(taskList[state.nextIndex].payload);
 			taskList[state.nextIndex].executed = 1;
 			taskCount.fetch_sub(1, std::memory_order_relaxed);
@@ -149,13 +160,14 @@ namespace jsr {
 		taskList(),
 		readIndex(0),
 		writeIndex(0),
-		threadNum(0)
+		threadNum(0),
+		jobCount(0)
 	{
 	}
 	TaskListExecutor::~TaskListExecutor()
 	{
 		StopThread(true);
-		//Info("TaskExecutor %s stopped", GetName().c_str());
+		Info("TaskExecutor %s, jobCount = %d", GetName().c_str(), jobCount);
 	}
 
 	void TaskListExecutor::Start(unsigned int threadNum)
@@ -184,7 +196,7 @@ namespace jsr {
 
 	int TaskListExecutor::Run()
 	{
-		taskListState_t localList[MAX_TASK_NUM];
+		taskListThreadState_t localList[MAX_TASK_NUM];
 
 		int numTaskLists = 0;
 		int lastStalledTaskList = -1;
@@ -219,6 +231,9 @@ namespace jsr {
 			bool singleTask = localList[currentTaskList].taskList->GetPriority() == PRIO_HIGH ? true : false;
 			int result = localList[currentTaskList].taskList->RunTasks(threadNum, localList[currentTaskList], singleTask);
 
+			jobCount++;
+
+
 			if ((result & TASK_DONE) != 0)
 			{
 				for (int i = currentTaskList; i < numTaskLists - 1; ++i)
@@ -233,6 +248,7 @@ namespace jsr {
 				{
 					if ((result & TASK_PROGRESS) == 0)
 					{
+						Info("Stall th: %d, taskList: %d", threadNum, currentTaskList);
 						std::this_thread::yield();
 					}
 				}
@@ -258,15 +274,12 @@ namespace jsr {
 
 	bool TaskManager::Init()
 	{
-		int numCore = GetCpuCount();
-		if (numCore > 4)
-		{
-			numCore = 32;
-		}
+		const int numCore = GetCpuCount();
+		const int threads = numCore > 4 ? numCore - 2 : 2;
 
-		Info("* TaskManager: Launching %d threads...", numCore);
+		Info("* TaskManager: Launching %d threads, cpu cores %d", threads, numCore);
 
-		for (int i = 0; i < numCore; ++i)
+		for (int i = 0; i < threads; ++i)
 		{
 			auto* t = threadPool.emplace_back(new TaskListExecutor());
 			t->Start(i);
@@ -297,7 +310,7 @@ namespace jsr {
 	{
 		if (!IsInitalized() || !threaded)
 		{
-			taskListState_t state{};
+			taskListThreadState_t state{};
 			state.version = taskList->GetVersion();
 			taskList->RunTasks(0, state, false);
 		}

@@ -15,19 +15,13 @@
 
 using namespace std::chrono;
 
-int xdata[] = { 1,2,3,4 };
-
-void task(int* data)
-{
-    std::cout << std::endl << "data = " << *data << ", tid = " << std::this_thread::get_id() << std::endl;
-}
+using namespace std::chrono_literals;
 
 int main(int argc, char** argv)
 {
     Info("JS Engine Demo v0.1");
     Info("Platform: %s, PID: %d", jsr::GetPlatform(), std::this_thread::get_id());
-
-    using namespace std::chrono_literals;
+    Info("Installed memory: %dMB", jsr::GetSystemRAM());
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 
@@ -36,20 +30,6 @@ int main(int argc, char** argv)
     {
         return 0;
     }
-
-    jsr::TaskManager tmgr;
-    tmgr.Init();
-
-    jsr::TaskList tl(100, jsr::PRIO_HIGH);
-    tl.AddTask((jsr::taskfun_t)task, &xdata[0]);
-    tl.AddTask((jsr::taskfun_t)task, &xdata[1]);
-    tl.AddTask((jsr::taskfun_t)task, &xdata[2]);
-    tl.AddTask((jsr::taskfun_t)task, &xdata[3]);
-
-    tmgr.Submit(&tl);
-    tl.Wait();
-
-    Info("TaskList finished");
 
     std::atomic_bool quit{};
     jsr::Image* im = new jsr::Image("imag1");

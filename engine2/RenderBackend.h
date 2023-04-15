@@ -2,17 +2,12 @@
 
 #include <cinttypes>
 #include <glm/glm.hpp>
+#include "./RenderCommon.h"
 
 namespace jsr {
 
 	const int MAX_TEXTURE_UNITS = 14;
 
-	enum eVertexLayout
-	{
-		VL_NONE = -1,
-		VL_DRAW_VIEW,
-		VL_POSITION_ONLY
-	};
 
 	struct tmu_t
 	{
@@ -22,15 +17,14 @@ namespace jsr {
 		unsigned int	currentCubeMapArray;
 	};
 
-	struct renderView_t
-	{
-
-	};
-
 	struct glcontext_t
 	{
-		uint64_t	frameCounter;
-		tmu_t		tmu[MAX_TEXTURE_UNITS];
+		uint64_t		frameCounter;
+		tmu_t			tmu[MAX_TEXTURE_UNITS];
+		unsigned int	currentVertexBuffer;
+		unsigned int	currentIndexBuffer;
+		unsigned int	currentProgram;
+		eVertexLayout	currentVertexLayout;
 	};
 
 	extern glcontext_t glcontext;

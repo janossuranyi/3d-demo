@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+#include <SDL.h>
 #include "./Image.h"
 
 namespace jsr {
@@ -12,12 +14,39 @@ namespace jsr {
         bool normalized;
         int numComponent;
     };
-    
+
+	struct glconfig_t
+	{
+		int				resX;
+		int				resY;
+		SDL_Window*		hwnd;
+		SDL_GLContext	glctx;
+		int				msaa;
+		int				vsync;
+		int				version;
+		int				maxFragmentTextureImageUnits;
+		int				maxVertexTextureImageUnits;
+		int				maxComputeTextureImageUnits;
+		int				maxArrayTextureLayers;
+		int				maxTextureSize;
+		int				maxComputeSharedMemorySize;
+		int				maxUniformBlockSize;
+		int				maxShaderStorageBlockSize;
+		int				maxVertexAttribs;
+		int				maxVertexAttribBindings;
+		int				uniformBufferOffsetAligment;
+		int				availableVideoMemory;
+
+		std::set< std::string > extensions;
+	};
+
     extern const imageFormatInfo_t s_image_formats[];
+	extern glconfig_t glconfig;
 
     GLenum GL_map_texfilter(eImageFilter x);
     GLenum GL_map_texrepeat(eImageRepeat x);
     GLenum GL_map_textarget(eImageShape x);
+
 
 }
 

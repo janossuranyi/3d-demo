@@ -51,29 +51,7 @@ namespace jsr {
 
 	using namespace std;
 
-	struct glconfig_t
-	{
-		int				resX;
-		int				resY;
-		SDL_Window*		hwnd;
-		SDL_GLContext	glctx;
-		int				msaa;
-		int				vsync;
-		int				version;
-		set<string>		extensions;
-		int				maxFragmentTextureImageUnits;
-		int				maxVertexTextureImageUnits;
-		int				maxComputeTextureImageUnits;
-		int				maxArrayTextureLayers;
-		int				maxTextureSize;
-		int				maxComputeSharedMemorySize;
-		int				maxUniformBlockSize;
-		int				maxShaderStorageBlockSize;
-		int				maxVertexAttribs;
-		int				maxVertexAttribBindings;
-		int				uniformBufferOffsetAligment;
-		int				availableVideoMemory;
-	} glconfig;
+	glconfig_t glconfig;
 
 
 	void GLAPIENTRY GL_DebugMessageCallback(GLenum source,

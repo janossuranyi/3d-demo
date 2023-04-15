@@ -6,6 +6,13 @@
 
 namespace jsr {
 
+	enum eVertexLayout
+	{
+		VL_NONE = -1,
+		VL_DRAW_VERT,
+		VL_POSITION_ONLY
+	};
+
 	struct screenRect_t
 	{
 		int		x1;
@@ -23,18 +30,27 @@ namespace jsr {
 		int			rdflags;
 	};
 
+	// vertex index type (16bit)
+	typedef unsigned short elementIndex_t;
 
-	struct meshGeometry_t;
+	// Triangle list based surface
+	struct triangles_t
+	{
+		int numVertices;
+		int numIndices;
+		drawVert_t* vertices;
+		elementIndex_t* indices;
+	};
+
 	class Material;
 	class Model;
 	class RenderModel;
-	struct viewEntity_t;
 
 	struct modelSurface_t
 	{
 		int	id;
 		const Material* shader;
-		meshGeometry_t* geometry;
+		triangles_t* surf;
 	};
 
 	class RenderWorld;
@@ -43,30 +59,34 @@ namespace jsr {
 	{
 
 	};
-	struct drawSurf_t
-	{
-		const meshGeometry_t* geoRef;
-		int						indexCount;
-		vertCacheHandle_t		indexCache;
-		vertCacheHandle_t		vertexCache;
-		const viewEntity_t* space;
-		const Material* shader;
-		float sort;
-	};
 
+	struct drawSurf_t;
 	struct viewEntity_t
 	{
-		viewEntity_t* next;
-		float			modelMatrix[16];		// local coords to global coords
-		float			modelViewMatrix[16];	// local coords to eye coords
+		viewEntity_t*	next;
+		glm::mat4		modelMatrix;		// local coords to global coords
+		glm::mat4		modelViewMatrix;	// local coords to eye coords
 		glm::mat4		mvp;
+		drawSurf_t*		surf;
 	};
+
+	struct drawSurf_t
+	{
+		const triangles_t*	refSurf;
+		int					numIndex;
+		vertCacheHandle_t	indexCache;
+		vertCacheHandle_t	vertexCache;
+		const viewEntity_t* space;
+		const Material*		shader;
+		float				sort;
+	};
+
 
 	struct viewLight_t
 	{
-		viewLight_t* next;
-		glm::vec3		vieworg;
-		glm::mat3		viewaxis;
+		viewLight_t*	next;
+		glm::vec3		origin;
+		glm::mat3		axis;
 		float			radius;
 		const Material* shader;
 	};
@@ -74,15 +94,15 @@ namespace jsr {
 	struct viewDef_t
 	{
 		renderView_t	renderView;
-		float			projectionMatrix[16];
-		float			unprojectionToCameraMatrix[16];
-		float			unprojectionToWorldMatrix[16];
+		glm::mat4		projectionMatrix;
+		glm::mat4		unprojectionToCameraMatrix;
+		glm::mat4		unprojectionToWorldMatrix;
 
 		screenRect_t	viewport;
 		screenRect_t	scissor;
 		bool			isSubview;
 		bool			isMirror;
-		RenderWorld*	 renderWorld;
+		RenderWorld*	renderWorld;
 		drawSurf_t**	drawSurfs;
 		int				numDrawSurfs;
 		viewEntity_t*	viewEntites;

@@ -35,6 +35,19 @@ typedef unsigned short halfFloat_t;
 #define HF_EXP(x)		( ( x & 32767 ) >> 10 )
 #define HF_SIGN(x)		( ( x & 32768 ) ? -1 : 1 )
 
+inline float saturate(float f)
+{
+	return _std clamp(f, -1.0f, 1.0f);
+}
+inline glm::vec3 saturate(const glm::vec3& f)
+{
+	return glm::clamp(f, -1.0f, 1.0f);
+}
+inline glm::vec4 saturate(const glm::vec4& f)
+{
+	return glm::clamp(f, -1.0f, 1.0f);
+}
+
 inline uint32_t pack32(uint8_t x, uint8_t y, uint8_t z, uint8_t w)
 {
 	return ((uint32_t)w << 24) | ((uint32_t)z << 16) | ((uint32_t)y << 8) | ((uint32_t)x);

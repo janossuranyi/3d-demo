@@ -46,66 +46,69 @@ namespace jsr {
 		}
 		void SetColor(const glm::vec4& pX)
 		{
-			color[0] = (byte)(255.0f * glm::clamp(pX[0], 0.0f, 1.0f));
-			color[1] = (byte)(255.0f * glm::clamp(pX[1], 0.0f, 1.0f));
-			color[2] = (byte)(255.0f * glm::clamp(pX[2], 0.0f, 1.0f));
-			color[3] = (byte)(255.0f * glm::clamp(pX[3], 0.0f, 1.0f));
+			for (int i = 0; i < 4; ++i)
+			{
+				color[i] = floatToUnorm8(pX[i]);
+			}
 		}
 		void SetColor(float* pX)
 		{
-			color[0] = (byte)(255.0f * glm::clamp(pX[0], 0.0f, 1.0f));
-			color[1] = (byte)(255.0f * glm::clamp(pX[1], 0.0f, 1.0f));
-			color[2] = (byte)(255.0f * glm::clamp(pX[2], 0.0f, 1.0f));
-			color[3] = (byte)(255.0f * glm::clamp(pX[3], 0.0f, 1.0f));
+			for (int i = 0; i < 4; ++i)
+			{
+				color[i] = floatToUnorm8(pX[i]);
+			}
 		}
 		void SetColor(float fX, float fY, float fZ, float fW)
 		{
-			color[0] = (byte)(255.0f * glm::clamp(fX, 0.0f, 1.0f));
-			color[1] = (byte)(255.0f * glm::clamp(fY, 0.0f, 1.0f));
-			color[2] = (byte)(255.0f * glm::clamp(fZ, 0.0f, 1.0f));
-			color[3] = (byte)(255.0f * glm::clamp(fW, 0.0f, 1.0f));
+			color[0] = floatToUnorm8(fX);
+			color[1] = floatToUnorm8(fY);
+			color[2] = floatToUnorm8(fZ);
+			color[3] = floatToUnorm8(fW);
 		}
 		void SetTangent(float fX, float fY, float fZ, float fW)
 		{
-			tangent[0] = (byte)(255.0f * ((1.0f + glm::clamp(fX, -1.0f, 1.0f)) / 2.0f));
-			tangent[1] = (byte)(255.0f * ((1.0f + glm::clamp(fY, -1.0f, 1.0f)) / 2.0f));
-			tangent[2] = (byte)(255.0f * ((1.0f + glm::clamp(fZ, -1.0f, 1.0f)) / 2.0f));
-			tangent[3] = (byte)(255.0f * ((1.0f + glm::clamp(fW, -1.0f, 1.0f)) / 2.0f));
+			tangent[0] = VERTEX_FLOAT_TO_BYTE(saturate(fX));
+			tangent[1] = VERTEX_FLOAT_TO_BYTE(saturate(fY));
+			tangent[2] = VERTEX_FLOAT_TO_BYTE(saturate(fZ));
+			tangent[3] = VERTEX_FLOAT_TO_BYTE(saturate(fW));
 		}
 		void SetTangent(const glm::vec4& pX)
 		{
-			tangent[0] = (byte)(255.0f * ((1.0f + glm::clamp(pX[0], -1.0f, 1.0f)) / 2.0f));
-			tangent[1] = (byte)(255.0f * ((1.0f + glm::clamp(pX[1], -1.0f, 1.0f)) / 2.0f));
-			tangent[2] = (byte)(255.0f * ((1.0f + glm::clamp(pX[2], -1.0f, 1.0f)) / 2.0f));
-			tangent[3] = (byte)(255.0f * ((1.0f + glm::clamp(pX[3], -1.0f, 1.0f)) / 2.0f));
+			for (int i = 0; i < 4; ++i)
+			{
+				tangent[i] = VERTEX_FLOAT_TO_BYTE(saturate(pX[i]));
+			}
 		}
 		void SetTangent(float* pX)
 		{
-			tangent[0] = (byte)(255.0f * ((1.0f + glm::clamp(pX[0], -1.0f, 1.0f)) / 2.0f));
-			tangent[1] = (byte)(255.0f * ((1.0f + glm::clamp(pX[1], -1.0f, 1.0f)) / 2.0f));
-			tangent[2] = (byte)(255.0f * ((1.0f + glm::clamp(pX[2], -1.0f, 1.0f)) / 2.0f));
-			tangent[3] = (byte)(255.0f * ((1.0f + glm::clamp(pX[3], -1.0f, 1.0f)) / 2.0f));
+			for (int i = 0; i < 4; ++i)
+			{
+				tangent[i] = VERTEX_FLOAT_TO_BYTE(saturate(pX[i]));
+			}
 		}
 		void SetNormal(float* pX)
 		{
-			normal[0] = (byte)(255.0f * ((1.0f + glm::clamp(pX[0], -1.0f, 1.0f)) / 2.0f));
-			normal[1] = (byte)(255.0f * ((1.0f + glm::clamp(pX[1], -1.0f, 1.0f)) / 2.0f));
-			normal[2] = (byte)(255.0f * ((1.0f + glm::clamp(pX[2], -1.0f, 1.0f)) / 2.0f));
-			normal[3] = 127;
+			for (int i = 0; i < 3; ++i)
+			{
+				normal[i] = VERTEX_FLOAT_TO_BYTE(saturate(pX[i]));
+			}
+			normal[3] = VERTEX_FLOAT_TO_BYTE(0.0f);
 		}
 		void SetNormal(const glm::vec3& pX)
 		{
-			normal[0] = (byte)(255.0f * ((1.0f + glm::clamp(pX[0], -1.0f, 1.0f)) / 2.0f));
-			normal[1] = (byte)(255.0f * ((1.0f + glm::clamp(pX[1], -1.0f, 1.0f)) / 2.0f));
-			normal[2] = (byte)(255.0f * ((1.0f + glm::clamp(pX[2], -1.0f, 1.0f)) / 2.0f));
-			normal[3] = 127;
+			for (int i = 0; i < 3; ++i)
+			{
+				normal[i] = VERTEX_FLOAT_TO_BYTE(saturate(pX[i]));
+			}
+			normal[3] = VERTEX_FLOAT_TO_BYTE(0.0f);
 		}
 		void SetNormal(float fX, float fY, float fZ)
 		{
-			normal[0] = (byte)(255.0f * ((1.0f + glm::clamp(fX, -1.0f, 1.0f)) / 2.0f));
-			normal[1] = (byte)(255.0f * ((1.0f + glm::clamp(fY, -1.0f, 1.0f)) / 2.0f));
-			normal[2] = (byte)(255.0f * ((1.0f + glm::clamp(fZ, -1.0f, 1.0f)) / 2.0f));
-			normal[3] = 127;
+			normal[0] = VERTEX_FLOAT_TO_BYTE(saturate(fX));
+			normal[1] = VERTEX_FLOAT_TO_BYTE(saturate(fY));
+			normal[2] = VERTEX_FLOAT_TO_BYTE(saturate(fZ));
+			normal[3] = VERTEX_FLOAT_TO_BYTE(0.0f);
+
 		}
 		void SetUV(const glm::vec2& v)
 		{

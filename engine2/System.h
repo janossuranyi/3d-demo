@@ -6,6 +6,8 @@
 #include <emmintrin.h>
 #endif
 
+#include "./EngineTypes.h"
+
 #define assert_2_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) &  1 ) == 0 )
 #define assert_4_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) &  3 ) == 0 )
 #define assert_8_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) &  7 ) == 0 )
@@ -33,7 +35,7 @@ namespace jsr {
 	int GetCpuCount();
 	int GetSystemRAM();
 	int MessageBox(unsigned int flags, const char* title, const char* message);
-
+	uint64 GetTimeMillisecond();
 
 	/*
 	================================================================================================
