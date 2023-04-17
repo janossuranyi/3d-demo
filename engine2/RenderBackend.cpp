@@ -1,5 +1,6 @@
-#include "RenderBackend.h"
-#include "Logger.h"
+#include "./RenderBackend.h"
+#include "./RenderProgs.h"
+#include "./Logger.h"
 
 #include <memory>
 
@@ -12,7 +13,6 @@ namespace jsr {
 		glcontext.frameCounter = 0;
 		std::memset(glcontext.tmu, 0xffff, sizeof(glcontext.tmu));
 		currenttmu = 0;
-		currentLayout = VL_NONE;
 		currentFramebuffer = nullptr;
 		clearColor[0] = .0f;
 		clearColor[1] = .0f;

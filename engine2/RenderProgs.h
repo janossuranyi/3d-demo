@@ -5,6 +5,13 @@
 
 namespace jsr {
 
+	enum eVertexLayout
+	{
+		LAYOUT_NONE = -1,
+		LAYOUT_DRAW_VERT,
+		LAYOUT_POSITION_ONLY
+	};
+
 	enum eShaderStage
 	{
 		SHADER_STAGE_VERTEX = 1,

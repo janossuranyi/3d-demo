@@ -3,6 +3,8 @@
 #include <atomic>
 #include <filesystem>
 #include <iostream>
+#include <fstream>
+
 #include <SDL.h>
 #include "engine2/Engine.h"
 #include "engine2/RenderSystem.h"
@@ -12,16 +14,38 @@
 #include "engine2/ThreadWorker.h"
 #include "engine2/TaskExecutor.h"
 #include "engine2/System.h"
+#include "engine2/Resources.h"
 
 using namespace std::chrono;
 
 using namespace std::chrono_literals;
+
+void parse_config(const char* filename)
+{
+    std::ifstream input{ filename, std::ios::in };
+    if (input.is_open())
+    {
+        char buffer[1024];
+        while (input.eof() == false)
+        {
+            std::string key, val;
+            input >> key >> val;
+            if (key.empty() == false)
+            {
+                Info("%s = %s", key.c_str(), val.c_str());
+            }
+        }
+        input.close();
+    }
+}
 
 int main(int argc, char** argv)
 {
     Info("JS Engine Demo v0.1");
     Info("Platform: %s, PID: %d", jsr::GetPlatform(), std::this_thread::get_id());
     Info("Installed memory: %dMB", jsr::GetSystemRAM());
+
+    parse_config("d:/test.ini");
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 
@@ -30,6 +54,8 @@ int main(int argc, char** argv)
     {
         return 0;
     }
+
+    jsr::ResourceManager::instance.AddResourcePath("../assets/textures");
 
     std::atomic_bool quit{};
     jsr::Image* im = new jsr::Image("imag1");
@@ -77,6 +103,8 @@ int main(int argc, char** argv)
         std::this_thread::sleep_for(1ms);
     }
 
+    delete im;
+    delete im2;
 
     //jsr::renderSystem.Shutdown();
 

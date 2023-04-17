@@ -19,13 +19,6 @@ namespace jsr {
 		TP_TRIANGLES
 	};
 
-	enum eVertexLayout
-	{
-		LAYOUT_NONE = -1,
-		LAYOUT_DRAW_VERT,
-		LAYOUT_POSITION_ONLY
-	};
-
 	struct screenRect_t
 	{
 		int		x;

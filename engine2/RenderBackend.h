@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <glm/glm.hpp>
 #include "./RenderCommon.h"
+#include "./RenderProgs.h"
 
 namespace jsr {
 
@@ -53,7 +54,6 @@ namespace jsr {
 		int		currenttmu;
 		bool	initialized;
 	public:	
-		eVertexLayout currentLayout;
 		Framebuffer* currentFramebuffer{};
 	};
 
