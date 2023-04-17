@@ -3,22 +3,35 @@
 #include <glm/glm.hpp>
 #include "./EngineTypes.h"
 #include "./VertexCache.h"
+#include "./Bounds.h"
+#include "./Frustum.h"
+//#include "./Model.h"
 
 namespace jsr {
 
+	enum eTopology
+	{
+		TP_POINTS,
+		TP_LINES,
+		TP_LINE_STRIPS,
+		TP_TRIANGLE_FANS,
+		TP_TRIANGLE_STRIPS,
+		TP_TRIANGLES
+	};
+
 	enum eVertexLayout
 	{
-		VL_NONE = -1,
-		VL_DRAW_VERT,
-		VL_POSITION_ONLY
+		LAYOUT_NONE = -1,
+		LAYOUT_DRAW_VERT,
+		LAYOUT_POSITION_ONLY
 	};
 
 	struct screenRect_t
 	{
-		int		x1;
-		int		y1;
-		int		x2;
-		int		y2;
+		int		x;
+		int		y;
+		int		w;
+		int		h;
 	};
 
 	struct renderView_t
@@ -33,32 +46,10 @@ namespace jsr {
 	// vertex index type (16bit)
 	typedef unsigned short elementIndex_t;
 
-	// Triangle list based surface
-	struct triangles_t
-	{
-		int numVertices;
-		int numIndices;
-		drawVert_t* vertices;
-		elementIndex_t* indices;
-	};
 
 	class Material;
-	class Model;
-	class RenderModel;
-
-	struct modelSurface_t
-	{
-		int	id;
-		const Material* shader;
-		triangles_t* surf;
-	};
 
 	class RenderWorld;
-
-	struct renderEntity_t
-	{
-
-	};
 
 	struct drawSurf_t;
 	struct viewEntity_t
@@ -70,9 +61,10 @@ namespace jsr {
 		drawSurf_t*		surf;
 	};
 
+	struct vertexData_t;
 	struct drawSurf_t
 	{
-		const triangles_t*	refSurf;
+		const vertexData_t*	frontEndGeo;
 		int					numIndex;
 		vertCacheHandle_t	indexCache;
 		vertCacheHandle_t	vertexCache;
@@ -107,6 +99,7 @@ namespace jsr {
 		int				numDrawSurfs;
 		viewEntity_t*	viewEntites;
 		viewLight_t*	viewLights;
+		Frustum			frustum;
 	};
 
 }
