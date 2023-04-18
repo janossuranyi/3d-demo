@@ -15,29 +15,11 @@
 #include "engine2/TaskExecutor.h"
 #include "engine2/System.h"
 #include "engine2/Resources.h"
+#include "engine2/Bounds.h"
 
 using namespace std::chrono;
 
 using namespace std::chrono_literals;
-
-void parse_config(const char* filename)
-{
-    std::ifstream input{ filename, std::ios::in };
-    if (input.is_open())
-    {
-        char buffer[1024];
-        while (input.eof() == false)
-        {
-            std::string key, val;
-            input >> key >> val;
-            if (key.empty() == false)
-            {
-                Info("%s = %s", key.c_str(), val.c_str());
-            }
-        }
-        input.close();
-    }
-}
 
 int main(int argc, char** argv)
 {
@@ -45,7 +27,26 @@ int main(int argc, char** argv)
     Info("Platform: %s, PID: %d", jsr::GetPlatform(), std::this_thread::get_id());
     Info("Installed memory: %dMB", jsr::GetSystemRAM());
 
-    parse_config("d:/test.ini");
+    jsr::Bounds box1{};
+    box1.Extend(glm::vec3(-1, -1, -1));
+    box1.Extend(glm::vec3(1, 1, 1));
+
+    glm::vec3 center = box1.GetCenter();
+
+    Info("box center [%.2f, %.2f, %.2f], radius: %.2f", center.x, center.y, center.z, box1.GetRadius());
+    
+    glm::vec3 corners[8];
+    box1.GetCorners(corners);
+    for (int i = 0; i < 8; ++i)
+    {
+        std::cout << corners[i].x << ", " << corners[i].y << ", " << corners[i].z << std::endl;
+    }
+    
+    float tmin{}, tmax{};
+    bool ok = box1.RayIntersect(glm::vec3(2, 0, 0), glm::vec3(-1, 0, 0), tmin, tmax);
+    Info("Intersect result (%i) %.2f, %.2f", ok, tmin, tmax);
+
+    exit(1);
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 

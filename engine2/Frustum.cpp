@@ -47,7 +47,7 @@ namespace jsr {
 	}
 	bool Frustum::BoundsTest(const Bounds& b) const
 	{
-		if (!SphereTest(b.GetOrigin(), b.GetRadius()))
+		if (!SphereTest(b.GetCenter(), b.GetRadius()))
 		{
 			return false;
 		}
