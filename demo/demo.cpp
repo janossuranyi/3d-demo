@@ -28,15 +28,14 @@ int main(int argc, char** argv)
     Info("Installed memory: %dMB", jsr::GetSystemRAM());
 
     jsr::Bounds box1{};
-    box1.Extend(glm::vec3(-1, -1, -1));
-    box1.Extend(glm::vec3(1, 1, 1));
+    box1 << (glm::vec3(-1, -1, -1));
+    box1 << (glm::vec3(1, 1, 1));
 
     glm::vec3 center = box1.GetCenter();
 
     Info("box center [%.2f, %.2f, %.2f], radius: %.2f", center.x, center.y, center.z, box1.GetRadius());
     
-    glm::vec3 corners[8];
-    box1.GetCorners(corners);
+    auto corners = box1.GetCorners();
     for (int i = 0; i < 8; ++i)
     {
         std::cout << corners[i].x << ", " << corners[i].y << ", " << corners[i].z << std::endl;

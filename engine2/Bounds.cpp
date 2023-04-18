@@ -5,67 +5,124 @@
 
 namespace jsr {
 
+	Sphere::Sphere(const glm::vec3& center_, float r) :
+		center(center_),
+		radius(r),
+		radius2(r*r)
+	{
+	}
+	bool Sphere::Contains(const glm::vec3& p) const
+	{
+		const auto v = c - p;
+		return glm::dot(v, v) <= radius2;
+	}
+	float Sphere::Distance(const glm::vec3& p) const
+	{
+		return glm::length(p - center) - radius;
+	}
+	bool Sphere::RayIntersect(const glm::vec3& start, const glm::vec3& dir, float& tnear, float& tfar) const
+	{
+		const glm::vec3 u = glm::normalize(dir);
+		const glm::vec3 oc = start - center;
+		const float aoc = glm::length(oc);
+		const float aoc2 = aoc * aoc;
+		const float k = glm::dot(u, oc);
+		float K = k * k - (aoc2 - radius2);
+		
+		if (K < 0)
+		{
+			return false;
+		}
+
+		const float d = -k;
+		if (K < epsilon)
+		{
+			tnear = d;
+			tfar = 0.0f;
+			return true;
+		}
+
+		const float Ksr = glm::sqrt(K);
+		tnear = (d - Ksr);
+		tfar = (d + Ksr);
+
+		return true;
+	}
+	bool Sphere::LineIntersect(const glm::vec3& start, const glm::vec3& end, float& tnear, float& tfar) const
+	{
+		const glm::vec3 v = end - start;
+
+		if (RayIntersect(start, v, tnear, tfar))
+		{
+			if (tnear < 0.0f || tfar < 0.0f)
+			{
+				// p0 is inside the sphere
+				tnear = 0.0f;
+				tfar  = 0.0f;
+				return true;
+			}
+
+			const float l = length(v);
+			if ((l - tnear) >= 0.0f || (l - tfar) >= 0.0f)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+	bool Sphere::Intersect(const Sphere& s) const
+	{
+		const glm::vec3 c = s.center - center;
+		const float distance2 = glm::dot(c, c);
+		const float sr = s.radius + radius;
+
+		return distance2 <= (sr * sr);
+	}
+	glm::vec3 Sphere::GetCenter() const
+	{
+		return center;
+	}
+	float Sphere::GetRadius() const
+	{
+		return radius;
+	}
+	bool Sphere::Intersect(const Bounds& s) const
+	{
+		// get box closest point to sphere center by clamping
+		const glm::vec3 v = glm::max(s.GetMin(), glm::min(center, s.GetMax()));
+		const float d = dot(v, v);
+
+		return d < radius2;
+	}
 	Bounds::Bounds() :
 		min(glm::vec3(std::numeric_limits<float>::max())),
-		max(-glm::vec3(std::numeric_limits<float>::max()))
-	{
-	}
-	Bounds::Bounds(float _min, float _max) :
-		min(glm::vec3(_min)),
-		max(glm::vec3(_max))
-	{
-	}
-	Bounds::Bounds(const glm::vec3& _min, const glm::vec3& _max) :
-		min(_min),
-		max(_max)
-	{
-	}
+		max(glm::vec3(std::numeric_limits<float>::lowest()))
+	{}
 
-	Bounds& Bounds::Extend(float k)
+	Bounds::Bounds(const glm::vec3& a, const glm::vec3& b) :
+		min(glm::min(a, b)),
+		max(glm::max(a, b))
 	{
-		min.x = glm::min(min.x, k);
-		min.y = glm::min(min.y, k);
-		min.z = glm::min(min.z, k);
-
-		max.x = glm::max(max.x, k);
-		max.y = glm::max(max.y, k);
-		max.z = glm::max(max.z, k);
-
-		return *this;
 	}
-	Bounds& Bounds::Extend(const glm::vec3& v)
+	
+	Bounds& Bounds::operator<<(const glm::vec3& v)
 	{
-		max = glm::max(max, v);
 		min = glm::min(min, v);
+		max = glm::max(max, v);
 
 		return *this;
 	}
-	Bounds& Bounds::Extend(const Bounds& other)
+	Bounds& Bounds::operator<<(const Bounds& other)
 	{
 		max = glm::max(max, other.max);
 		min = glm::min(min, other.min);
 
 		return *this;
 	}
-	int Bounds::Intersect(float fX, float fY, float fZ) const
+	bool Bounds::Contains(const glm::vec3& p) const
 	{
-		glm::vec3 mn = min;
-		glm::vec3 mx = max;
-
-		if (fX < mn.x || fY < mn.y || fZ < mn.z || fX > mx.x || fY > mx.y || fZ > mx.z)
-		{
-			return IR_OUTSIDE;
-		}
-		if (fX == mn.x || fY == mn.y || fZ == mn.z || fX == mx.x || fY == mx.y || fZ == mx.z)
-		{
-			return IR_INTERSECT;
-		}
-
-		return IR_INSIDE;
-	}
-	int Bounds::Intersect(const glm::vec3& v) const
-	{
-		return Intersect(v.x, v.y, v.z);
+		return glm::all(glm::greaterThanEqual(p, min)) && glm::all(glm::lessThanEqual(p, max));
 	}
 	float Bounds::GetRadius() const
 	{
@@ -83,19 +140,31 @@ namespace jsr {
 	{
 		return max;
 	}
-	void Bounds::GetCorners(glm::vec3 v[8]) const
+	std::vector<glm::vec3> Bounds::GetCorners() const
 	{
-		glm::vec3 mmin = min;
-		glm::vec3 mmax = max;
-		v[0] = glm::vec3(mmin.x, mmin.y, mmin.z);
-		v[1] = glm::vec3(mmin.x, mmax.y, mmin.z);
-		v[2] = glm::vec3(mmax.x, mmax.y, mmin.z);
-		v[3] = glm::vec3(mmax.x, mmin.y, mmin.z);
-
-		v[4] = glm::vec3(mmin.x, mmin.y, mmax.z);
-		v[5] = glm::vec3(mmin.x, mmax.y, mmax.z);
-		v[6] = glm::vec3(mmax.x, mmax.y, mmax.z);
-		v[7] = glm::vec3(mmax.x, mmin.y, mmax.z);
+		using namespace glm;
+		return {
+			vec3(min[0], min[1], min[2]),
+			vec3(min[0], min[1], max[2]),
+			vec3(min[0], max[1], min[2]),
+			vec3(min[0], max[1], max[2]),
+			vec3(max[0], min[1], min[2]),
+			vec3(max[0], min[1], max[2]),
+			vec3(max[0], max[1], min[2]),
+			vec3(max[0], max[1], max[2]) };
+	}
+	std::vector<glm::vec4> Bounds::GetHomogenousCorners() const
+	{
+		using namespace glm;
+		return {
+			vec4(min[0], min[1], min[2], 1.0f),
+			vec4(min[0], min[1], max[2], 1.0f),
+			vec4(min[0], max[1], min[2], 1.0f),
+			vec4(min[0], max[1], max[2], 1.0f),
+			vec4(max[0], min[1], min[2], 1.0f),
+			vec4(max[0], min[1], max[2], 1.0f),
+			vec4(max[0], max[1], min[2], 1.0f),
+			vec4(max[0], max[1], max[2], 1.0f) };
 	}
 	bool Bounds::RayIntersect(const glm::vec3& start, const glm::vec3& rayDir, float& tnear, float& tfar)
 	{
@@ -108,6 +177,20 @@ namespace jsr {
 		tfar = glm::min(glm::min(t2.x, t2.y), t2.z);
 
 		return tfar > tnear;
+	}
+	Bounds Bounds::Transform(const glm::mat4& trans) const
+	{
+		Bounds b{};
+		auto corners = GetHomogenousCorners();
+		b.min = glm::vec3(trans * corners[0]);
+		b.max = b.min;
+		for (auto i = 1; i < 8; ++i)
+		{
+			auto const tc = glm::vec3(trans * corners[i]);
+			b << tc;
+		}
+
+		return b;
 	}
 	/*
 	bool Bounds::RayIntersect(const glm::vec3& start, const glm::vec3& dir, float& tmin, float& tmax)
@@ -149,10 +232,8 @@ namespace jsr {
 
 		return result;
 	}
-	Bounds& Bounds::operator+=(const Bounds& other)
+	bool Bounds::Empty() const
 	{
-		Extend(other);
-
-		return *this;
+		return min.x == std::numeric_limits<float>::max();
 	}
 }

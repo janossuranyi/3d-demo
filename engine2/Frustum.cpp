@@ -52,8 +52,7 @@ namespace jsr {
 			return false;
 		}
 
-		glm::vec3 corners[8];
-		b.GetCorners(corners);
+		auto corners = b.GetCorners();
 
 		for (int i = 0; i < 8; ++i)
 		{
