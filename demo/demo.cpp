@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     box1 << (glm::vec3(-1, -1, -1));
     box1 << (glm::vec3(1, 1, 1));
 
-    glm::vec3 center = box1.GetCenter();
+    auto center = box1.GetCenter();
 
     Info("box center [%.2f, %.2f, %.2f], radius: %.2f", center.x, center.y, center.z, box1.GetRadius());
     
@@ -41,10 +41,16 @@ int main(int argc, char** argv)
         std::cout << corners[i].x << ", " << corners[i].y << ", " << corners[i].z << std::endl;
     }
     
-    float tmin{}, tmax{};
-    bool ok = box1.RayIntersect(glm::vec3(2, 0, 0), glm::vec3(-1, 0, 0), tmin, tmax);
-    Info("Intersect result (%i) %.2f, %.2f", ok, tmin, tmax);
+    float tmin, tmax;
+    tmin = tmax = 0.0f;
+    glm::vec3 R0(0.0f, 0.0f, -0.9f);
+    glm::vec3 Rd(3.f, -2.f, 10.f);
+    Rd = glm::normalize(Rd);
 
+    bool ok = box1.RayIntersect(R0, 1.0f / Rd, tmin, tmax);
+    Info("Intersect result (%i) %.2f, %.2f", ok, tmin, tmax);
+    glm::vec3 c = R0 + Rd * tmin;
+    Info("Intersection point: Pi(%.2f,%.2f,%.2f)", c.x, c.y, c.z);
     exit(1);
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");

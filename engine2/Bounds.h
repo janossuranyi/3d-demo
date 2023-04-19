@@ -25,9 +25,9 @@ namespace jsr {
 		glm::vec3 GetCenter() const;
 		float GetRadius() const;
 	private:
-		glm::vec3 center;
-		float radius;
-		float radius2;
+		glm::vec3 _center;
+		float _radius;
+		float _radius2;
 	};
 
 	class Bounds
@@ -45,17 +45,23 @@ namespace jsr {
 		std::vector<glm::vec3> GetCorners() const;
 		std::vector<glm::vec4> GetHomogenousCorners() const;
 		Bounds Transform(const glm::mat4& trans) const;
+		glm::vec3 operator[](size_t index) const;
+		glm::vec3& operator[](size_t index);
+		glm::vec3& min();
+		glm::vec3& max();
+		const glm::vec3& min() const;
+		const glm::vec3& max() const;
 		/*
 		compute the near and far intersections of the cube(stored in the x and y components) using the slab method
 		no intersection means vec.x > vec.y (really tNear > tFar)
 		*/
-		bool RayIntersect(const glm::vec3& start, const glm::vec3& dir, float& tmin, float& tmax);
+		bool RayIntersect(const glm::vec3& start, const glm::vec3& invdir, float& tmin, float& tmax);
 		bool operator==(const Bounds& other) const;
 		bool operator!=(const Bounds& other) const;
 		Bounds operator+(const Bounds& other) const;
 		bool Empty() const;
 	private:
-		glm::vec3 min;
-		glm::vec3 max;
+		glm::vec3 _min;
+		glm::vec3 _max;
 	};
 }
