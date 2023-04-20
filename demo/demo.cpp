@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     Info("Platform: %s, PID: %d", jsr::GetPlatform(), std::this_thread::get_id());
     Info("Installed memory: %dMB", jsr::GetSystemRAM());
 
-    jsr::ResourceManager::instance.AddResourcePath("../assets/shaders");
+    jsr::resourceMgr->AddResourcePath("../assets/shaders");
 
     exit(1);
 
