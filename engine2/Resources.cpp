@@ -11,6 +11,8 @@ namespace jsr {
 
     ResourceManager ResourceManager::instance{};
 
+    ResourceManager* resourceMgr = &ResourceManager::instance;
+
     static void dir_traversal(const fs::path& start, std::function<void(const fs::path&)> callback)
     {
         auto it = fs::directory_iterator{ start };
@@ -47,7 +49,7 @@ namespace jsr {
             //Info("%s --> %s", key.c_str(), val.c_str());
             });
 
-        Info("[ResourceManager]: dir %s added", src.generic_string().c_str());
+        Info("[ResourceManager]: %s added", src.generic_string().c_str());
 
         return true;
     }

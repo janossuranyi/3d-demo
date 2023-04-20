@@ -43,4 +43,6 @@ namespace jsr {
 		std::set<std::string> sources;
 
 	};
+
+	extern ResourceManager* resourceMgr;
 }

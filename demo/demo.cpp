@@ -28,32 +28,8 @@ int main(int argc, char** argv)
     Info("Platform: %s, PID: %d", jsr::GetPlatform(), std::this_thread::get_id());
     Info("Installed memory: %dMB", jsr::GetSystemRAM());
 
+    jsr::ResourceManager::instance.AddResourcePath("../assets/shaders");
 
-    jsr::Bounds box1{};
-    box1 << (vec3(-1, -1, -1));
-    box1 << (vec3(1, 1, 1));
-
-    auto center = box1.GetCenter();
-
-    Info("box center [%.2f, %.2f, %.2f], radius: %.2f", center.x, center.y, center.z, box1.GetRadius());
-    
-    auto corners = box1.GetCorners();
-    for (int i = 0; i < 8; ++i)
-    {
-        std::cout << corners[i].x << ", " << corners[i].y << ", " << corners[i].z << std::endl;
-    }
-    
-    float tmin, tmax;
-    tmin = tmax = 0.0f;
-    vec3 R0(0.0f, 0.0f, -0.9f);
-    vec3 Rd(3.f, -2.f, 10.f);
-    Rd = glm::normalize(Rd);
-
-    bool ok = box1.RayIntersect(R0, 1.0f / Rd, tmin, tmax);
-    Info("Intersect result (%i) %.2f, %.2f", ok, tmin, tmax);
-    vec3 c = R0 + Rd * tmin;
-    Info("Intersection point: Pi(%.2f,%.2f,%.2f)", c.x, c.y, c.z);
-    
     exit(1);
 
 

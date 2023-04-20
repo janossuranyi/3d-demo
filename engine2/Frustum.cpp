@@ -58,7 +58,7 @@ namespace jsr {
 		{
 			for (int k = 0; k < 6; ++k)
 			{
-				float dist = glm::dot(corners[i], glm::vec3(planes[k])) + planes[k].w;
+				float const dist = glm::dot(corners[i], glm::vec3(planes[k])) + planes[k].w;
 				if (dist >= 0)
 				{
 					return true;
@@ -69,7 +69,7 @@ namespace jsr {
 	}
 	bool Frustum::SphereTest(const glm::vec3& p, float radius) const
 	{
-		for (int i = 0; i < 6; i++)
+		for (int i = 0; i < 6; ++i)
 		{
 			float dist = glm::dot(p, glm::vec3(planes[i])) + planes[i].w + radius;
 			if (dist < 0) return false; // sphere culled
