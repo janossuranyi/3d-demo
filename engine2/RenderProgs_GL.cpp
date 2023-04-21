@@ -10,6 +10,20 @@
 
 namespace jsr {
 
+	renderProgram_t ProgramManager::builtins[] = {
+		{"vertex_color",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
+//		{"depth_pass",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
+//		{"metallic_roughness_ao",	SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
+	};
+
+	static void R_DeleteShaders(GLuint const* list, int numShader)
+	{
+		for (int i = 0; i < numShader; ++i)
+		{
+			if (glIsShader(list[i])) glDeleteShader(list[i]);
+		}
+	}
+
 	static bool R_LinkProgram(GLuint& program, GLuint const* shaders, int numShader)
 	{
 		GL_CHECK(program = glCreateProgram());
@@ -39,13 +53,6 @@ namespace jsr {
 		return true;
 	}
 
-	static void R_DeleteShaders(GLuint const* list, int numShader)
-	{
-		for (int i = 0; i < numShader; ++i)
-		{
-			if (glIsShader(list[i])) glDeleteShader(list[i]);
-		}
-	}
 	static bool R_CompileShader(GLuint shader)
 	{
 		if (!glIsShader(shader)) return false;
@@ -78,23 +85,23 @@ namespace jsr {
 		switch (stage)
 		{
 		case GL_VERTEX_SHADER:
-			r_name.append("_vert.glsl");
+			r_name.append(".vert.glsl");
 			break;
 		case GL_FRAGMENT_SHADER:
-			r_name.append("_frag.glsl");
+			r_name.append(".frag.glsl");
 			break;
 		case GL_GEOMETRY_SHADER:
-			r_name.append("_geom.glsl");
+			r_name.append(".geom.glsl");
 			break;
 		case GL_COMPUTE_SHADER:
-			r_name.append("_comp.glsl");
+			r_name.append(".comp.glsl");
 			break;
 		}
 
 		GLuint modul = glCreateShader(stage);
 		if (!modul) return 0;
 
-		auto source = resourceMgr->GetShaderSource(r_name);
+		auto source = resourceMgr->GetShaderSource("shaders/" + r_name);
 		const char* pStr = source.c_str();
 		GL_CHECK(glShaderSource(modul, 1, &pStr, nullptr));
 
@@ -109,6 +116,29 @@ namespace jsr {
 		}
 		return true;
 	}
+	void ProgramManager::UseProgram(eBuiltinProgram program)
+	{
+		unsigned int apiObject = builtins[program].prg;
+		if (apiObject != currentProgram)
+		{
+			currentProgram = apiObject;
+			GL_CHECK( glUseProgram( (GLuint)apiObject ) );
+		}
+	}
+	void ProgramManager::UpdateUniforms()
+	{
+		uniformsCache = renderSystem.vertexCache->AllocTransientUniform(&uniforms, sizeof(uniforms));
+	}
+
+	void ProgramManager::BindUniforms()
+	{
+		UniformBuffer ubo;
+		if (renderSystem.vertexCache->GetUniformBuffer(uniformsCache, ubo))
+		{
+			GL_CHECK( glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()) );
+		}
+	}
+
 	bool ProgramManager::CreateBuiltinProgram(renderProgram_t& p)
 	{
 
@@ -137,15 +167,35 @@ namespace jsr {
 			return false;
 		}
 
-		GLuint program;
+		GLuint program = 0xffff;
 		allOk = allOk && R_LinkProgram(program, shaders.data(), shaders.size());
-		if (allOk)
+		if (allOk && program != 0xffff)
 		{
 			// All shader stage are compiled
 			p.prg = program;
-			R_DeleteShaders(shaders.data(), shaders.size());
 		}
+
+		R_DeleteShaders(shaders.data(), shaders.size());
 
 		return allOk;
 	}
+
+	void ProgramManager::Shutdown()
+	{
+		if (!IsInitialized()) return;
+
+		if (currentProgram)
+		{
+			glUseProgram(0);
+			currentProgram = 0;
+		}
+
+		for(auto k : builtins) 
+		{
+			GL_CHECK(glDeleteProgram(k.prg));
+		}
+
+		initialized = false;
+	}
+
 }

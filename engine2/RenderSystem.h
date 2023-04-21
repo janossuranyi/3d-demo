@@ -9,6 +9,7 @@ namespace jsr {
 	public:
 		RenderBackend* backend;
 		VertexCache* vertexCache;
+		ProgramManager* programManager;
 
 		RenderSystem();
 		~RenderSystem();

@@ -1,4 +1,6 @@
-#include "Engine.h"
+#include "./Engine.h"
+#include "./Logger.h"
+#include "./RenderSystem.h"
 
 namespace jsr {
 
@@ -19,5 +21,49 @@ namespace jsr {
 	{
 	}
 
+
 	engineConfig_t engineConfig = engineConfig_t();
+
+	Engine::Engine() : threaded(false)
+	{
+	}
+
+	Engine::~Engine()
+	{
+		Shutdown();
+	}
+
+	bool Engine::Init(bool aThreaded)
+	{
+		if (!renderSystem.Init())
+		{
+			return false;
+		}
+
+		if (aThreaded)
+		{
+			if (!StartWorkerThread("JSR_Engine_thread"))
+			{
+				Error("Worker thread failed to start");
+				return false;
+			}
+			threaded = true;
+		}
+		return true;
+	}
+	
+	void Engine::Shutdown()
+	{
+		if (threaded)
+		{
+			StopThread(true);
+		}
+		
+		renderSystem.Shutdown();
+	}
+
+	int Engine::Run()
+	{
+		return 0;
+	}
 }

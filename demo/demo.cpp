@@ -16,11 +16,14 @@
 #include "engine2/System.h"
 #include "engine2/Resources.h"
 #include "engine2/Bounds.h"
+#include "engine2/RenderProgs.h"
+#include "engine2/Engine.h"
 
 using namespace std::chrono;
 
 using namespace std::chrono_literals;
 using namespace glm;
+using namespace jsr;
 
 int main(int argc, char** argv)
 {
@@ -28,25 +31,23 @@ int main(int argc, char** argv)
     Info("Platform: %s, PID: %d", jsr::GetPlatform(), std::this_thread::get_id());
     Info("Installed memory: %dMB", jsr::GetSystemRAM());
 
-    jsr::resourceMgr->AddResourcePath("../assets/shaders");
-
-    exit(1);
-
+    resourceMgr->AddResourcePath("../assets/shaders");
+    resourceMgr->AddResourcePath("../assets/textures");
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 
+    Engine engine;
 
-    if (!jsr::renderSystem.Init())
+    if (!engine.Init(false))
     {
         return 0;
     }
-
-    jsr::ResourceManager::instance.AddResourcePath("../assets/textures");
+    
 
     std::atomic_bool quit{};
-    jsr::Image* im = new jsr::Image("imag1");
-    jsr::Image* im2 = new jsr::Image("imag2");
-    jsr::renderSystem.backend->SetCurrentTextureUnit(0);
+    Image* im = new jsr::Image("imag1");
+    Image* im2 = new jsr::Image("imag2");
+    renderSystem.backend->SetCurrentTextureUnit(0);
 
     std::filesystem::path p("../assets/textures/concrete/ConcreteWall02_2K_BaseColor_ect1s.ktx2");
 
@@ -55,27 +56,27 @@ int main(int argc, char** argv)
         Error("Cannot load texture");
     }
 
-    jsr::imageOpts_t opts{};
+    imageOpts_t opts{};
     opts.sizeX = 512;
     opts.sizeY = 512;
-    opts.format = jsr::IMF_R11G11B10F;
+    opts.format = IMF_R11G11B10F;
     opts.compressed = false;
     opts.numLevel = 1;
-    opts.shape = jsr::IMS_2D;
+    opts.shape = IMS_2D;
     opts.srgb = false;
-    opts.usage = jsr::IMU_DIFFUSE;
-    im2->AllocImage(opts, jsr::IFL_LINEAR, jsr::IMR_CLAMP_TO_EDGE);
+    opts.usage = IMU_DIFFUSE;
+    im2->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE);
 
-    jsr::renderSystem.backend->SetCurrentTextureUnit(0);
+    renderSystem.backend->SetCurrentTextureUnit(0);
     im2->Bind();
-    jsr::renderSystem.backend->SetCurrentTextureUnit(1);
+    renderSystem.backend->SetCurrentTextureUnit(1);
     im->Bind();
 
     SDL_Event e;
 
     while (!quit)
     {
-        jsr::renderSystem.Frame();
+        renderSystem.Frame();
 
         while (SDL_PollEvent(&e) != SDL_FALSE)
         {

@@ -1,4 +1,5 @@
 #pragma once
+#include "./ThreadWorker.h"
 
 namespace jsr {
 
@@ -14,6 +15,18 @@ namespace jsr {
 
 		engineConfig_t();
 		void LoadFromFile();
+	};
+
+	class Engine : public ThreadWorker
+	{
+	public:
+		Engine();
+		virtual ~Engine();
+		bool Init(bool aThreaded);
+		void Shutdown();
+		int Run() override;
+	private:
+		bool	threaded;
 	};
 
 	extern engineConfig_t engineConfig;

@@ -3,10 +3,11 @@
 namespace jsr {
 	RenderSystem::RenderSystem()
 	{
-		initialized = false;
-		frameNum = 0;
-		backend = new RenderBackend();
-		vertexCache = new VertexCache();
+		initialized		= false;
+		frameNum		= 0;
+		backend			= new RenderBackend();
+		vertexCache		= new VertexCache();
+		programManager	= new ProgramManager();
 	}
 	RenderSystem::~RenderSystem()
 	{
@@ -14,6 +15,8 @@ namespace jsr {
 		{
 			Shutdown();
 		}
+
+		delete programManager;
 		delete vertexCache;
 		delete backend;
 
@@ -27,6 +30,7 @@ namespace jsr {
 			return false;
 		}
 
+		programManager->Init();
 		vertexCache->Init();
 
 		initialized = true;
@@ -45,8 +49,13 @@ namespace jsr {
 	void RenderSystem::Frame()
 	{
 
-		backend->Clear(true, true, true);
+		programManager->UpdateUniforms();
 		vertexCache->Frame();
+
+		backend->Clear(true, true, true);
+
+		programManager->BindUniforms();
+
 		/*
 		RENDERING
 		*/

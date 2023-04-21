@@ -2,11 +2,22 @@
 
 #include <string>
 #include <array>
+#include <glm/glm.hpp>
+
 #include "./RenderCommon.h"
 
 namespace jsr {
 
 	const unsigned int INVALID_PROGRAM = 0xFFFF;
+
+	struct uboUniforms_t
+	{
+		alignas(16)
+		glm::mat4 localToWorldMatrix;
+		glm::mat4 worldToViewMatrix;
+		glm::mat4 worldToviewProjectionMatrix;
+		glm::vec4 viewOrigin;
+	};
 
 	enum eVertexLayout
 	{
@@ -27,8 +38,8 @@ namespace jsr {
 	enum eBuiltinProgram
 	{
 		PRG_VERTEX_COLOR,
-		PRG_ZPASS,
-		PRG_METALLIC_ROUGH_AO,
+//		PRG_ZPASS,
+//		PRG_METALLIC_ROUGH_AO,
 		PRG_COUNT
 	};
 
@@ -44,12 +55,22 @@ namespace jsr {
 	{
 	public:
 		ProgramManager();
+		~ProgramManager();
 		bool Init();
+		void Shutdown();
 		bool LowLevelInit();
+		bool IsInitialized() const { return initialized; }
+		void UseProgram(eBuiltinProgram program);
+		void UpdateUniforms();
+		void BindUniforms();
 	private:
-		unsigned int currentProgram;
-		static renderProgram_t builtins[PRG_COUNT];
+		unsigned int			currentProgram;
+		bool					initialized;
+		uboUniforms_t			uniforms;
+		vertCacheHandle_t		uniformsCache;
+		static renderProgram_t	builtins[PRG_COUNT];
 
 		bool CreateBuiltinProgram(renderProgram_t& p);
 	};
+
 }

@@ -9,6 +9,16 @@ namespace jsr {
 
 	const int MAX_TEXTURE_UNITS = 14;
 
+	struct rasterizerState_t
+	{
+
+	};
+
+	struct blendingState_t
+	{
+
+	};
+
 
 	struct tmu_t
 	{
@@ -49,6 +59,7 @@ namespace jsr {
 		void		SetCurrentTextureUnit(int unit);
 		bool		IsInitialized() const;
 		tmu_t*		GetTextureUnit(int index);
+		void		RenderView(viewDef_t* view);
 	private:
 		float	clearColor[4];
 		int		currenttmu;

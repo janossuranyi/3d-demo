@@ -94,6 +94,7 @@ namespace jsr {
 	};
 	class UniformBuffer : public BufferObject
 	{
+		friend class ProgramManager;
 	public:
 		UniformBuffer();
 	};

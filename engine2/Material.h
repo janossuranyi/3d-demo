@@ -2,6 +2,7 @@
 
 namespace jsr {
 
+
 	struct stage_t
 	{
 

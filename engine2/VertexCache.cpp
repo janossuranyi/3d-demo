@@ -6,11 +6,11 @@ namespace jsr {
 
 	VertexCache::VertexCache()
 	{		
-		staticCacheSize = DEFAULT_MAX_STATIC_CACHE;
-		transientCacheSize = DEFAULT_MAX_TRANSIENT_CACHE;
-		staticUboCacheSize = 64 * 1024;
-		transientUboCacheSize = 8 * 1024 * 1024;
-		uniformBufferAligment = 256;
+		staticCacheSize			= DEFAULT_MAX_STATIC_CACHE;
+		transientCacheSize		= DEFAULT_MAX_TRANSIENT_CACHE;
+		staticUboCacheSize		= 8 * 1024 * 1024;
+		transientUboCacheSize	= 8 * 1024 * 1024;
+		uniformBufferAligment	= 256;
 		uniformBufferAligmentBits = 8;
 	}
 
@@ -282,16 +282,18 @@ namespace jsr {
 
 		int	endPos = 0;
 		int offset = 0;
+		int numBytes{};
 
 		switch (type)
 		{
 		case CACHE_VERTEX:
-			endPos = gbs.vertexAlloced.fetch_add(bytes, std::memory_order_relaxed) + bytes;
+			numBytes = (bytes + 31) & ~31;
+			endPos = gbs.vertexAlloced.fetch_add(bytes, std::memory_order_relaxed) + numBytes;
 			if (endPos > gbs.vertexMaxSize)
 			{
 				Error("Out of vertex cache !");
 			}
-			offset = endPos - bytes;
+			offset = endPos - numBytes;
 			if (data != nullptr)
 			{
 				if (gbs.vertexBuffer.GetUsage() == BU_DYNAMIC)
@@ -304,12 +306,13 @@ namespace jsr {
 			break;
 
 		case CACHE_INDEX:
-			endPos = gbs.indexAlloced.fetch_add(bytes, std::memory_order_relaxed) + bytes;
+			numBytes = (bytes + 15) & ~15;
+			endPos = gbs.indexAlloced.fetch_add(bytes, std::memory_order_relaxed) + numBytes;
 			if (endPos > gbs.indexMaxSize)
 			{
 				Error("Out of index cache !");
 			}
-			offset = endPos - bytes;
+			offset = endPos - numBytes;
 			if (data != nullptr)
 			{
 				if (gbs.indexBuffer.GetUsage() == BU_DYNAMIC)
@@ -322,12 +325,13 @@ namespace jsr {
 			break;
 
 		case CACHE_UNIFORM:
-			endPos = gbs.uniformsAlloced.fetch_add(bytes, std::memory_order_relaxed) + bytes;
+			numBytes = (bytes + (uniformBufferAligment - 1)) & ~(uniformBufferAligment - 1);
+			endPos = gbs.uniformsAlloced.fetch_add(bytes, std::memory_order_relaxed) + numBytes;
 			if (endPos > gbs.uniformMaxSize)
 			{
 				Error("Out of uniform cache !");
 			}
-			offset = endPos - bytes;
+			offset = endPos - numBytes;
 			if (data != nullptr)
 			{
 				if (gbs.uniformBuffer.GetUsage() == BU_DYNAMIC)

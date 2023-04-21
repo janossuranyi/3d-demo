@@ -280,6 +280,10 @@ namespace jsr {
 		return glconfig.uniformBufferOffsetAligment;
 	}
 
+	void RenderBackend::RenderView(viewDef_t* view)
+	{
+
+	}
 	void RenderBackend::EndFrame()
 	{
 		glFinish();

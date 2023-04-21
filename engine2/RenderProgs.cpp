@@ -3,24 +3,25 @@
 
 namespace jsr {
 
-	renderProgram_t ProgramManager::builtins[] = {
-			{"vertex_color",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-			{"depth_pass",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-			{"metallic_roughness_ao",	SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
-	};
-
-	ProgramManager::ProgramManager()
+	ProgramManager::ProgramManager() :
+		initialized(false),
+		currentProgram(0)
 	{
+	}
+
+	ProgramManager::~ProgramManager()
+	{
+		Shutdown();
 	}
 
 	bool ProgramManager::Init()
 	{
-		if (renderSystem.IsInitialized() == false)
+		if (LowLevelInit())
 		{
-			return false;
+			initialized = true;
+			return true;
 		}
 
-		return LowLevelInit();
+		return false;
 	}
-
 }
