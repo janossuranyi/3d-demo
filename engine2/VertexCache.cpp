@@ -246,8 +246,8 @@ namespace jsr {
 	byte* VertexCache::MappedVertex(vertCacheHandle_t handle) const
 	{
 		assert(!IsStatic(handle));
-		const uint64 offset		= (handle << JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
-		const uint64 framenum	= (handle << JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
+		const uint64 offset		= (handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
+		const uint64 framenum	= (handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
 		assert(framenum == (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK));
 
 		return transientBufferSet[listNum].vertexPtr + offset;
@@ -255,8 +255,8 @@ namespace jsr {
 	byte* VertexCache::MappedIndex(vertCacheHandle_t handle) const
 	{
 		assert(!IsStatic(handle));
-		const uint64 offset = (handle << JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
-		const uint64 framenum = (handle << JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
+		const uint64 offset = (handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
 		assert(framenum == (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK));
 
 		return transientBufferSet[listNum].indexPtr + offset;
