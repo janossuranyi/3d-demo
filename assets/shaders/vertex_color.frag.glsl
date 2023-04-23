@@ -1,4 +1,4 @@
-#include "version.inc.glsl"
+@include "version.inc.glsl"
 
 in INTERFACE
 {
@@ -7,13 +7,7 @@ in INTERFACE
     vec4 normal;
 } In;
 
-layout(binding = 0, std140) uniform uboUniforms
-{
-    mat4 localToWorldMatrix;
-    mat4 worldToViewMatrix;
-    mat4 worldToviewProjectionMatrix;
-    vec4 viewOrigin;
-};
+@include "uniforms.inc.glsl"
 
 out vec4 fragColor;
 

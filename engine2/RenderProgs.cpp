@@ -1,11 +1,14 @@
 #include "RenderProgs.h"
 #include "RenderSystem.h"
+#include "Logger.h"
 
 namespace jsr {
 
 	ProgramManager::ProgramManager() :
 		initialized(false),
-		currentProgram(0)
+		currentProgram(0),
+		uniformsCache(0),
+		uniforms()
 	{
 	}
 
@@ -16,6 +19,7 @@ namespace jsr {
 
 	bool ProgramManager::Init()
 	{
+		Info("size of uboUniforms_t = %d", sizeof(uboUniforms_t));
 		if (LowLevelInit())
 		{
 			initialized = true;

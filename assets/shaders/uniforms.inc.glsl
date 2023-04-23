@@ -1,46 +1,18 @@
 
-layout(std140) uniform Matrixes {
-    mat4 rpMtxInvProj;
-    mat4 rpMtxModelViewProj;
-    mat4 rpMtxModel;
-    mat4 rpMtxNormal;
-};
+#define SHADER_UNIFORMS_BINDING 0
 
-struct SpotLight {
-    vec4 color;
-    vec4 attenuation;
-    vec4 position;
-    vec4 spotDir;
-    float innerConeAngle;
-    float outerConeAngle;
-};
-
-struct DirLight {
-    vec4 color;
-    vec4 direction;
-};
-
-struct PointLight {
-    vec4 color;
-    vec4 attenuation;
-    vec4 position;
-};
-
-layout(std140) uniform SpotLights {
-    SpotLight rpSpotLights[256];
-};
-
-layout(std140) uniform PointLights {
-    PointLight rpPointLights[256];
-};
-
-layout(std140) uniform DirLights {
-    DirLight rpDirLights[256];
-};
-
-layout(std140) uniform Params {
-    vec4    rpEyePos;
-    int     rpNumSpotLight;
-    int     rpNumDirLight;
-    int     rpNumPointLight;
-};
+layout(binding = SHADER_UNIFORMS_BINDING, std140) uniform uboUniforms
+{
+    mat4 localToWorldMatrix;
+    mat4 worldToViewMatrix;
+	mat4 projectionMatrix;
+    mat4 worldToviewProjectionMatrix;
+    vec4 viewOrigin;
+	vec4 user01;
+	vec4 user02;
+	vec4 user03;
+	vec4 user04;
+	vec4 user05;
+	vec4 user06;
+	vec4 user07;
+} ubo;

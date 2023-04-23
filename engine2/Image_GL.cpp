@@ -13,6 +13,7 @@ namespace jsr {
 	Image::Image(const std::string& name_)
 	{
 		name = name_;
+		refCount = 0;
 		created = true;
 		wrapS = IMR_CLAMP_TO_EDGE;
 		wrapT = IMR_CLAMP_TO_EDGE;

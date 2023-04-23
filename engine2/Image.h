@@ -118,6 +118,8 @@ namespace jsr {
 		void SetNumLevel(int x);
 		void SetNumLayer(int x);
 		void SetMaxAnisotropy(float f);
+		void AddRef();
+		void ReleaseRef();
 		int GetNumLevel() const;
 		int GetNumLayer() const;
 		int GetWidth() const;
@@ -137,6 +139,7 @@ namespace jsr {
 		bool created;
 		int apiObject;
 		int apiTarget;
+		int refCount;
 		eImageFilter magFilter;
 		eImageFilter minFilter;
 		eImageRepeat wrapS;

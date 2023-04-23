@@ -146,6 +146,28 @@ namespace jsr {
 		return true;
 	}
 
+	static bool imageLoader_DDS(Image* img, const char* filename)
+	{
+		nv_dds::CDDSImage image;
+		image.load(filename);
+
+		if (!image.is_valid()) return false;
+
+		img->Bind();
+		switch (image.get_type())
+		{
+		case nv_dds::TextureFlat:
+			image.upload_texture2D();
+			break;
+		case nv_dds::TextureCubemap:
+			image.upload_textureCubemap();
+			break;
+		case nv_dds::Texture3D:
+			image.upload_texture3D();
+			break;
+		}
+	}
+
 	static bool imageLoader_STB(Image* img, const char* filename)
 	{
 		if (img->IsCreated()) return false;
@@ -211,6 +233,8 @@ namespace jsr {
 		return true;
 	}
 
+
+
 	Image::Image() : Image("_unnamed_") {}
 
 	void Image::SetUsage(eImageUsage x)
@@ -242,6 +266,16 @@ namespace jsr {
 	void Image::SetMaxAnisotropy(float f)
 	{
 		opts.maxAnisotropy = f;
+	}
+
+	void Image::AddRef()
+	{
+		++refCount;
+	}
+
+	void Image::ReleaseRef()
+	{
+		if (refCount > 0) --refCount;
 	}
 
 	int Image::GetNumLevel() const
@@ -321,7 +355,7 @@ namespace jsr {
 		else if (ext.string() == ".dds")
 		{
 			// dds path
-			Error("DDS not implemented");			
+			return imageLoader_DDS(this, filename);
 		}
 		else
 		{

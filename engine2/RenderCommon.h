@@ -9,6 +9,13 @@
 
 namespace jsr {
 
+	enum eCullMode
+	{
+		CULL_NONE,
+		CULL_FRONT,
+		CULL_BACK
+	};
+
 	enum eTopology
 	{
 		TP_POINTS,

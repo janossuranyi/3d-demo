@@ -8,7 +8,7 @@ namespace jsr {
 	{		
 		staticCacheSize			= DEFAULT_MAX_STATIC_CACHE;
 		transientCacheSize		= DEFAULT_MAX_TRANSIENT_CACHE;
-		staticUboCacheSize		= 8 * 1024 * 1024;
+		staticUboCacheSize		= 4 * 1024 * 1024;
 		transientUboCacheSize	= 8 * 1024 * 1024;
 		uniformBufferAligment	= 256;
 		uniformBufferAligmentBits = 8;
@@ -180,14 +180,14 @@ namespace jsr {
 
 		if (isStatic)
 		{
-			dest.MakeView(staticBufferSet.vertexBuffer, offset << 4, size);
+			dest.MakeView(staticBufferSet.vertexBuffer, offset, size);
 			return true;
 		}
 		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
 		{
 			return false;
 		}
-		dest.MakeView(transientBufferSet[renderFrame].vertexBuffer, offset << 4, size);
+		dest.MakeView(transientBufferSet[renderFrame].vertexBuffer, offset, size);
 	}
 
 	bool VertexCache::GetIndexBuffer(vertCacheHandle_t handle, IndexBuffer& dest)
@@ -199,14 +199,14 @@ namespace jsr {
 
 		if (isStatic)
 		{
-			dest.MakeView(staticBufferSet.indexBuffer, offset << 4, size);
+			dest.MakeView(staticBufferSet.indexBuffer, offset, size);
 			return true;
 		}
 		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
 		{
 			return false;
 		}
-		dest.MakeView(transientBufferSet[renderFrame].indexBuffer, offset << 4, size);
+		dest.MakeView(transientBufferSet[renderFrame].indexBuffer, offset, size);
 	}
 
 	bool VertexCache::GetUniformBuffer(vertCacheHandle_t handle, UniformBuffer& dest)
@@ -218,14 +218,14 @@ namespace jsr {
 
 		if (isStatic)
 		{
-			dest.MakeView(staticBufferSet.uniformBuffer, offset << uniformBufferAligmentBits, size);
+			dest.MakeView(staticBufferSet.uniformBuffer, offset, size);
 			return true;
 		}
 		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
 		{
 			return false;
 		}
-		dest.MakeView(transientBufferSet[renderFrame].uniformBuffer, offset << uniformBufferAligmentBits, size);
+		dest.MakeView(transientBufferSet[renderFrame].uniformBuffer, offset, size);
 	}
 
 	bool VertexCache::IsStatic(vertCacheHandle_t handle) const
@@ -301,7 +301,6 @@ namespace jsr {
 					MapBufferSet(gbs);
 				}
 				gbs.vertexBuffer.Update(data, offset, bytes);
-				offset >>= 4;
 			}
 			break;
 
@@ -320,7 +319,6 @@ namespace jsr {
 					MapBufferSet(gbs);
 				}
 				gbs.indexBuffer.Update(data, offset, bytes);
-				offset >>= 4;
 			}
 			break;
 
@@ -339,7 +337,6 @@ namespace jsr {
 					MapBufferSet(gbs);
 				}
 				gbs.uniformBuffer.Update(data, offset, bytes);
-				offset >>= uniformBufferAligmentBits;
 			}
 			break;
 		default:

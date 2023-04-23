@@ -87,7 +87,7 @@ namespace jsr {
 
     std::string ResourceManager::GetShaderSource(const std::string& name, int depth)
     {
-        static const std::regex include_regex("^#include[ ]*\"(.+)\"");
+        static const std::regex include_regex("^[#@]include[ ]*\"(.+)\"");
         std::string output;
 
         if (depth < 0 || resource_map.count(name) == 0)

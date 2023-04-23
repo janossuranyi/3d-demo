@@ -11,8 +11,8 @@
 namespace jsr {
 
 	renderProgram_t ProgramManager::builtins[] = {
-		{"vertex_color",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
-//		{"depth_pass",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
+		{"vertex_color",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
+		{"depth_only",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
 //		{"metallic_roughness_ao",	SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
 	};
 
@@ -20,7 +20,7 @@ namespace jsr {
 	{
 		for (int i = 0; i < numShader; ++i)
 		{
-			if (glIsShader(list[i])) glDeleteShader(list[i]);
+			if (glIsShader(list[i])) { glDeleteShader(list[i]); }
 		}
 	}
 
@@ -110,13 +110,27 @@ namespace jsr {
 
 	bool ProgramManager::LowLevelInit()
 	{
+		int idx = 0;
 		for (auto& p : builtins)
 		{
-			assert(CreateBuiltinProgram(p));
+			Info("[ProgramManager] Creating render program %2d:[%s]", idx++, p.name);
+			if (!CreateBuiltinProgram(p))
+			{
+				Error("[ProgramManager] Cannot initialize render programs");
+				for (auto k : builtins)
+				{
+					if (k.prg != INVALID_PROGRAM)
+					{
+						GL_CHECK( glDeleteProgram( k.prg ) );
+					}
+				}
+
+				return false;
+			}
 		}
 		return true;
 	}
-	void ProgramManager::UseProgram(eBuiltinProgram program)
+	void ProgramManager::UseProgram(eShaderProg program)
 	{
 		unsigned int apiObject = builtins[program].prg;
 		if (apiObject != currentProgram)
@@ -127,7 +141,7 @@ namespace jsr {
 	}
 	void ProgramManager::UpdateUniforms()
 	{
-		uniformsCache = renderSystem.vertexCache->AllocTransientUniform(&uniforms, sizeof(uniforms));
+		uniformsCache = renderSystem.vertexCache->AllocTransientUniform( &uniforms, sizeof(uniforms) );
 	}
 
 	void ProgramManager::BindUniforms()
@@ -135,7 +149,7 @@ namespace jsr {
 		UniformBuffer ubo;
 		if (renderSystem.vertexCache->GetUniformBuffer(uniformsCache, ubo))
 		{
-			GL_CHECK( glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()) );
+			GL_CHECK( glBindBufferRange(GL_UNIFORM_BUFFER, SHADER_UNIFORMS_BINDING, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()) );
 		}
 	}
 

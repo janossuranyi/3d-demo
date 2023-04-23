@@ -9,14 +9,24 @@
 namespace jsr {
 
 	const unsigned int INVALID_PROGRAM = 0xFFFF;
+	const int SHADER_UNIFORMS_BINDING = 0;
 
+	// must be synchronized with uniforms.inc.glsl
 	struct uboUniforms_t
 	{
 		alignas(16)
 		glm::mat4 localToWorldMatrix;
 		glm::mat4 worldToViewMatrix;
+		glm::mat4 projectionMatrix;
 		glm::mat4 worldToviewProjectionMatrix;
 		glm::vec4 viewOrigin;
+		glm::vec4 user01;
+		glm::vec4 user02;
+		glm::vec4 user03;
+		glm::vec4 user04;
+		glm::vec4 user05;
+		glm::vec4 user06;
+		glm::vec4 user07;
 	};
 
 	enum eVertexLayout
@@ -35,10 +45,10 @@ namespace jsr {
 		SHADER_STAGE_DEFAULT = SHADER_STAGE_VERTEX | SHADER_STAGE_FRAGMENT
 	};
 
-	enum eBuiltinProgram
+	enum eShaderProg
 	{
 		PRG_VERTEX_COLOR,
-//		PRG_ZPASS,
+		PRG_ZPASS,
 //		PRG_METALLIC_ROUGH_AO,
 		PRG_COUNT
 	};
@@ -60,7 +70,7 @@ namespace jsr {
 		void Shutdown();
 		bool LowLevelInit();
 		bool IsInitialized() const { return initialized; }
-		void UseProgram(eBuiltinProgram program);
+		void UseProgram(eShaderProg program);
 		void UpdateUniforms();
 		void BindUniforms();
 	private:

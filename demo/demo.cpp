@@ -49,7 +49,7 @@ int main(int argc, char** argv)
     Image* im2 = new jsr::Image("imag2");
     renderSystem.backend->SetCurrentTextureUnit(0);
 
-    std::filesystem::path p("../assets/textures/concrete/ConcreteWall02_2K_BaseColor_ect1s.ktx2");
+    std::filesystem::path p("../assets/textures/debug_uv.dds");
 
     if (!std::filesystem::exists(p) || !im->Load(p.string().c_str()))
     {
