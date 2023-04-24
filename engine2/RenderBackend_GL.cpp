@@ -219,6 +219,14 @@ namespace jsr {
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDepthMask(GL_TRUE);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		if (engineConfig.r_fbsrgb)
+		{
+			glEnable(GL_FRAMEBUFFER_SRGB);
+		}
+		else
+		{
+			glDisable(GL_FRAMEBUFFER_SRGB);
+		}
 
 		// end
 		if (engineConfig.r_debug && glconfig.extensions.count("GL_ARB_debug_output"))
