@@ -61,10 +61,10 @@ namespace jsr {
 		drawSurf_t*		surf;
 	};
 
-	struct vertexData_t;
+	struct surface_t;
 	struct drawSurf_t
 	{
-		const vertexData_t*	frontEndGeo;
+		const surface_t*	frontEndGeo;
 		int					numIndex;
 		vertCacheHandle_t	indexCache;
 		vertCacheHandle_t	vertexCache;

@@ -8,6 +8,7 @@ namespace jsr {
 		pParent(),
 		localToWorldMatrix(1.0f),
 		origin(vec3(0.0f)),
+		scale(vec3(1.0f)),
 		changed(true),
 		dir(1.0f,0.0f, 0.0f, 0.0f)
 	{}
@@ -33,19 +34,18 @@ namespace jsr {
 
 	mat4 const& Node3D::GetLocalToWorldMatrix()
 	{
+		static mat4 IDENT(1.0f);
+
 		if (changed)
 		{
 			changed = false;
 
-			localToWorldMatrix = translate(mat4(1.0f), origin) * mat4(dir);
+			localToWorldMatrix = glm::translate(IDENT, origin) * mat4_cast(dir);
+			localToWorldMatrix = glm::scale(localToWorldMatrix, scale);
+						
 			if (pParent)
 			{
-				localToWorldMatrix = localToWorldMatrix * pParent->GetLocalToWorldMatrix();
-			}
-
-			for (auto* node : children)
-			{
-				node->changed = true;
+				localToWorldMatrix = pParent->GetLocalToWorldMatrix() * localToWorldMatrix;
 			}
 		}
 
@@ -55,13 +55,19 @@ namespace jsr {
 	void Node3D::SetOrigin(glm::vec3 const& o)
 	{
 		origin = o;
-		changed = true;
+		Changed();
+	}
+
+	void Node3D::SetScale(glm::vec3 const& v)
+	{
+		scale = v;
+		Changed();
 	}
 
 	void Node3D::SetDir(glm::quat const& d)
 	{
 		dir = d;
-		changed = true;
+		Changed();
 	}
 
 	void Node3D::SetDir(float radX, float radY, float radZ)
@@ -74,6 +80,16 @@ namespace jsr {
 	void Node3D::SetParent(Node3D* parent)
 	{
 		pParent = parent;
+		Changed();
+	}
+
+	void Node3D::Changed()
+	{
+		changed = true;
+		for (auto* node : children)
+		{
+			node->Changed();
+		}
 	}
 	
 }

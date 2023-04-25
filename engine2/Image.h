@@ -131,6 +131,7 @@ namespace jsr {
 		eImageFilter GetMagFilter() const;
 		eImageRepeat GetRepeatS() const;
 		eImageRepeat GetRepeatT() const;
+		eImageUsage GetUsage() const;
 		bool IsCreated() const;
 		bool IsCompressed() const;
 		imageOpts_t opts;

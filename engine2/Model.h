@@ -1,10 +1,12 @@
 #pragma once
+
+#include <vector>
 #include "./Bounds.h"
 #include "./RenderCommon.h"
 
 namespace jsr {
 
-	struct vertexData_t
+	struct surface_t
 	{
 		Bounds				bounds;
 		int					numVerts;
@@ -14,6 +16,7 @@ namespace jsr {
 		eTopology			topology;
 		vertCacheHandle_t	vertexCache;
 		vertCacheHandle_t	indexCache;
+		bool gpuResident;
 	};
 
 
@@ -21,11 +24,22 @@ namespace jsr {
 	{
 		int				id;
 		const Material* shader;
-		vertexData_t	primitive;
+		surface_t		surf;
 	};
 
 	class RenderModel
 	{
-
+	public:
+		int						GetNumSurface() const
+		{
+			return surfs.size();
+		}
+		modelSurface_t const*	GetSurface(int idx) const
+		{
+			assert(idx < surfs.size());
+			return surfs[idx];
+		}
+	private:
+		std::vector<modelSurface_t*> surfs;
 	};
 }

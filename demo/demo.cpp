@@ -44,19 +44,21 @@ int main(int argc, char** argv)
     Node3D n1{};
     Node3D n2{};
 
-    n2.SetDir(glm::angleAxis(radians(35.0f), vec3(0.0f, 1.0f, 0.0f)));
-    auto q1 = n2.GetDir();
-    Info("q1{% .2f, % .2f, % .2f, % .2f }", q1.w, q1.x, q1.y, q1.z);
-    n1.SetOrigin(vec3(1.0f, 2.0f, 3.0f));
-    n2.SetOrigin(vec3(4.0f, 5.0f, 6.0f));
     n1.SetParent(&n2);
+    n2.SetDir(glm::angleAxis(radians(90.0f), vec3(1.0f, 0.0f, 0.0f)));
+    n1.SetScale(vec3(1.0f));
+
+    auto q1 = n1.GetDir();
+    Info("q1{% .2f, % .2f, % .2f, % .2f }", q1.w, q1.x, q1.y, q1.z);
+    n2.SetOrigin(vec3(0.0f, 0.0f, 0.0f));
+    n1.SetOrigin(vec3(0.0f, 1.0f, 0.0f));
 
     auto W = n1.GetLocalToWorldMatrix();
 
     Info("--------------------------------------------");
     for (int i = 0; i < 4; ++i)
     {
-        Info("M%d{% .2f, % .2f, % .2f, % .2f }", i, W[0][i], W[1][i], W[2][i], W[3][i]);
+        Info("M%d{ % .2f, % .2f, % .2f, % .2f }", i, W[0][i], W[1][i], W[2][i], W[3][i]);
     }
 
     exit(0);

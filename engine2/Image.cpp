@@ -122,10 +122,12 @@ namespace jsr {
 		img->opts = opts;
 		img->Bind();
 
-		if (tex_not_loaded) {
+		if (tex_not_loaded)
+		{
 			ktxresult = ktxTexture_IterateLoadLevelFaces(kTexture, Ktx_image_callback, img);
 		}
-		else {
+		else
+		{
 			ktxresult = ktxTexture_IterateLevelFaces(kTexture, Ktx_image_callback, img);
 		}
 
@@ -331,6 +333,11 @@ namespace jsr {
 	eImageRepeat Image::GetRepeatT() const
 	{
 		return wrapT;
+	}
+
+	eImageUsage Image::GetUsage() const
+	{
+		return opts.usage;
 	}
 
 	bool Image::IsCreated() const
