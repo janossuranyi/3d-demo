@@ -1,4 +1,5 @@
 #include "./RenderSystem.h"
+#include "./Logger.h"
 
 namespace jsr {
 	RenderSystem::RenderSystem()
@@ -8,6 +9,7 @@ namespace jsr {
 		backend			= new RenderBackend();
 		vertexCache		= new VertexCache();
 		programManager	= new ProgramManager();
+		imageManager	= new ImageManager();
 	}
 	RenderSystem::~RenderSystem()
 	{
@@ -16,13 +18,13 @@ namespace jsr {
 			Shutdown();
 		}
 
+		delete imageManager;
 		delete programManager;
 		delete vertexCache;
 		delete backend;
 
 		initialized = false;
 	}
-
 	bool RenderSystem::Init()
 	{
 		if (!backend->Init())
@@ -30,8 +32,9 @@ namespace jsr {
 			return false;
 		}
 
-		programManager->Init();
-		vertexCache->Init();
+		if (!programManager->Init())	Error("[RenderSystem]: programManager init failed !");
+		if (!vertexCache->Init())		Error("[RenderSystem]: vertexCache init failed !");
+		if (!imageManager->Init())		Error("[RenderSystem]: imageManager init failed !");
 
 		initialized = true;
 

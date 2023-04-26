@@ -47,7 +47,9 @@ namespace jsr {
 		IMU_DIFFUSE,
 		IMU_NORMAL,
 		IMU_AORM,		// R:Ambient occlusion, G:Roughness, B:Metalness
-		IMU_EMMISIVE
+		IMU_EMMISIVE,
+		IMU_DEPTH,
+		IMU_HDR
 	};
 
 	enum eImageFilter
@@ -108,7 +110,7 @@ namespace jsr {
 		void PurgeImage();
 		bool Load(const char* filename);
 		void Bind() const;
-		void Unbind() const;
+		static void Unbind();
 		bool UpdateImageData(int w, int h,  int level, int layer, int face, int size, const void* data, eImageFormat srcFormat = IMF_DEFAULT);
 		void CopyFramebuffer(int x, int y, int imageWidth, int imageHeight);
 		void SetTextureParameters() const;
@@ -134,6 +136,7 @@ namespace jsr {
 		eImageUsage GetUsage() const;
 		bool IsCreated() const;
 		bool IsCompressed() const;
+		std::string GetName() const;
 		imageOpts_t opts;
 	private:
 		std::string	name;

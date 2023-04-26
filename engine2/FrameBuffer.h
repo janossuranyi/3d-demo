@@ -4,9 +4,10 @@
 #include <string>
 #include <list>
 
-#define JSR_MAX_COLOR_ATTACHMENTS 16
 
 namespace jsr {
+
+	const int MAX_COLOR_ATTACHMENTS =16;
 
 	class Image;
 	class Framebuffer
@@ -28,9 +29,9 @@ namespace jsr {
 		std::string		fboName;
 		int				width;
 		int				height;
-		int				colorAttachment[JSR_MAX_COLOR_ATTACHMENTS];
-		int				depthAttachmemt;
-		int				stencilAttachmemt;
+		int				colorAttachments[ MAX_COLOR_ATTACHMENTS ];
+		int				depthAttachment;
+		int				stencilAttachment;
 		int				apiObject;
 
 		static std::list<Framebuffer*>	framebuffers;
@@ -38,11 +39,10 @@ namespace jsr {
 
 	struct globalFramebuffers_t
 	{
-		Framebuffer*	shadowMapFBO;
+		Framebuffer*	shadowFBO;
 		Framebuffer*	hdrFBO;
-		Framebuffer*	GBuffer0;
-		Framebuffer*	GBuffer1;
-		Framebuffer*	depthFBO;
+		Framebuffer*	GBufferFBO;
+		Framebuffer*	defaultFBO;
 	};
 
 	extern globalFramebuffers_t globalFramebuffers;

@@ -20,6 +20,7 @@
 #include "engine2/RenderProgs.h"
 #include "engine2/Engine.h"
 #include "engine2/Node3D.h"
+#include "engine2/ImageManager.h"
 
 using namespace std::chrono;
 
@@ -61,65 +62,52 @@ int main(int argc, char** argv)
         Info("M%d{ % .2f, % .2f, % .2f, % .2f }", i, W[0][i], W[1][i], W[2][i], W[3][i]);
     }
 
-    exit(0);
+    //exit(0);
 
     Engine engine;
 
-    if (!engine.Init(false))
+    if ( !engine.Init( false ) )
     {
         return 0;
     }
 
-
-
     std::atomic_bool quit{};
-    Image* im = new jsr::Image("imag1");
-    Image* im2 = new jsr::Image("imag2");
-    renderSystem.backend->SetCurrentTextureUnit(0);
+    Image* im  = new Image( "imag1" );
+    renderSystem.imageManager->AddImage( im );
 
-    std::filesystem::path p("../assets/textures/debug_uv.dds");
+    renderSystem.backend->SetCurrentTextureUnit( 0 );
 
-    if (!std::filesystem::exists(p) || !im->Load(p.string().c_str()))
+    std::filesystem::path p( "../assets/textures/debug_uv.dds" );
+
+    if ( !std::filesystem::exists( p ) || !im->Load( p.string().c_str() ) )
     {
-        Error("Cannot load texture");
+        Error( "Cannot load texture" );
     }
 
-    imageOpts_t opts{};
-    opts.sizeX = 512;
-    opts.sizeY = 512;
-    opts.format = IMF_R11G11B10F;
-    opts.compressed = false;
-    opts.numLevel = 1;
-    opts.shape = IMS_2D;
-    opts.srgb = false;
-    opts.usage = IMU_DIFFUSE;
-    im2->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE);
-
-    renderSystem.backend->SetCurrentTextureUnit(0);
-    im2->Bind();
-    renderSystem.backend->SetCurrentTextureUnit(1);
+    renderSystem.backend->SetCurrentTextureUnit( 1 );
     im->Bind();
+
+    Image* im2 = renderSystem.imageManager->GetImage("_hdrimage");
+    renderSystem.backend->SetCurrentTextureUnit( 0 );
+    im2->Bind();
 
     SDL_Event e;
 
-    while (!quit)
+    while ( !quit )
     {
         renderSystem.Frame();
 
-        while (SDL_PollEvent(&e) != SDL_FALSE)
+        while ( SDL_PollEvent( &e ) != SDL_FALSE )
         {
-            if (e.type == SDL_QUIT)
+            if ( e.type == SDL_QUIT )
             {
                 quit = true;
                 break;
             }
         }
         
-        std::this_thread::sleep_for(1ms);
+        std::this_thread::sleep_for( 1ms );
     }
-
-    delete im;
-    delete im2;
 
     //jsr::renderSystem.Shutdown();
 

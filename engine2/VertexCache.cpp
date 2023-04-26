@@ -67,9 +67,9 @@ namespace jsr {
 			gbs.uniformBuffer.UnmapBuffer();
 		}
 	}
-	void VertexCache::Init(int uniformBufferAligment_)
+	bool VertexCache::Init(int uniformBufferAligment_)
 	{
-		if (initialized) return;
+		if (initialized) return false;
 
 		assert((uniformBufferAligment_ & (uniformBufferAligment_ - 1)) == 0);
 		uniformBufferAligment = uniformBufferAligment_;
@@ -97,6 +97,7 @@ namespace jsr {
 		Info("%10d %10d %10d %10d %10d %10d", transientCacheSize, transientCacheSize, transientUboCacheSize, staticCacheSize, staticCacheSize, staticUboCacheSize);
 		Info("================================================================");
 
+		return true;
 	}
 
 	void VertexCache::Shutdown()

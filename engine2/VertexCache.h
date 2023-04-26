@@ -59,7 +59,7 @@ namespace jsr {
 		VertexCache& operator=(const VertexCache&) = delete;
 		VertexCache& operator=(VertexCache&&) = delete;
 		~VertexCache();
-		void Init(int uniformBufferAligment_ = 256);
+		bool Init(int uniformBufferAligment_ = 256);
 		void Shutdown();
 		void Restart();
 		void Frame();

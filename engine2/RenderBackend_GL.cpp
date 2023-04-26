@@ -234,7 +234,7 @@ namespace jsr {
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 
 			glDebugMessageCallbackARB(&GL_DebugMessageCallback, NULL);
-#if 1
+#if 0
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_ERROR_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);

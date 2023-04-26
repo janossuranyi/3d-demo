@@ -350,6 +350,11 @@ namespace jsr {
 		return opts.compressed;
 	}
 
+	std::string Image::GetName() const
+	{
+		return name;
+	}
+
 	bool Image::Load(const char* filename)
 	{
 		std::filesystem::path path(filename);

@@ -1,7 +1,7 @@
 #pragma once
 #include "./RenderBackend.h"
 #include "./VertexCache.h"
-
+#include "./ImageManager.h"
 namespace jsr {
 
 	class RenderSystem
@@ -10,6 +10,7 @@ namespace jsr {
 		RenderBackend* backend;
 		VertexCache* vertexCache;
 		ProgramManager* programManager;
+		ImageManager* imageManager;
 
 		RenderSystem();
 		~RenderSystem();

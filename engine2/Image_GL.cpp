@@ -61,10 +61,14 @@ namespace jsr {
 		}
 	}
 
-	void Image::Unbind() const
+	void Image::Unbind()
 	{
-		//if (!created) return;
-		//GL_CHECK(glBindTexture(apiTarget, 0));
+		GL_CHECK(glBindTexture(GL_TEXTURE_1D, 0));
+		GL_CHECK(glBindTexture(GL_TEXTURE_1D_ARRAY, 0));
+		GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+		GL_CHECK(glBindTexture(GL_TEXTURE_2D_ARRAY, 0));
+		GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+		GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0));
 	}
 
 	bool Image::UpdateImageData(int w, int h, int level, int layer, int face, int size, const void* data, eImageFormat srcFormat)

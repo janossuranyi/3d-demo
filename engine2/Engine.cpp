@@ -11,7 +11,7 @@ namespace jsr {
 		r_resY = 720;
 		r_fullscreen = 0;
 		r_debug = true;
-		r_fbsrgb = true;
+		r_fbsrgb = false;
 		r_fullscreen = 0;
 		r_msaa = 0;
 		r_vsync = 1;

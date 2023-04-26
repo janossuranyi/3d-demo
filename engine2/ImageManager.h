@@ -1,10 +1,14 @@
 #pragma once
 
+#include <string>
+#include <vector>
+#include <unordered_map>
+
 #include "./Image.h"
 
 namespace jsr {
 
-	struct internalImages_t
+	struct globalImages_t
 	{
 		Image* HDRaccum;
 		Image* GBufferAlbedo;
@@ -22,7 +26,17 @@ namespace jsr {
 		~ImageManager();
 		bool Init();
 		void Shutdown();
+		int LoadFromFile(std::string const& name, std::string const& filename, eImageUsage usage);
+		int AddImage(Image* img);
+		void RemoveImage(int idx);
+		void RemoveImage(std::string const& name);
+		Image* GetImage(int idx);
+		Image* GetImage(std::string const& name);
+		globalImages_t globalImages;
 	private:
-
+		size_t AllocImage();
+		bool initialized;
+		std::vector<Image*> images;
+		std::unordered_map<std::string, Image*> imagemap;
 	};
 }
