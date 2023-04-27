@@ -8,6 +8,8 @@ namespace jsr {
 
 	glcontext_t glcontext{};
 
+	RenderBackend tr{};
+	
 	RenderBackend::RenderBackend()
 	{
 		glcontext.frameCounter = 0;
@@ -39,7 +41,6 @@ namespace jsr {
 	bool RenderBackend::Init()
 	{
 		Info("---- Init graphics subsystem ----");
-		SetClearColor(0, 0, 0, 1);
 		if (!R_InitGfxAPI())
 		{
 			return false;
@@ -57,13 +58,6 @@ namespace jsr {
 		}
 	}
 
-	void RenderBackend::SetClearColor(float r, float g, float b, float a)
-	{
-		clearColor[0] = r;
-		clearColor[1] = g;
-		clearColor[2] = b;	
-		clearColor[3] = a;
-	}
 	glm::vec4 RenderBackend::GetClearColor() const
 	{
 		return glm::vec4(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);

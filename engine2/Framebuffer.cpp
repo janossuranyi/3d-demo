@@ -1,9 +1,11 @@
 #include "./RenderSystem.h"
+#include "./ImageManager.h"
 #include "./FrameBuffer.h"
+#include "./Logger.h"
 
 namespace jsr {
 
-	std::list<Framebuffer*>	Framebuffer::framebuffers;
+	std::vector<Framebuffer*>	Framebuffer::framebuffers;
 	globalFramebuffers_t globalFramebuffers;
 
 	void Framebuffer::Shutdown()
@@ -17,6 +19,46 @@ namespace jsr {
 	}
 	void Framebuffer::Init()
 	{
+		// Creating global framebuffers
+		Framebuffer* fb;
+		ImageManager* imgr = renderSystem.imageManager;
+
+		int w, h;
+		renderSystem.backend->GetScreenSize( w, h );
+
+		fb = new Framebuffer( "defaultFBO", w, h);
+		fb->Bind();
+		fb->AttachImage2D(imgr->globalImages.defaultImage, 0);
+		fb->AttachImageDepth( imgr->globalImages.defaultDepth );
+		if ( ! fb->Check() )
+		{
+			Error("[Framebuffer]: defaultFBO init failed!");
+		}
+		globalFramebuffers.defaultFBO = fb;
+
+		fb = new Framebuffer( "hdrFBO", w, h );
+		fb->Bind();
+		fb->AttachImage2D( imgr->globalImages.HDRaccum, 0 );
+		fb->AttachImageDepth(imgr->globalImages.HDRdepth);
+		if ( ! fb->Check() )
+		{
+			Error("[Framebuffer]: hdrFBO init failed!");
+		}
+		globalFramebuffers.hdrFBO = fb;
+
+		fb = new Framebuffer( "gbufferFBO", w, h );
+		fb->Bind();
+		fb->AttachImageDepth( imgr->globalImages.Depth32 );
+		fb->AttachImage2D( imgr->globalImages.GBufferAlbedo, 0 );
+		fb->AttachImage2D( imgr->globalImages.GBufferSpec, 1 );
+		fb->AttachImage2D( imgr->globalImages.GBufferNormal, 2 );
+		if ( ! fb->Check() )
+		{
+			Error("[Framebuffer]: GBufferFBO init failed!");
+		}
+		globalFramebuffers.GBufferFBO = fb;
+
+		Framebuffer::Unbind();
 	}
 	bool Framebuffer::IsDefaultFramebufferActive()
 	{

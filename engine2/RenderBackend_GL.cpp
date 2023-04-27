@@ -262,6 +262,15 @@ namespace jsr {
 		}
 	}
 
+	void RenderBackend::SetClearColor(float r, float g, float b, float a)
+	{
+		clearColor[0] = r;
+		clearColor[1] = g;
+		clearColor[2] = b;
+		clearColor[3] = a;
+		GL_CHECK( glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]) );
+	}
+
 	void RenderBackend::Clear(bool color, bool depth, bool stencil)
 	{
 		GLbitfield target{};

@@ -87,10 +87,6 @@ int main(int argc, char** argv)
     renderSystem.backend->SetCurrentTextureUnit( 1 );
     im->Bind();
 
-    Image* im2 = renderSystem.imageManager->GetImage("_hdrimage");
-    renderSystem.backend->SetCurrentTextureUnit( 0 );
-    im2->Bind();
-
     SDL_Event e;
 
     while ( !quit )

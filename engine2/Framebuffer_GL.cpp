@@ -1,3 +1,4 @@
+#include <vector>
 #include <GL/glew.h>
 #include "./FrameBuffer.h"
 #include "./RenderSystem.h"
@@ -12,7 +13,7 @@ namespace jsr {
 		this->width = width;
 		this->height = height;
 		this->depthAttachment = -1;
-		this->stencilAttachmemt = -1;
+		this->stencilAttachment = -1;
 		this->apiObject = -1;
 
 		for (int k = 0; k < MAX_COLOR_ATTACHMENTS; ++k) { this->colorAttachments[k] = -1; }
@@ -32,6 +33,16 @@ namespace jsr {
 		{
 			GL_CHECK(glDeleteFramebuffers(1, (GLuint*)&apiObject));
 		}
+	}
+
+	int Framebuffer::HasColorAttachment() const
+	{
+		int n = 0;
+		for (auto i = 0; i < MAX_COLOR_ATTACHMENTS; ++i)
+		{
+			if (colorAttachments[i] != 0) { ++n; }
+		}
+		return n;
 	}
 
 	void Framebuffer::AttachImage2D(const Image* img, int index, int level, int cubeFace)
@@ -56,12 +67,18 @@ namespace jsr {
 		colorAttachments[index] = img->apiObject;
 	}
 
-	void Framebuffer::AttachImageDepth(const Image* img, int layer)
+	void Framebuffer::AttachImageDepth(const Image* img, int layer, int level)
 	{
 		if ( depthAttachment != -1 ) return;
 		if ( img == nullptr || !img->IsCreated() ) return;
-
-		GL_CHECK( glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, img->apiTarget, img->apiObject, layer ) );
+		if ( img->GetShape() == IMS_CUBEMAP )
+		{
+			GL_CHECK( glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, img->apiObject, level ) );
+		}
+		else
+		{
+			GL_CHECK( glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, img->apiObject, level ) );
+		}
 		depthAttachment = img->apiObject;
 	}
 
@@ -81,6 +98,22 @@ namespace jsr {
 
 		GL_CHECK( glBindFramebuffer( GL_FRAMEBUFFER, apiObject ) );
 
+		int numAttachments = HasColorAttachment();
+		if (numAttachments)
+		{
+			std::vector<GLenum> drawbuffers;
+			for (int i = 0; i < MAX_COLOR_ATTACHMENTS; ++i)
+			{
+				if (colorAttachments[i] > 0) { drawbuffers.push_back(GL_COLOR_ATTACHMENT0 + i); }
+			}
+			GL_CHECK(glDrawBuffers(drawbuffers.size(), drawbuffers.data()));
+		}
+		else
+		{
+			GL_CHECK(glDrawBuffer(GL_NONE));
+			GL_CHECK(glReadBuffer(GL_NONE));
+		}
+		
 		int status{};
 		GL_CHECK( status = glCheckFramebufferStatus(GL_FRAMEBUFFER) );
 		if ( status == GL_FRAMEBUFFER_COMPLETE )
@@ -132,7 +165,7 @@ namespace jsr {
 
 	void Framebuffer::Bind()
 	{
-		if ( renderSystem.backend->currentFramebuffer != this )
+		if (renderSystem.backend->currentFramebuffer != this )
 		{
 			GL_CHECK( glBindFramebuffer(GL_FRAMEBUFFER, apiObject) );
 			renderSystem.backend->currentFramebuffer = this;
@@ -146,10 +179,13 @@ namespace jsr {
 
 	void Framebuffer::Unbind()
 	{
-		GL_CHECK( glBindFramebuffer( GL_FRAMEBUFFER, 0 ) );
-		GL_CHECK( glBindRenderbuffer( GL_RENDERBUFFER, 0 ) );
-
-		renderSystem.backend->currentFramebuffer = NULL;
+		if (renderSystem.backend->currentFramebuffer != nullptr)
+		{
+			GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, 0));
+			
+			renderSystem.backend->currentFramebuffer = nullptr;
+		}
 	}
 
 }

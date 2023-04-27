@@ -7,11 +7,10 @@ namespace jsr {
 	class RenderSystem
 	{
 	public:
-		RenderBackend* backend;
 		VertexCache* vertexCache;
 		ProgramManager* programManager;
 		ImageManager* imageManager;
-
+		RenderBackend* backend;
 		RenderSystem();
 		~RenderSystem();
 

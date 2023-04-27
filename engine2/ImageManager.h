@@ -11,11 +11,15 @@ namespace jsr {
 	struct globalImages_t
 	{
 		Image* HDRaccum;
+		Image* HDRdepth;
 		Image* GBufferAlbedo;
 		Image* GBufferNormal;
 		Image* GBufferSpec;
 		Image* Depth32;
+		Image* defaultImage;
+		Image* defaultDepth;
 		Image* whiteImage;
+		Image* grayImage;
 		Image* flatNormal;
 	};
 

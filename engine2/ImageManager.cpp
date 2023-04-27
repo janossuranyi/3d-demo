@@ -25,9 +25,13 @@ namespace jsr {
 		globalImages.GBufferAlbedo = new Image("_gbuffer_albedo");
 		globalImages.GBufferNormal = new Image("_gbuffer_normal");
 		globalImages.Depth32 = new Image("_depth");
+		globalImages.defaultDepth = new Image("_defaultDepth");
+		globalImages.defaultImage = new Image("_defaultImage");
 		globalImages.GBufferSpec = new Image("_gbuffer_specular");
 		globalImages.HDRaccum = new Image("_hdrimage");
+		globalImages.HDRdepth = new Image("_hdrDepth");
 		globalImages.whiteImage = new Image("_white");
+		globalImages.grayImage = new Image("_gray");
 		globalImages.flatNormal = new Image("_flatnorm");
 
 
@@ -80,7 +84,33 @@ namespace jsr {
 		}
 		AddImage(globalImages.HDRaccum);
 
+
+		opts.format = IMF_RGBA;
+		opts.usage = IMU_DEFAULT;
+		if (!globalImages.defaultImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			Error("[ImageManager]: defaultImage allocation failed !");
+		}
+		AddImage(globalImages.defaultImage);
+
+		opts.format = IMF_D32;
+		opts.usage = IMU_DEPTH;
+		if (!globalImages.defaultDepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			Error("[ImageManager]: Image defaultDepth allocation failed !");
+		}
+		AddImage(globalImages.defaultDepth);
+
+		opts.format = IMF_D32;
+		opts.usage = IMU_DEPTH;
+		if (!globalImages.HDRdepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			Error("[ImageManager]: Image HDRdepth allocation failed !");
+		}
+		AddImage(globalImages.HDRdepth);
+
 		initialized = true;
+		Image::Unbind();
 
 		return true;
 	}

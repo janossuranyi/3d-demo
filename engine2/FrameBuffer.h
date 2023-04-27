@@ -2,7 +2,7 @@
 #define JSR_FRAMEBUFFER_H
 
 #include <string>
-#include <list>
+#include <vector>
 
 
 namespace jsr {
@@ -17,8 +17,9 @@ namespace jsr {
 		static void Shutdown();
 		static void Init();
 		virtual ~Framebuffer();
+		int		HasColorAttachment() const;
 		void	AttachImage2D(const Image* img, int index, int level = 0, int cubeFace = 0);
-		void	AttachImageDepth(const Image* img, int layer = 0);
+		void	AttachImageDepth(const Image* img, int layer = 0, int level = 0);
 		void	AttachImageStencil(const Image* img);
 		bool	Check();
 		void	Bind();
@@ -34,7 +35,7 @@ namespace jsr {
 		int				stencilAttachment;
 		int				apiObject;
 
-		static std::list<Framebuffer*>	framebuffers;
+		static std::vector<Framebuffer*>	framebuffers;
 	};
 
 	struct globalFramebuffers_t

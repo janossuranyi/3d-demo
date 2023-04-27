@@ -27,8 +27,6 @@ namespace jsr {
 
 	void Image::Bind() const
 	{
-		if (!renderSystem.IsInitialized()) return;
-
 		const int texunit = renderSystem.backend->GetCurrentTextureUnit();
 		tmu_t* tmu = &glcontext.tmu[texunit];
 
@@ -69,6 +67,14 @@ namespace jsr {
 		GL_CHECK(glBindTexture(GL_TEXTURE_2D_ARRAY, 0));
 		GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
 		GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0));
+		for (int i = 0; i < MAX_TEXTURE_UNITS; ++i)
+		{
+			glcontext.tmu[i].current2DArray = -1;
+			glcontext.tmu[i].current2DMap = -1;
+			glcontext.tmu[i].currentCubeMap = -1;
+			glcontext.tmu[i].currentCubeMapArray = -1;
+		}
+
 	}
 
 	bool Image::UpdateImageData(int w, int h, int level, int layer, int face, int size, const void* data, eImageFormat srcFormat)
@@ -164,9 +170,9 @@ namespace jsr {
 		GL_CHECK(glTexParameteri(apiTarget, GL_TEXTURE_MAG_FILTER, GL_map_texfilter(magFilter)));
 		//glTexParameteri(apiTarget, GL_TEXTURE_MAX_LEVEL, numLevel - 1);
 		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_ANISOTROPY, opts.maxAnisotropy));
-		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MIN_LOD, 0.0f));
-		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_LOD, (float)(opts.numLevel - 1)));
-		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_LOD_BIAS, 0.0f));
+		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MIN_LOD, 0.0f));
+		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_LOD, (float)(opts.numLevel - 1)));
+		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_LOD_BIAS, 0.0f));
 		GL_CHECK(glTexParameterfv(apiTarget, GL_TEXTURE_BORDER_COLOR, &borderColor[0]));
 
 	}
