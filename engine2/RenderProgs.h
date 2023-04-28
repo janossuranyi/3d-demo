@@ -18,7 +18,7 @@ namespace jsr {
 		glm::mat4 localToWorldMatrix;
 		glm::mat4 worldToViewMatrix;
 		glm::mat4 projectionMatrix;
-		glm::mat4 worldToviewProjectionMatrix;
+		glm::mat4 VWPMatrix;
 		glm::vec4 viewOrigin;
 		glm::vec4 user01;
 		glm::vec4 user02;

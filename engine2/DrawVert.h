@@ -51,7 +51,7 @@ namespace jsr {
 				color[i] = floatToUnorm8(pX[i]);
 			}
 		}
-		void SetColor(float* pX)
+		void SetColor(float const* pX)
 		{
 			for (int i = 0; i < 4; ++i)
 			{
@@ -79,14 +79,14 @@ namespace jsr {
 				tangent[i] = VERTEX_FLOAT_TO_BYTE(saturate(pX[i]));
 			}
 		}
-		void SetTangent(float* pX)
+		void SetTangent(float const* pX)
 		{
 			for (int i = 0; i < 4; ++i)
 			{
 				tangent[i] = VERTEX_FLOAT_TO_BYTE(saturate(pX[i]));
 			}
 		}
-		void SetNormal(float* pX)
+		void SetNormal(float const* pX)
 		{
 			for (int i = 0; i < 3; ++i)
 			{
@@ -120,12 +120,12 @@ namespace jsr {
 			uv[0] = fX;
 			uv[1] = fY;
 		}
-		void SetUV(float* pX)
+		void SetUV(float const* pX)
 		{
 			uv[0] = pX[0];
 			uv[1] = pX[1];
 		}
-		void SetPos(float* pX)
+		void SetPos(float const* pX)
 		{
 			xyz[0] = pX[0];
 			xyz[1] = pX[1];

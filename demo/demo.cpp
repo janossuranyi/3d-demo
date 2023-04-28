@@ -20,6 +20,7 @@
 #include "engine2/RenderProgs.h"
 #include "engine2/Engine.h"
 #include "engine2/Node3D.h"
+#include "engine2/Model.h"
 #include "engine2/ImageManager.h"
 
 using namespace std::chrono;
@@ -36,33 +37,16 @@ int main(int argc, char** argv)
 
     resourceMgr->AddResourcePath("../assets/shaders");
     resourceMgr->AddResourcePath("../assets/textures");
+    resourceMgr->AddResourcePath("../assets/scenes");
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 
     engineConfig.r_fbsrgb = false;
 
+    RenderModel rm{};
+    rm.LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), "");
 
-    Node3D n1{};
-    Node3D n2{};
-
-    n1.SetParent(&n2);
-    n2.SetDir(glm::angleAxis(radians(90.0f), vec3(1.0f, 0.0f, 0.0f)));
-    n1.SetScale(vec3(1.0f));
-
-    auto q1 = n1.GetDir();
-    Info("q1{% .2f, % .2f, % .2f, % .2f }", q1.w, q1.x, q1.y, q1.z);
-    n2.SetOrigin(vec3(0.0f, 0.0f, 0.0f));
-    n1.SetOrigin(vec3(0.0f, 1.0f, 0.0f));
-
-    auto W = n1.GetLocalToWorldMatrix();
-
-    Info("--------------------------------------------");
-    for (int i = 0; i < 4; ++i)
-    {
-        Info("M%d{ % .2f, % .2f, % .2f, % .2f }", i, W[0][i], W[1][i], W[2][i], W[3][i]);
-    }
-
-    //exit(0);
+    
 
     Engine engine;
 

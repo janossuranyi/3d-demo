@@ -15,9 +15,8 @@ namespace jsr {
 		switch (type)
 		{
 		case LIGHT_POINT:
-
+			break;
 		}
-	
 	}
 
 	Light& Light::SetNode(Node3D* pNode)
