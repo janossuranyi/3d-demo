@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <utility>
+#include <cinttypes>
 #include <tiny_gltf.h>
 
 #include "./Model.h"
@@ -40,7 +41,7 @@ namespace jsr {
 
 		return surf;
 	}
-	bool RenderModel::LoadFromGLTF(const std::string& filename, int index, const std::string name)
+	bool RenderModel::LoadFromGLTF(const std::string& filename, int index, const std::string& name)
 	{
 		Model model{};
 		TinyGLTF loader{};
@@ -114,16 +115,46 @@ namespace jsr {
 			modelSurface_t* ms = AllocSurface(numVerts, numIndexes, surfIndex);
 			assert(xyz.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-			float const* flist = reinterpret_cast<float const*>(
+			const unsigned char* pData = 
 				model.buffers[model.bufferViews[xyz.bufferView].buffer].data.data() +
 				model.bufferViews[xyz.bufferView].byteOffset +
-				xyz.byteOffset);
+				xyz.byteOffset;
 
+			ptrdiff_t stride = xyz.ByteStride(model.bufferViews[xyz.bufferView]);
+			drawVert_t* drawvert = ms->surf.verts;
 			for (int j = 0; j < xyz.count; ++j)
 			{
-				ms->surf.verts[j].SetPos(&flist[3 * j]);
+				drawvert->SetPos((const float*)pData);
+				pData += stride;
+				++drawvert;
 			}
 
+			pData = 
+				model.buffers[model.bufferViews[idx.bufferView].buffer].data.data() +
+				model.bufferViews[idx.bufferView].byteOffset +
+				idx.byteOffset;
+			
+			stride = idx.ByteStride(model.bufferViews[idx.bufferView]);
+			elementIndex_t* indices = ms->surf.indexes;
+
+			if (idx.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
+			{
+				for (int j = 0; j < idx.count; ++j)
+				{
+					*indices = (uint16_t) *((uint32_t*)pData);
+					pData += stride;
+					++indices;
+				}
+			}
+			else if (idx.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+			{
+				for (int j = 0; j < idx.count; ++j)
+				{
+					*indices = *((uint16_t*)pData);
+					pData += stride;
+					++indices;
+				}
+			}
 		}
 
 		return false;

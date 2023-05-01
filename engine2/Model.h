@@ -32,17 +32,18 @@ namespace jsr {
 	public:
 		RenderModel();
 		~RenderModel();
-		modelSurface_t*					AllocSurface(int numVerts, int numIndexes, int& newIdx);
+		modelSurface_t* AllocSurface(int numVerts, int numIndexes, int& newIdx);
+		bool LoadFromGLTF(const std::string& filename, int index = -1, const std::string& name = "");
 
-		inline int						GetNumSurface() const { return surfs.size(); }
-		inline Bounds					GetBounds() const { return bounds; }
-		inline modelSurface_t const*	GetSurface(int idx) const
+		inline int GetNumSurface() const { return surfs.size(); }
+		inline Bounds GetBounds() const { return bounds; }
+
+		inline modelSurface_t const* GetSurface(int idx) const
 		{
 			assert(idx < surfs.size());
 			return surfs[idx];
 		}
 
-		bool							LoadFromGLTF(const std::string& filename, int index = -1, const std::string name = "");
 	private:
 		Bounds bounds;
 		std::vector<modelSurface_t*> surfs;

@@ -44,10 +44,9 @@ int main(int argc, char** argv)
     engineConfig.r_fbsrgb = false;
 
     RenderModel rm{};
-    rm.LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), "");
+    rm.LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), 0);
 
     
-
     Engine engine;
 
     if ( !engine.Init( false ) )
