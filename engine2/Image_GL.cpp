@@ -55,7 +55,7 @@ namespace jsr {
 
 		if (dirty)
 		{
-			GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + texunit, GL_map_textarget(opts.shape), apiObject));
+			GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + texunit, apiTarget, apiObject));
 		}
 	}
 
@@ -194,6 +194,7 @@ namespace jsr {
 		}
 		created = true;
 		apiObject = texture;
+		apiTarget = GL_map_textarget(opts.shape);
 
 		Bind();
 
@@ -209,7 +210,6 @@ namespace jsr {
 		GLenum internalFormat = opts.srgb ? s_image_formats[opts.format].internalFormatSRGB : s_image_formats[opts.format].internalFormat;
 		GLenum glformat = s_image_formats[opts.format].format;
 		GLenum gltype = s_image_formats[opts.format].type;
-		apiTarget = GL_map_textarget(opts.shape);
 		int numSides = opts.shape == IMS_CUBEMAP || opts.shape == IMS_2D_ARRAY ? 6 : 1;
 		//opts.numLevel = (int)std::max(std::floor(std::log2(w)), std::floor(std::log2(h)));
 		//opts.numLayer = 0;

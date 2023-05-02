@@ -6,8 +6,10 @@ layout(binding = SHADER_UNIFORMS_BINDING, std140) uniform uboUniforms
     mat4 localToWorldMatrix;
     mat4 worldToViewMatrix;
 	mat4 projectionMatrix;
-    mat4 VWPMatrix;
+    mat4 WVPMatrix;
     vec4 viewOrigin;
+	vec4 baseColorFactor;
+	vec4 alphaCutoff;
 	vec4 user01;
 	vec4 user02;
 	vec4 user03;

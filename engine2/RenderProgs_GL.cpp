@@ -13,7 +13,8 @@ namespace jsr {
 	renderProgram_t ProgramManager::builtins[] = {
 		{"vertex_color",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
 		{"depth_only",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
-//		{"metallic_roughness_ao",	SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
+//		{"gbuffer_pbr_mrao",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
+//		{"deferred_pbr_mrao",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
 	};
 
 	static void R_DeleteShaders(GLuint const* list, int numShader)

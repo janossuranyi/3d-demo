@@ -10,5 +10,5 @@ layout(location = 4) in vec4 in_Color;
 
 void main()
 {
-    gl_Position = ubo.worldToviewProjectionMatrix * ubo.localToWorldMatrix * in_Position;
+    gl_Position = ubo.WVPMatrix * ubo.localToWorldMatrix * in_Position;
 }

@@ -6,6 +6,8 @@ namespace jsr {
 	{
 		ENT_MODEL,
 		ENT_LIGHT,
+		ENT_LIGHT_PROBE,
+		ENT_ENV_PROBE,
 		ENT_COUNT
 	};
 
