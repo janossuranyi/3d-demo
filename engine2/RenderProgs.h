@@ -20,7 +20,7 @@ namespace jsr {
 		glm::mat4 projectionMatrix;
 		glm::mat4 WVPMatrix;
 		glm::vec4 viewOrigin;
-		glm::vec4 baseColorFactor;
+		glm::vec4 matDiffuseFactor;
 		glm::vec4 alphaCutoff;
 		glm::vec4 user01;
 		glm::vec4 user02;
@@ -51,7 +51,8 @@ namespace jsr {
 	{
 		PRG_VERTEX_COLOR,
 		PRG_ZPASS,
-//		PRG_METALLIC_ROUGH_AO,
+		PRG_EQUIRECT_TEXTURE,
+		PRG_DEFERRED_GBUFFER_MR,
 		PRG_COUNT
 	};
 

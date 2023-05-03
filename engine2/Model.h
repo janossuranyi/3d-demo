@@ -33,11 +33,12 @@ namespace jsr {
 		RenderModel();
 		~RenderModel();
 		modelSurface_t* AllocSurface(int numVerts, int numIndexes, int& newIdx);
-		bool LoadFromGLTF(const std::string& filename, int index = -1, const std::string& name = "");
-
+		void UpdateSurfaceCache();
+		void SetStatic(bool b);
+		inline bool IsStatic() const { return isStatic; }
 		inline int GetNumSurface() const { return surfs.size(); }
 		inline Bounds GetBounds() const { return bounds; }
-
+		inline Bounds& GetBounds() { return bounds; }
 		inline modelSurface_t const* GetSurface(int idx) const
 		{
 			assert(idx < surfs.size());
@@ -46,6 +47,7 @@ namespace jsr {
 
 	private:
 		Bounds bounds;
+		bool isStatic;
 		std::vector<modelSurface_t*> surfs;
 	};
 
@@ -55,6 +57,7 @@ namespace jsr {
 	public:
 		ModelManager();
 		~ModelManager();
+		RenderModel* LoadFromGLTF(const std::string& filename, int index = -1, const std::string& name = "");
 	private:
 		std::vector<RenderModel*> models;
 	};

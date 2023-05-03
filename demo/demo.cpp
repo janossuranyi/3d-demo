@@ -43,9 +43,6 @@ int main(int argc, char** argv)
 
     engineConfig.r_fbsrgb = false;
 
-    RenderModel rm{};
-    rm.LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), 0);
-
     
     Engine engine;
 
@@ -54,13 +51,17 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    ModelManager MM{};
+    RenderModel* rm = MM.LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), 0);
+
     std::atomic_bool quit{};
     Image* im  = new Image( "imag1" );
     renderSystem.imageManager->AddImage( im );
 
     renderSystem.backend->SetCurrentTextureUnit( 0 );
 
-    std::filesystem::path p( "../assets/textures/debug_uv.dds" );
+//    std::filesystem::path p( "../assets/textures/debug_uv.dds" );
+    std::filesystem::path p("d:/data/kloofendal_48d_partly_cloudy_puresky_4k.hdr");
 
     if ( !std::filesystem::exists( p ) || !im->Load( p.string().c_str() ) )
     {

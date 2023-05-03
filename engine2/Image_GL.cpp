@@ -20,12 +20,12 @@ namespace jsr {
 		magFilter = IFL_LINEAR;
 		minFilter = IFL_LINEAR;
 		apiObject = -1;
-		apiTarget = -1;
+		apiTarget = IMS_COUNT;
 		opts = imageOpts_t{};
 		GL_CHECK(glGenTextures(1, (GLuint*)&apiObject));
 	}
 
-	void Image::Bind() const
+	void Image::Bind()
 	{
 		const int texunit = renderSystem.backend->GetCurrentTextureUnit();
 		tmu_t* tmu = &glcontext.tmu[texunit];
@@ -55,6 +55,7 @@ namespace jsr {
 
 		if (dirty)
 		{
+			if (apiTarget == IMS_COUNT) apiTarget = GL_map_textarget(opts.shape);
 			GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + texunit, apiTarget, apiObject));
 		}
 	}

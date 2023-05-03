@@ -38,6 +38,11 @@ add_library(engine2 STATIC
   ${ENGINE2_FILES}
 )
 
+add_library(tinyobjloader STATIC
+  external/tinyobjloader/tiny_obj_loader.h
+  external/tinyobjloader/tiny_obj_loader.cc
+)
+
 add_library(nv_dds STATIC
   external/nv_dds/nv_dds.h
   external/nv_dds/nv_dds.cpp
@@ -70,6 +75,7 @@ include_directories(
   external/half/
   external/tinygltf/
   external/nv_dds/
+  external/tinyobjloader/
   lib/ktx/include/
   ${SDL2_INCLUDE_DIR}
 )
@@ -78,8 +84,27 @@ link_directories(
 #  ${ASSIMP_LIBRARY_DIRS}
 )
 
-file(GLOB SHADERS assets/shaders/*.glsl)
-file(GLOB SHADERS_INC assets/shaders/*.inc)
+file(GLOB SHADERS_G assets/shaders/*.glsl)
+file(GLOB SHADERS_I assets/shaders/*.inc)
+file(GLOB SHADERS_B assets/shaders/builtin/*.glsl)
+file(GLOB SHADERS_BI assets/shaders/builtin/*.inc)
+
+set(SHADERS_BUILTIN
+${SHADERS_B}
+${SHADERS_BI}
+)
+
+set(SHADERS_DEV
+${SHADERS_G}
+${SHADERS_I}
+)
+
+set(SHADERS
+${SHADERS_G}
+${SHADERS_I}
+${SHADERS_B}
+${SHADERS_BI}
+)
 
 add_executable(demo
   ${DEMO_FILES}
@@ -92,6 +117,7 @@ target_link_libraries(demo
   tinygltf
   engine2
   nv_dds
+  tinyobjloader
   ../lib/ktx/ktx
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}
@@ -125,4 +151,5 @@ set(ENGINE_OGL
   ${ENGINE_GFX_OGL_C}
 )
 
-source_group("Shaders" FILES ${SHADERS} )
+source_group("Shaders" FILES ${SHADERS_DEV} )
+source_group("Shaders/builtin" FILES ${SHADERS_BUILTIN} )

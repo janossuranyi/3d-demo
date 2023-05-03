@@ -7,7 +7,9 @@
 #undef _std
 #define _std std::
 
+#ifndef M_PI
 #define M_PI 3.14159265359f
+#endif
 
 // The hardware converts a byte to a float by division with 255 and in the
 // vertex programs we convert the floating-point value in the range [0, 1]

@@ -154,17 +154,53 @@ namespace jsr {
 		image.load(filename);
 
 		if (!image.is_valid()) return false;
+		img->opts.sizeX = image.get_width();
+		img->opts.sizeY = image.get_height();
+		img->opts.compressed = image.is_compressed();
+		img->opts.numLevel = 1 + image.get_num_mipmaps();
+		img->opts.numLayer = image.get_depth();
+		auto const fmt = image.get_format();
+		switch (fmt)
+		{
+		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+			img->opts.format = IMF_RGBA_COMPRESSED_DXT1;
+			break;
+		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+			img->opts.format = IMF_RGBA_COMPRESSED_DXT3;
+			break;
+		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+			img->opts.format = IMF_RGBA_COMPRESSED_DXT5;
+			break;
+		case GL_RGBA:
+			img->opts.format = IMF_RGBA;
+			break;
+		case GL_RGB:
+		case GL_BGR_EXT:
+			img->opts.format = IMF_RGB;
+			break;
+		case GL_LUMINANCE:
+			img->opts.format = IMF_R8;
+			break;
+		default:
+			img->opts.format = IMF_RGBA;
+			break;
+		}
 
-		img->Bind();
 		switch (image.get_type())
 		{
 		case nv_dds::TextureFlat:
+			img->opts.shape = IMS_2D;
+			img->Bind();
 			image.upload_texture2D();
 			break;
 		case nv_dds::TextureCubemap:
+			img->opts.shape = IMS_CUBEMAP;
+			img->Bind();
 			image.upload_textureCubemap();
 			break;
 		case nv_dds::Texture3D:
+			img->opts.shape = IMS_3D;
+			img->Bind();
 			image.upload_texture3D();
 			break;
 		}
@@ -172,16 +208,37 @@ namespace jsr {
 
 	static bool imageLoader_STB(Image* img, const char* filename)
 	{
-		if (img->IsCreated()) return false;
+//		if (img->IsCreated()) return false;
 		
-		if (stbi_is_hdr(filename))
-		{
-			Error("HDR image not supported yet!");
-			return false;
-		}
-
 		int iw = 0, ih = 0, n = 0;
 		int nr = 4;
+		stbi_set_flip_vertically_on_load(true);
+
+		if (stbi_is_hdr(filename))
+		{
+			float* data = stbi_loadf(filename, &iw, &ih, &n, 0);
+			if (n < 3)
+			{
+				Error("HDR image: RGB/RGBA format supported");
+				stbi_image_free(data);
+				return false;
+			}
+			eImageFormat fmt = n == 3 ? IMF_RGB32F : IMF_RGBA32F;
+			imageOpts_t opts;
+			opts.format = fmt;
+			opts.shape = IMS_2D;
+			opts.sizeX = iw;
+			opts.sizeY = ih;
+			opts.numLayer = 1;
+			opts.numLevel = 1;
+			opts.compressed = false;
+			img->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE);
+			img->UpdateImageData(iw, ih, 0, 0, 0, 0, data, fmt);
+			stbi_image_free(data);
+
+			return true;
+		}
+
 		if (stbi_info(filename, &iw, &ih, &n))
 		{
 			nr = n == 3 ? 4 : n;
@@ -192,7 +249,6 @@ namespace jsr {
 		}
 
 		eImageFormat fmt = IMF_RGBA;
-		stbi_set_flip_vertically_on_load(true);
 		stbi_uc* data = stbi_load(filename, &iw, &ih, &n, nr);
 		if (data == nullptr)
 		{

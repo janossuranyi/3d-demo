@@ -9,7 +9,9 @@ namespace jsr {
 		IMS_2D,
 		IMS_2D_ARRAY,
 		IMS_CUBEMAP,
-		IMS_CUBEMAP_ARRAY
+		IMS_CUBEMAP_ARRAY,
+		IMS_3D,
+		IMS_COUNT
 	};
 
 	enum eImageFormat
@@ -28,8 +30,10 @@ namespace jsr {
 		IMF_RG8,
 		IMF_RG16,
 		IMF_RG16F,
+		IMF_RGB,
 		IMF_RGBA,
 		IMF_RGBA16F,
+		IMF_RGB32F,
 		IMF_RGBA32F,
 		IMF_R11G11B10F,
 		IMF_RGB_COMPRESSED,
@@ -44,6 +48,7 @@ namespace jsr {
 	enum eImageUsage
 	{
 		IMU_DEFAULT,
+		IMU_FRAGPOS,
 		IMU_DIFFUSE,
 		IMU_NORMAL,
 		IMU_AORM,		// R:Ambient occlusion, G:Roughness, B:Metalness
@@ -88,7 +93,7 @@ namespace jsr {
 	inline imageOpts_t::imageOpts_t()
 	{
 		format = IMF_DEFAULT;
-		shape = IMS_2D;
+		shape = IMS_COUNT;
 		usage = IMU_DEFAULT;
 		maxAnisotropy = 1.0f;
 		sizeX = 0;
@@ -109,7 +114,7 @@ namespace jsr {
 		bool AllocImage(const imageOpts_t& opts, eImageFilter minFilter, eImageRepeat repeat);
 		void PurgeImage();
 		bool Load(const char* filename);
-		void Bind() const;
+		void Bind();
 		static void Unbind();
 		bool UpdateImageData(int w, int h,  int level, int layer, int face, int size, const void* data, eImageFormat srcFormat = IMF_DEFAULT);
 		void CopyFramebuffer(int x, int y, int imageWidth, int imageHeight);

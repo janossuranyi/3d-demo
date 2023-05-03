@@ -12,8 +12,9 @@ namespace jsr {
 
 	renderProgram_t ProgramManager::builtins[] = {
 		{"vertex_color",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"depth_only",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
-//		{"gbuffer_pbr_mrao",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
+		{"depth_only",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
+		{"texture_equirect",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
+		{"deferred_gbuffer_mr",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
 //		{"deferred_pbr_mrao",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
 	};
 
@@ -102,7 +103,7 @@ namespace jsr {
 		GLuint modul = glCreateShader(stage);
 		if (!modul) return 0;
 
-		auto source = resourceMgr->GetShaderSource("shaders/" + r_name);
+		auto source = resourceMgr->GetShaderSource("shaders/builtin/" + r_name);
 		const char* pStr = source.c_str();
 		GL_CHECK(glShaderSource(modul, 1, &pStr, nullptr));
 

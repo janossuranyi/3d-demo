@@ -22,6 +22,7 @@ namespace jsr {
 			Error("[ImageManager]: render system not initialized !");
 			return false;
 		}
+		globalImages.GBufferFragPos = new Image("_gbuffer_fragpos");
 		globalImages.GBufferAlbedo = new Image("_gbuffer_albedo");
 		globalImages.GBufferNormal = new Image("_gbuffer_normal");
 		globalImages.Depth32 = new Image("_depth");
@@ -32,7 +33,8 @@ namespace jsr {
 		globalImages.HDRdepth = new Image("_hdrDepth");
 		globalImages.whiteImage = new Image("_white");
 		globalImages.grayImage = new Image("_gray");
-		globalImages.flatNormal = new Image("_flatnorm");
+		globalImages.blackImage = new Image("_black");
+		globalImages.flatNormal = new Image("_flatnormal");
 
 
 		int screen_width, screen_height;
@@ -51,6 +53,14 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferAlbedo allocation failed !");
 		}
 		AddImage(globalImages.GBufferAlbedo);
+
+		opts.format = IMF_RGB32F;
+		opts.usage = IMU_FRAGPOS;
+		if (!globalImages.GBufferFragPos->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			Error("[ImageManager]: Image GBufferFragPos allocation failed !");
+		}
+		AddImage(globalImages.GBufferFragPos);
 
 		opts.format = IMF_RG16F;
 		opts.usage = IMU_NORMAL;
@@ -108,6 +118,56 @@ namespace jsr {
 			Error("[ImageManager]: Image HDRdepth allocation failed !");
 		}
 		AddImage(globalImages.HDRdepth);
+
+		std::vector<unsigned int> tmp(16 * 16);
+		opts.sizeX = 16;
+		opts.sizeY = 16;
+		opts.format = IMF_RGBA;
+
+		// white
+		tmp.assign(16 * 16, 0xFFFFFFFF);
+		if (globalImages.whiteImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			AddImage(globalImages.whiteImage);
+			globalImages.whiteImage->UpdateImageData(16, 16, 0, 0, 0, 0, tmp.data());
+		}
+		else
+		{
+			Error("[ImageManager]: Image whiteImage allocation failed !");
+		}
+		// black
+		tmp.assign(16 * 16, 0xFF000000);
+		if (globalImages.blackImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			AddImage(globalImages.blackImage);
+			globalImages.blackImage->UpdateImageData(16, 16, 0, 0, 0, 0, tmp.data());
+		}
+		else
+		{
+			Error("[ImageManager]: Image blackImage allocation failed !");
+		}
+		// gray
+		tmp.assign(16 * 16, 0xFF7F7F7F);
+		if (globalImages.grayImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			AddImage(globalImages.grayImage);
+			globalImages.grayImage->UpdateImageData(16, 16, 0, 0, 0, 0, tmp.data());
+		}
+		else
+		{
+			Error("[ImageManager]: Image grayImage allocation failed !");
+		}
+		// flat normal
+		tmp.assign(16 * 16, 0xFFFF7F7F);
+		if (globalImages.flatNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			AddImage(globalImages.flatNormal);
+			globalImages.flatNormal->UpdateImageData(16, 16, 0, 0, 0, 0, tmp.data());
+		}
+		else
+		{
+			Error("[ImageManager]: Image flatNormal allocation failed !");
+		}
 
 		initialized = true;
 		Image::Unbind();

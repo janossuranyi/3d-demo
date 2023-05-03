@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <tiny_gltf.h>
 
+#include "./Math.h"
 #include "./Model.h"
 #include "./Logger.h"
 
@@ -41,13 +42,17 @@ namespace jsr {
 
 		return surf;
 	}
-	bool RenderModel::LoadFromGLTF(const std::string& filename, int index, const std::string& name)
+	
+	ModelManager::ModelManager() {}
+	ModelManager::~ModelManager() {}
+
+	RenderModel* ModelManager::LoadFromGLTF(const std::string& filename, int index, const std::string& name)
 	{
 		Model model{};
 		TinyGLTF loader{};
 		std::string err, warn;
 
-		if (name.empty() && index < 0) return false;
+		if (name.empty() && index < 0) return nullptr;
 
 		bool wasOk{};
 		fs::path fnp(filename);
@@ -63,7 +68,7 @@ namespace jsr {
 		if (!wasOk)
 		{
 			Error("[ModelManager]: (LoadFromGLTF) %s", err.c_str());
-			return false;
+			return nullptr;
 		}
 
 		if (!warn.empty())
@@ -91,10 +96,13 @@ namespace jsr {
 		if (!mesh)
 		{
 			Error("[ModelManager]: (LoadFromGLTF) mesh '%s' not found", name.c_str());
-			return false;
+			return nullptr;
 		}
 
 		int const numSurfs = mesh->primitives.size();
+		
+		RenderModel* RM = new RenderModel();
+
 		for (int i = 0; i < numSurfs; ++i)
 		{
 			auto& surf = mesh->primitives[i];
@@ -103,7 +111,7 @@ namespace jsr {
 			if (it == std::end(surf.attributes))
 			{
 				Error("[ModelManager]: (LoadFromGLTF) %s/%s no position vectors", filename, name);
-				return false;
+				return nullptr;
 			}
 
 			Accessor const& xyz = model.accessors[it->second];
@@ -112,7 +120,7 @@ namespace jsr {
 			int const numIndexes = idx.count;
 			int surfIndex{};
 
-			modelSurface_t* ms = AllocSurface(numVerts, numIndexes, surfIndex);
+			modelSurface_t* ms = RM->AllocSurface(numVerts, numIndexes, surfIndex);
 			assert(xyz.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
 			const unsigned char* pData = 
@@ -124,9 +132,93 @@ namespace jsr {
 			drawVert_t* drawvert = ms->surf.verts;
 			for (int j = 0; j < xyz.count; ++j)
 			{
-				drawvert->SetPos((const float*)pData);
+				const float* ff = (const float*)pData;
+				ms->surf.bounds << glm::vec3(ff[0], ff[1], ff[2]);
+				RM->GetBounds() << glm::vec3(ff[0], ff[1], ff[2]);
+
+				drawvert->SetPos(ff);
 				pData += stride;
 				++drawvert;
+			}
+
+			it = surf.attributes.find("NORMAL");
+			if (std::end(surf.attributes) != it)
+			{
+				Accessor const& normals = model.accessors[it->second];
+				const unsigned char* pData =
+					model.buffers[model.bufferViews[normals.bufferView].buffer].data.data() +
+					model.bufferViews[normals.bufferView].byteOffset +
+					normals.byteOffset;
+				
+				ptrdiff_t stride = normals.ByteStride(model.bufferViews[normals.bufferView]);
+				drawVert_t* drawvert = ms->surf.verts;
+				for (int j = 0; j < normals.count; ++j)
+				{
+					drawvert->SetNormal((const float*)pData);
+					pData += stride;
+					++drawvert;
+				}
+			}
+
+			it = surf.attributes.find("TANGENT");
+			if (std::end(surf.attributes) != it)
+			{
+				Accessor const& tangent = model.accessors[it->second];
+				const unsigned char* pData =
+					model.buffers[model.bufferViews[tangent.bufferView].buffer].data.data() +
+					model.bufferViews[tangent.bufferView].byteOffset +
+					tangent.byteOffset;
+
+				ptrdiff_t stride = tangent.ByteStride(model.bufferViews[tangent.bufferView]);
+				drawVert_t* drawvert = ms->surf.verts;
+				for (int j = 0; j < tangent.count; ++j)
+				{
+					drawvert->SetTangent((const float*)pData);
+					pData += stride;
+					++drawvert;
+				}
+			}
+
+			it = surf.attributes.find("TEXCOORD_0");
+			if (std::end(surf.attributes) != it)
+			{
+				Accessor const& uv = model.accessors[it->second];
+				assert(uv.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+
+				const unsigned char* pData =
+					model.buffers[model.bufferViews[uv.bufferView].buffer].data.data() +
+					model.bufferViews[uv.bufferView].byteOffset +
+					uv.byteOffset;
+
+				ptrdiff_t stride = uv.ByteStride(model.bufferViews[uv.bufferView]);
+				drawVert_t* drawvert = ms->surf.verts;
+				for (int j = 0; j < uv.count; ++j)
+				{
+					drawvert->SetUV((const float*)pData);
+					pData += stride;
+					++drawvert;
+				}
+			}
+
+			it = surf.attributes.find("COLOR_0");
+			if (std::end(surf.attributes) != it)
+			{
+				Accessor const& color = model.accessors[it->second];
+				assert(color.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+				assert(color.type == TINYGLTF_TYPE_VEC4);
+				const unsigned char* pData =
+					model.buffers[model.bufferViews[color.bufferView].buffer].data.data() +
+					model.bufferViews[color.bufferView].byteOffset +
+					color.byteOffset;
+
+				ptrdiff_t stride = color.ByteStride(model.bufferViews[color.bufferView]);
+				drawVert_t* drawvert = ms->surf.verts;
+				for (int j = 0; j < color.count; ++j)
+				{
+					drawvert->SetColor((const float*)pData);
+					pData += stride;
+					++drawvert;
+				}
 			}
 
 			pData = 
@@ -157,6 +249,11 @@ namespace jsr {
 			}
 		}
 
-		return false;
+		return RM;
+	}
+
+	void RenderModel::UpdateSurfaceCache()
+	{
+
 	}
 }

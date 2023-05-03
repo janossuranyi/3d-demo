@@ -1,4 +1,3 @@
-
 #define SHADER_UNIFORMS_BINDING 0
 
 layout(binding = SHADER_UNIFORMS_BINDING, std140) uniform uboUniforms
@@ -8,7 +7,7 @@ layout(binding = SHADER_UNIFORMS_BINDING, std140) uniform uboUniforms
 	mat4 projectionMatrix;
     mat4 WVPMatrix;
     vec4 viewOrigin;
-	vec4 baseColorFactor;
+	vec4 matDiffuseFactor;
 	vec4 alphaCutoff;
 	vec4 user01;
 	vec4 user02;

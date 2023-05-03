@@ -12,6 +12,7 @@ namespace jsr {
 	{
 		Image* HDRaccum;
 		Image* HDRdepth;
+		Image* GBufferFragPos;
 		Image* GBufferAlbedo;
 		Image* GBufferNormal;
 		Image* GBufferSpec;
@@ -20,6 +21,7 @@ namespace jsr {
 		Image* defaultDepth;
 		Image* whiteImage;
 		Image* grayImage;
+		Image* blackImage;
 		Image* flatNormal;
 	};
 
