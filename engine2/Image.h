@@ -32,6 +32,7 @@ namespace jsr {
 		IMF_RG16F,
 		IMF_RGB,
 		IMF_RGBA,
+		IMF_RGB16F,
 		IMF_RGBA16F,
 		IMF_RGB32F,
 		IMF_RGBA32F,

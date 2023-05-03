@@ -10,7 +10,7 @@ in INTERFACE
 } In;
 
 layout(location = 0) out vec3 outAlbedo;
-layout(location = 1) out vec2 outNormal;
+layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec3 outSpec;
 layout(location = 3) out vec3 outFragPos;
 
@@ -32,5 +32,5 @@ void main()
     outFragPos = In.fragPos.xyz;
     outAlbedo = texture(texAlbedo, In.texCoord).xyz;
     outSpec = texture(texSpecular, In.texCoord).xyz;    
-    outNormal = wsNorm.xy;
+    outNormal = wsNorm;
 }

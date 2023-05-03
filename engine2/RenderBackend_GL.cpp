@@ -37,6 +37,7 @@ namespace jsr {
 		{GL_RG16F,				GL_ZERO,					GL_RG,				GL_HALF_FLOAT,						false,	2}, // IMF_RG16
 		{GL_RGB8,				GL_SRGB8,					GL_RGB,				GL_UNSIGNED_BYTE,					true,	3}, // IMF_RGB
 		{GL_RGBA8,				GL_SRGB8_ALPHA8,			GL_RGBA,			GL_UNSIGNED_BYTE,					true,	4}, // IMF_RGBA
+		{GL_RGB16F,				GL_ZERO,					GL_RGB,				GL_HALF_FLOAT,						false,	3}, // IMF_RGB16F
 		{GL_RGBA16F,			GL_ZERO,					GL_RGBA,			GL_HALF_FLOAT,						false,	4}, // IMF_RGBA16F
 		{GL_RGB32F,				GL_ZERO,					GL_RGB,				GL_FLOAT,							false,	3}, // IMF_RGB32F
 		{GL_RGBA32F,			GL_ZERO,					GL_RGBA,			GL_FLOAT,							false,	4}, // IMF_RGBA32F
