@@ -14,30 +14,10 @@ namespace jsr {
 
 	Material::~Material()
 	{
-		for (int i = 0; i < STAGE_COUNT; ++i)
-		{
-			if (stages[i])
-			{
-				delete stages[i];
-				stages[i] = nullptr;
-			}
-		}
 	}
 
-	stage_t* Material::GetStage(eStageType aType)
+	stage_t& Material::GetStage(eStageType aType)
 	{
-		return stages[aType];
-	}
-
-	stage_t* Material::AllocStage(eStageType aType)
-	{
-		if (stages[aType])
-		{
-			return stages[aType];
-		}
-		
-		stages[aType] = new stage_t;
-
 		return stages[aType];
 	}
 
@@ -46,7 +26,7 @@ namespace jsr {
 		int active = 0;
 		for (int i = 0; STAGE_COUNT; ++i)
 		{
-			if (stages[i]) ++active;
+			if (stages[i].enabled) ++active;
 		}
 
 		return active == 0;
@@ -62,4 +42,23 @@ namespace jsr {
 		image->AddRef();
 	}
 
+	stage_t::stage_t() :
+		enabled(false),
+		type(STAGE_GBUFFER),
+		shader(PRG_DEFERRED_GBUFFER_MR),
+		shaderParms(),
+		images(),
+		coverage(COVERAGE_SOLID),
+		cullMode(CULL_NONE),
+		alphaCutoff(0.5f)
+	{
+	}
+	Material* MaterialManager::CreateMaterial(const std::string& name)
+	{
+		Material* res = new Material();
+		lstMaterial.push_back(res);
+		mapMaterial.emplace(name, res);
+
+		return res;
+	}
 }

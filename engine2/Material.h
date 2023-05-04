@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <glm/glm.hpp>
 #include "./Image.h"
 #include "./RenderProgs.h"
@@ -27,6 +28,7 @@ namespace jsr {
 
 	struct stage_t
 	{
+		bool enabled;
 		eStageType type;
 		eShaderProg shader;
 		glm::vec4 shaderParms[8];		// copied to uboUniforms_t.user01..07
@@ -36,6 +38,7 @@ namespace jsr {
 		float alphaCutoff;
 
 		void SetImage(int index, Image* image);
+		stage_t();
 	};
 
 	class Material
@@ -44,11 +47,22 @@ namespace jsr {
 		Material();
 		Material(const std::string& aName);
 		~Material();
-		stage_t* GetStage(eStageType aType);
-		stage_t* AllocStage(eStageType aType);
+		stage_t& GetStage(eStageType aType);
 		bool IsEmpty() const;
 	private:
 		std::string name;
-		stage_t* stages[STAGE_COUNT];
+		stage_t stages[STAGE_COUNT];
+	};
+
+	class MaterialManager
+	{
+	public:
+		MaterialManager() = default;
+		~MaterialManager() {};
+		Material* CreateMaterial(const std::string& name);
+		Material* FindMaterial(const std::string& name);
+	private:
+		std::vector<Material*> lstMaterial;
+		std::unordered_map<std::string, Material*> mapMaterial;
 	};
 }
