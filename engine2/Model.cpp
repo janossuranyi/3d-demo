@@ -6,13 +6,19 @@
 #include "./Math.h"
 #include "./Model.h"
 #include "./Logger.h"
+#include "./GpuTypes.h"
+
+#define ACCESSOR_PTR(model, accessor) \
+(unsigned char*)(model.buffers[model.bufferViews[accessor.bufferView].buffer].data.data() + \
+model.bufferViews[accessor.bufferView].byteOffset + \
+accessor.byteOffset)
 
 namespace jsr {
 
 	using namespace tinygltf;
 	namespace fs = std::filesystem;
 
-	RenderModel::RenderModel()
+	RenderModel::RenderModel() : isStatic(true)
 	{
 	}
 
@@ -25,6 +31,7 @@ namespace jsr {
 			delete surf;
 		}
 	}
+
 	modelSurface_t* RenderModel::AllocSurface(int numVerts, int numIndexes, int& newIdx)
 	{
 		assert(numVerts > 0);
@@ -45,6 +52,7 @@ namespace jsr {
 	
 	ModelManager::ModelManager() {}
 	ModelManager::~ModelManager() {}
+
 
 	RenderModel* ModelManager::LoadFromGLTF(const std::string& filename, int index, const std::string& name)
 	{
@@ -102,6 +110,7 @@ namespace jsr {
 		int const numSurfs = mesh->primitives.size();
 		
 		RenderModel* RM = new RenderModel();
+		RM->SetStatic(true);
 
 		for (int i = 0; i < numSurfs; ++i)
 		{
@@ -123,12 +132,9 @@ namespace jsr {
 			modelSurface_t* ms = RM->AllocSurface(numVerts, numIndexes, surfIndex);
 			assert(xyz.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-			const unsigned char* pData = 
-				model.buffers[model.bufferViews[xyz.bufferView].buffer].data.data() +
-				model.bufferViews[xyz.bufferView].byteOffset +
-				xyz.byteOffset;
+			auto* pData = ACCESSOR_PTR(model, xyz);
 
-			ptrdiff_t stride = xyz.ByteStride(model.bufferViews[xyz.bufferView]);
+			int stride = xyz.ByteStride(model.bufferViews[xyz.bufferView]);
 			drawVert_t* drawvert = ms->surf.verts;
 			for (int j = 0; j < xyz.count; ++j)
 			{
@@ -145,12 +151,8 @@ namespace jsr {
 			if (std::end(surf.attributes) != it)
 			{
 				Accessor const& normals = model.accessors[it->second];
-				const unsigned char* pData =
-					model.buffers[model.bufferViews[normals.bufferView].buffer].data.data() +
-					model.bufferViews[normals.bufferView].byteOffset +
-					normals.byteOffset;
-				
-				ptrdiff_t stride = normals.ByteStride(model.bufferViews[normals.bufferView]);
+				auto* pData = ACCESSOR_PTR(model, normals);
+				int stride = normals.ByteStride(model.bufferViews[normals.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
 				for (int j = 0; j < normals.count; ++j)
 				{
@@ -164,12 +166,9 @@ namespace jsr {
 			if (std::end(surf.attributes) != it)
 			{
 				Accessor const& tangent = model.accessors[it->second];
-				const unsigned char* pData =
-					model.buffers[model.bufferViews[tangent.bufferView].buffer].data.data() +
-					model.bufferViews[tangent.bufferView].byteOffset +
-					tangent.byteOffset;
+				auto* pData = ACCESSOR_PTR(model, tangent);
 
-				ptrdiff_t stride = tangent.ByteStride(model.bufferViews[tangent.bufferView]);
+				int stride = tangent.ByteStride(model.bufferViews[tangent.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
 				for (int j = 0; j < tangent.count; ++j)
 				{
@@ -185,12 +184,9 @@ namespace jsr {
 				Accessor const& uv = model.accessors[it->second];
 				assert(uv.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-				const unsigned char* pData =
-					model.buffers[model.bufferViews[uv.bufferView].buffer].data.data() +
-					model.bufferViews[uv.bufferView].byteOffset +
-					uv.byteOffset;
+				auto* pData = ACCESSOR_PTR(model, uv);
 
-				ptrdiff_t stride = uv.ByteStride(model.bufferViews[uv.bufferView]);
+				int stride = uv.ByteStride(model.bufferViews[uv.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
 				for (int j = 0; j < uv.count; ++j)
 				{
@@ -204,27 +200,37 @@ namespace jsr {
 			if (std::end(surf.attributes) != it)
 			{
 				Accessor const& color = model.accessors[it->second];
-				assert(color.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-				assert(color.type == TINYGLTF_TYPE_VEC4);
-				const unsigned char* pData =
-					model.buffers[model.bufferViews[color.bufferView].buffer].data.data() +
-					model.bufferViews[color.bufferView].byteOffset +
-					color.byteOffset;
 
-				ptrdiff_t stride = color.ByteStride(model.bufferViews[color.bufferView]);
+				auto const* pData = ACCESSOR_PTR(model, color);
+				int stride = color.ByteStride(model.bufferViews[color.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
+				int n = color.type == TINYGLTF_TYPE_VEC4 ? 4 : 3;
+				
 				for (int j = 0; j < color.count; ++j)
 				{
-					drawvert->SetColor((const float*)pData);
+					glm::vec4 aColor{ 0.0f,0.0f,0.0f,1.0f };
+					for (int k = 0; k < n; ++k)
+					{
+						switch (color.componentType)
+						{
+						case TINYGLTF_COMPONENT_TYPE_FLOAT:
+							aColor[k] = *( ( (float*)pData ) + k);
+							break;
+						case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+							aColor[k] = unorm16ToFloat( *( ((unsigned short*)pData) + k) );
+							break;
+						case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+							aColor[k] = unorm8ToFloat( *( ((unsigned char*)pData) + k) );
+							break;
+						}
+					}
+					drawvert->SetColor(aColor);
 					pData += stride;
 					++drawvert;
 				}
 			}
 
-			pData = 
-				model.buffers[model.bufferViews[idx.bufferView].buffer].data.data() +
-				model.bufferViews[idx.bufferView].byteOffset +
-				idx.byteOffset;
+			pData = ACCESSOR_PTR(model, idx);
 			
 			stride = idx.ByteStride(model.bufferViews[idx.bufferView]);
 			elementIndex_t* indices = ms->surf.indexes;
@@ -255,5 +261,9 @@ namespace jsr {
 	void RenderModel::UpdateSurfaceCache()
 	{
 
+	}
+	void RenderModel::SetStatic(bool b)
+	{
+		isStatic = b;
 	}
 }

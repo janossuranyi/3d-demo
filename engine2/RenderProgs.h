@@ -21,6 +21,7 @@ namespace jsr {
 		glm::mat4 WVPMatrix;
 		glm::vec4 viewOrigin;
 		glm::vec4 matDiffuseFactor;
+		glm::vec4 matMRFactor;
 		glm::vec4 alphaCutoff;
 		glm::vec4 user01;
 		glm::vec4 user02;
