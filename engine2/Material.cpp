@@ -53,6 +53,12 @@ namespace jsr {
 		alphaCutoff(0.5f)
 	{
 	}
+	
+	MaterialManager::~MaterialManager()
+	{
+		for (auto* p : lstMaterial) { delete p; }
+	}
+
 	Material* MaterialManager::CreateMaterial(const std::string& name)
 	{
 		Material* res = new Material();

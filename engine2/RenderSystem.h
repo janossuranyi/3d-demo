@@ -2,6 +2,9 @@
 #include "./RenderBackend.h"
 #include "./VertexCache.h"
 #include "./ImageManager.h"
+#include "./Material.h"
+#include "./Model.h"
+
 namespace jsr {
 
 	class RenderSystem
@@ -11,6 +14,9 @@ namespace jsr {
 		ProgramManager* programManager;
 		ImageManager* imageManager;
 		RenderBackend* backend;
+		MaterialManager* materialManager;
+		ModelManager* modelManager;
+
 		RenderSystem();
 		~RenderSystem();
 

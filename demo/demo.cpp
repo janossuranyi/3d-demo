@@ -51,9 +51,8 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    ModelManager MM{};
 //    RenderModel* rm = MM.LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), 0);
-    RenderModel* rm = MM.LoadFromGLTF("d:/data/vertexcolor.gltf", 0);
+    RenderModel* rm = renderSystem.modelManager->LoadFromGLTF("d:/data/vertexcolor.gltf", 0);
 
     std::atomic_bool quit{};
     Image* im  = new Image( "imag1" );

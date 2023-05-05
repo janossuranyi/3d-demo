@@ -58,7 +58,7 @@ namespace jsr {
 	{
 	public:
 		MaterialManager() = default;
-		~MaterialManager() {};
+		~MaterialManager();
 		Material* CreateMaterial(const std::string& name);
 		Material* FindMaterial(const std::string& name);
 	private:

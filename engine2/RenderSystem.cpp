@@ -12,7 +12,10 @@ namespace jsr {
 		vertexCache		= new VertexCache();
 		programManager	= new ProgramManager();
 		imageManager	= new ImageManager();
+		modelManager	= new ModelManager();
+		materialManager = new MaterialManager();
 	}
+
 	RenderSystem::~RenderSystem()
 	{
 		if (IsInitialized())
@@ -22,6 +25,8 @@ namespace jsr {
 
 		Framebuffer::Shutdown();
 
+		delete modelManager;
+		delete materialManager;
 		delete imageManager;
 		delete programManager;
 		delete vertexCache;

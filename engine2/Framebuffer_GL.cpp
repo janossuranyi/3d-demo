@@ -93,7 +93,7 @@ namespace jsr {
 
 	bool Framebuffer::Check()
 	{
-		int prev;
+		GLint prev{};
 		GL_CHECK( glGetIntegerv( GL_FRAMEBUFFER_BINDING, &prev ) );
 
 		GL_CHECK( glBindFramebuffer( GL_FRAMEBUFFER, apiObject ) );
@@ -106,12 +106,12 @@ namespace jsr {
 			{
 				if (colorAttachments[i] > 0) { drawbuffers.push_back(GL_COLOR_ATTACHMENT0 + i); }
 			}
-			GL_CHECK(glDrawBuffers(drawbuffers.size(), drawbuffers.data()));
+			GL_CHECK( glDrawBuffers( drawbuffers.size(), drawbuffers.data() ) );
 		}
 		else
 		{
-			GL_CHECK(glDrawBuffer(GL_NONE));
-			GL_CHECK(glReadBuffer(GL_NONE));
+			GL_CHECK( glDrawBuffer(GL_NONE) );
+			GL_CHECK( glReadBuffer(GL_NONE) );
 		}
 		
 		int status{};

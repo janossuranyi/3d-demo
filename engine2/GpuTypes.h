@@ -74,12 +74,12 @@ inline float unorm8ToFloat(uint8_t v)
 
 inline uint8_t floatToUnorm8(float v)
 {
-	return static_cast<uint8_t>(_std clamp(v * 255.0f, 0.0f, 255.0f));
+	return static_cast<uint8_t>(_std clamp(v * 255.0f + 0.5f, 0.0f, 255.0f));
 }
 
 inline int16_t floatToUnorm16(float v)
 {
-	return static_cast<uint16_t>(_std clamp(v * 65535.0f, 0.0f, 65535.0f));
+	return static_cast<uint16_t>(_std clamp(v * 65535.0f + 0.5f, 0.0f, 65535.0f));
 }
 
 inline float unorm16ToFloat(uint16_t v)
