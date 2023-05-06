@@ -232,7 +232,7 @@ namespace js
 
 	void GfxRenderer::ResetCommandBuffer()
 	{
-		const uintptr_t bytesNeededForAlignment = CACHE_LINE_SIZE - ((uintptr_t)frameData_->frameMemory.get() & (CACHE_LINE_SIZE - 1));
+		const uintptr_t bytesNeededForAlignment = CACHE_LINE_SIZE - ((uintptr_t)frameData->frameMemory & (CACHE_LINE_SIZE - 1));
 		int size = bytesNeededForAlignment + CACHE_LINE_ALIGN(sizeof(JseCmdWrapper));
 
 		frameData_->frameMemoryPtr.store(size, std::memory_order_relaxed);

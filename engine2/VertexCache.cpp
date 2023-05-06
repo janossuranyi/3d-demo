@@ -2,6 +2,22 @@
 #include "./VertexCache.h"
 #include "./Logger.h"
 
+#define DEFAULT_MAX_STATIC_CACHE	(128*1024*1024)
+#define DEFAULT_MAX_TRANSIENT_CACHE (16*1024*1024)
+
+#define CACHE_OFFSET_BITS	27
+#define CACHE_SIZE_BITS		24	// 16MB
+#define CACHE_FRAME_BITS	10
+#define CACHE_STATIC_SHIFT	0
+#define CACHE_OFFSET_SHIFT	1
+#define CACHE_SIZE_SHIFT	28
+#define CACHE_FRAME_SHIFT	52
+
+#define CACHE_OFFSET_MASK	((1ULL << CACHE_OFFSET_BITS) - 1)
+#define CACHE_SIZE_MASK		((1ULL << CACHE_SIZE_BITS) - 1)
+#define CACHE_FRAME_MASK	((1ULL << CACHE_FRAME_BITS) - 1)
+#define CACHE_STATIC		(1)
+
 namespace jsr {
 
 	VertexCache::VertexCache()
@@ -174,17 +190,17 @@ namespace jsr {
 
 	bool VertexCache::GetVertexBuffer(vertCacheHandle_t handle, VertexBuffer& dest)
 	{
-		const bool		isStatic = (handle >> JSE_VERTEX_CACHE_STATIC_SHIFT) & 1;
-		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK);
-		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & JSE_VERTEX_CACHE_SIZE_MASK);
-		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK);
+		const bool		isStatic = (handle >> CACHE_STATIC_SHIFT) & 1;
+		const int		offset = int((handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK);
+		const int		size = int((handle >> CACHE_SIZE_SHIFT) & CACHE_SIZE_MASK);
+		const int		frameNum = int((handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK);
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.vertexBuffer, offset, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
+		if (frameNum != ((activeFrame - 1) & CACHE_FRAME_MASK))
 		{
 			return false;
 		}
@@ -193,17 +209,17 @@ namespace jsr {
 
 	bool VertexCache::GetIndexBuffer(vertCacheHandle_t handle, IndexBuffer& dest)
 	{
-		const bool		isStatic = (handle >> JSE_VERTEX_CACHE_STATIC_SHIFT) & 1;
-		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK);
-		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & JSE_VERTEX_CACHE_SIZE_MASK);
-		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK);
+		const bool		isStatic = (handle >> CACHE_STATIC_SHIFT) & 1;
+		const int		offset = int((handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK);
+		const int		size = int((handle >> CACHE_SIZE_SHIFT) & CACHE_SIZE_MASK);
+		const int		frameNum = int((handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK);
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.indexBuffer, offset, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
+		if (frameNum != ((activeFrame - 1) & CACHE_FRAME_MASK))
 		{
 			return false;
 		}
@@ -212,17 +228,17 @@ namespace jsr {
 
 	bool VertexCache::GetUniformBuffer(vertCacheHandle_t handle, UniformBuffer& dest)
 	{
-		const bool		isStatic = (handle & VERTEX_CACHE_STATIC);
-		const int		offset = int((handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK);
-		const int		size = int((handle >> JSE_VERTEX_CACHE_SIZE_SHIFT) & JSE_VERTEX_CACHE_SIZE_MASK);
-		const int		frameNum = int((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK);
+		const bool		isStatic = (handle & CACHE_STATIC);
+		const int		offset = int((handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK);
+		const int		size = int((handle >> CACHE_SIZE_SHIFT) & CACHE_SIZE_MASK);
+		const int		frameNum = int((handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK);
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.uniformBuffer, offset, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & JSE_VERTEX_CACHE_FRAME_MASK))
+		if (frameNum != ((activeFrame - 1) & CACHE_FRAME_MASK))
 		{
 			return false;
 		}
@@ -231,43 +247,43 @@ namespace jsr {
 
 	bool VertexCache::IsStatic(vertCacheHandle_t handle) const
 	{
-		return handle & VERTEX_CACHE_STATIC;
+		return handle & CACHE_STATIC;
 	}
 
 	bool VertexCache::IsCurrent(vertCacheHandle_t handle) const
 	{
-		if (handle & VERTEX_CACHE_STATIC)
+		if (handle & CACHE_STATIC)
 		{
 			return true;
 		}
 		
-		return (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK) == (int)((handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK);
+		return (activeFrame & CACHE_FRAME_MASK) == (int)((handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK);
 	}
 
 	byte* VertexCache::MappedVertex(vertCacheHandle_t handle) const
 	{
 		assert(!IsStatic(handle));
-		const uint64 offset		= (handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
-		const uint64 framenum	= (handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
-		assert(framenum == (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK));
+		const uint64 offset		= (handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 framenum	= (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+		assert(framenum == (activeFrame & CACHE_FRAME_MASK));
 
 		return transientBufferSet[listNum].vertexPtr + offset;
 	}
 	byte* VertexCache::MappedIndex(vertCacheHandle_t handle) const
 	{
 		assert(!IsStatic(handle));
-		const uint64 offset = (handle >> JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
-		const uint64 framenum = (handle >> JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
-		assert(framenum == (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK));
+		const uint64 offset = (handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+		assert(framenum == (activeFrame & CACHE_FRAME_MASK));
 
 		return transientBufferSet[listNum].indexPtr + offset;
 	}
 	byte* VertexCache::MappedUniform(vertCacheHandle_t handle) const
 	{
 		assert(!IsStatic(handle));
-		const uint64 offset = (handle << JSE_VERTEX_CACHE_OFFSET_SHIFT) & JSE_VERTEX_CACHE_OFFSET_MASK;
-		const uint64 framenum = (handle << JSE_VERTEX_CACHE_FRAME_SHIFT) & JSE_VERTEX_CACHE_FRAME_MASK;
-		assert(framenum == (activeFrame & JSE_VERTEX_CACHE_FRAME_MASK));
+		const uint64 offset = (handle << CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle << CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+		assert(framenum == (activeFrame & CACHE_FRAME_MASK));
 
 		return transientBufferSet[listNum].uniformsPtr + offset;
 	}
@@ -344,13 +360,13 @@ namespace jsr {
 			assert(false);
 		}
 
-		vertCacheHandle_t handle =	((uint64)(activeFrame & JSE_VERTEX_CACHE_FRAME_MASK) << JSE_VERTEX_CACHE_FRAME_SHIFT) |
-									((uint64)(offset & JSE_VERTEX_CACHE_OFFSET_MASK) << JSE_VERTEX_CACHE_OFFSET_SHIFT) |
-									((uint64)(bytes & JSE_VERTEX_CACHE_SIZE_MASK) << JSE_VERTEX_CACHE_SIZE_SHIFT);
+		vertCacheHandle_t handle =	((uint64)(activeFrame & CACHE_FRAME_MASK) << CACHE_FRAME_SHIFT) |
+									((uint64)(offset & CACHE_OFFSET_MASK) << CACHE_OFFSET_SHIFT) |
+									((uint64)(bytes & CACHE_SIZE_MASK) << CACHE_SIZE_SHIFT);
 
 		if (&gbs == &staticBufferSet)
 		{
-			handle |= VERTEX_CACHE_STATIC;
+			handle |= CACHE_STATIC;
 		}
 
 		return handle;

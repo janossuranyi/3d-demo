@@ -49,6 +49,7 @@ namespace jsr {
 		~Material();
 		stage_t& GetStage(eStageType aType);
 		bool IsEmpty() const;
+		std::string GetName() const;
 	private:
 		std::string name;
 		stage_t stages[STAGE_COUNT];
@@ -61,8 +62,10 @@ namespace jsr {
 		~MaterialManager();
 		Material* CreateMaterial(const std::string& name);
 		Material* FindMaterial(const std::string& name);
+		void RemoveMaterial(Material* pM);
 	private:
-		std::vector<Material*> lstMaterial;
+		std::vector<Material> lstMaterial;
+		std::vector<bool> materialUse;
 		std::unordered_map<std::string, Material*> mapMaterial;
 	};
 }

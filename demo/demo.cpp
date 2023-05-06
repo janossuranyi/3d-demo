@@ -51,25 +51,14 @@ int main(int argc, char** argv)
         return 0;
     }
 
-//    RenderModel* rm = MM.LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), 0);
-    RenderModel* rm = renderSystem.modelManager->LoadFromGLTF("d:/data/vertexcolor.gltf", 0);
+    RenderModel* rm = renderSystem.modelManager->LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), 0);
+//    RenderModel* rm = renderSystem.modelManager->LoadFromGLTF("d:/data/vertexcolor.gltf", 0);
+
+    Material* m1 = renderSystem.materialManager->CreateMaterial("_default");
+
+    Info("m1: %s", m1->GetName().c_str());
 
     std::atomic_bool quit{};
-    Image* im  = new Image( "imag1" );
-    renderSystem.imageManager->AddImage( im );
-
-    renderSystem.backend->SetCurrentTextureUnit( 0 );
-
-//    std::filesystem::path p( "../assets/textures/debug_uv.dds" );
-    std::filesystem::path p("d:/data/kloofendal_48d_partly_cloudy_puresky_4k.hdr");
-
-    if ( !std::filesystem::exists( p ) || !im->Load( p.string().c_str() ) )
-    {
-        Error( "Cannot load texture" );
-    }
-
-    renderSystem.backend->SetCurrentTextureUnit( 1 );
-    im->Bind();
 
     SDL_Event e;
 

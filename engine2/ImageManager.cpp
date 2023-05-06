@@ -54,7 +54,7 @@ namespace jsr {
 		}
 		AddImage(globalImages.GBufferAlbedo);
 
-		opts.format = IMF_RGB32F;
+		opts.format = IMF_RGBA16F;
 		opts.usage = IMU_FRAGPOS;
 		if (!globalImages.GBufferFragPos->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
@@ -62,7 +62,7 @@ namespace jsr {
 		}
 		AddImage(globalImages.GBufferFragPos);
 
-		opts.format = IMF_RGB16F;
+		opts.format = IMF_RGBA16F;
 		opts.usage = IMU_NORMAL;
 		if (!globalImages.GBufferNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{

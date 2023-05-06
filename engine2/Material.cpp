@@ -54,17 +54,48 @@ namespace jsr {
 	{
 	}
 	
+	std::string Material::GetName() const { return name; }
+
 	MaterialManager::~MaterialManager()
 	{
-		for (auto* p : lstMaterial) { delete p; }
+		
 	}
 
 	Material* MaterialManager::CreateMaterial(const std::string& name)
 	{
-		Material* res = new Material();
-		lstMaterial.push_back(res);
+		Material* res{};
+		if (lstMaterial.empty() == false)
+		{
+			for (int i = 0; i < materialUse.size(); ++i)
+			{
+				if (!materialUse[i])
+				{
+					materialUse[i] = true;
+					res = &lstMaterial[i];
+					mapMaterial.emplace(name, res);
+
+					return res;
+				}
+			}
+		}
+
+		lstMaterial.emplace_back();
+		res = &lstMaterial.back();
 		mapMaterial.emplace(name, res);
 
 		return res;
+	}
+
+	void MaterialManager::RemoveMaterial(Material* pM)
+	{
+		for (int i = 0; i < materialUse.size(); ++i)
+		{
+			if (materialUse[i] && pM == &lstMaterial[i])
+			{
+				materialUse[i] = false;
+				lstMaterial[i] = Material{};
+				mapMaterial.erase(pM->GetName());
+			}
+		}
 	}
 }
