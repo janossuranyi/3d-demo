@@ -43,15 +43,20 @@ namespace jsr {
 
 	class Material
 	{
+		friend class MaterialManager;
 	public:
 		Material();
 		Material(const std::string& aName);
 		~Material();
 		stage_t& GetStage(eStageType aType);
 		bool IsEmpty() const;
+		int GetId() const;
 		std::string GetName() const;
+		void SetName(const std::string& name);
+		bool IsValid() const;
 	private:
 		std::string name;
+		int id;
 		stage_t stages[STAGE_COUNT];
 	};
 
@@ -63,9 +68,10 @@ namespace jsr {
 		Material* CreateMaterial(const std::string& name);
 		Material* FindMaterial(const std::string& name);
 		void RemoveMaterial(Material* pM);
+		Material* operator[](size_t index);
+		Material* GetMaterial(int id);
 	private:
-		std::vector<Material> lstMaterial;
-		std::vector<bool> materialUse;
-		std::unordered_map<std::string, Material*> mapMaterial;
+		std::vector<Material*> materials;
+		std::vector<size_t> freelist;
 	};
 }

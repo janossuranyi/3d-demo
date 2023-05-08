@@ -14,19 +14,20 @@ namespace jsr {
 	{
 		name = name_;
 		refCount = 0;
-		created = true;
 		wrapS = IMR_CLAMP_TO_EDGE;
 		wrapT = IMR_CLAMP_TO_EDGE;
 		magFilter = IFL_LINEAR;
 		minFilter = IFL_LINEAR;
 		apiObject = -1;
-		apiTarget = IMS_COUNT;
+		apiTarget = IMS_2D;
 		opts = imageOpts_t{};
 		GL_CHECK(glGenTextures(1, (GLuint*)&apiObject));
 	}
 
 	void Image::Bind()
 	{
+		if (apiObject == -1) return;
+
 		const int texunit = renderSystem.backend->GetCurrentTextureUnit();
 		tmu_t* tmu = &glcontext.tmu[texunit];
 
@@ -78,11 +79,23 @@ namespace jsr {
 
 	}
 
+	int Image::GetId() const
+	{
+		return id;
+	}
+
+	bool Image::IsValid() const
+	{
+		return id >= 0;
+	}
+
 	bool Image::UpdateImageData(int w, int h, int level, int layer, int face, int size, const void* data, eImageFormat srcFormat)
 	{
-		if (!created) return false;
-
-		GLenum const internalFormat = opts.srgb ? s_image_formats[opts.format].internalFormatSRGB : s_image_formats[opts.format].internalFormat;
+		if (apiObject == -1)
+		{
+			GL_CHECK(glGenTextures(1, (GLuint*)&apiObject));
+		}
+		GLenum internalFormat = opts.srgb ? s_image_formats[opts.format].internalFormatSRGB : s_image_formats[opts.format].internalFormat;
 		GLenum glformat = s_image_formats[opts.format].format;
 		GLenum const gltype = s_image_formats[opts.format].type;
 		apiTarget = GL_map_textarget(opts.shape);
@@ -90,6 +103,49 @@ namespace jsr {
 		if (srcFormat != IMF_DEFAULT)
 		{
 			glformat = s_image_formats[srcFormat].format;
+		}
+		if (opts.autocompress)
+		{
+			if (!opts.srgb)
+			{
+				switch (opts.format)
+				{
+				case IMF_R8:
+					internalFormat = GL_COMPRESSED_RED;
+					break;
+				case IMF_RG8:
+					internalFormat = GL_COMPRESSED_RG;
+					break;
+				case IMF_RGB:
+					internalFormat = GL_COMPRESSED_RGB;
+					break;
+				case IMF_RGBA:
+					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
+					break;
+				default:
+					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
+				}
+			}
+			else
+			{
+				switch (opts.format)
+				{
+				case IMF_R8:
+					internalFormat = GL_COMPRESSED_RED;
+					break;
+				case IMF_RG8:
+					internalFormat = GL_COMPRESSED_RG;
+					break;
+				case IMF_RGB:
+					internalFormat = GL_COMPRESSED_SRGB;
+					break;
+				case IMF_RGBA:
+					internalFormat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
+					break;
+				default:
+					internalFormat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
+				}
+			}
 		}
 
 		GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
@@ -145,6 +201,11 @@ namespace jsr {
 
 	void Image::CopyFramebuffer(int x, int y, int imageWidth, int imageHeight)
 	{
+		if (apiObject == -1)
+		{
+			GL_CHECK(glGenTextures(1, (GLuint*)&apiObject));
+		}
+
 		Bind();
 		opts.sizeX = imageWidth;
 		opts.sizeY = imageHeight;
@@ -156,13 +217,12 @@ namespace jsr {
 		}
 		else
 		{
-			GL_CHECK(glCopyTexImage2D(apiTarget, 0, GL_RGBA16F, x, y, imageWidth, imageHeight, 0));
+			GL_CHECK(glCopyTexImage2D(apiTarget, 0, GL_R11F_G11F_B10F, x, y, imageWidth, imageHeight, 0));
 		}
 	}
 
 	void Image::SetTextureParameters() const
 	{
-		if (!created) return;
 		const float borderColor[] = { 0.0f,0.0f,0.0f,1.0f };
 		//Bind();
 		GL_CHECK(glTexParameteri(apiTarget, GL_TEXTURE_WRAP_S, GL_map_texrepeat(wrapS)));
@@ -179,22 +239,14 @@ namespace jsr {
 	}
 
 	bool Image::AllocImage(const imageOpts_t& opts_, eImageFilter minFilter, eImageRepeat repeat)
-	{
-		if (created) {
-			PurgeImage();
+	{	
+		if (apiObject == -1)
+		{
+			GL_CHECK(glGenTextures(1, (GLuint*)&apiObject));
 		}
-	
+
 		this->opts = opts_;
 
-		GLuint texture = -1;
-		GL_CHECK(glGenTextures(1, &texture));
-		if (texture == -1)
-		{
-			Error("glGenTexture failed!");
-			return false;
-		}
-		created = true;
-		apiObject = texture;
 		apiTarget = GL_map_textarget(opts.shape);
 
 		Bind();
@@ -208,10 +260,10 @@ namespace jsr {
 			this->magFilter = IFL_NEAREST;
 		}
 
-		GLenum internalFormat = opts.srgb ? s_image_formats[opts.format].internalFormatSRGB : s_image_formats[opts.format].internalFormat;
-		GLenum glformat = s_image_formats[opts.format].format;
-		GLenum gltype = s_image_formats[opts.format].type;
-		int numSides = opts.shape == IMS_CUBEMAP || opts.shape == IMS_2D_ARRAY ? 6 : 1;
+		const GLenum internalFormat = opts.srgb ? s_image_formats[opts.format].internalFormatSRGB : s_image_formats[opts.format].internalFormat;
+		const GLenum glformat = s_image_formats[opts.format].format;
+		const GLenum gltype = s_image_formats[opts.format].type;
+		const int numSides = opts.shape == IMS_CUBEMAP || opts.shape == IMS_2D_ARRAY ? 6 : 1;
 		//opts.numLevel = (int)std::max(std::floor(std::log2(w)), std::floor(std::log2(h)));
 		//opts.numLayer = 0;
 
@@ -250,11 +302,10 @@ namespace jsr {
 
 	void Image::PurgeImage()
 	{
-		if (created)
+		if (apiObject > -1)
 		{
 			GL_CHECK(glDeleteTextures(1, (GLuint*) & apiObject));
 			apiObject = -1;
-			created = false;
 			for (int i = 0; i < MAX_TEXTURE_UNITS; ++i)
 			{
 				glcontext.tmu[i].current2DArray = -1;

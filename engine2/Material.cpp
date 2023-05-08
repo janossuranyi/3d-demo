@@ -4,10 +4,12 @@ namespace jsr {
 
 	Material::Material() :
 		name("_default_"),
+		id(-1),
 		stages() {}
 
 	Material::Material(const std::string& aName):
 		name(aName),
+		id(-1),
 		stages()
 	{
 	}
@@ -56,46 +58,76 @@ namespace jsr {
 	
 	std::string Material::GetName() const { return name; }
 
+	void Material::SetName(const std::string& name)
+	{
+		this->name = name;
+	}
+
+	bool Material::IsValid() const
+	{
+		return id > -1;
+	}
+
 	MaterialManager::~MaterialManager()
 	{
-		
+		for (auto* ptr : materials) { delete ptr; }
 	}
 
 	Material* MaterialManager::CreateMaterial(const std::string& name)
 	{
 		Material* res{};
-		if (lstMaterial.empty() == false)
+		if (!freelist.empty())
 		{
-			for (int i = 0; i < materialUse.size(); ++i)
-			{
-				if (!materialUse[i])
-				{
-					materialUse[i] = true;
-					res = &lstMaterial[i];
-					mapMaterial.emplace(name, res);
-
-					return res;
-				}
-			}
+			size_t idx = freelist.back();
+			freelist.pop_back();
+			materials[idx] = new Material(name);
+			materials[idx]->id = idx;
 		}
 
-		lstMaterial.emplace_back();
-		res = &lstMaterial.back();
-		mapMaterial.emplace(name, res);
+		materials.emplace_back(new Material(name));
+		res = materials.back();
+		res->id = materials.size() - 1;
 
 		return res;
 	}
 
-	void MaterialManager::RemoveMaterial(Material* pM)
+	Material* MaterialManager::FindMaterial(const std::string& name)
 	{
-		for (int i = 0; i < materialUse.size(); ++i)
+		for (auto* e : materials)
 		{
-			if (materialUse[i] && pM == &lstMaterial[i])
+			if (e && e->GetName() == name)
 			{
-				materialUse[i] = false;
-				lstMaterial[i] = Material{};
-				mapMaterial.erase(pM->GetName());
+				return e;
 			}
 		}
+		return nullptr;
+	}
+
+	void MaterialManager::RemoveMaterial(Material* pM)
+	{
+		for (int i = 0; i < materials.size(); ++i)
+		{
+			if (pM == materials[i])
+			{
+				delete materials[i];
+				materials[i] = nullptr;
+				freelist.push_back(i);
+			}
+		}
+	}
+
+	Material* MaterialManager::operator[](size_t index)
+	{
+		return GetMaterial((int)index);
+	}
+
+	Material* MaterialManager::GetMaterial(int id)
+	{
+		if (id > materials.size())
+		{
+			return nullptr;
+		}
+
+		return materials[id];
 	}
 }

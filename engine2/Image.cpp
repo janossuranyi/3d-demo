@@ -398,7 +398,7 @@ namespace jsr {
 
 	bool Image::IsCreated() const
 	{
-		return created;
+		return apiObject > -1;
 	}
 
 	bool Image::IsCompressed() const

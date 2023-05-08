@@ -25,6 +25,7 @@ namespace jsr {
 		int				id;
 		const Material* shader;
 		surface_t		surf;
+		~modelSurface_t();
 	};
 
 	class RenderModel

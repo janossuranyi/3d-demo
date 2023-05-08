@@ -96,6 +96,7 @@ namespace jsr {
 		/*
 		RENDERING
 		*/
+
 		backend->EndFrame();
 		++frameNum;
 	}

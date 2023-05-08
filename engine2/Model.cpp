@@ -7,6 +7,8 @@
 #include "./Model.h"
 #include "./Logger.h"
 #include "./GpuTypes.h"
+#include "./RenderSystem.h"
+#include "./Heap.h"
 
 #define ACCESSOR_PTR(model, accessor) \
 (unsigned char*)(model.buffers[model.bufferViews[accessor.bufferView].buffer].data.data() + \
@@ -26,8 +28,8 @@ namespace jsr {
 	{
 		for (auto* surf : surfs)
 		{
-			if (surf->surf.verts) { delete surf->surf.verts; }
-			if (surf->surf.indexes) { delete surf->surf.indexes; }
+			if (surf->surf.verts) { MemFree( surf->surf.verts ); }
+			if (surf->surf.indexes) { MemFree( surf->surf.indexes ); }
 			delete surf;
 		}
 	}
@@ -41,12 +43,11 @@ namespace jsr {
 
 		surf->surf.numVerts = numVerts;
 		surf->surf.numIndexes = numIndexes;
-		surf->surf.verts = new drawVert_t[numVerts];
+		surf->surf.verts = (drawVert_t*) MemAlloc(numVerts * sizeof(drawVert_t));
 		if (numIndexes > 0)
 		{
-			surf->surf.indexes = new elementIndex_t[numIndexes];
+			surf->surf.indexes = (elementIndex_t*) MemAlloc(sizeof(elementIndex_t) * numIndexes);
 		}
-
 		return surf;
 	}
 	
@@ -111,6 +112,21 @@ namespace jsr {
 		
 		RenderModel* RM = new RenderModel();
 		RM->SetStatic(true);
+
+		for (int i = 0; i < model.images.size(); ++i)
+		{
+			const auto& img = model.images[i];
+			Image* im = renderSystem.imageManager->AllocImage("img_" + img.name + std::to_string(i));
+			imageOpts_t opts;
+			opts.autocompress = false;
+			opts.format = IMF_RGBA;
+			opts.maxAnisotropy = 4.0f;
+			opts.shape = IMS_2D;
+			opts.sizeX = img.width;
+			opts.sizeY = img.height;
+			im->AllocImage(opts, IFL_LINEAR, IMR_REPEAT);
+			im->UpdateImageData(img.width, img.height, 0, 0, 0, 0, img.image.data());
+		}
 
 		for (int i = 0; i < numSurfs; ++i)
 		{
@@ -253,6 +269,24 @@ namespace jsr {
 					++indices;
 				}
 			}
+			
+			const auto& gmat = model.materials[ surf.material ];
+			Material* mat = renderSystem.materialManager->CreateMaterial(gmat.name);
+			mat->SetName(gmat.name);
+			eCoverage cov = gmat.alphaMode == "OPAQUE" ? COVERAGE_SOLID : (gmat.alphaMode == "BLEND" ? COVERAGE_BLEND : COVERAGE_MASK);
+			Image* img{};
+
+			if (cov == COVERAGE_MASK || cov == COVERAGE_SOLID)
+			{
+				stage_t& stage = mat->GetStage(STAGE_GBUFFER);
+				stage.alphaCutoff = gmat.alphaCutoff;
+				stage.coverage = cov;
+				stage.shader = PRG_DEFERRED_GBUFFER_MR;
+				stage.enabled = true;
+				stage.cullMode = gmat.doubleSided ? CULL_NONE : CULL_BACK;
+			}
+
+
 		}
 
 		return RM;
@@ -260,10 +294,33 @@ namespace jsr {
 
 	void RenderModel::UpdateSurfaceCache()
 	{
-
+		if (isStatic)
+		{
+			for (auto* surf : surfs)
+			{
+				if (surf->surf.vertexCache == 0) {
+					surf->surf.vertexCache = renderSystem.vertexCache->AllocStaticVertex(surf->surf.verts, sizeof(drawVert_t) * surf->surf.numVerts);
+				}
+				if (surf->surf.indexCache == 0) {
+					surf->surf.indexCache = renderSystem.vertexCache->AllocStaticIndex(surf->surf.indexes, (15UL + sizeof(elementIndex_t) * surf->surf.numIndexes) & ~15UL);
+				}
+			}
+		}
+		else
+		{
+			for (auto* surf : surfs)
+			{
+				surf->surf.vertexCache = renderSystem.vertexCache->AllocTransientVertex(surf->surf.verts, sizeof(drawVert_t) * surf->surf.numVerts);
+				surf->surf.indexCache = renderSystem.vertexCache->AllocTransientIndex(surf->surf.indexes, (15UL + sizeof(elementIndex_t) * surf->surf.numIndexes) & ~15UL) ;
+			}
+		}
 	}
 	void RenderModel::SetStatic(bool b)
 	{
 		isStatic = b;
+	}
+	modelSurface_t::~modelSurface_t()
+	{
+		if (shader) delete shader;
 	}
 }

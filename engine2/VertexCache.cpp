@@ -300,6 +300,18 @@ namespace jsr {
 		int	endPos = 0;
 		int offset = 0;
 		int numBytes{};
+		bool bStatic = false;
+		char* sStatic;
+
+		if (&gbs == &staticBufferSet)
+		{
+			bStatic = true;
+			sStatic = "static";
+		}
+		else
+		{
+			sStatic = "transient";
+		}
 
 		switch (type)
 		{
@@ -319,6 +331,7 @@ namespace jsr {
 				}
 				gbs.vertexBuffer.Update(data, offset, bytes);
 			}
+			Info("%s vertex alloced: %d bytes", sStatic, bytes);
 			break;
 
 		case CACHE_INDEX:
@@ -337,6 +350,7 @@ namespace jsr {
 				}
 				gbs.indexBuffer.Update(data, offset, bytes);
 			}
+			Info("%s index alloced: %d bytes", sStatic, bytes);
 			break;
 
 		case CACHE_UNIFORM:
@@ -355,6 +369,7 @@ namespace jsr {
 				}
 				gbs.uniformBuffer.Update(data, offset, bytes);
 			}
+			Info("%s uniform alloced: %d bytes", sStatic, bytes);
 			break;
 		default:
 			assert(false);

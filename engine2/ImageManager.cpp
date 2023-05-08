@@ -22,20 +22,20 @@ namespace jsr {
 			Error("[ImageManager]: render system not initialized !");
 			return false;
 		}
-		globalImages.GBufferFragPos = new Image("_gbuffer_fragpos");
-		globalImages.GBufferAlbedo = new Image("_gbuffer_albedo");
-		globalImages.GBufferNormal = new Image("_gbuffer_normal");
-		globalImages.Depth32 = new Image("_depth");
-		globalImages.defaultDepth = new Image("_defaultDepth");
-		globalImages.defaultImage = new Image("_defaultImage");
-		globalImages.GBufferSpec = new Image("_gbuffer_specular");
-		globalImages.HDRaccum = new Image("_hdrimage");
-		globalImages.HDRdepth = new Image("_hdrDepth");
-		globalImages.whiteImage = new Image("_white");
-		globalImages.grayImage = new Image("_gray");
-		globalImages.blackImage = new Image("_black");
-		globalImages.flatNormal = new Image("_flatnormal");
 
+		globalImages.GBufferFragPos = AllocImage("_gbuffer_fragpos");
+		globalImages.GBufferAlbedo = AllocImage("_gbuffer_albedo");
+		globalImages.GBufferNormal = AllocImage("_gbuffer_normal");
+		globalImages.Depth32 = AllocImage("_depth");
+		globalImages.defaultDepth = AllocImage("_defaultDepth");
+		globalImages.defaultImage = AllocImage("_defaultImage");
+		globalImages.GBufferSpec = AllocImage("_gbuffer_specular");
+		globalImages.HDRaccum = AllocImage("_hdrimage");
+		globalImages.HDRdepth = AllocImage("_hdrDepth");
+		globalImages.whiteImage = AllocImage("_white");
+		globalImages.grayImage = AllocImage("_gray");
+		globalImages.blackImage = AllocImage("_black");
+		globalImages.flatNormal = AllocImage("_flatnormal");
 
 		int screen_width, screen_height;
 		renderSystem.backend->GetScreenSize(screen_width, screen_height);
@@ -48,11 +48,13 @@ namespace jsr {
 		opts.sizeY = screen_height;
 		opts.numLevel = 1;
 		opts.numLayer = 1;
+		opts.maxAnisotropy = 1.0f;
+		opts.autocompress = false;
+
 		if (!globalImages.GBufferAlbedo->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image GBufferAlbedo allocation failed !");
 		}
-		AddImage(globalImages.GBufferAlbedo);
 
 		opts.format = IMF_RGBA16F;
 		opts.usage = IMU_FRAGPOS;
@@ -60,7 +62,6 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image GBufferFragPos allocation failed !");
 		}
-		AddImage(globalImages.GBufferFragPos);
 
 		opts.format = IMF_RGBA16F;
 		opts.usage = IMU_NORMAL;
@@ -68,7 +69,6 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image GBufferNormal allocation failed !");
 		}
-		AddImage(globalImages.GBufferNormal);
 
 		opts.format = IMF_D32;
 		opts.usage = IMU_DEPTH;
@@ -76,7 +76,6 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image GBufferNormal allocation failed !");
 		}
-		AddImage(globalImages.Depth32);
 
 		opts.format = IMF_RGBA;
 		opts.usage = IMU_AORM;
@@ -84,7 +83,6 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image GBufferSpec allocation failed !");
 		}
-		AddImage(globalImages.GBufferSpec);
 
 		opts.format = IMF_R11G11B10F;
 		opts.usage = IMU_HDR;
@@ -92,7 +90,6 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image HDRaccum allocation failed !");
 		}
-		AddImage(globalImages.HDRaccum);
 
 
 		opts.format = IMF_RGBA;
@@ -101,7 +98,6 @@ namespace jsr {
 		{
 			Error("[ImageManager]: defaultImage allocation failed !");
 		}
-		AddImage(globalImages.defaultImage);
 
 		opts.format = IMF_D32;
 		opts.usage = IMU_DEPTH;
@@ -109,7 +105,6 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image defaultDepth allocation failed !");
 		}
-		AddImage(globalImages.defaultDepth);
 
 		opts.format = IMF_D32;
 		opts.usage = IMU_DEPTH;
@@ -117,18 +112,17 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image HDRdepth allocation failed !");
 		}
-		AddImage(globalImages.HDRdepth);
 
 		std::vector<unsigned int> tmp(16 * 16);
 		opts.sizeX = 16;
 		opts.sizeY = 16;
 		opts.format = IMF_RGBA;
+		opts.autocompress = false;
 
 		// white
 		tmp.assign(16 * 16, 0xFFFFFFFF);
 		if (globalImages.whiteImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
-			AddImage(globalImages.whiteImage);
 			globalImages.whiteImage->UpdateImageData(16, 16, 0, 0, 0, 0, tmp.data());
 		}
 		else
@@ -139,7 +133,6 @@ namespace jsr {
 		tmp.assign(16 * 16, 0xFF000000);
 		if (globalImages.blackImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
-			AddImage(globalImages.blackImage);
 			globalImages.blackImage->UpdateImageData(16, 16, 0, 0, 0, 0, tmp.data());
 		}
 		else
@@ -150,7 +143,6 @@ namespace jsr {
 		tmp.assign(16 * 16, 0xFF7F7F7F);
 		if (globalImages.grayImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
-			AddImage(globalImages.grayImage);
 			globalImages.grayImage->UpdateImageData(16, 16, 0, 0, 0, 0, tmp.data());
 		}
 		else
@@ -161,7 +153,6 @@ namespace jsr {
 		tmp.assign(16 * 16, 0xFFFF7F7F);
 		if (globalImages.flatNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
-			AddImage(globalImages.flatNormal);
 			globalImages.flatNormal->UpdateImageData(16, 16, 0, 0, 0, 0, tmp.data());
 		}
 		else
@@ -179,110 +170,71 @@ namespace jsr {
 		if (initialized)
 		{
 			initialized = false;
-			/*
-			delete globalImages.GBufferAlbedo;
-			delete globalImages.GBufferNormal;
-			delete globalImages.Depth32;
-			delete globalImages.GBufferSpec;
-			delete globalImages.HDRaccum;
-			delete globalImages.whiteImage;
-			delete globalImages.flatNormal;
-			*/
+			for (auto* ptr : images) { delete ptr; }
 		}
-
-		for (auto* img : images) { delete img; }
-
-		images.clear();
-		imagemap.clear();
 	}
-	int ImageManager::LoadFromFile(std::string const& name, std::string const& filename, eImageUsage usage)
+
+	Image* ImageManager::LoadFromFile(std::string const& name, std::string const& filename, eImageUsage usage)
 	{
-		Image* newimg = new Image(name);
+		Image* newimg = AllocImage();
 		if (newimg->Load(filename.c_str()))
 		{
 			newimg->SetUsage(usage);
-			size_t idx = AllocImage();
-			images[idx] = newimg;
-
-			if (imagemap.count(name) == 0)
-			{
-				imagemap.emplace(name, newimg);
-			}
-			else
-			{
-				Info("[ImageManager]: name (%s) already exists", name.c_str());
-			}
-			return idx;
+			return newimg;
 		}
 		else
 		{
 			delete newimg;
-			return -1;
+			return nullptr;
 		}
-	}
-	int ImageManager::AddImage(Image* img)
-	{
-		size_t idx = AllocImage();
-		images[idx] = img;
-		if (imagemap.count(img->GetName()) == 0)
-		{
-			imagemap.emplace(img->GetName(), img);
-		}
-		else
-		{
-			Info("[ImageManager]: name (%s) already exists", img->GetName().c_str());
-		}
-		return (int)idx;
 	}
 	void ImageManager::RemoveImage(int idx)
 	{
-		Image* tmp{};
-		std::swap(images[idx], tmp);
-		imagemap.erase(tmp->GetName());
-		delete tmp;
-	}
-	void ImageManager::RemoveImage(std::string const& name)
-	{
-		auto it = imagemap.find(name);
-		if (std::end(imagemap) != it)
+		if (idx < images.size() && images[idx])
 		{
-			Image* what = it->second;
-			for (int i = 0; i < images.size(); ++i)
-			{
-				if (images[i] == what && images[i] != nullptr)
-				{
-					delete images[i];
-					images[i] = nullptr;
-				}
-			}
-			imagemap.erase(name);
+			delete images[idx];
+			images[idx] = nullptr;
+			freelist.push_back(idx);
 		}
 	}
+
+	void ImageManager::RemoveImage(Image* img)
+	{
+		if (img) RemoveImage(img->GetId());
+	}
+
 	Image* ImageManager::GetImage(int idx)
 	{
-		assert(idx < images.size());
+		if (idx >= images.size()) return nullptr;
+
 		return images[idx];
 	}
+
 	Image* ImageManager::GetImage(std::string const& name)
 	{
-		auto it = imagemap.find(name);
-		if (std::end(imagemap) != it)
+		for (auto* e : images)
 		{
-			return it->second;
+			if (e->GetName() == name) return e;
 		}
 		return nullptr;
 	}
-	size_t ImageManager::AllocImage()
+	
+	Image* ImageManager::AllocImage(std::string const& name)
 	{
-		for (int i = 0; i < images.size(); ++i)
+		if (!freelist.empty())
 		{
-			if (images[i] == nullptr)
-			{
-				return i;
-			}
+			size_t idx = freelist.back();
+			freelist.pop_back();
+			images[idx] = new Image(name);
+			images[idx]->id = idx;
+			return images[idx];
 		}
 		
-		images.emplace_back(nullptr);
-		return images.size() - 1;
+		images.emplace_back(new Image(name));
+		const size_t idx = images.size() - 1;
+		Image* res = images[idx];
+		res->id = idx;
+
+		return res;
 	}
 }

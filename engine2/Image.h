@@ -87,7 +87,8 @@ namespace jsr {
 		int numLayer;
 		bool srgb;
 		bool compressed;
-		
+		bool autocompress;
+
 		imageOpts_t();
 	};
 
@@ -103,11 +104,13 @@ namespace jsr {
 		numLayer = 0;
 		srgb = false;
 		compressed = false;
+		autocompress = false;
 	}
 
 	class Image
 	{
 		friend class Framebuffer;
+		friend class ImageManager;
 	public:
 		Image();
 		Image(const std::string& name);
@@ -117,6 +120,8 @@ namespace jsr {
 		bool Load(const char* filename);
 		void Bind();
 		static void Unbind();
+		int GetId() const;
+		bool IsValid() const;
 		bool UpdateImageData(int w, int h,  int level, int layer, int face, int size, const void* data, eImageFormat srcFormat = IMF_DEFAULT);
 		void CopyFramebuffer(int x, int y, int imageWidth, int imageHeight);
 		void SetTextureParameters() const;
@@ -145,8 +150,8 @@ namespace jsr {
 		std::string GetName() const;
 		imageOpts_t opts;
 	private:
+		int id;
 		std::string	name;
-		bool created;
 		int apiObject;
 		int apiTarget;
 		int refCount;

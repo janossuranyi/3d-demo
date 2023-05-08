@@ -51,12 +51,12 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    renderSystem.vertexCache->ClearStaticCache();
+
     RenderModel* rm = renderSystem.modelManager->LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), 0);
 //    RenderModel* rm = renderSystem.modelManager->LoadFromGLTF("d:/data/vertexcolor.gltf", 0);
-
-    Material* m1 = renderSystem.materialManager->CreateMaterial("_default");
-
-    Info("m1: %s", m1->GetName().c_str());
+    
+    if (rm) rm->UpdateSurfaceCache();
 
     std::atomic_bool quit{};
 

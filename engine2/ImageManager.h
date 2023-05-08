@@ -32,17 +32,16 @@ namespace jsr {
 		~ImageManager();
 		bool Init();
 		void Shutdown();
-		int LoadFromFile(std::string const& name, std::string const& filename, eImageUsage usage);
-		int AddImage(Image* img);
+		Image* LoadFromFile(std::string const& name, std::string const& filename, eImageUsage usage);
 		void RemoveImage(int idx);
-		void RemoveImage(std::string const& name);
+		void RemoveImage(Image* img);
 		Image* GetImage(int idx);
 		Image* GetImage(std::string const& name);
 		globalImages_t globalImages;
+		Image* AllocImage(std::string const& name = "_default_");
 	private:
-		size_t AllocImage();
 		bool initialized;
 		std::vector<Image*> images;
-		std::unordered_map<std::string, Image*> imagemap;
+		std::vector<size_t> freelist;
 	};
 }
