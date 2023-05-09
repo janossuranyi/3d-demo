@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+
 #include "./EngineTypes.h"
 #include "./VertexCache.h"
 #include "./Bounds.h"
@@ -81,6 +82,7 @@ namespace jsr {
 		glm::mat3		axis;
 		float			radius;
 		const Material* shader;
+		bool			remove;
 	};
 
 	struct viewDef_t

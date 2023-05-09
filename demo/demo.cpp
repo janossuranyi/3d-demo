@@ -42,8 +42,11 @@ int main(int argc, char** argv)
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 
     engineConfig.r_fbsrgb = false;
-
-    
+#ifdef _DEBUG
+    engineConfig.r_debug = true;
+#else
+    engineConfig.r_debug = false;
+#endif
     Engine engine;
 
     if ( !engine.Init( false ) )
@@ -58,25 +61,10 @@ int main(int argc, char** argv)
     
     if (rm) rm->UpdateSurfaceCache();
 
-    std::atomic_bool quit{};
-
-    SDL_Event e;
-
-    while ( !quit )
-    {
-        renderSystem.Frame();
-
-        while ( SDL_PollEvent( &e ) != SDL_FALSE )
-        {
-            if ( e.type == SDL_QUIT )
-            {
-                quit = true;
-                break;
-            }
-        }
-        
-        std::this_thread::sleep_for( 1ms );
-    }
+    renderSystem.vertexCache->PrintStatistic();
+    
+    engine.Run();
+    engine.Shutdown();
 
     //jsr::renderSystem.Shutdown();
 

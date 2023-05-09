@@ -32,7 +32,7 @@ namespace jsr {
 		eStageType type;
 		eShaderProg shader;
 		glm::vec4 shaderParms[8];		// copied to uboUniforms_t.user01..07
-		std::vector<Image*> images;
+		Image* images[IMU_COUNT];
 		eCoverage coverage;
 		eCullMode cullMode;
 		float alphaCutoff;

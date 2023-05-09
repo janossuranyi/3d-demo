@@ -48,6 +48,7 @@ namespace jsr {
 		void Restart();
 		void Frame();
 		void ClearStaticCache();
+		void PrintStatistic() const;
 		vertCacheHandle_t AllocStaticVertex(const void* data, int bytes);
 		vertCacheHandle_t AllocStaticIndex(const void* data, int bytes);
 		vertCacheHandle_t AllocStaticUniform(const void* data, int bytes);

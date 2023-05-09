@@ -1,5 +1,6 @@
 #pragma once
 #include "./ThreadWorker.h"
+#include "./Camera.h"
 
 namespace jsr {
 
@@ -25,6 +26,10 @@ namespace jsr {
 		bool Init(bool aThreaded);
 		void Shutdown();
 		int Run() override;
+
+		Camera player;
+
+
 	private:
 		bool	threaded;
 	};

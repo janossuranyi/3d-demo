@@ -19,7 +19,7 @@ namespace jsr {
 		magFilter = IFL_LINEAR;
 		minFilter = IFL_LINEAR;
 		apiObject = -1;
-		apiTarget = IMS_2D;
+		apiTarget = -1;
 		opts = imageOpts_t{};
 		GL_CHECK(glGenTextures(1, (GLuint*)&apiObject));
 	}
@@ -27,6 +27,7 @@ namespace jsr {
 	void Image::Bind()
 	{
 		if (apiObject == -1) return;
+		if (apiTarget == -1) apiTarget = GL_map_textarget(opts.shape);
 
 		const int texunit = renderSystem.backend->GetCurrentTextureUnit();
 		tmu_t* tmu = &glcontext.tmu[texunit];
@@ -56,7 +57,6 @@ namespace jsr {
 
 		if (dirty)
 		{
-			if (apiTarget == IMS_COUNT) apiTarget = GL_map_textarget(opts.shape);
 			GL_CHECK(glBindMultiTextureEXT(GL_TEXTURE0 + texunit, apiTarget, apiObject));
 		}
 	}
@@ -76,7 +76,6 @@ namespace jsr {
 			glcontext.tmu[i].currentCubeMap = -1;
 			glcontext.tmu[i].currentCubeMapArray = -1;
 		}
-
 	}
 
 	int Image::GetId() const
@@ -111,19 +110,19 @@ namespace jsr {
 				switch (opts.format)
 				{
 				case IMF_R8:
-					internalFormat = GL_COMPRESSED_RED;
+					internalFormat = GL_COMPRESSED_RED_RGTC1_EXT;
 					break;
 				case IMF_RG8:
-					internalFormat = GL_COMPRESSED_RG;
+					internalFormat = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
 					break;
 				case IMF_RGB:
-					internalFormat = GL_COMPRESSED_RGB;
+					internalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
 					break;
 				case IMF_RGBA:
-					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
+					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 					break;
 				default:
-					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
+					internalFormat = GL_COMPRESSED_RGBA;
 				}
 			}
 			else
@@ -131,22 +130,24 @@ namespace jsr {
 				switch (opts.format)
 				{
 				case IMF_R8:
-					internalFormat = GL_COMPRESSED_RED;
+					internalFormat = GL_COMPRESSED_RED_RGTC1_EXT;
 					break;
 				case IMF_RG8:
-					internalFormat = GL_COMPRESSED_RG;
+					internalFormat = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
 					break;
 				case IMF_RGB:
-					internalFormat = GL_COMPRESSED_SRGB;
+					internalFormat = GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;
 					break;
 				case IMF_RGBA:
-					internalFormat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
+					internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT;
 					break;
 				default:
-					internalFormat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
+					internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT;
 				}
 			}
 		}
+
+		SetTextureParameters();
 
 		GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
 
@@ -196,6 +197,11 @@ namespace jsr {
 			assert(false);
 		}
 
+		if (opts.automipmap && !opts.compressed)
+		{
+			GL_CHECK(glGenerateMipmap(apiTarget));
+		}
+
 		return true;
 	}
 
@@ -235,7 +241,6 @@ namespace jsr {
 		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_LOD, (float)(opts.numLevel - 1)));
 		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_LOD_BIAS, 0.0f));
 		GL_CHECK(glTexParameterfv(apiTarget, GL_TEXTURE_BORDER_COLOR, &borderColor[0]));
-
 	}
 
 	bool Image::AllocImage(const imageOpts_t& opts_, eImageFilter minFilter, eImageRepeat repeat)

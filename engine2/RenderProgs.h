@@ -23,6 +23,7 @@ namespace jsr {
 		glm::vec4 matDiffuseFactor;
 		glm::vec4 matMRFactor;
 		glm::vec4 alphaCutoff;
+		glm::vec4 debugFlags;
 		glm::vec4 user01;
 		glm::vec4 user02;
 		glm::vec4 user03;
@@ -50,7 +51,7 @@ namespace jsr {
 
 	enum eShaderProg
 	{
-		PRG_VERTEX_COLOR,
+		PRG_TEXTURED,
 		PRG_ZPASS,
 		PRG_EQUIRECT_TEXTURE,
 		PRG_DEFERRED_GBUFFER_MR,

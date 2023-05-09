@@ -36,10 +36,8 @@ namespace jsr {
 
 	void stage_t::SetImage(int index, Image* image)
 	{
-		if (images.size() <= index)
-		{
-			images.resize(index + 1);
-		}
+		if (index >= IMU_COUNT) return;
+
 		images[index] = image;
 		image->AddRef();
 	}

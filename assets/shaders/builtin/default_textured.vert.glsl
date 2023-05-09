@@ -1,4 +1,6 @@
 @include "version.inc.glsl"
+@include "common.inc.glsl"
+@include "uniforms.inc.glsl"
 
 layout(location = 0) in vec4 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
@@ -9,12 +11,12 @@ layout(location = 4) in vec4 in_Color;
 out INTERFACE
 {
     vec4 fragPos;
+    vec2 texCoord;
     vec4 color;
     vec4 tangent;
     vec3 normal;
 } Out;
 
-@include "uniforms.inc.glsl"
 
 void main()
 {
@@ -35,4 +37,5 @@ void main()
 
     Out.normal      = N;
     Out.tangent     = vec4(T, in_Tangent.w);
+    Out.texCoord    = in_TexCoord;
 }

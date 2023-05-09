@@ -2,6 +2,8 @@
 
 #include <vector>
 #include "./Math.h"
+#include "./Model.h"
+#include "./Light.h"
 
 namespace jsr {
 
@@ -21,6 +23,12 @@ namespace jsr {
 		void				SetDir(glm::quat const& v);
 		void				SetDir(float radX, float radY, float radZ);
 		void				SetParent(Node3D* parent);
+		void				AddModel(RenderModel* model);
+		void				AddLight(Light* model);
+		int					GetNumChildren() const;
+		int					GetNumEntities() const;
+		const Entity3D*		GetEntities() const;
+		const Node3D* const* GetChildren() const;
 	private:
 		void				Changed();
 		Node3D* pParent;
@@ -29,7 +37,7 @@ namespace jsr {
 		glm::vec3 scale;
 		glm::quat dir;
 		std::vector<Node3D*> children;
-		std::vector<Entity3D*> entities;
+		std::vector<Entity3D> entities;
 		bool changed;
 	};
 

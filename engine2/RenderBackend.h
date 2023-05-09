@@ -9,6 +9,17 @@ namespace jsr {
 
 	const int MAX_TEXTURE_UNITS = 14;
 
+	enum eRenderCommand
+	{
+		RC_NOP
+	};
+
+	struct emptyCommand_t
+	{
+		eRenderCommand command;
+		emptyCommand_t* next;
+	};
+
 	struct rasterizerState_t
 	{
 
@@ -60,6 +71,7 @@ namespace jsr {
 		bool		IsInitialized() const;
 		tmu_t*		GetTextureUnit(int index);
 		void		RenderView(viewDef_t* view);
+		void		RenderCommandBuffer(emptyCommand_t* cmds);
 	private:
 		float	clearColor[4];
 		int		currenttmu;

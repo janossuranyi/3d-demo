@@ -158,6 +158,17 @@ namespace jsr {
 		staticBufferSet.uniformsAlloced.store(0, std::memory_order_relaxed);
 	}
 
+	void VertexCache::PrintStatistic() const
+	{
+		Info("Allocated static vertex     :   %d", staticBufferSet.vertexAlloced.load());
+		Info("Allocated static index      :   %d", staticBufferSet.indexAlloced.load());
+		Info("Allocated static uniform    :   %d", staticBufferSet.uniformsAlloced.load());
+		Info("Allocated transient vertex  :   %d", transientBufferSet[activeFrame].vertexAlloced.load());
+		Info("Allocated transient index   :   %d", transientBufferSet[activeFrame].indexAlloced.load());
+		Info("Allocated transient uniform :   %d", transientBufferSet[activeFrame].uniformsAlloced.load());
+
+	}
+
 	vertCacheHandle_t VertexCache::AllocStaticVertex(const void* data, int size)
 	{
 		return RealAlloc(staticBufferSet, data, size, CACHE_VERTEX);
@@ -331,7 +342,6 @@ namespace jsr {
 				}
 				gbs.vertexBuffer.Update(data, offset, bytes);
 			}
-			Info("%s vertex alloced: %d bytes", sStatic, bytes);
 			break;
 
 		case CACHE_INDEX:
@@ -350,7 +360,6 @@ namespace jsr {
 				}
 				gbs.indexBuffer.Update(data, offset, bytes);
 			}
-			Info("%s index alloced: %d bytes", sStatic, bytes);
 			break;
 
 		case CACHE_UNIFORM:
@@ -369,7 +378,6 @@ namespace jsr {
 				}
 				gbs.uniformBuffer.Update(data, offset, bytes);
 			}
-			Info("%s uniform alloced: %d bytes", sStatic, bytes);
 			break;
 		default:
 			assert(false);

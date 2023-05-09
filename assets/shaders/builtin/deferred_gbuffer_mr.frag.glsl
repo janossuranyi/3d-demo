@@ -20,17 +20,25 @@ layout(binding = 2) uniform sampler2D texSpecular;
 
 //@include "uniforms.inc.glsl"
 
+struct input_t {
+    vec3 normal;
+    mat3 tbn;
+};
+
 void main()
 {
-    vec3 localNormal = normalize( In.normal );
-    vec3 localTangent = normalize( In.tangent.xyz );
-    vec3 derivedBitangent = normalize( cross( localNormal, localTangent ) * In.tangent.w );
-    mat3 TBN = mat3(localTangent, derivedBitangent, localNormal);
-    vec3 tsNorm = normalize( texture(texNormal, In.texCoord).xyz * 2.0 - vec3(1.0) );
-    vec3 wsNorm = TBN * tsNorm;
+    input_t inputs = input_t(vec3(0.0),mat3(1.0));
+    {
+        vec3 localNormal = normalize( In.normal );
+        vec3 localTangent = normalize( In.tangent.xyz );
+        vec3 derivedBitangent = normalize( cross( localNormal, localTangent ) * In.tangent.w );
+
+        inputs.tbn = mat3( localTangent, derivedBitangent, localNormal );
+        inputs.normal = localNormal;
+    }
 
     outFragPos = In.fragPos.xyz;
     outAlbedo = texture(texAlbedo, In.texCoord).xyz;
     outSpec = texture(texSpecular, In.texCoord).xyz;    
-    outNormal = wsNorm;
+    outNormal = inputs.normal;
 }

@@ -181,6 +181,9 @@ namespace jsr {
 		case GL_LUMINANCE:
 			img->opts.format = IMF_R8;
 			break;
+		case GL_RG:
+			img->opts.format = IMF_RG8;
+			break;
 		default:
 			img->opts.format = IMF_RGBA;
 			break;

@@ -8,4 +8,8 @@ namespace jsr {
 		light()
 	{
 	}
+	void Entity3D::SetValue(void* ptr)
+	{
+		value = ptr;
+	}
 }

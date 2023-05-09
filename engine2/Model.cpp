@@ -116,21 +116,71 @@ namespace jsr {
 		for (int i = 0; i < model.images.size(); ++i)
 		{
 			const auto& img = model.images[i];
-			Image* im = renderSystem.imageManager->AllocImage("img_" + img.name + std::to_string(i));
-			imageOpts_t opts;
-			opts.autocompress = false;
-			opts.format = IMF_RGBA;
-			opts.maxAnisotropy = 4.0f;
-			opts.shape = IMS_2D;
-			opts.sizeX = img.width;
-			opts.sizeY = img.height;
-			im->AllocImage(opts, IFL_LINEAR, IMR_REPEAT);
+			if (img.bits != 8) continue;
+			
+			Image* im = renderSystem.imageManager->AllocImage("gltfimg_" + std::to_string(i));
+			//imageOpts_t opts;
+			im->opts.autocompress = false;
+			im->opts.automipmap = true;
+			im->opts.format = img.component == 3 ? IMF_RGB : IMF_RGBA;
+			im->opts.maxAnisotropy = 1.0f;
+			im->opts.shape = IMS_2D;
+			im->opts.sizeX = img.width;
+			im->opts.sizeY = img.height;
+			im->Bind();
+			//im->AllocImage(opts, IFL_LINEAR, IMR_REPEAT);
 			im->UpdateImageData(img.width, img.height, 0, 0, 0, 0, img.image.data());
+			//Info("img_%s%d uploaded", img.name.c_str(), i);
+		}
+
+		for (int i = 0; i < model.materials.size(); ++i)
+		{
+			const auto& gmat = model.materials[i];
+			Material* mat = renderSystem.materialManager->CreateMaterial("gltfmat_" + std::to_string(i));
+			mat->SetName("gltfmat_" + std::to_string(i));
+			eCoverage cov = gmat.alphaMode == "OPAQUE" ? COVERAGE_SOLID : (gmat.alphaMode == "BLEND" ? COVERAGE_BLEND : COVERAGE_MASK);
+
+			stage_t& stage = mat->GetStage(STAGE_DEBUG);
+			stage.alphaCutoff = gmat.alphaCutoff;
+			stage.coverage = cov;
+			stage.shader = PRG_TEXTURED;
+			stage.enabled = true;
+			stage.cullMode = gmat.doubleSided ? CULL_NONE : CULL_BACK;
+			stage.type = STAGE_DEBUG;
+			if (gmat.pbrMetallicRoughness.baseColorTexture.index > -1) {
+				stage.images[IMU_DIFFUSE] = renderSystem.imageManager->GetImage("gltfimg_" + gmat.pbrMetallicRoughness.baseColorTexture.index);
+			}
+			else {
+				stage.images[IMU_DIFFUSE] = renderSystem.imageManager->globalImages.whiteImage;
+			}
+			if (gmat.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
+			{
+				stage.images[IMU_AORM] = renderSystem.imageManager->GetImage("gltfimg_" + gmat.pbrMetallicRoughness.metallicRoughnessTexture.index);
+			}
+			else {
+				stage.images[IMU_AORM] = renderSystem.imageManager->globalImages.grayImage;
+			}
+			if (gmat.emissiveTexture.index > -1)
+			{
+				stage.images[IMU_EMMISIVE] = renderSystem.imageManager->GetImage("gltfimg_" + gmat.emissiveTexture.index);
+			}
+			else {
+				stage.images[IMU_EMMISIVE] = renderSystem.imageManager->globalImages.blackImage;
+			}
+			if (gmat.normalTexture.index > -1)
+			{
+				stage.images[IMU_NORMAL] = renderSystem.imageManager->GetImage("gltfimg_" + gmat.normalTexture.index);
+			}
+			else {
+				stage.images[IMU_NORMAL] = renderSystem.imageManager->globalImages.flatNormal;
+			}
 		}
 
 		for (int i = 0; i < numSurfs; ++i)
 		{
 			auto& surf = mesh->primitives[i];
+			if (surf.mode != TINYGLTF_MODE_TRIANGLES) continue;
+
 			auto it = surf.attributes.find("POSITION");
 
 			if (it == std::end(surf.attributes))
@@ -221,7 +271,7 @@ namespace jsr {
 				int stride = color.ByteStride(model.bufferViews[color.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
 				int n = color.type == TINYGLTF_TYPE_VEC4 ? 4 : 3;
-				
+
 				for (int j = 0; j < color.count; ++j)
 				{
 					glm::vec4 aColor{ 0.0f,0.0f,0.0f,1.0f };
@@ -230,13 +280,13 @@ namespace jsr {
 						switch (color.componentType)
 						{
 						case TINYGLTF_COMPONENT_TYPE_FLOAT:
-							aColor[k] = *( ( (float*)pData ) + k);
+							aColor[k] = *(((float*)pData) + k);
 							break;
 						case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-							aColor[k] = unorm16ToFloat( *( ((unsigned short*)pData) + k) );
+							aColor[k] = unorm16ToFloat(*(((unsigned short*)pData) + k));
 							break;
 						case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-							aColor[k] = unorm8ToFloat( *( ((unsigned char*)pData) + k) );
+							aColor[k] = unorm8ToFloat(*(((unsigned char*)pData) + k));
 							break;
 						}
 					}
@@ -247,7 +297,7 @@ namespace jsr {
 			}
 
 			pData = ACCESSOR_PTR(model, idx);
-			
+
 			stride = idx.ByteStride(model.bufferViews[idx.bufferView]);
 			elementIndex_t* indices = ms->surf.indexes;
 
@@ -255,7 +305,7 @@ namespace jsr {
 			{
 				for (int j = 0; j < idx.count; ++j)
 				{
-					*indices = (uint16_t) *((uint32_t*)pData);
+					*indices = (uint16_t) * ((uint32_t*)pData);
 					pData += stride;
 					++indices;
 				}
@@ -269,24 +319,11 @@ namespace jsr {
 					++indices;
 				}
 			}
-			
-			const auto& gmat = model.materials[ surf.material ];
-			Material* mat = renderSystem.materialManager->CreateMaterial(gmat.name);
-			mat->SetName(gmat.name);
-			eCoverage cov = gmat.alphaMode == "OPAQUE" ? COVERAGE_SOLID : (gmat.alphaMode == "BLEND" ? COVERAGE_BLEND : COVERAGE_MASK);
-			Image* img{};
 
-			if (cov == COVERAGE_MASK || cov == COVERAGE_SOLID)
-			{
-				stage_t& stage = mat->GetStage(STAGE_GBUFFER);
-				stage.alphaCutoff = gmat.alphaCutoff;
-				stage.coverage = cov;
-				stage.shader = PRG_DEFERRED_GBUFFER_MR;
-				stage.enabled = true;
-				stage.cullMode = gmat.doubleSided ? CULL_NONE : CULL_BACK;
-			}
-
-
+			auto const& mat = model.materials[surf.material];
+			jsr::Material* jmat = renderSystem.materialManager->FindMaterial("gltfmat_" + std::to_string(surf.material));
+			ms->shader = jmat;
+			ms->surf.topology = TP_TRIANGLES;
 		}
 
 		return RM;
@@ -304,6 +341,7 @@ namespace jsr {
 				if (surf->surf.indexCache == 0) {
 					surf->surf.indexCache = renderSystem.vertexCache->AllocStaticIndex(surf->surf.indexes, (15UL + sizeof(elementIndex_t) * surf->surf.numIndexes) & ~15UL);
 				}
+				surf->surf.gpuResident = true;
 			}
 		}
 		else

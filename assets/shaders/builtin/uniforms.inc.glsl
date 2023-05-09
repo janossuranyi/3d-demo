@@ -10,6 +10,7 @@ layout(binding = SHADER_UNIFORMS_BINDING, std140) uniform uboUniforms
 	vec4 matDiffuseFactor;
 	vec4 matMRFactor;
 	vec4 alphaCutoff;
+	vec4 debugFlags;
 	vec4 user01;
 	vec4 user02;
 	vec4 user03;

@@ -4,22 +4,11 @@
 #include "./ImageManager.h"
 #include "./Material.h"
 #include "./Model.h"
+#include "./Camera.h"
 
 #define CACHE_LINE_SIZE 64
 
 namespace jsr {
-
-
-	enum eRenderCommand
-	{
-		RC_NOP
-	};
-
-	struct emptyCommand_t
-	{
-		eRenderCommand command;
-		emptyCommand_t* next;
-	};
 
 	struct frameData_t {
 		
@@ -53,13 +42,13 @@ namespace jsr {
 		bool IsInitialized() const;
 		void Frame();
 
+		viewDef_t* view;
+
 	private:
 		bool initialized;
 		int	 frameNum;
 	};
 
-
 	extern RenderSystem renderSystem;
-
 
 }

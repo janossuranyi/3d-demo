@@ -18,12 +18,12 @@ namespace jsr {
 	public:
 		Entity3D(eEntityType type);
 		~Entity3D() = default;
-		inline eEntityType GetType() const { return type; }
-		inline Light const* GetLight() const { return light; }
-		inline RenderModel const* GetModel() const { return model; }
+		void SetValue(void* ptr);
+		inline eEntityType GetType() const		{ return type; }
+		inline Light* GetLight() const			{ return reinterpret_cast<Light*>( value ); }
+		inline RenderModel* GetModel() const	{ return reinterpret_cast<RenderModel*>( value ); }
 	private: 
 		eEntityType type;
-		const RenderModel* model;
-		const Light* light;
+		void* value;
 	};
 }

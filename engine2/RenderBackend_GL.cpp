@@ -4,9 +4,12 @@
 #include <GL/glew.h>
 
 #include "./Engine.h"
+#include "./RenderSystem.h"
 #include "./RenderBackend.h"
 #include "./RenderBackend_GL.h"
+#include "./FrameBuffer.h"
 #include "./Logger.h"
+
 
 void CheckOpenGLError(const char* stmt, const char* fname, int line)
 {
@@ -302,6 +305,25 @@ namespace jsr {
 
 	void RenderBackend::RenderView(viewDef_t* view)
 	{
+
+	}
+	void RenderBackend::RenderCommandBuffer(emptyCommand_t* cmds)
+	{
+		SetClearColor(.4f, .0f, .3f, 1.0f);
+		renderSystem.programManager->UpdateUniforms();
+		renderSystem.vertexCache->Frame();
+
+		//globalFramebuffers.GBufferFBO->Bind();
+		Framebuffer::Unbind();
+		Clear(true, true, true);
+
+		renderSystem.programManager->BindUniforms();
+
+		/*
+		RENDERING
+		*/
+
+		EndFrame();
 
 	}
 	void RenderBackend::EndFrame()

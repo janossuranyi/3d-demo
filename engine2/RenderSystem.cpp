@@ -24,6 +24,7 @@ namespace jsr {
 
 	RenderSystem::RenderSystem()
 	{
+		view			= nullptr;
 		initialized		= false;
 		frameNum		= 0;
 		backend			= new RenderBackend();
@@ -83,21 +84,8 @@ namespace jsr {
 
 	void RenderSystem::Frame()
 	{
-		backend->SetClearColor(.4f, .0f, .3f, 1.0f);
-		programManager->UpdateUniforms();
-		vertexCache->Frame();
 
-		//globalFramebuffers.GBufferFBO->Bind();
-		Framebuffer::Unbind();
-		backend->Clear(true, true, true);
-
-		programManager->BindUniforms();
-
-		/*
-		RENDERING
-		*/
-
-		backend->EndFrame();
+		backend->RenderCommandBuffer(NULL);
 		++frameNum;
 	}
 

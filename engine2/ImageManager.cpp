@@ -184,7 +184,7 @@ namespace jsr {
 		}
 		else
 		{
-			delete newimg;
+			RemoveImage(newimg);
 			return nullptr;
 		}
 	}

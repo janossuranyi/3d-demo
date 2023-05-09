@@ -11,7 +11,7 @@
 namespace jsr {
 
 	renderProgram_t ProgramManager::builtins[] = {
-		{"vertex_color",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
+		{"default_textured",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
 		{"depth_only",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
 		{"texture_equirect",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
 		{"deferred_gbuffer_mr",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }

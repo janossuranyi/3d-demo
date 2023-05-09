@@ -1,4 +1,5 @@
 #include "./Node3D.h"
+#include "./Entity3D.h"
 
 using namespace glm;
 
@@ -25,6 +26,11 @@ namespace jsr {
 	vec3 const& Node3D::GetOrigin() const
 	{
 		return origin;
+	}
+
+	glm::vec3 const& Node3D::GetScale() const
+	{
+		return scale;
 	}
 
 	Node3D* Node3D::GetParent()
@@ -81,6 +87,38 @@ namespace jsr {
 	{
 		pParent = parent;
 		Changed();
+	}
+
+	void Node3D::AddModel(RenderModel* model)
+	{
+		auto& ent = entities.emplace_back(ENT_MODEL);
+		ent.SetValue(model);
+	}
+
+	void Node3D::AddLight(Light* model)
+	{
+		auto& ent = entities.emplace_back(ENT_LIGHT);
+		ent.SetValue(model);
+	}
+
+	int Node3D::GetNumChildren() const
+	{
+		return children.size();
+	}
+
+	int Node3D::GetNumEntities() const
+	{
+		return entities.size();
+	}
+
+	const Entity3D* Node3D::GetEntities() const
+	{
+		return entities.data();
+	}
+
+	const Node3D* const* Node3D::GetChildren() const
+	{
+		return children.data();
 	}
 
 	void Node3D::Changed()

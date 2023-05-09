@@ -48,14 +48,15 @@ namespace jsr {
 
 	enum eImageUsage
 	{
-		IMU_DEFAULT,
-		IMU_FRAGPOS,
 		IMU_DIFFUSE,
 		IMU_NORMAL,
 		IMU_AORM,		// R:Ambient occlusion, G:Roughness, B:Metalness
 		IMU_EMMISIVE,
 		IMU_DEPTH,
-		IMU_HDR
+		IMU_FRAGPOS,
+		IMU_HDR,
+		IMU_DEFAULT,
+		IMU_COUNT
 	};
 
 	enum eImageFilter
@@ -88,14 +89,14 @@ namespace jsr {
 		bool srgb;
 		bool compressed;
 		bool autocompress;
-
+		bool automipmap;
 		imageOpts_t();
 	};
 
 	inline imageOpts_t::imageOpts_t()
 	{
 		format = IMF_DEFAULT;
-		shape = IMS_COUNT;
+		shape = IMS_2D;
 		usage = IMU_DEFAULT;
 		maxAnisotropy = 1.0f;
 		sizeX = 0;
@@ -105,6 +106,7 @@ namespace jsr {
 		srgb = false;
 		compressed = false;
 		autocompress = false;
+		automipmap = false;
 	}
 
 	class Image
