@@ -20,6 +20,7 @@ namespace jsr {
 
 	uint8_t* R_FrameAlloc(uint32_t bytes);
 	emptyCommand_t* R_GetCommandBuffer(uint32_t size);
+	emptyCommand_t* R_SwapCommandBuffers(bool swap = true);
 	void R_ResetCommandBuffer();
 	void R_InitCommandBuffers();
 	void R_ShutdownCommandBuffers();

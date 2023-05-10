@@ -34,6 +34,11 @@ namespace jsr {
 		return active == 0;
 	}
 
+	int Material::GetId() const
+	{
+		return id;
+	}
+
 	void stage_t::SetImage(int index, Image* image)
 	{
 		if (index >= IMU_COUNT) return;
@@ -103,6 +108,8 @@ namespace jsr {
 
 	void MaterialManager::RemoveMaterial(Material* pM)
 	{
+		if (!pM) return;
+
 		for (int i = 0; i < materials.size(); ++i)
 		{
 			if (pM == materials[i])
@@ -110,6 +117,7 @@ namespace jsr {
 				delete materials[i];
 				materials[i] = nullptr;
 				freelist.push_back(i);
+				break;
 			}
 		}
 	}

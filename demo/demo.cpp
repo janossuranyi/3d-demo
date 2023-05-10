@@ -21,6 +21,7 @@
 #include "engine2/Engine.h"
 #include "engine2/Node3D.h"
 #include "engine2/Model.h"
+#include "engine2/RenderWorld.h"
 #include "engine2/ImageManager.h"
 
 using namespace std::chrono;
@@ -55,15 +56,13 @@ int main(int argc, char** argv)
     }
 
     renderSystem.vertexCache->ClearStaticCache();
-
-    RenderModel* rm = renderSystem.modelManager->LoadFromGLTF(resourceMgr->GetResource("scenes/sponza/Sponza.gltf"), 0);
-//    RenderModel* rm = renderSystem.modelManager->LoadFromGLTF("d:/data/vertexcolor.gltf", 0);
     
-    if (rm) rm->UpdateSurfaceCache();
-
+    engine.LoadWorld("scenes/sponza/sponza_j.gltf");
+    
     renderSystem.vertexCache->PrintStatistic();
-    
-    engine.Run();
+    engine.MainLoop();
+
+
     engine.Shutdown();
 
     //jsr::renderSystem.Shutdown();

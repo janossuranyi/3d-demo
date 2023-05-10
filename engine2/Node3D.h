@@ -4,10 +4,10 @@
 #include "./Math.h"
 #include "./Model.h"
 #include "./Light.h"
+#include "./Entity3D.h"
 
 namespace jsr {
 
-	class Entity3D;
 	class Node3D
 	{
 	public:
@@ -23,21 +23,20 @@ namespace jsr {
 		void				SetDir(glm::quat const& v);
 		void				SetDir(float radX, float radY, float radZ);
 		void				SetParent(Node3D* parent);
-		void				AddModel(RenderModel* model);
-		void				AddLight(Light* model);
 		int					GetNumChildren() const;
 		int					GetNumEntities() const;
-		const Entity3D*		GetEntities() const;
+		Entity3D&			GetEntity();
 		const Node3D* const* GetChildren() const;
+		void				AddChild(Node3D* child);
 	private:
 		void				Changed();
 		Node3D* pParent;
+		Entity3D entity;
 		glm::mat4 localToWorldMatrix;
 		glm::vec3 origin;
 		glm::vec3 scale;
 		glm::quat dir;
 		std::vector<Node3D*> children;
-		std::vector<Entity3D> entities;
 		bool changed;
 	};
 

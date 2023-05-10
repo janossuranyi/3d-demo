@@ -128,6 +128,20 @@ namespace jsr {
 		return cmd;
 	}
 
+	emptyCommand_t* R_SwapCommandBuffers(bool swap)
+	{
+		if (swap)
+		{
+			renderFrame = activeFrame;
+			activeFrame = (activeFrame + 1) % ON_FLIGHT_FRAMES;
+			frameData = &frames[activeFrame];
+		}
+
+		R_ResetCommandBuffer();
+
+		return frames[swap ? renderFrame : activeFrame].cmdHead;
+	}
+
 	void R_ResetCommandBuffer()
 	{
 		const uintptr_t bytesNeededForAlignment = CACHE_LINE_SIZE - ((uintptr_t)frameData->frameMemory & (CACHE_LINE_SIZE - 1));

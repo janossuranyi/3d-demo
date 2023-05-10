@@ -1,3 +1,4 @@
+#include <atomic>
 #include "./System.h"
 #include <SDL.h>
 
@@ -38,5 +39,11 @@ namespace jsr {
     uint64 GetTimeMillisecond()
     {
         return SDL_GetTicks64();
+    }
+    int GetUniqId()
+    {
+        static std::atomic_int next_id;
+
+        return next_id.fetch_add(1);
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "./ThreadWorker.h"
 #include "./Camera.h"
+#include "./RenderWorld.h"
 
 namespace jsr {
 
@@ -24,13 +25,15 @@ namespace jsr {
 		Engine();
 		virtual ~Engine();
 		bool Init(bool aThreaded);
+		bool LoadWorld(const std::string& filename);
+		void MainLoop();
 		void Shutdown();
 		int Run() override;
 
 		Camera player;
 
-
 	private:
+		RenderWorld* world;
 		bool	threaded;
 	};
 

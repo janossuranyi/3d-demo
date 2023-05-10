@@ -1,5 +1,7 @@
 #include "./Node3D.h"
 #include "./Entity3D.h"
+#include "./RenderSystem.h"
+#include "./Model.h";
 
 using namespace glm;
 
@@ -11,6 +13,7 @@ namespace jsr {
 		origin(vec3(0.0f)),
 		scale(vec3(1.0f)),
 		changed(true),
+		entity(ENT_MODEL),
 		dir(1.0f,0.0f, 0.0f, 0.0f)
 	{}
 
@@ -89,18 +92,6 @@ namespace jsr {
 		Changed();
 	}
 
-	void Node3D::AddModel(RenderModel* model)
-	{
-		auto& ent = entities.emplace_back(ENT_MODEL);
-		ent.SetValue(model);
-	}
-
-	void Node3D::AddLight(Light* model)
-	{
-		auto& ent = entities.emplace_back(ENT_LIGHT);
-		ent.SetValue(model);
-	}
-
 	int Node3D::GetNumChildren() const
 	{
 		return children.size();
@@ -108,17 +99,22 @@ namespace jsr {
 
 	int Node3D::GetNumEntities() const
 	{
-		return entities.size();
+		return 1;
 	}
 
-	const Entity3D* Node3D::GetEntities() const
+	Entity3D& Node3D::GetEntity()
 	{
-		return entities.data();
+		return entity;
 	}
 
 	const Node3D* const* Node3D::GetChildren() const
 	{
 		return children.data();
+	}
+
+	void Node3D::AddChild(Node3D* child)
+	{
+		children.push_back(child);
 	}
 
 	void Node3D::Changed()

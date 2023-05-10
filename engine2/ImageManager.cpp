@@ -118,6 +118,7 @@ namespace jsr {
 		opts.sizeY = 16;
 		opts.format = IMF_RGBA;
 		opts.autocompress = false;
+		opts.usage = IMU_DIFFUSE;
 
 		// white
 		tmp.assign(16 * 16, 0xFFFFFFFF);
@@ -150,6 +151,7 @@ namespace jsr {
 			Error("[ImageManager]: Image grayImage allocation failed !");
 		}
 		// flat normal
+		opts.usage = IMU_NORMAL;
 		tmp.assign(16 * 16, 0xFFFF7F7F);
 		if (globalImages.flatNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{

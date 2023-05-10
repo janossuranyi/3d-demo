@@ -91,9 +91,8 @@ namespace jsr {
 			std::unique_lock<std::mutex> lck(signalMutex);
 			signalDone.wait(lck, [&] {return workDone; });
 		}
-		else if (isRunning)
+		else if (isRunning && isTerminating)
 		{
-			isTerminating = true;
 			if (thread.joinable()) { thread.join(); }
 		}
 	}
@@ -106,6 +105,10 @@ namespace jsr {
 			hasWork = true;
 			workDone = false;
 			signalHasWork.notify_all();
+		}
+		else
+		{
+			Run();
 		}
 	}
 

@@ -9,6 +9,7 @@
 #include "./GpuTypes.h"
 #include "./RenderSystem.h"
 #include "./Heap.h"
+#include "./System.h"
 
 #define ACCESSOR_PTR(model, accessor) \
 (unsigned char*)(model.buffers[model.bufferViews[accessor.bufferView].buffer].data.data() + \
@@ -20,7 +21,7 @@ namespace jsr {
 	using namespace tinygltf;
 	namespace fs = std::filesystem;
 
-	RenderModel::RenderModel() : isStatic(true)
+	RenderModel::RenderModel() : isStatic(true), id(-1)
 	{
 	}
 
@@ -48,11 +49,19 @@ namespace jsr {
 		{
 			surf->surf.indexes = (elementIndex_t*) MemAlloc(sizeof(elementIndex_t) * numIndexes);
 		}
+		surf->id = jsr::GetTimeMillisecond() + GetUniqId();
+
 		return surf;
 	}
 	
 	ModelManager::ModelManager() {}
-	ModelManager::~ModelManager() {}
+	ModelManager::~ModelManager() 
+	{
+		for (auto* model : models)
+		{
+			if (model) delete model;
+		}
+	}
 
 
 	RenderModel* ModelManager::LoadFromGLTF(const std::string& filename, int index, const std::string& name)
@@ -112,13 +121,20 @@ namespace jsr {
 		
 		RenderModel* RM = new RenderModel();
 		RM->SetStatic(true);
+		std::vector<int> image_index;
+		std::vector<int> material_index;
+		
+		image_index.reserve(model.images.size());
+		material_index.reserve(model.materials.size());
 
 		for (int i = 0; i < model.images.size(); ++i)
 		{
 			const auto& img = model.images[i];
 			if (img.bits != 8) continue;
 			
-			Image* im = renderSystem.imageManager->AllocImage("gltfimg_" + std::to_string(i));
+			Image* im = renderSystem.imageManager->AllocImage(img.name);
+			image_index.push_back(im->GetId());
+
 			//imageOpts_t opts;
 			im->opts.autocompress = false;
 			im->opts.automipmap = true;
@@ -136,8 +152,9 @@ namespace jsr {
 		for (int i = 0; i < model.materials.size(); ++i)
 		{
 			const auto& gmat = model.materials[i];
-			Material* mat = renderSystem.materialManager->CreateMaterial("gltfmat_" + std::to_string(i));
-			mat->SetName("gltfmat_" + std::to_string(i));
+			Material* mat = renderSystem.materialManager->CreateMaterial(gmat.name);
+			material_index.push_back(mat->GetId());
+
 			eCoverage cov = gmat.alphaMode == "OPAQUE" ? COVERAGE_SOLID : (gmat.alphaMode == "BLEND" ? COVERAGE_BLEND : COVERAGE_MASK);
 
 			stage_t& stage = mat->GetStage(STAGE_DEBUG);
@@ -148,28 +165,28 @@ namespace jsr {
 			stage.cullMode = gmat.doubleSided ? CULL_NONE : CULL_BACK;
 			stage.type = STAGE_DEBUG;
 			if (gmat.pbrMetallicRoughness.baseColorTexture.index > -1) {
-				stage.images[IMU_DIFFUSE] = renderSystem.imageManager->GetImage("gltfimg_" + gmat.pbrMetallicRoughness.baseColorTexture.index);
+				stage.images[IMU_DIFFUSE] = renderSystem.imageManager->GetImage(image_index[ gmat.pbrMetallicRoughness.baseColorTexture.index ]);
 			}
 			else {
 				stage.images[IMU_DIFFUSE] = renderSystem.imageManager->globalImages.whiteImage;
 			}
 			if (gmat.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
 			{
-				stage.images[IMU_AORM] = renderSystem.imageManager->GetImage("gltfimg_" + gmat.pbrMetallicRoughness.metallicRoughnessTexture.index);
+				stage.images[IMU_AORM] = renderSystem.imageManager->GetImage(image_index[ gmat.pbrMetallicRoughness.metallicRoughnessTexture.index ]);
 			}
 			else {
 				stage.images[IMU_AORM] = renderSystem.imageManager->globalImages.grayImage;
 			}
 			if (gmat.emissiveTexture.index > -1)
 			{
-				stage.images[IMU_EMMISIVE] = renderSystem.imageManager->GetImage("gltfimg_" + gmat.emissiveTexture.index);
+				stage.images[IMU_EMMISIVE] = renderSystem.imageManager->GetImage(image_index[ gmat.emissiveTexture.index ]);
 			}
 			else {
 				stage.images[IMU_EMMISIVE] = renderSystem.imageManager->globalImages.blackImage;
 			}
 			if (gmat.normalTexture.index > -1)
 			{
-				stage.images[IMU_NORMAL] = renderSystem.imageManager->GetImage("gltfimg_" + gmat.normalTexture.index);
+				stage.images[IMU_NORMAL] = renderSystem.imageManager->GetImage(image_index[ gmat.normalTexture.index ]);
 			}
 			else {
 				stage.images[IMU_NORMAL] = renderSystem.imageManager->globalImages.flatNormal;
@@ -320,13 +337,41 @@ namespace jsr {
 				}
 			}
 
-			auto const& mat = model.materials[surf.material];
-			jsr::Material* jmat = renderSystem.materialManager->FindMaterial("gltfmat_" + std::to_string(surf.material));
+			jsr::Material* jmat = renderSystem.materialManager->GetMaterial(material_index[surf.material]);
 			ms->shader = jmat;
 			ms->surf.topology = TP_TRIANGLES;
 		}
 
 		return RM;
+	}
+
+	RenderModel* ModelManager::CreateModel(const std::string& name)
+	{
+		if (freelist.empty() == false)
+		{
+			int idx = freelist.back();
+			freelist.pop_back();
+			models[idx] = new RenderModel();
+			models[idx]->SetStatic(true);
+			models[idx]->id = idx;
+			return models[idx];
+		}
+		models.push_back(new RenderModel());
+		RenderModel* model = models.back();
+		model->id = models.size() - 1;
+		model->SetStatic(true);
+
+		return model;
+	}
+
+	void ModelManager::RemoveModel(RenderModel* model)
+	{
+		if (!model) return;
+		int id = model->GetId();
+		freelist.push_back(id);
+		models[id] = nullptr;
+
+		delete model;
 	}
 
 	void RenderModel::UpdateSurfaceCache()
@@ -342,7 +387,11 @@ namespace jsr {
 					surf->surf.indexCache = renderSystem.vertexCache->AllocStaticIndex(surf->surf.indexes, (15UL + sizeof(elementIndex_t) * surf->surf.numIndexes) & ~15UL);
 				}
 				surf->surf.gpuResident = true;
+				MemFree(surf->surf.indexes);
+				MemFree(surf->surf.verts);
+				delete surf;
 			}
+			surfs.clear();
 		}
 		else
 		{
@@ -359,6 +408,6 @@ namespace jsr {
 	}
 	modelSurface_t::~modelSurface_t()
 	{
-		if (shader) delete shader;
+		//if (shader) delete shader;
 	}
 }

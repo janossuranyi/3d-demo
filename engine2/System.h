@@ -19,6 +19,7 @@
 
 namespace jsr {
 
+
 	enum MessageBoxFlags : uint32_t {
 		MESSAGEBOX_ERROR,
 		MESSAGEBOX_WARNING,
@@ -36,6 +37,8 @@ namespace jsr {
 	int GetSystemRAM();
 	int MessageBox(unsigned int flags, const char* title, const char* message);
 	uint64 GetTimeMillisecond();
+
+	int GetUniqId();
 
 	/*
 	================================================================================================

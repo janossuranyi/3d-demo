@@ -4,6 +4,7 @@
 #include "./Engine.h"
 #include "./Logger.h"
 #include "./RenderSystem.h"
+#include "./Resources.h"
 #include "./Math.h"
 
 namespace jsr {
@@ -31,7 +32,7 @@ namespace jsr {
 
 	engineConfig_t engineConfig = engineConfig_t();
 
-	Engine::Engine() : threaded(false)
+	Engine::Engine() : threaded(false), world()
 	{
 	}
 
@@ -60,18 +61,23 @@ namespace jsr {
 		}
 		return true;
 	}
-	
-	void Engine::Shutdown()
+
+	bool Engine::LoadWorld(const std::string& filename)
 	{
-		if (threaded)
-		{
-			StopThread(true);
-		}
+		if (world) delete world;
 		
-		renderSystem.Shutdown();
+		world = new RenderWorld();
+
+		if (!world->LoadMapFromGLTF(resourceMgr->GetResource(filename)))
+		{
+			Error("Error loading map!");
+			return false;
+		}
+
+		return true;
 	}
 
-	int Engine::Run()
+	void Engine::MainLoop()
 	{
 		std::atomic_bool quit{};
 
@@ -82,12 +88,16 @@ namespace jsr {
 		player.MovementSpeed = 0.006f;
 		player.MouseSensitivity = 0.01;
 
-		int x=0, y=0, px=0, py=0;
+		int x = 0, y = 0, px = 0, py = 0;
 
 		bool mouseCapture = false;
 
 		while (!quit)
 		{
+			emptyCommand_t* cmds = R_SwapCommandBuffers(this->threaded);
+
+			SignalWork();
+
 			renderSystem.Frame();
 
 			while (SDL_PollEvent(&e) != SDL_FALSE)
@@ -144,8 +154,39 @@ namespace jsr {
 			time = now;
 
 			//std::this_thread::yield();
+			WaitForThread();
 		}
 		SDL_SetRelativeMouseMode(SDL_FALSE);
+	}
+	
+	void Engine::Shutdown()
+	{
+		if (threaded)
+		{
+			StopThread(true);
+		}
+		
+		if (world) delete world;
+		world = nullptr;
+
+		renderSystem.Shutdown();
+	}
+
+	int Engine::Run()
+	{
+		int x, y;
+		renderSystem.backend->GetScreenSize(x, y);
+
+		glm::mat4 projection = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, 1000.0f);
+
+		viewDef_t* view = (viewDef_t *)R_FrameAlloc(sizeof(viewDef_t));
+		view->renderView.viewID = 1;
+		view->renderView.fov = player.Zoom;
+		view->renderView.vieworg = player.Position;
+		view->renderView.viewaxis = glm::mat3(player.GetViewMatrix());
+		view->projectionMatrix = projection;
+		view->isSubview = false;
+		
 
 		return 0;
 	}
