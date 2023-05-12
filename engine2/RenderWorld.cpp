@@ -92,6 +92,55 @@ namespace jsr {
 
 		return true;
 	}
+	void RenderWorld::RenderView(viewDef_t* view)
+	{
+		for (int i = 0; i < nodes.size(); ++i)
+		{
+			Node3D* node = nodes[i];
+			if (node->GetEntity().GetType() != ENT_MODEL) continue;
+
+			glm::mat4 worldMatrix = node->GetLocalToWorldMatrix();
+			glm::mat4 viewMatrix = glm::mat4(view->renderView.viewaxis);
+			viewMatrix[3] = glm::vec4(view->renderView.vieworg, 1.0f);
+
+			auto modelViewMatrix = viewMatrix * worldMatrix;
+
+			Bounds entityBounds = node->GetEntity().GetModel()->GetBounds();
+			Frustum f(view->projectionMatrix, modelViewMatrix);
+			if (f.BoundsTest(entityBounds))
+			{
+				viewEntity_t* ent = (viewEntity_t*) R_FrameAlloc(sizeof(*ent));
+				const auto* model = node->GetEntity().GetModel();
+
+				ent->next = view->viewEntites;
+				view->viewEntites = ent;
+				ent->modelMatrix = worldMatrix;
+				ent->modelViewMatrix = modelViewMatrix;
+				ent->mvp = view->projectionMatrix * ent->modelViewMatrix;
+
+				for (int entSurf = 0; entSurf < model->GetNumSurface(); ++entSurf)
+				{
+					const auto* surf = model->GetSurface(entSurf);
+					if (f.BoundsTest(surf->surf.bounds))
+					{
+						drawSurf_t* drawSurf = (drawSurf_t*)R_FrameAlloc(sizeof(*drawSurf));
+						drawSurf->frontEndGeo = &surf->surf;
+						drawSurf->numIndex = surf->surf.numIndexes;
+						drawSurf->indexCache = surf->surf.indexCache;
+						drawSurf->vertexCache = surf->surf.vertexCache;
+						drawSurf->shader = surf->shader;
+						drawSurf->space = ent;
+						glm::vec4 p = ent->modelViewMatrix * glm::vec4(surf->surf.bounds.GetSphere().GetCenter(), 1.0f);
+						drawSurf->sort = p.z;
+						ent->surf = drawSurf;
+
+						view->numDrawSurfs++;
+					}
+				}
+			}
+		}
+		Info("visibe surface count: %d", view->numDrawSurfs);
+	}
 	void RenderWorld::DestroyWorld()
 	{
 		

@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "./Bounds.h"
 
 namespace jsr {
 
@@ -20,7 +21,7 @@ namespace jsr {
 	public:
 		Frustum();
 		Frustum(const glm::mat4& projection, const glm::mat4& modelview);
-		bool SphereTest(const glm::vec3& p, float radius) const;
+		bool SphereTest(const Sphere& s) const;
 		bool BoundsTest(const Bounds& b) const;
 	private:
 		glm::vec4	planes[6];

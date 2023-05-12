@@ -60,6 +60,7 @@ namespace jsr {
 		glm::mat4		modelViewMatrix;	// local coords to eye coords
 		glm::mat4		mvp;
 		drawSurf_t*		surf;
+		bool			visible;
 	};
 
 	struct surface_t;

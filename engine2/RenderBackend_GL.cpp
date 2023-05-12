@@ -305,7 +305,6 @@ namespace jsr {
 
 	void RenderBackend::RenderView(viewDef_t* view)
 	{
-
 	}
 	void RenderBackend::RenderCommandBuffer(emptyCommand_t* cmds)
 	{

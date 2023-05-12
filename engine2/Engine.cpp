@@ -48,7 +48,7 @@ namespace jsr {
 			return false;
 		}
 
-		player.Position = glm::vec3(0.0f, 5.0f, -10.f);
+		player.Position = glm::vec3(0.f, 0.f, 0.f);
 		
 		if (aThreaded)
 		{
@@ -177,16 +177,26 @@ namespace jsr {
 		int x, y;
 		renderSystem.backend->GetScreenSize(x, y);
 
-		glm::mat4 projection = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, 1000.0f);
+		glm::mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, 1000.0f);
+		glm::mat4 viewMatrix = player.GetViewMatrix();
+		glm::mat4 vpMatrix = projMatrix * viewMatrix;
 
 		viewDef_t* view = (viewDef_t *)R_FrameAlloc(sizeof(viewDef_t));
 		view->renderView.viewID = 1;
 		view->renderView.fov = player.Zoom;
 		view->renderView.vieworg = player.Position;
-		view->renderView.viewaxis = glm::mat3(player.GetViewMatrix());
-		view->projectionMatrix = projection;
+		view->renderView.viewaxis = glm::mat3(viewMatrix);
+		view->projectionMatrix = projMatrix;
 		view->isSubview = false;
-		
+		view->isMirror = false;
+		view->frustum = Frustum(projMatrix, glm::mat4(1.0f));
+		view->unprojectionToCameraMatrix = glm::inverse(projMatrix);
+		view->unprojectionToWorldMatrix = glm::inverse(vpMatrix);
+		view->viewport = screenRect_t{ 0,0,x,y };
+		view->scissor = view->viewport;
+		view->renderWorld = world;
+
+		world->RenderView(view);
 
 		return 0;
 	}
