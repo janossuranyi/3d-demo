@@ -49,6 +49,7 @@ namespace jsr {
 		Material(const std::string& aName);
 		~Material();
 		stage_t& GetStage(eStageType aType);
+		const stage_t& GetStage(eStageType aType) const;
 		bool IsEmpty() const;
 		int GetId() const;
 		std::string GetName() const;

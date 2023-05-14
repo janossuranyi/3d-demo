@@ -11,13 +11,22 @@ namespace jsr {
 
 	enum eRenderCommand
 	{
-		RC_NOP
+		RC_NOP,
+		RC_DRAW_VIEW,
+		RC_COUNT
 	};
 
 	struct emptyCommand_t
 	{
 		eRenderCommand command;
-		emptyCommand_t* next;
+		eRenderCommand* next;
+	};
+
+	struct drawViewCommand_t
+	{
+		eRenderCommand command;
+		eRenderCommand* next;
+		viewDef_t* view;
 	};
 
 	struct rasterizerState_t
@@ -71,7 +80,7 @@ namespace jsr {
 		bool		IsInitialized() const;
 		tmu_t*		GetTextureUnit(int index);
 		void		RenderView(viewDef_t* view);
-		void		RenderCommandBuffer(emptyCommand_t* cmds);
+		void		RenderCommandBuffer(const emptyCommand_t* cmds);
 	private:
 		float	clearColor[4];
 		int		currenttmu;

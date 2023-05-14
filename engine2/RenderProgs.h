@@ -35,9 +35,9 @@ namespace jsr {
 
 	enum eVertexLayout
 	{
-		LAYOUT_NONE = -1,
 		LAYOUT_DRAW_VERT,
-		LAYOUT_POSITION_ONLY
+		LAYOUT_POSITION_ONLY,
+		LAYOUT_COUNT
 	};
 
 	enum eShaderStage
@@ -78,10 +78,10 @@ namespace jsr {
 		void UseProgram(eShaderProg program);
 		void UpdateUniforms();
 		void BindUniforms();
+		uboUniforms_t			uniforms;
 	private:
 		unsigned int			currentProgram;
 		bool					initialized;
-		uboUniforms_t			uniforms;
 		vertCacheHandle_t		uniformsCache;
 		static renderProgram_t	builtins[PRG_COUNT];
 

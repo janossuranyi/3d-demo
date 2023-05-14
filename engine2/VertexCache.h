@@ -63,6 +63,9 @@ namespace jsr {
 		byte* MappedVertex(vertCacheHandle_t handle) const;
 		byte* MappedIndex(vertCacheHandle_t handle) const;
 		byte* MappedUniform(vertCacheHandle_t handle) const;
+		void BindVertexBuffer(vertCacheHandle_t handle, int binding, uint32 stride) const;
+		void BindIndexBuffer(vertCacheHandle_t handle) const;
+		uint32 GetBaseVertex(vertCacheHandle_t handle, uint32 vertexSize) const;
 	private:
 
 		int staticCacheSize{};

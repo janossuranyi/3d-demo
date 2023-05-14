@@ -143,7 +143,15 @@ namespace jsr {
 	}
 	void ProgramManager::UpdateUniforms()
 	{
-		if (!uniformsCache) uniformsCache = renderSystem.vertexCache->AllocStaticUniform( &uniforms, sizeof(uniforms) );
+		if (!uniformsCache) {
+			uniformsCache = renderSystem.vertexCache->AllocStaticUniform(&uniforms, sizeof(uniforms));
+		}
+		else
+		{
+			UniformBuffer buffer;
+			renderSystem.vertexCache->GetUniformBuffer(uniformsCache, buffer);
+			buffer.Update(&uniforms, 0, sizeof(uniforms));
+		}
 	}
 
 	void ProgramManager::BindUniforms()

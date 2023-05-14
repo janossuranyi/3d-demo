@@ -60,6 +60,8 @@ namespace jsr {
 	glconfig_t glconfig;
 
 
+	static GLuint _vertex_layouts[LAYOUT_COUNT];
+
 	void GLAPIENTRY GL_DebugMessageCallback(GLenum source,
 		GLenum type,
 		GLuint id,
@@ -68,6 +70,34 @@ namespace jsr {
 		const GLchar* message,
 		const GLvoid* userParam);
 
+	void R_InitVertexLayoutDefs()
+	{
+		std::memset(&_vertex_layouts[0], 0, sizeof(_vertex_layouts));
+
+		GL_CHECK(glGenVertexArrays(LAYOUT_COUNT, _vertex_layouts));
+
+		// LAYOUT_DRAW_VERT
+		GLuint vao = _vertex_layouts[LAYOUT_DRAW_VERT];
+		GL_CHECK(glBindVertexArray(vao));
+		GL_CHECK(glVertexAttribBinding(0, 0));
+		GL_CHECK(glVertexAttribBinding(1, 0));
+		GL_CHECK(glVertexAttribBinding(2, 0));
+		GL_CHECK(glVertexAttribBinding(3, 0));
+		GL_CHECK(glVertexAttribBinding(4, 0));
+
+		GL_CHECK(glVertexAttribFormat(0, 3, GL_FLOAT, false, offsetof(drawVert_t, xyz)));
+		GL_CHECK(glVertexAttribFormat(1, 2, GL_FLOAT, false, offsetof(drawVert_t, uv)));
+		GL_CHECK(glVertexAttribFormat(2, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, normal)));
+		GL_CHECK(glVertexAttribFormat(3, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, tangent)));
+		GL_CHECK(glVertexAttribFormat(4, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, color)));
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(3);
+		glEnableVertexAttribArray(4);
+
+		glconfig.currentVertexArray = vao;
+	}
 
 	bool R_InitGfxAPI()
 	{
@@ -252,6 +282,7 @@ namespace jsr {
 #endif
 		}
 
+		R_InitVertexLayoutDefs();
 		return true;
 
 	}
@@ -305,23 +336,75 @@ namespace jsr {
 
 	void RenderBackend::RenderView(viewDef_t* view)
 	{
-	}
-	void RenderBackend::RenderCommandBuffer(emptyCommand_t* cmds)
-	{
-		SetClearColor(.4f, .0f, .3f, 1.0f);
-		renderSystem.programManager->UpdateUniforms();
-		renderSystem.vertexCache->Frame();
-
-		//globalFramebuffers.GBufferFBO->Bind();
-		Framebuffer::Unbind();
 		Clear(true, true, true);
+		if (!view) return;
 
+		renderSystem.programManager->UpdateUniforms();
 		renderSystem.programManager->BindUniforms();
+		
+		const drawSurf_t* surf;
 
-		/*
-		RENDERING
-		*/
+		for (int i = 0; i < view->numDrawSurfs; ++i)
+		{
+			surf = view->drawSurfs[i];
+			const Material* shader = surf->shader;
+			if (!shader || shader->IsEmpty()) continue;
+			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
+			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+			renderSystem.programManager->UseProgram(stage.shader);
 
+			// setup textures
+			for (int j = 0; j < IMU_COUNT; ++j)
+			{
+				if (stage.images[j]) {
+					this->SetCurrentTextureUnit(j);
+					stage.images[j]->Bind();
+				}
+			}
+
+			// setup vertex/index buffers
+			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
+			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
+
+			renderSystem.programManager->uniforms.alphaCutoff = glm::vec4(stage.alphaCutoff);
+			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
+			renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
+			renderSystem.programManager->uniforms.matDiffuseFactor = glm::vec4(1.0f);
+			renderSystem.programManager->uniforms.matMRFactor = glm::vec4(1.0f);
+			renderSystem.programManager->uniforms.viewOrigin = glm::vec4(view->renderView.vieworg, 1.f);
+			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
+			renderSystem.programManager->UpdateUniforms();
+
+			IndexBuffer idx;
+			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
+			glDrawElementsBaseVertex(
+				GL_TRIANGLES,
+				surf->numIndex,
+				GL_UNSIGNED_SHORT,
+				(void*)idx.GetOffset(),
+				renderSystem.vertexCache->GetBaseVertex(surf->vertexCache, sizeof(drawVert_t)));			
+		}
+		//[...]
+
+	}
+	void RenderBackend::RenderCommandBuffer(const emptyCommand_t* cmds)
+	{
+		renderSystem.vertexCache->Frame();
+		Framebuffer::Unbind();
+
+		for (const emptyCommand_t* cmd = cmds; cmd != nullptr; cmd = (emptyCommand_t*)cmd->next)
+		{
+
+			switch (cmd->command)
+			{
+			case RC_NOP:
+				//Info("Render command NOP");
+				break;
+			case RC_DRAW_VIEW:
+				RenderView(((drawViewCommand_t*)cmd)->view);
+				break;
+			}
+		}
 		EndFrame();
 
 	}

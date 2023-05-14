@@ -37,7 +37,8 @@ namespace jsr {
 		int				uniformBufferOffsetAligment;
 		int				availableVideoMemory;
 
-		std::set< std::string > extensions;
+		std::set<std::string> extensions;
+		GLuint			currentVertexArray{ 0 };
 	};
 
     extern const imageFormatInfo_t s_image_formats[];

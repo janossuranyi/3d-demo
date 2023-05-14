@@ -22,11 +22,16 @@ namespace jsr {
 	{
 		return stages[aType];
 	}
+	
+	const stage_t& Material::GetStage(eStageType aType) const
+	{
+		return stages[aType];
+	}
 
 	bool Material::IsEmpty() const
 	{
 		int active = 0;
-		for (int i = 0; STAGE_COUNT; ++i)
+		for (int i = 0; i < STAGE_COUNT; ++i)
 		{
 			if (stages[i].enabled) ++active;
 		}

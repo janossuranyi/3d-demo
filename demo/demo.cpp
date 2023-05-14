@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 
     renderSystem.vertexCache->ClearStaticCache();
     
-    engine.LoadWorld("scenes/sponza/sponza_j.gltf");
+    engine.LoadWorld("scenes/monkey.gltf");
     
     renderSystem.vertexCache->PrintStatistic();
     engine.MainLoop();

@@ -40,7 +40,7 @@ namespace jsr {
 		int			viewID;
 		float		fov;
 		glm::vec3	vieworg;
-		glm::mat3	viewaxis;
+		glm::mat4	viewMatrix;
 		int			rdflags;
 	};
 
@@ -72,6 +72,7 @@ namespace jsr {
 		vertCacheHandle_t	vertexCache;
 		const viewEntity_t* space;
 		const Material*		shader;
+		drawSurf_t*			next;
 		float				sort;
 	};
 

@@ -299,6 +299,57 @@ namespace jsr {
 		return transientBufferSet[listNum].uniformsPtr + offset;
 	}
 
+	void VertexCache::BindVertexBuffer(vertCacheHandle_t handle, int binding, uint32 stride) const
+	{
+		VertexBuffer const* buffer;
+		const bool isStatic = (handle & CACHE_STATIC) == CACHE_STATIC;
+		handle = handle & ~((uint64)CACHE_STATIC);
+
+		const uint64 offset = (handle << CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle << CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+
+		if (isStatic)
+		{
+			buffer = &staticBufferSet.vertexBuffer;
+		}
+		else if (framenum == activeFrame - 1)
+		{
+			buffer = &transientBufferSet[renderFrame].vertexBuffer;
+		}
+		else return;
+
+		buffer->BindVertexBuffer(binding, offset, stride);
+	}
+
+	void VertexCache::BindIndexBuffer(vertCacheHandle_t handle) const
+	{
+		IndexBuffer const* buffer;
+		const bool isStatic = (handle & CACHE_STATIC) == CACHE_STATIC;
+		handle = handle & ~((uint64)CACHE_STATIC);
+
+		const uint64 offset = (handle << CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle << CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+
+		if (isStatic)
+		{
+			buffer = &staticBufferSet.indexBuffer;
+		}
+		else if (framenum == activeFrame - 1)
+		{
+			buffer = &transientBufferSet[renderFrame].indexBuffer;
+		}
+		else return;
+
+		buffer->BindIndexBuffer();
+	}
+
+	uint32 VertexCache::GetBaseVertex(vertCacheHandle_t handle, uint32 vertexSize) const
+	{
+		const uint64 offset = (handle << CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+
+		return (uint32)(offset / vertexSize);
+	}
+
 	vertCacheHandle_t VertexCache::RealAlloc(geoBufferSet_t& gbs, const void* data, int bytes, eCacheType type)
 	{
 		if (bytes == 0)

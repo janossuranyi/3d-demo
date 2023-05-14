@@ -48,7 +48,8 @@ namespace jsr {
 			return false;
 		}
 
-		player.Position = glm::vec3(0.f, 0.f, 0.f);
+		player.Position = glm::vec3(0.f, 0.f, -5.f);
+		player.Front = glm::vec3(0.f, 0.f, 1.f);
 		
 		if (aThreaded)
 		{
@@ -85,8 +86,8 @@ namespace jsr {
 		float time, dt;
 		dt = 0.0f;
 		time = (float)SDL_GetTicks();
-		player.MovementSpeed = 0.006f;
-		player.MouseSensitivity = 0.01;
+		player.MovementSpeed = 0.002f;
+		player.MouseSensitivity = 0.1;
 
 		int x = 0, y = 0, px = 0, py = 0;
 
@@ -98,7 +99,7 @@ namespace jsr {
 
 			SignalWork();
 
-			renderSystem.Frame();
+			renderSystem.Frame(cmds);
 
 			while (SDL_PollEvent(&e) != SDL_FALSE)
 			{
@@ -128,7 +129,7 @@ namespace jsr {
 						quit = true;
 						break;
 					}
-					Info("x: %f, y: %f, z: %f", player.Position.x, player.Position.y, player.Position.z);
+					//Info("x: %f, y: %f, z: %f", player.Position.x, player.Position.y, player.Position.z);
 				}
 				else if (e.type == SDL_MOUSEBUTTONDOWN && !mouseCapture)
 				{
@@ -142,11 +143,10 @@ namespace jsr {
 				}
 			}
 
+			SDL_GetRelativeMouseState(&x, &y);
 			if (mouseCapture)
 			{
-				SDL_GetRelativeMouseState(&x, &y);
 				player.ProcessMouseMovement((float)x, (float)y, true);
-				//Info("mx: %d, my: %d", x, y);
 			}
 
 			float now = (float)SDL_GetTicks();
@@ -185,11 +185,11 @@ namespace jsr {
 		view->renderView.viewID = 1;
 		view->renderView.fov = player.Zoom;
 		view->renderView.vieworg = player.Position;
-		view->renderView.viewaxis = glm::mat3(viewMatrix);
+		view->renderView.viewMatrix = viewMatrix;
 		view->projectionMatrix = projMatrix;
 		view->isSubview = false;
 		view->isMirror = false;
-		view->frustum = Frustum(projMatrix, glm::mat4(1.0f));
+		view->frustum = Frustum(projMatrix, viewMatrix);
 		view->unprojectionToCameraMatrix = glm::inverse(projMatrix);
 		view->unprojectionToWorldMatrix = glm::inverse(vpMatrix);
 		view->viewport = screenRect_t{ 0,0,x,y };
@@ -197,6 +197,28 @@ namespace jsr {
 		view->renderWorld = world;
 
 		world->RenderView(view);
+
+		if (view->numDrawSurfs)
+		{
+			// allocate drawSurf pointers
+			view->drawSurfs = (drawSurf_t**)R_FrameAlloc(view->numDrawSurfs * sizeof(view->drawSurfs));
+			int i = 0;
+			for (const auto* ent = view->viewEntites; ent != nullptr; ent = ent->next)
+			{
+				for (auto* drawSurf = ent->surf; drawSurf != nullptr; drawSurf = drawSurf->next)
+				{
+					view->drawSurfs[i++] = drawSurf;
+				}
+			}
+
+			drawViewCommand_t* cmd = (drawViewCommand_t*)R_GetCommandBuffer(sizeof(*cmd));
+			cmd->command = RC_DRAW_VIEW;
+			cmd->view = view;
+		}
+		else
+		{
+			Info("No surface to draw !");
+		}
 
 		return 0;
 	}

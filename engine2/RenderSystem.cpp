@@ -82,10 +82,10 @@ namespace jsr {
 		return initialized;
 	}
 
-	void RenderSystem::Frame()
+	void RenderSystem::Frame(const emptyCommand_t* cmds)
 	{
 
-		backend->RenderCommandBuffer(NULL);
+		backend->RenderCommandBuffer(cmds);
 		++frameNum;
 	}
 
@@ -93,16 +93,16 @@ namespace jsr {
 	{
 		bytes = CACHE_LINE_ALIGN(bytes);
 
-		int	end{};
 		uint8_t* ret{};
 
-		end = frameData->frameMemoryPtr.fetch_add(bytes, std::memory_order_relaxed) + bytes;
+		const int next = frameData->frameMemoryPtr.fetch_add(bytes, std::memory_order_relaxed);
+		const int end = next + bytes;
 
 		if (end > DEFAULT_FRAME_MEM_SIZE) {
 			Error("Out of frame memory");
 		}
 
-		ret = frameData->frameMemory + end - bytes;
+		ret = frameData->frameMemory + next;
 
 		int x = maxFrameMemUsage.load(std::memory_order_relaxed);
 		if (end > x) {
@@ -122,7 +122,7 @@ namespace jsr {
 		emptyCommand_t* cmd;
 		cmd = (emptyCommand_t*)R_FrameAlloc(size);
 		cmd->next = nullptr;
-		frameData->cmdTail->next = cmd;
+		frameData->cmdTail->next = &cmd->command;
 		frameData->cmdTail = cmd;
 
 		return cmd;
@@ -149,6 +149,7 @@ namespace jsr {
 
 		frameData->frameMemoryPtr.store(size, std::memory_order_relaxed);
 		emptyCommand_t* cmd = (emptyCommand_t*)frameData->frameMemory + bytesNeededForAlignment;
+		std::memset(cmd, 0, sizeof(*cmd));
 		cmd->command = RC_NOP;
 		cmd->next = nullptr;
 		frameData->cmdTail = cmd;

@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 #include <string>
+#include "./EngineTypes.h"
 
 namespace jsr {
 
@@ -29,6 +30,7 @@ namespace jsr {
 
 	class BufferObject
 	{
+		friend class VertexCache;
 	public:
 		BufferObject::BufferObject();
 
@@ -84,16 +86,21 @@ namespace jsr {
 
 	class VertexBuffer : public BufferObject
 	{
+		friend class VertexCache;
 	public:
 		VertexBuffer();
+		void BindVertexBuffer(int binding, uint32 offset, uint32 stride) const;
 	};
 	class IndexBuffer : public BufferObject
 	{
+		friend class VertexCache;
 	public:
 		IndexBuffer();
+		void BindIndexBuffer() const;
 	};
 	class UniformBuffer : public BufferObject
 	{
+		friend class VertexCache;
 		friend class ProgramManager;
 	public:
 		UniformBuffer();

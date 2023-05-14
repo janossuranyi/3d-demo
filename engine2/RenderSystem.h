@@ -41,7 +41,7 @@ namespace jsr {
 		bool Init();
 		void Shutdown();
 		bool IsInitialized() const;
-		void Frame();
+		void Frame(const emptyCommand_t* cmds);
 
 		viewDef_t* view;
 

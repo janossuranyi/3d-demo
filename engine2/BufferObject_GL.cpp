@@ -1,5 +1,6 @@
 #include <cassert>
 #include <GL/glew.h>
+#include "./EngineTypes.h"
 #include "./RenderBackend_GL.h"
 #include "./BufferObject.h"
 #include "./Logger.h"
@@ -160,5 +161,14 @@ namespace jsr {
 		GL_CHECK(glBindBuffer(c_bufferTargetLut[target], apiObject));
 	}
 
+	void VertexBuffer::BindVertexBuffer(int binding, uint32 offset, uint32 stride) const
+	{
+		GL_CHECK(glBindVertexBuffer(binding, apiObject, offset, stride));
+	}
+
+	void IndexBuffer::BindIndexBuffer() const
+	{
+		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, apiObject));
+	}
 }
 
