@@ -377,12 +377,12 @@ namespace jsr {
 
 			IndexBuffer idx;
 			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
-			glDrawElementsBaseVertex(
+			glDrawElements(
 				GL_TRIANGLES,
 				surf->numIndex,
 				GL_UNSIGNED_SHORT,
-				(void*)idx.GetOffset(),
-				renderSystem.vertexCache->GetBaseVertex(surf->vertexCache, sizeof(drawVert_t)));			
+				(void*)idx.GetOffset());
+//				renderSystem.vertexCache->GetBaseVertex(surf->vertexCache, sizeof(drawVert_t)));
 		}
 		//[...]
 

@@ -292,8 +292,8 @@ namespace jsr {
 	byte* VertexCache::MappedUniform(vertCacheHandle_t handle) const
 	{
 		assert(!IsStatic(handle));
-		const uint64 offset = (handle << CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
-		const uint64 framenum = (handle << CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+		const uint64 offset = (handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
 		assert(framenum == (activeFrame & CACHE_FRAME_MASK));
 
 		return transientBufferSet[listNum].uniformsPtr + offset;
@@ -303,10 +303,8 @@ namespace jsr {
 	{
 		VertexBuffer const* buffer;
 		const bool isStatic = (handle & CACHE_STATIC) == CACHE_STATIC;
-		handle = handle & ~((uint64)CACHE_STATIC);
-
-		const uint64 offset = (handle << CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
-		const uint64 framenum = (handle << CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+		const uint64 offset = (handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
 
 		if (isStatic)
 		{
@@ -325,10 +323,8 @@ namespace jsr {
 	{
 		IndexBuffer const* buffer;
 		const bool isStatic = (handle & CACHE_STATIC) == CACHE_STATIC;
-		handle = handle & ~((uint64)CACHE_STATIC);
-
-		const uint64 offset = (handle << CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
-		const uint64 framenum = (handle << CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+		const uint64 offset = (handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 framenum = (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
 
 		if (isStatic)
 		{
@@ -345,7 +341,7 @@ namespace jsr {
 
 	uint32 VertexCache::GetBaseVertex(vertCacheHandle_t handle, uint32 vertexSize) const
 	{
-		const uint64 offset = (handle << CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
+		const uint64 offset = (handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
 
 		return (uint32)(offset / vertexSize);
 	}
