@@ -19,11 +19,10 @@ namespace jsr {
 	class Frustum
 	{
 	public:
-		Frustum();
-		Frustum(const glm::mat4& projection, const glm::mat4& modelview);
-		bool SphereTest(const Sphere& s) const;
-		bool BoundsTest(const Bounds& b) const;
+		Frustum(const glm::mat4& vp);
+		bool Intersects(const Bounds& box) const;
 	private:
 		glm::vec4	planes[6];
+		glm::vec3	corners[8];
 	};
 }

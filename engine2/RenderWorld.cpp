@@ -104,8 +104,8 @@ namespace jsr {
 			// W-V-P -> P-V-W
 			auto modelViewMatrix = viewMatrix * worldMatrix;
 
-			Bounds entityBounds = node->GetEntity().GetModel()->GetBounds().Transform(worldMatrix);
-			if (view->frustum.BoundsTest(entityBounds))
+			Bounds entityBounds = node->GetEntity().GetModel()->GetBounds().Transform(modelViewMatrix);
+			if (view->frustum.Intersects(entityBounds))
 			{
 				viewEntity_t* ent = (viewEntity_t*) R_FrameAlloc(sizeof(*ent));
 				const auto* model = node->GetEntity().GetModel();
@@ -119,8 +119,8 @@ namespace jsr {
 				for (int entSurf = 0; entSurf < model->GetNumSurface(); ++entSurf)
 				{
 					const auto* surf = model->GetSurface(entSurf);
-					Bounds surfBounds = surf->surf.bounds.Transform(worldMatrix);
-					if (view->frustum.BoundsTest(surfBounds))
+					Bounds surfBounds = surf->surf.bounds.Transform(modelViewMatrix);
+					if (view->frustum.Intersects(surfBounds))
 					{
 						drawSurf_t* drawSurf = (drawSurf_t*)R_FrameAlloc(sizeof(*drawSurf));
 						drawSurf->frontEndGeo = &surf->surf;

@@ -30,7 +30,7 @@ namespace jsr {
 		void Shutdown();
 		int Run() override;
 
-		Camera player;
+		Camera player{};
 
 	private:
 		RenderWorld* world;

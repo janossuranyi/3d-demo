@@ -48,8 +48,8 @@ namespace jsr {
 			return false;
 		}
 
-		player.Position = glm::vec3(0.f, 0.f, -5.f);
-		player.Front = glm::vec3(0.f, 0.f, 1.f);
+		player.Position = glm::vec3(0.f, 0.f, 5.f);
+		player.Front = glm::vec3(0.f, 0.f, -1.f);
 		
 		if (aThreaded)
 		{
@@ -86,10 +86,11 @@ namespace jsr {
 		float time, dt;
 		dt = 0.0f;
 		time = (float)SDL_GetTicks();
-		player.MovementSpeed = 0.002f;
+		player.MovementSpeed = 0.004f;
 		player.MouseSensitivity = 0.1;
+		player.ProcessMouseMovement(0.f, 0.f);
 
-		int x = 0, y = 0, px = 0, py = 0;
+		int x = 0, y = 0;
 
 		bool mouseCapture = false;
 
@@ -141,12 +142,18 @@ namespace jsr {
 					SDL_SetRelativeMouseMode(SDL_FALSE);
 					mouseCapture = false;
 				}
+				else if (e.type == SDL_MOUSEWHEEL)
+				{
+					float r = (float)e.wheel.y;
+					if (e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) r = -r;
+					player.ProcessMouseScroll((float)e.wheel.y);
+				}
 			}
 
 			SDL_GetRelativeMouseState(&x, &y);
 			if (mouseCapture)
 			{
-				player.ProcessMouseMovement((float)x, (float)y, true);
+				player.ProcessMouseMovement((float)x, (float)-y, true);
 			}
 
 			float now = (float)SDL_GetTicks();
@@ -172,16 +179,23 @@ namespace jsr {
 		renderSystem.Shutdown();
 	}
 
+	struct
+	{
+		bool operator()(drawSurf_t* a, drawSurf_t* b) const { return a->sort < b->sort; }
+	} drawSurfLess;
+
 	int Engine::Run()
 	{
+		using namespace glm;
+		
 		int x, y;
 		renderSystem.backend->GetScreenSize(x, y);
 
-		glm::mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, 1000.0f);
-		glm::mat4 viewMatrix = player.GetViewMatrix();
-		glm::mat4 vpMatrix = projMatrix * viewMatrix;
+		mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, 1000.0f);
+		mat4 viewMatrix = player.GetViewMatrix();
+		mat4 vpMatrix = projMatrix * viewMatrix;
 
-		viewDef_t* view = (viewDef_t *)R_FrameAlloc(sizeof(viewDef_t));
+		viewDef_t* view = (viewDef_t *)R_FrameAlloc(sizeof(*view));
 		view->renderView.viewID = 1;
 		view->renderView.fov = player.Zoom;
 		view->renderView.vieworg = player.Position;
@@ -189,7 +203,7 @@ namespace jsr {
 		view->projectionMatrix = projMatrix;
 		view->isSubview = false;
 		view->isMirror = false;
-		view->frustum = Frustum(projMatrix, viewMatrix);
+		view->frustum = Frustum(projMatrix);
 		view->unprojectionToCameraMatrix = glm::inverse(projMatrix);
 		view->unprojectionToWorldMatrix = glm::inverse(vpMatrix);
 		view->viewport = screenRect_t{ 0,0,x,y };
@@ -211,6 +225,7 @@ namespace jsr {
 				}
 			}
 
+			std::sort(view->drawSurfs, view->drawSurfs + view->numDrawSurfs, drawSurfLess);
 			drawViewCommand_t* cmd = (drawViewCommand_t*)R_GetCommandBuffer(sizeof(*cmd));
 			cmd->command = RC_DRAW_VIEW;
 			cmd->view = view;

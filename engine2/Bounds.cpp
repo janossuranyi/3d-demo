@@ -102,19 +102,29 @@ namespace jsr {
 	Bounds::Bounds(const glm::vec3& a, const glm::vec3& b) :
 		b{ glm::min(a, b), glm::max(a, b) } {}
 
-	Bounds& Bounds::operator<<(const glm::vec3& v)
+	Bounds& Bounds::Extend(const glm::vec3& v)
 	{
 		b[0] = glm::min(b[0], v);
 		b[1] = glm::max(b[1], v);
 
 		return *this;
 	}
-	Bounds& Bounds::operator<<(const Bounds& other)
+
+	Bounds& Bounds::Extend(const Bounds& other)
 	{
 		b[0] = glm::min(b[0], other.min());
 		b[1] = glm::max(b[1], other.max());
 
 		return *this;
+	}
+
+	Bounds& Bounds::operator<<(const glm::vec3& v)
+	{
+		return Extend(v);
+	}
+	Bounds& Bounds::operator<<(const Bounds& other)
+	{
+		return Extend(other);
 	}
 	bool Bounds::Contains(const glm::vec3& p) const
 	{
@@ -214,7 +224,10 @@ namespace jsr {
 	}
 	Sphere Bounds::GetSphere() const
 	{
-		return Sphere(GetCenter(), GetRadius());
+		const auto center = 0.5f * (b[0] + b[1]);
+		const auto radius = glm::length(b[1] - center);
+
+		return { center,radius };
 	}
 	const glm::vec3& Bounds::min() const
 	{

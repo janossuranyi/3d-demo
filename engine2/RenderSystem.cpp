@@ -144,7 +144,13 @@ namespace jsr {
 
 	void R_ResetCommandBuffer()
 	{
-		const uintptr_t bytesNeededForAlignment = CACHE_LINE_SIZE - ((uintptr_t)frameData->frameMemory & (CACHE_LINE_SIZE - 1));
+		uintptr_t bytesNeededForAlignment = 0;
+		const uintptr_t aligmentError = ((uintptr_t)frameData->frameMemory & (CACHE_LINE_SIZE - 1));
+		if (aligmentError)
+		{
+			bytesNeededForAlignment = CACHE_LINE_SIZE - aligmentError;
+		}
+
 		int size = bytesNeededForAlignment + CACHE_LINE_ALIGN(sizeof(emptyCommand_t));
 
 		frameData->frameMemoryPtr.store(size, std::memory_order_relaxed);

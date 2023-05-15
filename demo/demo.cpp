@@ -50,15 +50,16 @@ int main(int argc, char** argv)
 #endif
     Engine engine;
 
-    if ( !engine.Init( false ) )
+    if ( !engine.Init( true ) )
     {
         return 0;
     }
 
     renderSystem.vertexCache->ClearStaticCache();
     
-    engine.LoadWorld("scenes/monkey.gltf");
-    
+//    engine.LoadWorld("scenes/monkey.gltf");
+    engine.LoadWorld("scenes/sponza/sponza_j.gltf");
+
     renderSystem.vertexCache->PrintStatistic();
     engine.MainLoop();
 

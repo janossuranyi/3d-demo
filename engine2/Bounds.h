@@ -35,6 +35,8 @@ namespace jsr {
 	public:
 		Bounds();
 		Bounds(const glm::vec3& a, const glm::vec3& b);
+		Bounds& Extend(const glm::vec3& v);
+		Bounds& Extend(const Bounds& other);
 		Bounds& operator<<(const glm::vec3& v);
 		Bounds& operator<<(const Bounds& other);
 		bool Contains(const glm::vec3& p) const;
