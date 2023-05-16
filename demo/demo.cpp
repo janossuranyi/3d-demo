@@ -39,8 +39,13 @@ int main(int argc, char** argv)
     resourceMgr->AddResourcePath("../assets/shaders");
     resourceMgr->AddResourcePath("../assets/textures");
     resourceMgr->AddResourcePath("../assets/scenes");
+    resourceMgr->AddResourcePath("../assets/models");
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
+
+    engineConfig.r_resX = 1280;
+    engineConfig.r_resY = 720;
+    engineConfig.r_fullscreen = 0;
 
     engineConfig.r_fbsrgb = false;
 #if 0
@@ -59,8 +64,8 @@ int main(int argc, char** argv)
     
 //
 //
-    engine.LoadWorld("scenes/monkey.gltf");
-    //engine.LoadWorld("scenes/sponza/sponza_j.gltf");
+    //engine.LoadWorld("models/CesiumDrone.glb");
+    engine.LoadWorld("scenes/sponza/sponza_j.gltf");
 
     renderSystem.vertexCache->PrintStatistic();
     engine.MainLoop();

@@ -91,11 +91,12 @@ namespace jsr {
 		player.MouseSensitivity = 0.1;
 		player.ProcessMouseMovement(0.f, 0.f);
 
-		renderSystem.backend->SetClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		renderSystem.backend->SetClearColor(0.3f, 0.3f, 0.8f, 1.0f);
 
 		int x = 0, y = 0;
 
 		bool mouseCapture = false;
+		bool mover[4]{};
 
 		while (!quit)
 		{
@@ -112,22 +113,42 @@ namespace jsr {
 					quit = true;
 					break;
 				}
+				if (e.type == SDL_KEYUP)
+				{
+					auto key = e.key.keysym.sym;
+					switch (key)
+					{
+					case SDLK_w:
+						mover[FORWARD] = false;
+						break;
+					case SDLK_s:
+						mover[BACKWARD] = false;
+						break;
+					case SDLK_a:
+						mover[LEFT] = false;
+						break;
+					case SDLK_d:
+						mover[RIGHT] = false;
+						break;
+					}
+				}
+
 				if (e.type == SDL_KEYDOWN)
 				{
 					auto key = e.key.keysym.sym;
 					switch (key)
 					{
 					case SDLK_w:
-						player.ProcessKeyboard(FORWARD, dt);
+						mover[FORWARD] = true;
 						break;
 					case SDLK_s:
-						player.ProcessKeyboard(BACKWARD, dt);
+						mover[BACKWARD] = true;
 						break;
 					case SDLK_a:
-						player.ProcessKeyboard(LEFT, dt);
+						mover[LEFT] = true;
 						break;
 					case SDLK_d:
-						player.ProcessKeyboard(RIGHT, dt);
+						mover[RIGHT] = true;
 						break;
 					case SDLK_0:
 						renderSystem.programManager->uniforms.debugFlags = vec4(0.f);
@@ -146,6 +167,9 @@ namespace jsr {
 						break;
 					case SDLK_5:
 						renderSystem.programManager->uniforms.debugFlags = vec4(16.f);
+						break;
+					case SDLK_6:
+						renderSystem.programManager->uniforms.debugFlags = vec4(32.f);
 						break;
 					case SDLK_ESCAPE:
 						quit = true;
@@ -176,6 +200,11 @@ namespace jsr {
 			{
 				player.ProcessMouseMovement((float)x, (float)-y, true);
 			}
+
+			if (mover[FORWARD])		player.ProcessKeyboard(FORWARD, dt);
+			if (mover[BACKWARD])	player.ProcessKeyboard(BACKWARD, dt);
+			if (mover[LEFT])		player.ProcessKeyboard(LEFT, dt);
+			if (mover[RIGHT])		player.ProcessKeyboard(RIGHT, dt);
 
 			float now = (float)SDL_GetTicks();
 			dt = now - time;
@@ -255,7 +284,7 @@ namespace jsr {
 		}
 		else
 		{
-			Info("No surface to draw !");
+			//Info("No surface to draw !");
 		}
 
 		return 0;

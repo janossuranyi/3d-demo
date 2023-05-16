@@ -45,6 +45,7 @@ void main()
 
     vec4 color = vec4( 1.0 );
     int debflags = int( ubo.debugFlags.x );
+    vec3 normalTS = texture(tNormal, In.texCoord).xyz * 2.0 - 1.0;
     
     if ( debflags == 0 )
     {
@@ -52,7 +53,6 @@ void main()
     }
     else if ( ( debflags & 1 ) == 1 )
     {
-        vec3 normalTS = texture(tNormal, In.texCoord).xyz * 2.0 - 1.0;
         vec3 worldNormal = normalize( inputs.tbn * normalTS );
         color.xyz = EncodeNormal( worldNormal );
     }
@@ -71,6 +71,10 @@ void main()
     else if ( ( debflags & 16 ) == 16 )
     {
         color.xyz = EncodeNormal( In.normal );
+    }
+    else if ( ( debflags & 32 ) == 32 )
+    {
+        color.xyz = EncodeNormal( normalTS );
     }
 
     fragColor = color * In.color * ubo.matDiffuseFactor;
