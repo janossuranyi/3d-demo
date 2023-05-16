@@ -110,6 +110,7 @@ namespace jsr {
 				viewEntity_t* ent = (viewEntity_t*) R_FrameAlloc(sizeof(*ent));
 				const auto* model = node->GetEntity().GetModel();
 
+				// entity chain
 				ent->next = view->viewEntites;
 				view->viewEntites = ent;
 				ent->modelMatrix = worldMatrix;
@@ -119,7 +120,7 @@ namespace jsr {
 				for (int entSurf = 0; entSurf < model->GetNumSurface(); ++entSurf)
 				{
 					const auto* surf = model->GetSurface(entSurf);
-					Bounds surfBounds = surf->surf.bounds.Transform(modelViewMatrix);
+					const Bounds surfBounds = surf->surf.bounds.Transform(modelViewMatrix);
 					if (view->frustum.Intersects(surfBounds))
 					{
 						drawSurf_t* drawSurf = (drawSurf_t*)R_FrameAlloc(sizeof(*drawSurf));
@@ -130,7 +131,7 @@ namespace jsr {
 						drawSurf->shader = surf->shader;
 						drawSurf->space = ent;
 						glm::vec4 p = ent->modelViewMatrix * glm::vec4(surf->surf.bounds.GetSphere().GetCenter(), 1.0f);
-						drawSurf->sort = (surf->shader->GetId() << 24) + p.z;
+						drawSurf->sort = static_cast<float>((surf->shader->GetId() << 24) + p.z);
 						drawSurf->next = ent->surf;
 						ent->surf = drawSurf;
 
@@ -186,6 +187,8 @@ namespace jsr {
 			im->opts.shape = IMS_2D;
 			im->opts.sizeX = img.width;
 			im->opts.sizeY = img.height;
+			im->SetFilter(IFL_LINEAR_LINEAR, IFL_LINEAR);
+			im->SetRepeat(IMR_REPEAT, IMR_REPEAT);
 			im->Bind();
 			//im->AllocImage(opts, IFL_LINEAR, IMR_REPEAT);
 			im->UpdateImageData(img.width, img.height, 0, 0, 0, 0, img.image.data());
@@ -384,6 +387,7 @@ namespace jsr {
 				RM->GetBounds() << glm::vec3(ff[0], ff[1], ff[2]);
 
 				drawvert->SetPos(ff);
+				drawvert->SetColor(glm::vec4(1.0f));
 				pData += stride;
 				++drawvert;
 			}
@@ -413,7 +417,8 @@ namespace jsr {
 				drawVert_t* drawvert = ms->surf.verts;
 				for (int j = 0; j < tangent.count; ++j)
 				{
-					drawvert->SetTangent((const float*)pData);
+					const float* f = (const float*)pData;
+					drawvert->SetTangent(f);
 					pData += stride;
 					++drawvert;
 				}

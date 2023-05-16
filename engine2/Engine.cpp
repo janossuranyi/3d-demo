@@ -80,6 +80,7 @@ namespace jsr {
 
 	void Engine::MainLoop()
 	{
+		using namespace glm;
 		std::atomic_bool quit{};
 
 		SDL_Event e;
@@ -89,6 +90,8 @@ namespace jsr {
 		player.MovementSpeed = 0.004f;
 		player.MouseSensitivity = 0.1;
 		player.ProcessMouseMovement(0.f, 0.f);
+
+		renderSystem.backend->SetClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		int x = 0, y = 0;
 
@@ -125,6 +128,24 @@ namespace jsr {
 						break;
 					case SDLK_d:
 						player.ProcessKeyboard(RIGHT, dt);
+						break;
+					case SDLK_0:
+						renderSystem.programManager->uniforms.debugFlags = vec4(0.f);
+						break;
+					case SDLK_1:
+						renderSystem.programManager->uniforms.debugFlags = vec4(1.f);
+						break;
+					case SDLK_2:
+						renderSystem.programManager->uniforms.debugFlags = vec4(2.f);
+						break;
+					case SDLK_3:
+						renderSystem.programManager->uniforms.debugFlags = vec4(4.f);
+						break;
+					case SDLK_4:
+						renderSystem.programManager->uniforms.debugFlags = vec4(8.f);
+						break;
+					case SDLK_5:
+						renderSystem.programManager->uniforms.debugFlags = vec4(16.f);
 						break;
 					case SDLK_ESCAPE:
 						quit = true;
@@ -229,6 +250,8 @@ namespace jsr {
 			drawViewCommand_t* cmd = (drawViewCommand_t*)R_GetCommandBuffer(sizeof(*cmd));
 			cmd->command = RC_DRAW_VIEW;
 			cmd->view = view;
+
+			//Info("Surfaces to draw: %d", view->numDrawSurfs);
 		}
 		else
 		{

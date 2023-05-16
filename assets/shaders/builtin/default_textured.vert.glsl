@@ -17,17 +17,19 @@ out INTERFACE
     vec3 normal;
 } Out;
 
-
 void main()
 {
     gl_Position = ubo.WVPMatrix * in_Position;
-    mat3 mNormal3 = transpose( mat3( ubo.localToWorldMatrix ) ) ;
+    mat3 mNormal3 = mat3(ubo.normalMatrix); // transpose( mat3( ubo.localToWorldMatrix ) ) ;
 
     Out.fragPos     = ubo.localToWorldMatrix * in_Position;
     Out.color       = in_Color;
 	
-    vec3 T = normalize( mNormal3 * vec3(in_Tangent) );
-	vec3 N = normalize( mNormal3 * in_Normal );
+    vec4 localTangent = in_Tangent * 2.0 - 1.0;
+    //localTangent.w = floor( in_Tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
+
+    vec3 T = normalize( mNormal3 * localTangent.xyz );
+	vec3 N = normalize( mNormal3 * (in_Normal * 2.0 - 1.0) );
 
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
@@ -36,6 +38,6 @@ void main()
 	// vec3 B = normalize(cross(N, T) * in_Tangent.w);
 
     Out.normal      = N;
-    Out.tangent     = vec4(T, in_Tangent.w);
+    Out.tangent     = vec4(T, localTangent.w);
     Out.texCoord    = in_TexCoord;
 }

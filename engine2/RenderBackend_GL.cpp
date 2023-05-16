@@ -90,6 +90,7 @@ namespace jsr {
 		GL_CHECK(glVertexAttribFormat(2, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, normal)));
 		GL_CHECK(glVertexAttribFormat(3, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, tangent)));
 		GL_CHECK(glVertexAttribFormat(4, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, color)));
+
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
@@ -336,6 +337,8 @@ namespace jsr {
 
 	void RenderBackend::RenderView(viewDef_t* view)
 	{
+		using namespace glm;
+
 		Clear(true, true, true);
 		if (!view) return;
 
@@ -362,6 +365,8 @@ namespace jsr {
 				}
 			}
 
+			mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
+
 			// setup vertex/index buffers
 			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
 			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
@@ -373,15 +378,16 @@ namespace jsr {
 			renderSystem.programManager->uniforms.matMRFactor = glm::vec4(1.0f);
 			renderSystem.programManager->uniforms.viewOrigin = glm::vec4(view->renderView.vieworg, 1.f);
 			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
+			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
 			renderSystem.programManager->UpdateUniforms();
 
 			IndexBuffer idx;
 			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
-			glDrawElements(
+			GL_CHECK(glDrawElements(
 				GL_TRIANGLES,
 				surf->numIndex,
 				GL_UNSIGNED_SHORT,
-				(void*)idx.GetOffset());
+				(void*)idx.GetOffset()));
 //				renderSystem.vertexCache->GetBaseVertex(surf->vertexCache, sizeof(drawVert_t)));
 		}
 		//[...]

@@ -21,7 +21,7 @@ namespace jsr {
 			return uv;
 		}
 		glm::vec4 GetTangent() const
-		{
+		{			
 			return glm::vec4(
 				VERTEX_BYTE_TO_FLOAT(tangent[0]),
 				VERTEX_BYTE_TO_FLOAT(tangent[1]),
@@ -60,10 +60,10 @@ namespace jsr {
 		}
 		void SetColor(float fX, float fY, float fZ, float fW)
 		{
-			color[0] = floatToUnorm8(fX);
-			color[1] = floatToUnorm8(fY);
-			color[2] = floatToUnorm8(fZ);
-			color[3] = floatToUnorm8(fW);
+			color[0] = floatToUnorm8(glm::clamp(fX, 0.0f, 1.0f));
+			color[1] = floatToUnorm8(glm::clamp(fY, 0.0f, 1.0f));
+			color[2] = floatToUnorm8(glm::clamp(fZ, 0.0f, 1.0f));
+			color[3] = floatToUnorm8(glm::clamp(fW, 0.0f, 1.0f));
 		}
 		void SetTangent(float fX, float fY, float fZ, float fW)
 		{

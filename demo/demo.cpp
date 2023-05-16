@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 
     engineConfig.r_fbsrgb = false;
-#ifdef _DEBUG
+#if 0
     engineConfig.r_debug = true;
 #else
     engineConfig.r_debug = false;
@@ -57,7 +57,9 @@ int main(int argc, char** argv)
 
     renderSystem.vertexCache->ClearStaticCache();
     
-//    engine.LoadWorld("scenes/monkey.gltf");
+//
+//
+    //engine.LoadWorld("scenes/monkey.gltf");
     engine.LoadWorld("scenes/sponza/sponza_j.gltf");
 
     renderSystem.vertexCache->PrintStatistic();
