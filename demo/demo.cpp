@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 
     engineConfig.r_resX = 1280;
     engineConfig.r_resY = 720;
-    engineConfig.r_fullscreen = 0;
+    engineConfig.r_fullscreen = 2;
 
     engineConfig.r_fbsrgb = false;
 #if 0

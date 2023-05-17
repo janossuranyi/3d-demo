@@ -14,9 +14,11 @@ in INTERFACE
 
 out vec4 fragColor;
 
-struct input_t {
+struct lightinginput_t {
     vec3 normal;
-    vec3 tangent;
+    vec3 vertexNormal;
+    vec4 sampleAmbient;
+    vec4 samplePBR;
     mat3 tbn;
 };
 
@@ -26,56 +28,106 @@ layout(binding = IMU_AORM)      uniform sampler2D tAORM;
 layout(binding = IMU_EMMISIVE)  uniform sampler2D tEmissive;
 
 vec3 ReconstructNormal(vec3 normalTS) { return (normalTS * 2.0 - 1.0); }
-vec3 EncodeNormal(vec3 N) { return saturate( (1.0 + N) * 0.5 ); }
+vec3 EncodeColor(vec3 N) { return saturate( (1.0 + N) * 0.5 ); }
+
+float linearize_depth(float original_depth) {
+	float z = original_depth * 2.0 - 1.0;
+    float near = ubo.clipPlanes.x;
+    float far  = ubo.clipPlanes.y;
+    return (2.0 * near * far) / (far + near - z * (far - near));
+}
+
+float ApproxPow ( float fBase, float fPower ) {
+	return asfloat( uint( fPower * float( asuint( fBase ) ) - ( fPower - 1 ) * 127 * ( 1 << 23 ) ) );
+}
+
+vec3 fresnelSchlick ( vec3 f0, float costheta ) {
+	const float baked_spec_occl = saturate( 50.0 * dot( f0, vec3( 0.3333 ) ) );
+	return saturate( f0 + ( baked_spec_occl - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 ) );
+}
+
+vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness ) {
+	const vec3 H = normalize( V + L );
+	float m = ( 1 - smoothness * 0.8 );
+	m *= m;
+	m *= m;
+	float m2 = m * m;
+	float NdotH = saturate( dot( N, H ) );
+	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
+	spec = m2 / ( spec * spec + 1e-8 );
+	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
+	spec /= ( 4.0 * Gv * Gl + 1e-8 );
+	return fresnelSchlick( f0, dot( L, H ) ) * spec;
+}
 
 void main()
 {
     
-    input_t inputs = input_t(vec3(0.0),vec3(0.0),mat3(0.0));
+    lightinginput_t inputs = lightinginput_t(vec3(0),vec3(0),vec4(0),vec4(0),mat3(0));
 
     {
         vec3 localTangent       = normalize( In.tangent.xyz );
         vec3 localNormal        = normalize( In.normal );
         vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
-
-        inputs.tbn      = transpose( mat3( localTangent, derivedBitangent, localNormal ) );
-        inputs.normal   = localNormal;
-        inputs.tangent  = localTangent;
+        vec3 normalTS           = vec3(1,-1,1) * (texture(tNormal, In.texCoord).xyz * 2.0 - 1.0);
+        inputs.tbn      = mat3(localTangent,derivedBitangent,localNormal);
+        inputs.normal   = inputs.tbn * normalTS;
+        inputs.vertexNormal = localNormal;
     }
 
-    vec4 color = vec4( 1.0 );
+    vec4 color = vec4( 0.0 );
     int debflags = int( ubo.debugFlags.x );
-    vec3 normalTS = texture(tNormal, In.texCoord).xyz * 2.0 - 1.0;
     
+    inputs.sampleAmbient = ubo.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
+    inputs.samplePBR = texture( tAORM, In.texCoord );
+    inputs.samplePBR.g = 1.0 - inputs.samplePBR.g;
+
+    vec3 lightPos = vec3(ubo.viewOrigin);
+    vec3 lightColor = vec3(4.5, 4.5, 4.0) ;
+    float specFactor = 1.0;
+
     if ( debflags == 0 )
     {
-        color = texture( tDiffuse, In.texCoord );
+        vec3 V = normalize(ubo.viewOrigin.xyz - In.fragPos.xyz);
+        vec3 L = (lightPos - In.fragPos.xyz);
+        float Ld = length(L);
+        L /= Ld;
+        
+        float attenuation = 1.0 / (1.0 + 0.2*Ld + 0.4*Ld*Ld);
+
+        float NdotL = max( dot( inputs.normal, L ), 0.0 );
+        
+        vec3 f0 = mix(vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b);
+        vec3 spec = specBRDF(inputs.normal, V, L, f0, inputs.samplePBR.g);
+        vec3 diffuseFactor = (1.0 - spec) * (1.0 - inputs.samplePBR.b);
+        vec3 final = (diffuseFactor * inputs.sampleAmbient.xyz + spec) * NdotL * lightColor * attenuation;
+        color.xyz = GammaIEC( tonemap( final ));
     }
     else if ( ( debflags & 1 ) == 1 )
     {
-        vec3 worldNormal = normalize( inputs.tbn * normalTS );
-        color.xyz = EncodeNormal( worldNormal );
+        color.xyz = EncodeColor( inputs.normal );
     }
     else if ( ( debflags & 2 ) == 2 )
     {
-        color.xyz = texture(tAORM, In.texCoord).xyz;
+        color.xyz = inputs.samplePBR.xyz;
     }
     else if ( ( debflags & 4 ) == 4 )
     {
-        color.xyz = EncodeNormal( inputs.tangent  ); // texture(tEmissive, In.texCoord);
+        color.xy = In.texCoord.xy;
     }
     else if ( ( debflags & 8 ) == 8 )
     {
-        color.xyz = EncodeNormal( In.fragPos.xyz );
+        color.xyz = EncodeColor(In.fragPos.xyz);
     }
     else if ( ( debflags & 16 ) == 16 )
     {
-        color.xyz = EncodeNormal( In.normal );
+        color.xyz = saturate( vec3( gl_FragCoord.z * gl_FragCoord.w ) );
     }
     else if ( ( debflags & 32 ) == 32 )
     {
-        color.xyz = EncodeNormal( normalTS );
+        color.xyz = EncodeColor(inputs.vertexNormal);
     }
 
-    fragColor = color * In.color * ubo.matDiffuseFactor;
+    fragColor = color * In.color;
 }

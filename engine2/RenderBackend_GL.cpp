@@ -85,11 +85,14 @@ namespace jsr {
 		GL_CHECK(glVertexAttribBinding(3, 0));
 		GL_CHECK(glVertexAttribBinding(4, 0));
 
+
 		GL_CHECK(glVertexAttribFormat(0, 3, GL_FLOAT, false, offsetof(drawVert_t, xyz)));
 		GL_CHECK(glVertexAttribFormat(1, 2, GL_FLOAT, false, offsetof(drawVert_t, uv)));
 		GL_CHECK(glVertexAttribFormat(2, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, normal)));
 		GL_CHECK(glVertexAttribFormat(3, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, tangent)));
 		GL_CHECK(glVertexAttribFormat(4, 4, GL_UNSIGNED_BYTE, true, offsetof(drawVert_t, color)));
+
+		glVertexBindingDivisor(0, 0);
 
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
@@ -371,12 +374,12 @@ namespace jsr {
 			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
 			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
 
-			renderSystem.programManager->uniforms.alphaCutoff = glm::vec4(stage.alphaCutoff);
+			renderSystem.programManager->uniforms.alphaCutoff = vec4(stage.alphaCutoff);
 			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
 			renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
-			renderSystem.programManager->uniforms.matDiffuseFactor = glm::vec4(1.0f);
-			renderSystem.programManager->uniforms.matMRFactor = glm::vec4(1.0f);
-			renderSystem.programManager->uniforms.viewOrigin = glm::vec4(view->renderView.vieworg, 1.f);
+			renderSystem.programManager->uniforms.matDiffuseFactor = vec4(1.0f);
+			renderSystem.programManager->uniforms.matMRFactor = vec4(1.0f);
+			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
 			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
 			renderSystem.programManager->UpdateUniforms();

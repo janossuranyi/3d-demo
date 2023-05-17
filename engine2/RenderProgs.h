@@ -25,6 +25,7 @@ namespace jsr {
 		glm::vec4 matMRFactor;
 		glm::vec4 alphaCutoff;
 		glm::vec4 debugFlags;
+		glm::vec4 clipPlanes;
 		glm::vec4 user01;
 		glm::vec4 user02;
 		glm::vec4 user03;

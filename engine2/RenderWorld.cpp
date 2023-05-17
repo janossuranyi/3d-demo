@@ -94,6 +94,8 @@ namespace jsr {
 	}
 	void RenderWorld::RenderView(viewDef_t* view)
 	{
+		using namespace glm;
+
 		for (int i = 0; i < nodes.size(); ++i)
 		{
 			Node3D* node = nodes[i];
@@ -130,8 +132,8 @@ namespace jsr {
 						drawSurf->vertexCache = surf->surf.vertexCache;
 						drawSurf->shader = surf->shader;
 						drawSurf->space = ent;
-						glm::vec4 p = ent->modelViewMatrix * glm::vec4(surf->surf.bounds.GetSphere().GetCenter(), 1.0f);
-						drawSurf->sort = static_cast<float>((surf->shader->GetId() << 24) + p.z);
+						const vec4 p = ent->modelViewMatrix * vec4(surf->surf.bounds.GetSphere().GetCenter(), 1.0f);
+						drawSurf->sort = static_cast<float>((surf->shader->GetId() << 24) - p.z);
 						drawSurf->next = ent->surf;
 						ent->surf = drawSurf;
 
@@ -187,6 +189,7 @@ namespace jsr {
 			im->opts.shape = IMS_2D;
 			im->opts.sizeX = img.width;
 			im->opts.sizeY = img.height;
+			im->opts.srgb = false;
 			im->SetFilter(IFL_LINEAR_LINEAR, IFL_LINEAR);
 			im->SetRepeat(IMR_REPEAT, IMR_REPEAT);
 			im->Bind();

@@ -87,7 +87,7 @@ namespace jsr {
 		float time, dt;
 		dt = 0.0f;
 		time = (float)SDL_GetTicks();
-		player.MovementSpeed = 0.004f;
+		player.MovementSpeed = 0.002f;
 		player.MouseSensitivity = 0.1;
 		player.ProcessMouseMovement(0.f, 0.f);
 
@@ -100,8 +100,9 @@ namespace jsr {
 
 		while (!quit)
 		{
-			emptyCommand_t* cmds = R_SwapCommandBuffers(this->threaded);
 
+
+			emptyCommand_t* cmds = R_SwapCommandBuffers(this->threaded);
 			SignalWork();
 
 			renderSystem.Frame(cmds);
@@ -212,6 +213,7 @@ namespace jsr {
 
 			//std::this_thread::yield();
 			WaitForThread();
+
 		}
 		SDL_SetRelativeMouseMode(SDL_FALSE);
 	}
@@ -231,7 +233,7 @@ namespace jsr {
 
 	struct
 	{
-		bool operator()(drawSurf_t* a, drawSurf_t* b) const { return a->sort < b->sort; }
+		bool operator()(drawSurf_t* a, drawSurf_t* b) const { return (uint32)a->sort < (uint32)b->sort; }
 	} drawSurfLess;
 
 	int Engine::Run()
@@ -244,6 +246,9 @@ namespace jsr {
 		mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, 1000.0f);
 		mat4 viewMatrix = player.GetViewMatrix();
 		mat4 vpMatrix = projMatrix * viewMatrix;
+
+		renderSystem.programManager->uniforms.clipPlanes = vec4(0.1f, 1000.0f, 0.0f, 0.0f);
+		renderSystem.programManager->uniforms.viewOrigin = vec4(player.Position, 1.0f);
 
 		viewDef_t* view = (viewDef_t *)R_FrameAlloc(sizeof(*view));
 		view->renderView.viewID = 1;

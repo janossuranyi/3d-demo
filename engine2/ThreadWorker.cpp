@@ -135,8 +135,10 @@ namespace jsr {
 					else
 					{
 						workDone = true;
+						hasWork = false;
 						signalDone.notify_all();
 						signalHasWork.wait(lck, [&] {return hasWork; });
+						continue;
 					}
 
 					if (isTerminating)

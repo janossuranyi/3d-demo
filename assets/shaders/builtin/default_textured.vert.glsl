@@ -20,7 +20,8 @@ out INTERFACE
 void main()
 {
     gl_Position = ubo.WVPMatrix * in_Position;
-    mat3 mNormal3 = mat3(ubo.normalMatrix); // transpose( mat3( ubo.localToWorldMatrix ) ) ;
+    mat3 mNormal3   = mat3(ubo.normalMatrix); // transpose( mat3( ubo.localToWorldMatrix ) ) ;
+    //mat3 mModel3    = mat3(ubo.localToWorldMatrix);
 
     Out.fragPos     = ubo.localToWorldMatrix * in_Position;
     Out.color       = in_Color;
