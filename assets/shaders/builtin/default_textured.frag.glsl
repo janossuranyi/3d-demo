@@ -1,6 +1,76 @@
 @include "version.inc.glsl"
-@include "common.inc.glsl"
-@include "uniforms.inc.glsl"
+
+#define	IMU_DIFFUSE 0
+#define	IMU_NORMAL 1
+#define IMU_AORM 2
+#define IMU_EMMISIVE 3
+#define IMU_DEPTH 4
+#define IMU_FRAGPOS 5
+#define IMU_HDR 6
+#define IMU_DEFAULT 7
+
+const float PI = 3.14159265359;
+const float ONE_OVER_PI = 1.0/3.14159265359;
+
+float asfloat ( uint x ) { return uintBitsToFloat( x ); }
+uint asuint ( float x ) { return floatBitsToUint( x ); }
+
+float saturate(float x) { return clamp(x, 0.0, 1.0); }
+vec2 saturate(vec2 x) { return clamp(x, 0.0, 1.0); }
+vec3 saturate(vec3 x) { return clamp(x, 0.0, 1.0); }
+vec4 saturate(vec4 x) { return clamp(x, 0.0, 1.0); }
+
+vec3 tonemap(vec3 c) { return c / ( c + vec3(1.0) ); }
+float GammaIEC(float c) { return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055; }
+vec3 GammaIEC(vec3 c)
+{
+    return vec3(
+        GammaIEC(c.r),
+        GammaIEC(c.g),
+        GammaIEC(c.b));
+}
+float SRGBlinear ( float value ) { if ( value <= 0.04045 ) {
+		return ( value / 12.92 );
+	} else {
+		return pow( ( value / 1.055 ) + 0.0521327, 2.4 );
+	}
+}
+vec3 SRGBlinear ( vec3 sRGB ) {
+	vec3 outLinear;
+	outLinear.r = SRGBlinear( sRGB.r );
+	outLinear.g = SRGBlinear( sRGB.g );
+	outLinear.b = SRGBlinear( sRGB.b );
+	return outLinear;
+}
+
+vec4 SRGBlinear ( vec4 sRGBA ) { return vec4( SRGBlinear( sRGBA.rgb ), sRGBA.a );}
+
+#define SHADER_UNIFORMS_BINDING 0
+
+layout(binding = SHADER_UNIFORMS_BINDING, std140) uniform uboUniforms
+{
+    mat4 localToWorldMatrix;
+    mat4 worldToViewMatrix;
+	mat4 projectionMatrix;
+    mat4 WVPMatrix;
+	mat4 normalMatrix;
+    vec4 viewOrigin;
+	vec4 matDiffuseFactor;
+	vec4 matMRFactor;
+	vec4 alphaCutoff;
+	vec4 debugFlags;
+	vec4 clipPlanes;
+	vec4 user01;
+	vec4 user02;
+	vec4 user03;
+	vec4 user04;
+	vec4 user05;
+	vec4 user06;
+	vec4 user07;
+	float clipNear;
+	float clipFar;
+} ubo;
+
 
 in INTERFACE
 {
@@ -49,7 +119,7 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness ) {
 	const vec3 H = normalize( V + L );
 	float m = ( 1 - smoothness * 0.8 );
-	m *= m;
+	//m *= m;
 	m *= m;
 	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
@@ -59,6 +129,33 @@ vec3 specBRDF ( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness ) {
 	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
 	return fresnelSchlick( f0, dot( L, H ) ) * spec;
+}
+
+vec3 specBRDF_sj(vec3 N, vec3 V, vec3 L, vec3 F0, float smoothness)
+{
+    const vec3 H = normalize(V + L);
+    const float HdotV  = max(dot(H, V), 0.0);
+    const float NdotH  = max(dot(N, H), 0.0);
+    const float NdotV  = max(dot(N, V), 0.0);
+    const float NdotL  = max(dot(N, L), 0.0);
+
+    // DistributionGGX
+    float r = 1 - smoothness * 0.8;
+    float a = r*r;
+    a *= a;
+    float denom = (NdotH * NdotH) * (a - 1.0) + 1.0;
+    float NDF = a / (PI * denom * denom);
+
+    // GeometrySmith
+    a = (r + 1.0);
+    float k   = (a*a) / 8.0;
+    float Gv  = NdotV / (NdotV * (1.0 - k) + k);
+    float Gl  = NdotL / (NdotL * (1.0 - k) + k);
+    float spec = (NDF * Gv * Gl) / (4.0 * NdotL * NdotL + 1e-8);
+
+    vec3 F = fresnelSchlick(F0, HdotV);
+
+    return F * spec;
 }
 
 void main()
@@ -84,7 +181,7 @@ void main()
     inputs.samplePBR.g = 1.0 - inputs.samplePBR.g;
 
     vec3 lightPos = vec3(ubo.viewOrigin);
-    vec3 lightColor = vec3(4.5, 4.5, 4.0) ;
+    vec3 lightColor = vec3(4.5, 1.5, 1.0) ;
     float specFactor = 1.0;
 
     if ( debflags == 0 )
@@ -94,12 +191,12 @@ void main()
         float Ld = length(L);
         L /= Ld;
         
-        float attenuation = 1.0 / (1.0 + 0.2*Ld + 0.4*Ld*Ld);
+        float attenuation = 1.0 / (1.0 + 0.5*Ld + 1*Ld*Ld);
 
         float NdotL = max( dot( inputs.normal, L ), 0.0 );
         
         vec3 f0 = mix(vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b);
-        vec3 spec = specBRDF(inputs.normal, V, L, f0, inputs.samplePBR.g);
+        vec3 spec = specBRDF_sj(inputs.normal, V, L, f0, inputs.samplePBR.g);
         vec3 diffuseFactor = (1.0 - spec) * (1.0 - inputs.samplePBR.b);
         vec3 final = (diffuseFactor * inputs.sampleAmbient.xyz + spec) * NdotL * lightColor * attenuation;
         color.xyz = GammaIEC( tonemap( final ));
