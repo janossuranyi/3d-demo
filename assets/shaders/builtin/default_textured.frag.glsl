@@ -80,7 +80,7 @@ void main()
         vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
         vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);
         inputs.tbn      = mat3(localTangent,derivedBitangent,localNormal);
-        inputs.normal   = normalize(inputs.tbn * normalTS);
+        inputs.normal   = (inputs.tbn * normalTS);
         inputs.vertexNormal = localNormal;
     }
 
@@ -142,7 +142,7 @@ void main()
     }
     else if ( ( debflags & 32 ) == 32 )
     {
-        color.xyz = inputs.samplePBR.xyz;
+        color.xyz = vec3(0, 1-inputs.samplePBR.g, inputs.samplePBR.b);
     }
 
     fragColor = color * In.color;
