@@ -32,11 +32,14 @@ namespace jsr {
 		eStageType type;
 		eShaderProg shader;
 		glm::vec4 shaderParms[8];		// copied to uboUniforms_t.user01..07
+		glm::vec4 diffuseScale;
+		glm::vec4 emissiveScale;
 		Image* images[IMU_COUNT];
 		eCoverage coverage;
 		eCullMode cullMode;
 		float alphaCutoff;
-
+		float roughnessScale;
+		float metallicScale;
 		void SetImage(int index, Image* image);
 		stage_t();
 	};

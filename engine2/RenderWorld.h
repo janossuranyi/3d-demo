@@ -27,13 +27,14 @@ namespace jsr {
 		bool LoadMapFromGLTF(const std::string& filename);
 		void RenderView(viewDef_t* view);
 		void DestroyWorld();
+		Bounds GetBounds() const;
 	private:
 		void CreateImagesGLTF();
 		void CreateMaterialsGLTF();
 		void CreateNodesGLTF();
 		RenderModel* CreateModelGLTF(int mesh);
 
-		tinygltf::Model* maptoload;
+		tinygltf::Model* map;
 		std::vector<int> map_image_idx;
 		std::vector<int> map_mater_idx;
 

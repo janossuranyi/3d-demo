@@ -239,7 +239,7 @@ namespace jsr {
 		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_ANISOTROPY, opts.maxAnisotropy));
 		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MIN_LOD, 0.0f));
 		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_LOD, (float)(opts.numLevel - 1)));
-		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_LOD_BIAS, 0.0f));
+		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_LOD_BIAS, 0.0f));
 		GL_CHECK(glTexParameterfv(apiTarget, GL_TEXTURE_BORDER_COLOR, &borderColor[0]));
 	}
 

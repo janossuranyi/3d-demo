@@ -8,7 +8,7 @@
 #define IMU_DEFAULT 7
 
 const float PI = 3.14159265359;
-const float ONE_OVER_PI = 1.0/3.14159265359;
+const float ONE_OVER_PI = 1.0/PI;
 
 float asfloat ( uint x ) { return uintBitsToFloat( x ); }
 uint asuint ( float x ) { return floatBitsToUint( x ); }
@@ -27,7 +27,8 @@ vec3 GammaIEC(vec3 c)
         GammaIEC(c.g),
         GammaIEC(c.b));
 }
-float SRGBlinear ( float value ) { if ( value <= 0.04045 ) {
+float SRGBlinear ( float value ) {
+	if ( value <= 0.04045 ) {
 		return ( value / 12.92 );
 	} else {
 		return pow( ( value / 1.055 ) + 0.0521327, 2.4 );
@@ -42,4 +43,3 @@ vec3 SRGBlinear ( vec3 sRGB ) {
 }
 
 vec4 SRGBlinear ( vec4 sRGBA ) { return vec4( SRGBlinear( sRGBA.rgb ), sRGBA.a );}
-

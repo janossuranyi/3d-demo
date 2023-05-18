@@ -387,6 +387,9 @@ namespace jsr {
 					surf->surf.indexCache = renderSystem.vertexCache->AllocStaticIndex(surf->surf.indexes, (15UL + sizeof(elementIndex_t) * surf->surf.numIndexes) & ~15UL);
 				}
 				surf->surf.gpuResident = true;
+				MemFree16(surf->surf.verts); surf->surf.verts = nullptr;
+				MemFree16(surf->surf.indexes); surf->surf.indexes = nullptr;
+
 				/*
 				MemFree(surf->surf.indexes);
 				MemFree(surf->surf.verts);

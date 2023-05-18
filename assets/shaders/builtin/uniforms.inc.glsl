@@ -13,13 +13,4 @@ layout(binding = SHADER_UNIFORMS_BINDING, std140) uniform uboUniforms
 	vec4 alphaCutoff;
 	vec4 debugFlags;
 	vec4 clipPlanes;
-	vec4 user01;
-	vec4 user02;
-	vec4 user03;
-	vec4 user04;
-	vec4 user05;
-	vec4 user06;
-	vec4 user07;
-	float clipNear;
-	float clipFar;
 } ubo;

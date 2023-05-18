@@ -87,11 +87,13 @@ namespace jsr {
 		float time, dt;
 		dt = 0.0f;
 		time = (float)SDL_GetTicks();
-		player.MovementSpeed = 0.002f;
+		player.MovementSpeed = 0.001f;
 		player.MouseSensitivity = 0.1;
+		player.Zoom = 80.0f;
 		player.ProcessMouseMovement(0.f, 0.f);
 
-		renderSystem.backend->SetClearColor(0.3f, 0.3f, 0.8f, 1.0f);
+		renderSystem.backend->SetClearColor(0.2f, 0.2f, 0.6f, 1.0f);
+		player.Position = world->GetBounds().GetCenter();
 
 		int x = 0, y = 0;
 

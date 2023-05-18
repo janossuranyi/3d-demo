@@ -377,8 +377,8 @@ namespace jsr {
 			renderSystem.programManager->uniforms.alphaCutoff = vec4(stage.alphaCutoff);
 			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
 			renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
-			renderSystem.programManager->uniforms.matDiffuseFactor = vec4(1.0f);
-			renderSystem.programManager->uniforms.matMRFactor = vec4(1.0f);
+			renderSystem.programManager->uniforms.matDiffuseFactor = stage.diffuseScale;
+			renderSystem.programManager->uniforms.matMRFactor = vec4(stage.roughnessScale, stage.metallicScale, 0, 0);
 			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
 			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;

@@ -22,7 +22,7 @@ namespace jsr {
 	using namespace tinygltf;
 	namespace fs = std::filesystem;
 
-	RenderWorld::RenderWorld() : maptoload()
+	RenderWorld::RenderWorld() : map()
 	{
 		vertecCache		= renderSystem.vertexCache;
 		imageManager	= renderSystem.imageManager;
@@ -37,15 +37,15 @@ namespace jsr {
 
 	bool RenderWorld::LoadMapFromGLTF(const std::string& filename)
 	{
-		if (maptoload) delete maptoload;
+		if (map) delete map;
 		if (filename.empty()) return nullptr;
 
 		DestroyWorld();
 		map_mater_idx.clear();
 
-		maptoload = new tinygltf::Model();
+		map = new tinygltf::Model();
 
-		Model& model = *maptoload;
+		Model& model = *map;
 
 		TinyGLTF loader;
 		std::string err, warn;
@@ -55,17 +55,17 @@ namespace jsr {
 		fs::path fnp(filename);
 		if (fnp.extension().string() == ".glb")
 		{
-			wasOk = loader.LoadBinaryFromFile(maptoload, &err, &warn, filename);
+			wasOk = loader.LoadBinaryFromFile(map, &err, &warn, filename);
 		}
 		else
 		{
-			wasOk = loader.LoadASCIIFromFile(maptoload, &err, &warn, filename);
+			wasOk = loader.LoadASCIIFromFile(map, &err, &warn, filename);
 		}
 
 		if (!wasOk)
 		{
 			Error("[RenderWorld]: (LoadFromGLTF) %s", err.c_str());
-			delete maptoload;
+			delete map;
 
 			return false;
 		}
@@ -87,8 +87,8 @@ namespace jsr {
 		// CreateLightsGLTF
 		CreateNodesGLTF();
 
-		delete maptoload;
-		maptoload = nullptr;
+		delete map;
+		map = nullptr;
 
 		return true;
 	}
@@ -164,14 +164,19 @@ namespace jsr {
 		images.clear();
 	}
 
+	Bounds RenderWorld::GetBounds() const
+	{
+		return worldBounds;
+	}
+
 	void RenderWorld::CreateImagesGLTF()
 	{
-		if (maptoload == nullptr) return;
+		if (map == nullptr) return;
 		map_image_idx.clear();
 
-		for (int i = 0; i < maptoload->images.size(); ++i)
+		for (int i = 0; i < map->images.size(); ++i)
 		{
-			const auto& img = maptoload->images[i];
+			const auto& img = map->images[i];
 			if (img.bits != 8)
 			{
 				Info("Image bits: %d", img.bits);
@@ -202,12 +207,12 @@ namespace jsr {
 	}
 	void RenderWorld::CreateMaterialsGLTF()
 	{
-		if (maptoload == nullptr) return;
+		if (map == nullptr) return;
 
 		map_mater_idx.clear();
-		for (int i = 0; i < maptoload->materials.size(); ++i)
+		for (int i = 0; i < map->materials.size(); ++i)
 		{
-			const auto& gmat = maptoload->materials[i];
+			const auto& gmat = map->materials[i];
 			Material* mat = materialManager->CreateMaterial(gmat.name);
 			materials.insert(mat);
 
@@ -222,8 +227,13 @@ namespace jsr {
 			stage.enabled = true;
 			stage.cullMode = gmat.doubleSided ? CULL_NONE : CULL_BACK;
 			stage.type = STAGE_DEBUG;
+			stage.diffuseScale = glm::make_vec4((double*) gmat.pbrMetallicRoughness.baseColorFactor.data() );
+			stage.roughnessScale = static_cast<float>(gmat.pbrMetallicRoughness.roughnessFactor);
+			stage.metallicScale = static_cast<float>(gmat.pbrMetallicRoughness.metallicFactor);
+			stage.emissiveScale = glm::vec4(glm::make_vec3((double*) gmat.emissiveFactor.data()), 0.0f);
+
 			if (gmat.pbrMetallicRoughness.baseColorTexture.index > -1) {
-				const auto& tex = maptoload->textures[gmat.pbrMetallicRoughness.baseColorTexture.index];
+				const auto& tex = map->textures[gmat.pbrMetallicRoughness.baseColorTexture.index];
 				stage.images[IMU_DIFFUSE] = imageManager->GetImage(map_image_idx[tex.source]);
 			}
 			else {
@@ -231,7 +241,7 @@ namespace jsr {
 			}
 			if (gmat.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
 			{
-				const auto& tex = maptoload->textures[gmat.pbrMetallicRoughness.metallicRoughnessTexture.index];
+				const auto& tex = map->textures[gmat.pbrMetallicRoughness.metallicRoughnessTexture.index];
 				stage.images[IMU_AORM] = imageManager->GetImage(map_image_idx[tex.source]);
 			}
 			else {
@@ -239,7 +249,7 @@ namespace jsr {
 			}
 			if (gmat.emissiveTexture.index > -1)
 			{
-				const auto& tex = maptoload->textures[gmat.emissiveTexture.index];
+				const auto& tex = map->textures[gmat.emissiveTexture.index];
 				stage.images[IMU_EMMISIVE] = imageManager->GetImage(map_image_idx[tex.source]);
 			}
 			else {
@@ -247,7 +257,7 @@ namespace jsr {
 			}
 			if (gmat.normalTexture.index > -1)
 			{
-				const auto& tex = maptoload->textures[gmat.normalTexture.index];
+				const auto& tex = map->textures[gmat.normalTexture.index];
 				stage.images[IMU_NORMAL] = imageManager->GetImage(map_image_idx[tex.source]);
 			}
 			else {
@@ -258,18 +268,18 @@ namespace jsr {
 	}
 	void RenderWorld::CreateNodesGLTF()
 	{
-		if (maptoload == nullptr) return;
+		if (map == nullptr) return;
 		if (!nodes.empty())
 		{
 			nodes.clear();
 			rootnodes.clear();
 		}
 
-		std::vector<RenderModel*> surfcache(maptoload->meshes.size());
+		std::vector<RenderModel*> surfcache(map->meshes.size());
 
-		for (int i = 0; i < maptoload->nodes.size(); ++i)
+		for (int i = 0; i < map->nodes.size(); ++i)
 		{
-			const auto& gnode = maptoload->nodes[i];
+			const auto& gnode = map->nodes[i];
 
 			Node3D* node = new Node3D();
 			nodes.push_back(node);
@@ -316,7 +326,7 @@ namespace jsr {
 					{
 						surfcache[gnode.mesh]->UpdateSurfaceCache();
 						models.insert(surfcache[gnode.mesh]);
-						worldBounds << surfcache[gnode.mesh]->GetBounds();
+						worldBounds.Extend( surfcache[gnode.mesh]->GetBounds().Transform(node->GetLocalToWorldMatrix()) );
 					}
 				}
 
@@ -329,9 +339,9 @@ namespace jsr {
 			}
 		}
 
-		for (int i = 0; i < maptoload->nodes.size(); ++i)
+		for (int i = 0; i < map->nodes.size(); ++i)
 		{
-			const auto& gnode = maptoload->nodes[i];
+			const auto& gnode = map->nodes[i];
 			if (gnode.mesh == -1) continue;
 			auto* p = nodes[gnode.mesh];
 			for (auto child : gnode.children)
@@ -341,16 +351,16 @@ namespace jsr {
 			}
 		}
 
-		int scene = maptoload->defaultScene >= 0 ? maptoload->defaultScene : 0;
-		for (int i = 0; i < maptoload->scenes[scene].nodes.size(); ++i)
+		int scene = map->defaultScene >= 0 ? map->defaultScene : 0;
+		for (int i = 0; i < map->scenes[scene].nodes.size(); ++i)
 		{
-			rootnodes.push_back(nodes[maptoload->scenes[scene].nodes[i]]);
+			rootnodes.push_back(nodes[map->scenes[scene].nodes[i]]);
 		}
 	}
 
 	RenderModel* RenderWorld::CreateModelGLTF(int mesh)
 	{
-		const auto& gmesh = maptoload->meshes[mesh];
+		const auto& gmesh = map->meshes[mesh];
 		const int numSurfs = gmesh.primitives.size();
 
 		RenderModel* RM = modelManager->CreateModel(gmesh.name);
@@ -370,8 +380,8 @@ namespace jsr {
 				return nullptr;
 			}
 
-			Accessor const& xyz = maptoload->accessors[it->second];
-			Accessor const& idx = maptoload->accessors[surf.indices];
+			Accessor const& xyz = map->accessors[it->second];
+			Accessor const& idx = map->accessors[surf.indices];
 			int const numVerts = xyz.count;
 			int const numIndexes = idx.count;
 			int surfIndex{};
@@ -379,9 +389,9 @@ namespace jsr {
 			modelSurface_t* ms = RM->AllocSurface(numVerts, numIndexes, surfIndex);
 			assert(xyz.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-			auto* pData = ACCESSOR_PTR(maptoload, xyz);
+			auto* pData = ACCESSOR_PTR(map, xyz);
 
-			int stride = xyz.ByteStride(maptoload->bufferViews[xyz.bufferView]);
+			int stride = xyz.ByteStride(map->bufferViews[xyz.bufferView]);
 			drawVert_t* drawvert = ms->surf.verts;
 			for (int j = 0; j < xyz.count; ++j)
 			{
@@ -398,9 +408,9 @@ namespace jsr {
 			it = surf.attributes.find("NORMAL");
 			if (std::end(surf.attributes) != it)
 			{
-				Accessor const& normals = maptoload->accessors[it->second];
-				auto* pData = ACCESSOR_PTR(maptoload, normals);
-				int stride = normals.ByteStride(maptoload->bufferViews[normals.bufferView]);
+				Accessor const& normals = map->accessors[it->second];
+				auto* pData = ACCESSOR_PTR(map, normals);
+				int stride = normals.ByteStride(map->bufferViews[normals.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
 				for (int j = 0; j < normals.count; ++j)
 				{
@@ -413,10 +423,10 @@ namespace jsr {
 			it = surf.attributes.find("TANGENT");
 			if (std::end(surf.attributes) != it)
 			{
-				Accessor const& tangent = maptoload->accessors[it->second];
-				auto* pData = ACCESSOR_PTR(maptoload, tangent);
+				Accessor const& tangent = map->accessors[it->second];
+				auto* pData = ACCESSOR_PTR(map, tangent);
 
-				int stride = tangent.ByteStride(maptoload->bufferViews[tangent.bufferView]);
+				int stride = tangent.ByteStride(map->bufferViews[tangent.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
 				for (int j = 0; j < tangent.count; ++j)
 				{
@@ -430,12 +440,12 @@ namespace jsr {
 			it = surf.attributes.find("TEXCOORD_0");
 			if (std::end(surf.attributes) != it)
 			{
-				Accessor const& uv = maptoload->accessors[it->second];
+				Accessor const& uv = map->accessors[it->second];
 				assert(uv.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-				auto* pData = ACCESSOR_PTR(maptoload, uv);
+				auto* pData = ACCESSOR_PTR(map, uv);
 
-				int stride = uv.ByteStride(maptoload->bufferViews[uv.bufferView]);
+				int stride = uv.ByteStride(map->bufferViews[uv.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
 				for (int j = 0; j < uv.count; ++j)
 				{
@@ -448,10 +458,10 @@ namespace jsr {
 			it = surf.attributes.find("COLOR_0");
 			if (std::end(surf.attributes) != it)
 			{
-				Accessor const& color = maptoload->accessors[it->second];
+				Accessor const& color = map->accessors[it->second];
 
-				auto const* pData = ACCESSOR_PTR(maptoload, color);
-				int stride = color.ByteStride(maptoload->bufferViews[color.bufferView]);
+				auto const* pData = ACCESSOR_PTR(map, color);
+				int stride = color.ByteStride(map->bufferViews[color.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
 				int n = color.type == TINYGLTF_TYPE_VEC4 ? 4 : 3;
 
@@ -479,9 +489,9 @@ namespace jsr {
 				}
 			}
 
-			pData = ACCESSOR_PTR(maptoload, idx);
+			pData = ACCESSOR_PTR(map, idx);
 
-			stride = idx.ByteStride(maptoload->bufferViews[idx.bufferView]);
+			stride = idx.ByteStride(map->bufferViews[idx.bufferView]);
 			elementIndex_t* indices = ms->surf.indexes;
 
 			if (idx.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
