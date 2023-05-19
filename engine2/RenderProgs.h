@@ -26,6 +26,7 @@ namespace jsr {
 		glm::vec4 alphaCutoff;
 		glm::vec4 debugFlags;
 		glm::vec4 clipPlanes;
+		glm::vec4 flags;
 	};
 
 	enum eVertexLayout

@@ -6,6 +6,7 @@
 #include "./RenderSystem.h"
 #include "./Resources.h"
 #include "./Math.h"
+#include "./System.h"
 
 namespace jsr {
 
@@ -43,6 +44,10 @@ namespace jsr {
 
 	bool Engine::Init(bool aThreaded)
 	{
+		Info("JSR Engine v0.9");
+		Info("Platform: %s, PID: %d", jsr::GetPlatform(), std::this_thread::get_id());
+		Info("Installed memory: %dMB", jsr::GetSystemRAM());
+
 		if (!renderSystem.Init())
 		{
 			return false;

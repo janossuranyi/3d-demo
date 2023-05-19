@@ -169,14 +169,28 @@ namespace jsr {
 		return worldBounds;
 	}
 
+	eImageRepeat tiny_map_wrap(int x)
+	{
+		switch (x)
+		{
+		case TINYGLTF_TEXTURE_WRAP_REPEAT: return IMR_REPEAT;
+		case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE: return IMR_CLAMP_TO_EDGE;
+		case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT: return IMR_REPEAT;
+		default:
+			assert(false);
+		}
+	}
 	void RenderWorld::CreateImagesGLTF()
 	{
 		if (map == nullptr) return;
 		map_image_idx.clear();
 
-		for (int i = 0; i < map->images.size(); ++i)
+		for (int i = 0; i < map->textures.size(); ++i)
 		{
-			const auto& img = map->images[i];
+			const auto& tex = map->textures[i];
+			const auto& img = map->images[tex.source];
+			const auto& sam = map->samplers[tex.sampler];
+
 			if (img.bits != 8)
 			{
 				Info("Image bits: %d", img.bits);
@@ -185,6 +199,8 @@ namespace jsr {
 			Image* im = imageManager->AllocImage(img.name);
 			map_image_idx.push_back(im->GetId());
 			images.insert(im);
+			eImageRepeat rs = tiny_map_wrap(sam.wrapS), rt = tiny_map_wrap(sam.wrapT);
+			
 
 			//imageOpts_t opts;
 			im->opts.autocompress = false;
@@ -196,7 +212,7 @@ namespace jsr {
 			im->opts.sizeY = img.height;
 			im->opts.srgb = false;
 			im->SetFilter(IFL_LINEAR_LINEAR, IFL_LINEAR);
-			im->SetRepeat(IMR_REPEAT, IMR_REPEAT);
+			im->SetRepeat(rs, rt);
 			im->Bind();
 			//im->AllocImage(opts, IFL_LINEAR, IMR_REPEAT);
 			im->UpdateImageData(img.width, img.height, 0, 0, 0, 0, img.image.data());
@@ -233,32 +249,28 @@ namespace jsr {
 			stage.emissiveScale = glm::vec4(glm::make_vec3((double*) gmat.emissiveFactor.data()), 0.0f);
 
 			if (gmat.pbrMetallicRoughness.baseColorTexture.index > -1) {
-				const auto& tex = map->textures[gmat.pbrMetallicRoughness.baseColorTexture.index];
-				stage.images[IMU_DIFFUSE] = imageManager->GetImage(map_image_idx[tex.source]);
+				stage.images[IMU_DIFFUSE] = imageManager->GetImage(map_image_idx[gmat.pbrMetallicRoughness.baseColorTexture.index]);
 			}
 			else {
 				stage.images[IMU_DIFFUSE] = imageManager->globalImages.whiteImage;
 			}
 			if (gmat.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
 			{
-				const auto& tex = map->textures[gmat.pbrMetallicRoughness.metallicRoughnessTexture.index];
-				stage.images[IMU_AORM] = imageManager->GetImage(map_image_idx[tex.source]);
+				stage.images[IMU_AORM] = imageManager->GetImage(map_image_idx[gmat.pbrMetallicRoughness.metallicRoughnessTexture.index]);
 			}
 			else {
 				stage.images[IMU_AORM] = imageManager->globalImages.grayImage;
 			}
 			if (gmat.emissiveTexture.index > -1)
 			{
-				const auto& tex = map->textures[gmat.emissiveTexture.index];
-				stage.images[IMU_EMMISIVE] = imageManager->GetImage(map_image_idx[tex.source]);
+				stage.images[IMU_EMMISIVE] = imageManager->GetImage(map_image_idx[gmat.emissiveTexture.index]);
 			}
 			else {
 				stage.images[IMU_EMMISIVE] = imageManager->globalImages.blackImage;
 			}
 			if (gmat.normalTexture.index > -1)
 			{
-				const auto& tex = map->textures[gmat.normalTexture.index];
-				stage.images[IMU_NORMAL] = imageManager->GetImage(map_image_idx[tex.source]);
+				stage.images[IMU_NORMAL] = imageManager->GetImage(map_image_idx[gmat.normalTexture.index]);
 			}
 			else {
 				stage.images[IMU_NORMAL] = imageManager->globalImages.flatNormal;

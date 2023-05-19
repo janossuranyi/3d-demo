@@ -7,6 +7,12 @@
 #include "./RenderProgs.h"
 #include "./RenderCommon.h"
 
+#define FLG_X_COVERAGE_SHIFT 0
+#define FLG_X_COVERAGE_MASK 3
+#define FLG_X_COVERAGE_SOLID 0
+#define FLG_X_COVERAGE_MASKED 1
+#define FLG_X_COVERAGE_BLEND 2
+
 namespace jsr {
 
 	enum eCoverage

@@ -103,9 +103,9 @@ void main()
     }
     
     float exposure = 4;
-    float NdotL = saturate( dot(inputs.normal, inputs.lightDir));
+    float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
 
-    vec3 f0 = mix(vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b);
+    vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b );
     vec3 F = vec3(0);
     vec3 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, 1-inputs.samplePBR.g, F);
 
@@ -116,9 +116,20 @@ void main()
     vec3 mapped = vec3(1.0) - exp(-final * exposure);
     /*****************************************************************/
 
+    uint flg_x = asuint(ubo.flags.x);
+
     if ( debflags == 0 )
     {
-        color.xyz = GammaIEC( tonemap( mapped ));
+        uint localCoverage = (flg_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
+        if ( localCoverage == FLG_X_COVERAGE_SOLID || localCoverage == FLG_X_COVERAGE_BLEND )
+        { 
+            color.xyz = GammaIEC( tonemap( mapped )); 
+        } 
+        else if ( localCoverage == FLG_X_COVERAGE_MASKED && inputs.sampleAmbient.a >= ubo.alphaCutoff.x )
+        { 
+            color.xyz = GammaIEC( tonemap( mapped )); 
+        }
+        else { discard; }
     }
     else if ( ( debflags & 1 ) == 1 )
     {

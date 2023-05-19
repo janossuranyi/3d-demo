@@ -353,10 +353,13 @@ namespace jsr {
 		for (int i = 0; i < view->numDrawSurfs; ++i)
 		{
 			surf = view->drawSurfs[i];
+
 			const Material* shader = surf->shader;
 			if (!shader || shader->IsEmpty()) continue;
 			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
 			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+			if (stage.coverage != COVERAGE_SOLID && stage.coverage != COVERAGE_MASK) continue;
+
 			renderSystem.programManager->UseProgram(stage.shader);
 
 			// setup textures
@@ -374,20 +377,24 @@ namespace jsr {
 			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
 			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
 
-			renderSystem.programManager->uniforms.alphaCutoff = vec4(stage.alphaCutoff);
+			uint32 flg_x = stage.coverage << FLG_X_COVERAGE_SHIFT;
+
+			renderSystem.programManager->uniforms.alphaCutoff.x = stage.alphaCutoff;
 			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
 			renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
 			renderSystem.programManager->uniforms.matDiffuseFactor = stage.diffuseScale;
-			renderSystem.programManager->uniforms.matMRFactor = vec4(stage.roughnessScale, stage.metallicScale, 0, 0);
+			renderSystem.programManager->uniforms.matMRFactor.x = stage.roughnessScale;
+			renderSystem.programManager->uniforms.matMRFactor.y = stage.metallicScale;
 			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
 			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
+			renderSystem.programManager->uniforms.flags.x = glm::uintBitsToFloat(flg_x);
 			renderSystem.programManager->UpdateUniforms();
 
 			IndexBuffer idx;
 			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
 			GL_CHECK(glDrawElements(
-				GL_TRIANGLES,
+				GL_map_topology(surf->frontEndGeo->topology),
 				surf->numIndex,
 				GL_UNSIGNED_SHORT,
 				(void*)idx.GetOffset()));
@@ -536,6 +543,21 @@ namespace jsr {
 			message);
 	}
 
+		GLenum GL_map_topology(eTopology x)
+		{
+			switch (x)
+			{
+			case TP_POINTS:	return GL_POINTS;
+			case TP_LINES: return GL_LINES;
+			case TP_LINE_STRIPS: return GL_LINE_STRIP;
+			case TP_TRIANGLES: return GL_TRIANGLES;
+			case TP_TRIANGLE_FANS: return GL_TRIANGLE_FAN;
+			case TP_TRIANGLE_STRIPS: return GL_TRIANGLE_STRIP;
+			default: 
+				assert(false);
+			}
+		}
+
 		GLenum GL_map_texfilter(eImageFilter x)
 		{
 			switch (x)
@@ -546,6 +568,8 @@ namespace jsr {
 			case IFL_NEAREST_LINEAR:	return GL_NEAREST_MIPMAP_LINEAR;
 			case IFL_LINEAR_NEAREST:	return GL_LINEAR_MIPMAP_NEAREST;
 			case IFL_LINEAR_LINEAR:		return GL_LINEAR_MIPMAP_LINEAR;
+			default:
+				assert(false);
 			}
 		}
 
@@ -556,6 +580,8 @@ namespace jsr {
 			case IMR_REPEAT:			return GL_REPEAT;
 			case IMR_CLAMP_TO_BORDER:	return GL_CLAMP_TO_BORDER;
 			case IMR_CLAMP_TO_EDGE:		return GL_CLAMP_TO_EDGE;
+			default:
+				assert(false);
 			}
 		}
 		GLenum GL_map_textarget(eImageShape x)
@@ -566,6 +592,8 @@ namespace jsr {
 			case IMS_2D_ARRAY:		return GL_TEXTURE_2D_ARRAY;
 			case IMS_CUBEMAP:		return GL_TEXTURE_CUBE_MAP;
 			case IMS_CUBEMAP_ARRAY:	return GL_TEXTURE_CUBE_MAP_ARRAY;
+			default:
+				assert(false);
 			}
 		}
 }

@@ -3,6 +3,7 @@
 #include <set>
 #include <SDL.h>
 #include "./Image.h"
+#include "./RenderCommon.h"
 
 namespace jsr {
     struct imageFormatInfo_t
@@ -47,8 +48,7 @@ namespace jsr {
     GLenum GL_map_texfilter(eImageFilter x);
     GLenum GL_map_texrepeat(eImageRepeat x);
     GLenum GL_map_textarget(eImageShape x);
-
-
+	GLenum GL_map_topology(eTopology x);
 }
 
 void CheckOpenGLError(const char* stmt, const char* fname, int line);
