@@ -168,16 +168,16 @@ namespace jsr {
 						renderSystem.programManager->uniforms.debugFlags = vec4(2.f);
 						break;
 					case SDLK_3:
-						renderSystem.programManager->uniforms.debugFlags = vec4(4.f);
+						renderSystem.programManager->uniforms.debugFlags = vec4(3.f);
 						break;
 					case SDLK_4:
-						renderSystem.programManager->uniforms.debugFlags = vec4(8.f);
+						renderSystem.programManager->uniforms.debugFlags = vec4(4.f);
 						break;
 					case SDLK_5:
-						renderSystem.programManager->uniforms.debugFlags = vec4(16.f);
+						renderSystem.programManager->uniforms.debugFlags = vec4(5.f);
 						break;
 					case SDLK_6:
-						renderSystem.programManager->uniforms.debugFlags = vec4(32.f);
+						renderSystem.programManager->uniforms.debugFlags = vec4(6.f);
 						break;
 					case SDLK_ESCAPE:
 						quit = true;
@@ -249,12 +249,14 @@ namespace jsr {
 		
 		int x, y;
 		renderSystem.backend->GetScreenSize(x, y);
+		
+		const float R = world->GetBounds().GetRadius() * 2.0f;
 
-		mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, 1000.0f);
+		mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, R);
 		mat4 viewMatrix = player.GetViewMatrix();
 		mat4 vpMatrix = projMatrix * viewMatrix;
 
-		renderSystem.programManager->uniforms.clipPlanes = vec4(0.1f, 1000.0f, 0.0f, 0.0f);
+		renderSystem.programManager->uniforms.clipPlanes = vec4(0.1f, R, 0.0f, 0.0f);
 		renderSystem.programManager->uniforms.viewOrigin = vec4(player.Position, 1.0f);
 
 		viewDef_t* view = (viewDef_t *)R_FrameAlloc(sizeof(*view));

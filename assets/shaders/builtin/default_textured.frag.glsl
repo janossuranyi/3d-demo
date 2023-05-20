@@ -60,11 +60,14 @@ vec3 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness, out vec3 Fout 
 	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
 	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
+    // NDF
 	spec = m2 / ( spec * spec + 1e-8 );
+    // GeometrySmith
 	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
 	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
     Fout = fresnelSchlick( f0, dot( L, H ) );
+    //Fout = fresnelSchlick( f0, dot( H, V ) );
 	return Fout * spec;
 }
 
@@ -99,7 +102,7 @@ void main()
         float Ld = length(L);
         L /= Ld;
         inputs.lightDir = L;
-        inputs.attenuation = 1.0 / (1.0 + 0.0*Ld + 1.0*Ld*Ld);
+        inputs.attenuation = 1.0 / (1.0 + 0.2*Ld + 1.0*Ld*Ld);
     }
     
     float exposure = 4;
@@ -121,37 +124,37 @@ void main()
     if ( debflags == 0 )
     {
         uint localCoverage = (flg_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
-        if ( localCoverage == FLG_X_COVERAGE_SOLID || localCoverage == FLG_X_COVERAGE_BLEND )
+        if ( localCoverage == FLG_COVERAGE_SOLID || localCoverage == FLG_COVERAGE_BLEND )
         { 
             color.xyz = GammaIEC( tonemap( mapped )); 
         } 
-        else if ( localCoverage == FLG_X_COVERAGE_MASKED && inputs.sampleAmbient.a >= ubo.alphaCutoff.x )
+        else if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a >= ubo.alphaCutoff.x )
         { 
             color.xyz = GammaIEC( tonemap( mapped )); 
         }
         else { discard; }
     }
-    else if ( ( debflags & 1 ) == 1 )
+    else if ( debflags == 1 )
     {
         color.xyz = EncodeColor( inputs.normal );
     }
-    else if ( ( debflags & 2 ) == 2 )
+    else if ( debflags == 2 )
     {
         color.xyz = EncodeColor(inputs.vertexNormal);
     }
-    else if ( ( debflags & 4 ) == 4 )
+    else if ( debflags == 3 )
     {
         color.xyz = (inputs.spec.xyz);
     }
-    else if ( ( debflags & 8 ) == 8 )
+    else if ( debflags == 4 )
     {
-        color.xyz = EncodeColor(In.fragPos.xyz);
+        color.xyz = (Kd);
     }
-    else if ( ( debflags & 16 ) == 16 )
+    else if ( debflags == 5 )
     {
         color.x = ( gl_FragCoord.z * gl_FragCoord.w );
     }
-    else if ( ( debflags & 32 ) == 32 )
+    else if ( debflags  == 6 )
     {
         color.xyz = vec3(0, 1-inputs.samplePBR.g, inputs.samplePBR.b);
     }

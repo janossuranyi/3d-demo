@@ -283,6 +283,7 @@ namespace jsr {
 
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_TRUE);
 #endif
 		}
 
@@ -377,7 +378,7 @@ namespace jsr {
 			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
 			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
 
-			uint32 flg_x = stage.coverage << FLG_X_COVERAGE_SHIFT;
+			uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
 
 			renderSystem.programManager->uniforms.alphaCutoff.x = stage.alphaCutoff;
 			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
@@ -388,7 +389,7 @@ namespace jsr {
 			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
 			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
-			renderSystem.programManager->uniforms.flags.x = glm::uintBitsToFloat(flg_x);
+			renderSystem.programManager->uniforms.flags.x = uintBitsToFloat(flg_x);
 			renderSystem.programManager->UpdateUniforms();
 
 			IndexBuffer idx;
