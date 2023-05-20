@@ -52,22 +52,25 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 	return f0 + ( 1.0 - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );
 }
 
-vec3 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness, out vec3 Fout ) {
+/*******************************************************************************/
+/* Cook-Torrance specular BRDF. Based on https://learnopengl.com/PBR/Lighting   */
+/*******************************************************************************/
+vec3 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 Fout ) {
 	const vec3 H = normalize( V + L );
-	float m = ( 1 - smoothness * 0.8 );
+	float m = roughness; // ( 0.2 + roughness * 0.8 );
 	m *= m;
 	m *= m;
-	float m2 = m * m;
+	//float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
-	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
-    // NDF
-	spec = m2 / ( spec * spec + 1e-8 );
-    // GeometrySmith
-	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
-	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
+	float spec = (NdotH * NdotH) * (m - 1) + 1;
+	spec = m / ( spec * spec + 1e-8 );
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+	float Gv = saturate( dot( N, V ) ) * (1.0 - k) + k;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-    Fout = fresnelSchlick( f0, dot( L, H ) );
-    //Fout = fresnelSchlick( f0, dot( H, V ) );
+    //Fout = fresnelSchlick( f0, dot( L, H ) );
+    Fout = fresnelSchlick( f0, dot( H, V ) );
 	return Fout * spec;
 }
 
@@ -105,12 +108,12 @@ void main()
         inputs.attenuation = 1.0 / (1.0 + 0.2*Ld + 1.0*Ld*Ld);
     }
     
-    float exposure = 4;
+    float exposure = 3;
     float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
 
     vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b );
     vec3 F = vec3(0);
-    vec3 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, 1-inputs.samplePBR.g, F);
+    vec3 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.g, F);
 
     vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
     vec3 final = (Kd * inputs.sampleAmbient.xyz + spec) * NdotL * inputs.lightColor * inputs.attenuation;
@@ -124,15 +127,11 @@ void main()
     if ( debflags == 0 )
     {
         uint localCoverage = (flg_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
-        if ( localCoverage == FLG_COVERAGE_SOLID || localCoverage == FLG_COVERAGE_BLEND )
+        if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < ubo.alphaCutoff.x )
         { 
-            color.xyz = GammaIEC( tonemap( mapped )); 
-        } 
-        else if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a >= ubo.alphaCutoff.x )
-        { 
-            color.xyz = GammaIEC( tonemap( mapped )); 
+            discard;
         }
-        else { discard; }
+        color.xyz = GammaIEC( tonemap( mapped )); 
     }
     else if ( debflags == 1 )
     {
