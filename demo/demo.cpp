@@ -15,7 +15,7 @@ using namespace jsr;
 int main(int argc, char** argv)
 {
 
-    resourceMgr->AddResourcePath("../assets/shaders");
+    resourceMgr->AddResourcePath("../assets/shaders"); 
     resourceMgr->AddResourcePath("../assets/textures");
     resourceMgr->AddResourcePath("../assets/scenes");
     resourceMgr->AddResourcePath("../assets/models");
@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     engineConfig.r_fullscreen = 0;
 
     engineConfig.r_fbsrgb = false;
-#if 1
+#if 0
     engineConfig.r_debug = true;
 #else
     engineConfig.r_debug = false;

@@ -22,7 +22,7 @@ namespace jsr {
 	using namespace tinygltf;
 	namespace fs = std::filesystem;
 
-	RenderWorld::RenderWorld() : map()
+	RenderWorld::RenderWorld() : gltf_state()
 	{
 		vertecCache		= renderSystem.vertexCache;
 		imageManager	= renderSystem.imageManager;
@@ -37,15 +37,14 @@ namespace jsr {
 
 	bool RenderWorld::LoadMapFromGLTF(const std::string& filename)
 	{
-		if (map) delete map;
+		if (gltf_state) delete gltf_state;
 		if (filename.empty()) return nullptr;
 
 		DestroyWorld();
-		map_mater_idx.clear();
 
-		map = new tinygltf::Model();
+		gltf_state = new gltf_state_t();
 
-		Model& model = *map;
+		Model* model = &gltf_state->map;
 
 		TinyGLTF loader;
 		std::string err, warn;
@@ -55,18 +54,18 @@ namespace jsr {
 		fs::path fnp(filename);
 		if (fnp.extension().string() == ".glb")
 		{
-			wasOk = loader.LoadBinaryFromFile(map, &err, &warn, filename);
+			wasOk = loader.LoadBinaryFromFile(model, &err, &warn, filename);
 		}
 		else
 		{
-			wasOk = loader.LoadASCIIFromFile(map, &err, &warn, filename);
+			wasOk = loader.LoadASCIIFromFile(model, &err, &warn, filename);
 		}
 
 		if (!wasOk)
 		{
 			Error("[RenderWorld]: (LoadFromGLTF) %s", err.c_str());
-			delete map;
-
+			delete gltf_state;
+			gltf_state = nullptr;
 			return false;
 		}
 
@@ -76,7 +75,7 @@ namespace jsr {
 		}
 
 		// checking
-		if (model.scenes[0].nodes.empty()) 
+		if (model->scenes[0].nodes.empty()) 
 		{ 
 			Error("[RenderWorld]: (LoadFromGLTF) scene has zero node!");
 			return false; 
@@ -85,12 +84,66 @@ namespace jsr {
 		CreateImagesGLTF();
 		CreateMaterialsGLTF();
 		// CreateLightsGLTF
+		CreateModelsGLTF();
 		CreateNodesGLTF();
 
-		delete map;
-		map = nullptr;
+		delete gltf_state;
+		gltf_state = nullptr;
 
 		return true;
+	}
+	void RenderWorld::LoadModelsFromGLTF(const std::string& filename)
+	{
+		if (gltf_state) delete gltf_state;
+		if (filename.empty()) return;
+
+		gltf_state = new gltf_state_t();
+
+		Model* model = &gltf_state->map;
+
+		TinyGLTF loader;
+		std::string err, warn;
+
+		bool wasOk = false;
+
+		fs::path fnp(filename);
+		if (fnp.extension().string() == ".glb")
+		{
+			wasOk = loader.LoadBinaryFromFile(model, &err, &warn, filename);
+		}
+		else
+		{
+			wasOk = loader.LoadASCIIFromFile(model, &err, &warn, filename);
+		}
+
+		if (!wasOk)
+		{
+			Error("[RenderWorld]: (LoadModelsFromGLTF) %s", err.c_str());
+			delete gltf_state;
+			gltf_state = nullptr;
+			return;
+		}
+
+		if (!warn.empty())
+		{
+			Info("[RenderWorld]: (LoadModelsFromGLTF) %s", warn.c_str());
+		}
+
+		// checking
+		if (model->meshes.empty())
+		{
+			Error("[RenderWorld]: (LoadModelsFromGLTF) scene have no models!");
+			return;
+		}
+
+		CreateImagesGLTF();
+		CreateMaterialsGLTF();
+		// CreateLightsGLTF
+		CreateModelsGLTF();
+
+		delete gltf_state;
+		gltf_state = nullptr;
+
 	}
 	void RenderWorld::RenderView(viewDef_t* view)
 	{
@@ -110,7 +163,7 @@ namespace jsr {
 			if (view->frustum.Intersects(entityBounds))
 			{
 				viewEntity_t* ent = (viewEntity_t*) R_FrameAlloc(sizeof(*ent));
-				const auto* model = node->GetEntity().GetModel();
+				auto* model = node->GetEntity().GetModel();
 
 				// entity chain
 				ent->next = view->viewEntites;
@@ -145,6 +198,16 @@ namespace jsr {
 
 		//Info("visibe surface count: %d", view->numDrawSurfs);
 	}
+	void RenderWorld::InsertNode(const std::string& name, RenderModel* model, const glm::vec3& pos)
+	{
+		Node3D* node = new Node3D(name);
+		nodes.push_back(node);
+		rootnodes.push_back(node);
+		node->SetOrigin(pos);
+		node->GetEntity().SetType(ENT_MODEL);
+		node->GetEntity().SetValue(model);
+	}
+
 	void RenderWorld::DestroyWorld()
 	{
 		
@@ -162,6 +225,16 @@ namespace jsr {
 		materials.clear();
 		models.clear();
 		images.clear();
+	}
+
+	Node3D* RenderWorld::GetByName(const std::string& name)
+	{
+		for (auto* n : nodes)
+		{
+			if (n->GetName() == name) return n;
+		}
+
+		return nullptr;
 	}
 
 	Bounds RenderWorld::GetBounds() const
@@ -182,9 +255,10 @@ namespace jsr {
 	}
 	void RenderWorld::CreateImagesGLTF()
 	{
-		if (map == nullptr) return;
-		map_image_idx.clear();
+		if (gltf_state == nullptr) return;
+		gltf_state->map_image_idx.clear();
 
+		Model* map = &gltf_state->map;
 		for (int i = 0; i < map->textures.size(); ++i)
 		{
 			const auto& tex = map->textures[i];
@@ -197,7 +271,7 @@ namespace jsr {
 			}
 
 			Image* im = imageManager->AllocImage(img.name);
-			map_image_idx.push_back(im->GetId());
+			gltf_state->map_image_idx.push_back(im->GetId());
 			images.insert(im);
 			eImageRepeat rs = tiny_map_wrap(sam.wrapS), rt = tiny_map_wrap(sam.wrapT);
 			
@@ -223,16 +297,17 @@ namespace jsr {
 	}
 	void RenderWorld::CreateMaterialsGLTF()
 	{
-		if (map == nullptr) return;
+		if (gltf_state == nullptr) return;
 
-		map_mater_idx.clear();
+		gltf_state->map_mater_idx.clear();
+		Model* map = &gltf_state->map;
 		for (int i = 0; i < map->materials.size(); ++i)
 		{
 			const auto& gmat = map->materials[i];
 			Material* mat = materialManager->CreateMaterial(gmat.name);
 			materials.insert(mat);
 
-			map_mater_idx.push_back(mat->GetId());
+			gltf_state->map_mater_idx.push_back(mat->GetId());
 
 			eCoverage cov = gmat.alphaMode == "OPAQUE" ? COVERAGE_SOLID : (gmat.alphaMode == "BLEND" ? COVERAGE_BLEND : COVERAGE_MASK);
 
@@ -249,28 +324,28 @@ namespace jsr {
 			stage.emissiveScale = glm::vec4(glm::make_vec3((double*) gmat.emissiveFactor.data()), 0.0f);
 
 			if (gmat.pbrMetallicRoughness.baseColorTexture.index > -1) {
-				stage.images[IMU_DIFFUSE] = imageManager->GetImage(map_image_idx[gmat.pbrMetallicRoughness.baseColorTexture.index]);
+				stage.images[IMU_DIFFUSE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.pbrMetallicRoughness.baseColorTexture.index]);
 			}
 			else {
 				stage.images[IMU_DIFFUSE] = imageManager->globalImages.whiteImage;
 			}
 			if (gmat.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
 			{
-				stage.images[IMU_AORM] = imageManager->GetImage(map_image_idx[gmat.pbrMetallicRoughness.metallicRoughnessTexture.index]);
+				stage.images[IMU_AORM] = imageManager->GetImage(gltf_state->map_image_idx[gmat.pbrMetallicRoughness.metallicRoughnessTexture.index]);
 			}
 			else {
 				stage.images[IMU_AORM] = imageManager->globalImages.grayImage;
 			}
 			if (gmat.emissiveTexture.index > -1)
 			{
-				stage.images[IMU_EMMISIVE] = imageManager->GetImage(map_image_idx[gmat.emissiveTexture.index]);
+				stage.images[IMU_EMMISIVE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.emissiveTexture.index]);
 			}
 			else {
 				stage.images[IMU_EMMISIVE] = imageManager->globalImages.blackImage;
 			}
 			if (gmat.normalTexture.index > -1)
 			{
-				stage.images[IMU_NORMAL] = imageManager->GetImage(map_image_idx[gmat.normalTexture.index]);
+				stage.images[IMU_NORMAL] = imageManager->GetImage(gltf_state->map_image_idx[gmat.normalTexture.index]);
 			}
 			else {
 				stage.images[IMU_NORMAL] = imageManager->globalImages.flatNormal;
@@ -280,14 +355,14 @@ namespace jsr {
 	}
 	void RenderWorld::CreateNodesGLTF()
 	{
-		if (map == nullptr) return;
+		if (gltf_state == nullptr) return;
 		if (!nodes.empty())
 		{
 			nodes.clear();
 			rootnodes.clear();
 		}
 
-		std::vector<RenderModel*> surfcache(map->meshes.size());
+		Model* map = &gltf_state->map;
 
 		for (int i = 0; i < map->nodes.size(); ++i)
 		{
@@ -327,23 +402,10 @@ namespace jsr {
 
 			if (gnode.mesh > -1)
 			{
-				if (surfcache[gnode.mesh] == nullptr)
-				{
-					surfcache[gnode.mesh] = CreateModelGLTF(gnode.mesh);
-					if (surfcache[gnode.mesh] == nullptr)
-					{
-						Error("Mesh not loaded !");
-					}
-					else
-					{
-						surfcache[gnode.mesh]->UpdateSurfaceCache();
-						models.insert(surfcache[gnode.mesh]);
-						worldBounds.Extend( surfcache[gnode.mesh]->GetBounds().Transform(node->GetLocalToWorldMatrix()) );
-					}
-				}
-
+				models.insert(gltf_state->map_models[gnode.mesh]);
+				worldBounds.Extend(gltf_state->map_models[gnode.mesh]->GetBounds().Transform(node->GetLocalToWorldMatrix()) );
 				node->GetEntity().SetType(ENT_MODEL);
-				node->GetEntity().SetValue(surfcache[gnode.mesh]);
+				node->GetEntity().SetValue(gltf_state->map_models[gnode.mesh]);
 			}
 			else
 			{
@@ -370,15 +432,29 @@ namespace jsr {
 		}
 	}
 
+	void RenderWorld::CreateModelsGLTF()
+	{
+		if (gltf_state == nullptr) return;
+		
+		const Model& map = gltf_state->map;
+		gltf_state->map_models.resize(map.meshes.size());
+
+		for (int i = 0; i < map.meshes.size(); ++i)
+		{
+			gltf_state->map_models[i] = CreateModelGLTF(i);
+			gltf_state->map_models[i]->UpdateSurfaceCache();
+		}
+	}
+
 	RenderModel* RenderWorld::CreateModelGLTF(int mesh)
 	{
-		const auto& gmesh = map->meshes[mesh];
+		const auto& gmesh = gltf_state->map.meshes[mesh];
 		const int numSurfs = gmesh.primitives.size();
 
 		RenderModel* RM = modelManager->CreateModel(gmesh.name);
 
 		RM->SetStatic(true);
-
+		Model* map = &gltf_state->map;
 		for (int i = 0; i < numSurfs; ++i)
 		{
 			auto& surf = gmesh.primitives[i];
@@ -392,13 +468,13 @@ namespace jsr {
 				return nullptr;
 			}
 
-			Accessor const& xyz = map->accessors[it->second];
-			Accessor const& idx = map->accessors[surf.indices];
+			tinygltf::Accessor const& xyz = map->accessors[it->second];
+			tinygltf::Accessor const& idx = map->accessors[surf.indices];
 			int const numVerts = xyz.count;
 			int const numIndexes = idx.count;
-			int surfIndex{};
+			int surfIndex = RM->AllocSurface(numVerts, numIndexes);
 
-			modelSurface_t* ms = RM->AllocSurface(numVerts, numIndexes, surfIndex);
+			modelSurface_t* ms = RM->GetSurface(surfIndex);
 			assert(xyz.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
 			auto* pData = ACCESSOR_PTR(map, xyz);
@@ -420,7 +496,7 @@ namespace jsr {
 			it = surf.attributes.find("NORMAL");
 			if (std::end(surf.attributes) != it)
 			{
-				Accessor const& normals = map->accessors[it->second];
+				tinygltf::Accessor const& normals = map->accessors[it->second];
 				auto* pData = ACCESSOR_PTR(map, normals);
 				int stride = normals.ByteStride(map->bufferViews[normals.bufferView]);
 				drawVert_t* drawvert = ms->surf.verts;
@@ -435,7 +511,7 @@ namespace jsr {
 			it = surf.attributes.find("TANGENT");
 			if (std::end(surf.attributes) != it)
 			{
-				Accessor const& tangent = map->accessors[it->second];
+				tinygltf::Accessor const& tangent = map->accessors[it->second];
 				auto* pData = ACCESSOR_PTR(map, tangent);
 
 				int stride = tangent.ByteStride(map->bufferViews[tangent.bufferView]);
@@ -452,7 +528,7 @@ namespace jsr {
 			it = surf.attributes.find("TEXCOORD_0");
 			if (std::end(surf.attributes) != it)
 			{
-				Accessor const& uv = map->accessors[it->second];
+				tinygltf::Accessor const& uv = map->accessors[it->second];
 				assert(uv.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
 				auto* pData = ACCESSOR_PTR(map, uv);
@@ -470,7 +546,7 @@ namespace jsr {
 			it = surf.attributes.find("COLOR_0");
 			if (std::end(surf.attributes) != it)
 			{
-				Accessor const& color = map->accessors[it->second];
+				tinygltf::Accessor const& color = map->accessors[it->second];
 
 				auto const* pData = ACCESSOR_PTR(map, color);
 				int stride = color.ByteStride(map->bufferViews[color.bufferView]);
@@ -525,9 +601,17 @@ namespace jsr {
 				}
 			}
 
-			jsr::Material* jmat = renderSystem.materialManager->GetMaterial(map_mater_idx[surf.material]);
-			ms->shader = jmat;
-			ms->surf.topology = TP_TRIANGLES;
+			if (surf.material > -1)
+			{
+				jsr::Material* jmat = renderSystem.materialManager->GetMaterial(gltf_state->map_mater_idx[surf.material]);
+				ms->shader = jmat;
+				ms->surf.topology = TP_TRIANGLES;
+			}
+			else 
+			{
+				ms->shader = renderSystem.defaultMaterial;
+				ms->surf.topology = TP_TRIANGLES;
+			}
 		}
 		return RM;
 	}

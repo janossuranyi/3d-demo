@@ -143,15 +143,9 @@ namespace jsr {
 	}
 	void ProgramManager::UpdateUniforms()
 	{
-		if (!uniformsCache) {
-			uniformsCache = renderSystem.vertexCache->AllocStaticUniform(&uniforms, sizeof(uniforms));
-		}
-		else
-		{
-			UniformBuffer buffer;
-			renderSystem.vertexCache->GetUniformBuffer(uniformsCache, buffer);
-			buffer.Update(&uniforms, 0, sizeof(uniforms));
-		}
+		UniformBuffer buffer;
+		renderSystem.vertexCache->GetUniformBuffer(uniformsCache, buffer);
+		buffer.Update(&uniforms, 0, sizeof(uniforms));
 	}
 
 	void ProgramManager::BindUniforms()
@@ -159,7 +153,13 @@ namespace jsr {
 		UniformBuffer ubo;
 		if (renderSystem.vertexCache->GetUniformBuffer(uniformsCache, ubo))
 		{
-			GL_CHECK( glBindBufferRange(GL_UNIFORM_BUFFER, SHADER_UNIFORMS_BINDING, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()) );
+			if (glcontext.uboBindings[SHADER_UNIFORMS_BINDING].buffer != ubo.apiObject ||
+				glcontext.uboBindings[SHADER_UNIFORMS_BINDING].offset != ubo.GetOffset())
+			{
+				GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, SHADER_UNIFORMS_BINDING, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
+				glcontext.uboBindings[SHADER_UNIFORMS_BINDING].buffer = ubo.apiObject;
+				glcontext.uboBindings[SHADER_UNIFORMS_BINDING].offset = ubo.GetOffset();
+			}
 		}
 	}
 

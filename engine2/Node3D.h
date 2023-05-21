@@ -12,6 +12,7 @@ namespace jsr {
 	{
 	public:
 		Node3D();
+		Node3D(const std::string& name);
 		virtual ~Node3D();
 		glm::quat const&	GetDir() const;
 		glm::vec3 const&	GetOrigin() const;
@@ -26,10 +27,13 @@ namespace jsr {
 		int					GetNumChildren() const;
 		int					GetNumEntities() const;
 		Entity3D&			GetEntity();
+		std::string			GetName() const;
+		void				SetName(const std::string& name);
 		const Node3D* const* GetChildren() const;
 		void				AddChild(Node3D* child);
 	private:
 		void				Changed();
+		std::string name;
 		Node3D* pParent;
 		Entity3D entity;
 		glm::mat4 localToWorldMatrix;

@@ -3,6 +3,10 @@
 #include <SDL.h>
 #include <GL/glew.h>
 
+#include <imgui.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_sdl2.h>
+
 #include "./Engine.h"
 #include "./RenderSystem.h"
 #include "./RenderBackend.h"
@@ -288,6 +292,12 @@ namespace jsr {
 		}
 
 		R_InitVertexLayoutDefs();
+
+		ImGui::CreateContext();
+		
+		ImGui_ImplSDL2_InitForOpenGL(glconfig.hwnd, glconfig.glctx);
+		ImGui_ImplOpenGL3_Init();
+
 		return true;
 
 	}
@@ -346,7 +356,6 @@ namespace jsr {
 		Clear(true, true, true);
 		if (!view) return;
 
-		renderSystem.programManager->UpdateUniforms();
 		renderSystem.programManager->BindUniforms();
 		
 		const drawSurf_t* surf;
@@ -422,6 +431,17 @@ namespace jsr {
 				break;
 			}
 		}
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplSDL2_NewFrame();
+		ImGui::NewFrame();
+
+		ImGui::Text("Hello, world!");
+
+		// Render dear imgui into screen
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 		EndFrame();
 
 	}

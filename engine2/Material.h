@@ -82,6 +82,6 @@ namespace jsr {
 		Material* GetMaterial(int id);
 	private:
 		std::vector<Material*> materials;
-		std::vector<size_t> freelist;
+		std::vector<int> freelist;
 	};
 }

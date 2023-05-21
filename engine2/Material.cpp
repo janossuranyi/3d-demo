@@ -60,7 +60,11 @@ namespace jsr {
 		images(),
 		coverage(COVERAGE_SOLID),
 		cullMode(CULL_NONE),
-		alphaCutoff(0.5f)
+		alphaCutoff(0.5f),
+		diffuseScale(1.0f),
+		metallicScale(1.0f),
+		roughnessScale(1.0f),
+		emissiveScale(1.0f)
 	{
 	}
 	

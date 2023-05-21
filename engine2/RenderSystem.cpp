@@ -62,12 +62,29 @@ namespace jsr {
 			return false;
 		}
 
-		if (!programManager->Init())	Error("[RenderSystem]: programManager init failed !");
 		if (!vertexCache->Init())		Error("[RenderSystem]: vertexCache init failed !");
+		if (!programManager->Init())	Error("[RenderSystem]: programManager init failed !");
 		if (!imageManager->Init())		Error("[RenderSystem]: imageManager init failed !");
 
 		Framebuffer::Init();
 		R_InitCommandBuffers();
+		unitrect = modelManager->CreateModel("_unitcube");
+		unitrect->SetStatic(true);
+		unitrect->MakeUnitCube();
+
+		defaultMaterial = materialManager->CreateMaterial("_defaultMaterial");
+		stage_t& s = defaultMaterial->GetStage(STAGE_DEBUG);
+		s.alphaCutoff = 0.5f;
+		s.coverage = COVERAGE_SOLID;
+		s.cullMode = CULL_NONE;
+		s.diffuseScale = glm::vec4(0.1f,0.00f,0.1f,1.0f);
+		s.roughnessScale = 0.4f;
+		s.metallicScale = 0.0f;
+		s.enabled = true;
+		s.SetImage(IMU_DIFFUSE, imageManager->globalImages.whiteImage);
+		s.SetImage(IMU_AORM, imageManager->globalImages.whiteImage);
+		s.SetImage(IMU_NORMAL, imageManager->globalImages.flatNormal);
+		s.shader = PRG_TEXTURED;
 
 		initialized = true;
 

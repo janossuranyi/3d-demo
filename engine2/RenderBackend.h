@@ -8,6 +8,7 @@
 namespace jsr {
 
 	const int MAX_TEXTURE_UNITS = 14;
+	const int MAX_BINDING = 8;
 
 	enum eRenderCommand
 	{
@@ -48,14 +49,22 @@ namespace jsr {
 		unsigned int	currentCubeMapArray;
 	};
 
+	struct bufferBinding_t
+	{
+		unsigned int buffer;
+		unsigned int offset;
+		unsigned int stride;
+	};
+
 	struct glcontext_t
 	{
 		uint64_t		frameCounter;
 		tmu_t			tmu[MAX_TEXTURE_UNITS];
-		unsigned int	currentVertexBuffer;
-		unsigned int	currentIndexBuffer;
 		unsigned int	currentProgram;
+		unsigned int	currentIndexBuffer;
 		eVertexLayout	currentVertexLayout;
+		bufferBinding_t vtxBindings[MAX_BINDING];
+		bufferBinding_t uboBindings[MAX_BINDING];
 	};
 
 	extern glcontext_t glcontext;

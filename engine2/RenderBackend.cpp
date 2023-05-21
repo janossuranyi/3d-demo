@@ -20,6 +20,7 @@ namespace jsr {
 		clearColor[1] = .0f;
 		clearColor[2] = .0f;
 		clearColor[3] = 1.0f;
+		for (int i = 0; i < MAX_BINDING; ++i) glcontext.vtxBindings[i] = { 0,0,0 };
 		initialized = false;
 	}
 

@@ -25,18 +25,25 @@ namespace jsr {
 		~RenderWorld();
 
 		bool LoadMapFromGLTF(const std::string& filename);
+		void LoadModelsFromGLTF(const std::string& filename);
 		void RenderView(viewDef_t* view);
+		void InsertNode(const std::string& name, RenderModel* model, const glm::vec3& pos);
 		void DestroyWorld();
+		Node3D* GetByName(const std::string& name);
 		Bounds GetBounds() const;
 	private:
 		void CreateImagesGLTF();
 		void CreateMaterialsGLTF();
 		void CreateNodesGLTF();
+		void CreateModelsGLTF();
 		RenderModel* CreateModelGLTF(int mesh);
 
-		tinygltf::Model* map;
-		std::vector<int> map_image_idx;
-		std::vector<int> map_mater_idx;
+		struct gltf_state_t {
+			tinygltf::Model map;
+			std::vector<int> map_image_idx;
+			std::vector<int> map_mater_idx;
+			std::vector<RenderModel*> map_models;
+		} *gltf_state;
 
 		Bounds worldBounds;
 		std::vector<Node3D*> rootnodes;

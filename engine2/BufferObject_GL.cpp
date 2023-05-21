@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include "./EngineTypes.h"
 #include "./RenderBackend_GL.h"
+#include "./RenderBackend.h"
 #include "./BufferObject.h"
 #include "./Logger.h"
 
@@ -163,12 +164,23 @@ namespace jsr {
 
 	void VertexBuffer::BindVertexBuffer(int binding, uint32 offset, uint32 stride) const
 	{
-		GL_CHECK(glBindVertexBuffer(binding, apiObject, offset, stride));
+		auto& vtxbind = glcontext.vtxBindings[binding];
+		if (vtxbind.buffer != apiObject || vtxbind.offset != offset || vtxbind.stride != stride)
+		{
+			GL_CHECK(glBindVertexBuffer(binding, apiObject, offset, stride));
+			vtxbind.buffer = apiObject;
+			vtxbind.offset = offset;
+			vtxbind.stride = stride;
+		}
 	}
 
 	void IndexBuffer::BindIndexBuffer() const
 	{
-		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, apiObject));
+		if (glcontext.currentIndexBuffer != apiObject)
+		{
+			GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, apiObject));
+			glcontext.currentIndexBuffer = apiObject;
+		}
 	}
 }
 

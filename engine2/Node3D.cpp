@@ -14,8 +14,14 @@ namespace jsr {
 		scale(vec3(1.0f)),
 		changed(true),
 		entity(ENT_MODEL),
-		dir(1.0f,0.0f, 0.0f, 0.0f)
+		dir(1.0f,0.0f, 0.0f, 0.0f),
+		name("_unnamed_")
 	{}
+
+	Node3D::Node3D(const std::string & name) : Node3D()
+	{
+		this->name = name;
+	}
 
 	Node3D::~Node3D()
 	{
@@ -105,6 +111,16 @@ namespace jsr {
 	Entity3D& Node3D::GetEntity()
 	{
 		return entity;
+	}
+
+	std::string Node3D::GetName() const
+	{
+		return name;
+	}
+
+	void Node3D::SetName(const std::string& name)
+	{
+		this->name = name;
 	}
 
 	const Node3D* const* Node3D::GetChildren() const

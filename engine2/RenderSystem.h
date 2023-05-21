@@ -42,12 +42,13 @@ namespace jsr {
 		void Shutdown();
 		bool IsInitialized() const;
 		void Frame(const emptyCommand_t* cmds);
-
 		viewDef_t* view;
 
+		Material* defaultMaterial;
 	private:
 		bool initialized;
 		int	 frameNum;
+		RenderModel* unitrect;
 	};
 
 	extern RenderSystem renderSystem;

@@ -1,12 +1,17 @@
 #include <SDL.h>
 #include <chrono>
 #include <thread>
+#include <imgui.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_sdl2.h>
+
 #include "./Engine.h"
 #include "./Logger.h"
 #include "./RenderSystem.h"
 #include "./Resources.h"
 #include "./Math.h"
 #include "./System.h"
+#include "./Node3D.h"
 
 namespace jsr {
 
@@ -74,11 +79,19 @@ namespace jsr {
 		
 		world = new RenderWorld();
 
+		world->LoadModelsFromGLTF(resourceMgr->GetResource("models/zeroOneCube.glb"));
+
 		if (!world->LoadMapFromGLTF(resourceMgr->GetResource(filename)))
 		{
 			Error("Error loading map!");
 			return false;
 		}
+
+		RenderModel* cube = renderSystem.modelManager->FindByName("_zeroOneCube");
+		if (cube) world->InsertNode("cube1", cube, { -1.0f,5.0f,3.0f });
+
+		Material* m = renderSystem.materialManager->FindMaterial("Material_19");
+		if (m) cube->GetSurface(0)->shader = m;
 
 		return true;
 	}
@@ -104,18 +117,31 @@ namespace jsr {
 
 		bool mouseCapture = false;
 		bool mover[4]{};
+		float angle1 = 0.0f;
+		auto* cube = world->GetByName("cube1");
+		cube->SetScale({ .5f,.5f,.5f });
 
+		ImGuiIO& io = ImGui::GetIO();
 		while (!quit)
 		{
-
+			glm::quat rotY = glm::angleAxis(glm::radians(angle1), normalize( vec3{ 0.0f,1.0f, 0.0f } ));
+			glm::quat rotX = glm::angleAxis(glm::radians(-90.f), normalize( vec3{ 1.0f,0.0f, 0.0f }));
+			cube->SetDir(rotY*rotX);
 
 			emptyCommand_t* cmds = R_SwapCommandBuffers(this->threaded);
 			SignalWork();
+
 
 			renderSystem.Frame(cmds);
 
 			while (SDL_PollEvent(&e) != SDL_FALSE)
 			{
+				if (io.WantCaptureMouse)
+				{
+					ImGui_ImplSDL2_ProcessEvent(&e);
+					continue;
+				}
+
 				if (e.type == SDL_QUIT)
 				{
 					quit = true;
@@ -217,6 +243,9 @@ namespace jsr {
 			float now = (float)SDL_GetTicks();
 			dt = now - time;
 			time = now;
+
+			angle1 += .02f * dt;
+			angle1 = std::fmodf(angle1, 360.f);
 
 			//std::this_thread::yield();
 			WaitForThread();

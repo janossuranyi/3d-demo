@@ -1,7 +1,10 @@
 @include "version.inc.glsl"
 @include "common.inc.glsl"
 @include "uniforms.inc.glsl"
-// Line 63
+// Line 73
+
+//#define LIKE_A_DOOM
+
 in INTERFACE
 {
     vec4 fragPos;
@@ -55,12 +58,10 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 /*******************************************************************************/
 /* Cook-Torrance specular BRDF. Based on https://learnopengl.com/PBR/Lighting   */
 /*******************************************************************************/
-vec3 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 Fout ) {
+vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 	const vec3 H = normalize( V + L );
-	float m = roughness; // ( 0.2 + roughness * 0.8 );
+	float m = roughness*roughness;
 	m *= m;
-	m *= m;
-	//float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
 	float spec = (NdotH * NdotH) * (m - 1) + 1;
 	spec = m / ( spec * spec + 1e-8 );
@@ -69,9 +70,25 @@ vec3 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness, out vec3 Fout )
 	float Gv = saturate( dot( N, V ) ) * (1.0 - k) + k;
 	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-    //Fout = fresnelSchlick( f0, dot( L, H ) );
-    Fout = fresnelSchlick( f0, dot( H, V ) );
-	return Fout * spec;
+	return vec4(fresnelSchlick( f0, dot( H, V ) ), spec);
+}
+
+/*****************************************************/
+/* Cook-Torrance specular BRDF. Based on DOOM 2016   */
+/*****************************************************/
+vec4 specBRDF_DOOM( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
+	const vec3 H = normalize( V + L );
+	float m = ( 0.2 + roughness * 0.8 );
+	m *= m;
+	m *= m;
+	float m2 = m * m;
+	float NdotH = saturate( dot( N, H ) );
+	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
+	spec = m / ( spec * spec + 1e-8 );
+	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
+	spec /= ( 4.0 * Gv * Gl + 1e-8 );
+	return vec4(fresnelSchlick( f0, dot( L, H ) ), spec);
 }
 
 const vec3 CANDLE_COLOR = vec3(255, 87, 51)/255.0;
@@ -94,7 +111,7 @@ void main()
     int debflags = int( ubo.debugFlags.x );
     
     inputs.sampleAmbient = ubo.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
-    inputs.samplePBR = texture( tAORM, In.texCoord );
+    inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, ubo.matMRFactor.x, ubo.matMRFactor.y, 1.0);
 
     inputs.lightPos = vec3(ubo.viewOrigin);
     inputs.lightColor = CANDLE_COLOR * 5;
@@ -108,18 +125,26 @@ void main()
         inputs.attenuation = 1.0 / (1.0 + 0.2*Ld + 1.0*Ld*Ld);
     }
     
-    float exposure = 3;
-    float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
+    vec3 final = vec3(0);
+    {
+        float exposure = 3;
+        float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
 
-    vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b );
-    vec3 F = vec3(0);
-    vec3 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.g, F);
+        vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b );
+#ifdef LIKE_A_DOOM
+        vec4 spec = specBRDF_DOOM(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.g);
+#else
+        vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.g);
+#endif
+        vec3 F = spec.rgb;
+        float Ks = spec.w;
 
-    vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
-    vec3 final = (Kd * inputs.sampleAmbient.xyz + spec) * NdotL * inputs.lightColor * inputs.attenuation;
-    inputs.spec = vec4(spec,0);
+        vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
+        final = (Kd * inputs.sampleAmbient.xyz + F * Ks) * NdotL * inputs.lightColor * inputs.attenuation;
+        final = vec3(1.0) - exp(-final * exposure);
 
-    vec3 mapped = vec3(1.0) - exp(-final * exposure);
+        inputs.spec = vec4(F * Ks, Ks);
+    }
     /*****************************************************************/
 
     uint flg_x = asuint(ubo.flags.x);
@@ -131,7 +156,7 @@ void main()
         { 
             discard;
         }
-        color.xyz = GammaIEC( tonemap( mapped )); 
+        color.xyz = GammaIEC( tonemap( final )); 
     }
     else if ( debflags == 1 )
     {
@@ -143,11 +168,11 @@ void main()
     }
     else if ( debflags == 3 )
     {
-        color.xyz = (inputs.spec.xyz);
+        color.xyz = inputs.spec.www;
     }
     else if ( debflags == 4 )
     {
-        color.xyz = (Kd);
+        color.xyz = inputs.spec.xyz;
     }
     else if ( debflags == 5 )
     {

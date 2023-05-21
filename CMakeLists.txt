@@ -65,6 +65,22 @@ add_library(tinygltf STATIC
   external/tinygltf/tiny_gltf.cpp
 )
 
+file(GLOB IMGGUI_H external/imgui/*.h)
+file(GLOB IMGGUI_C external/imgui/*.cpp)
+file(GLOB IMGGUI_BACKENDS_H external/imgui/backends/*.h)
+file(GLOB IMGGUI_BACKENDS_C external/imgui/backends/*.cpp)
+
+set(IMGUI_FILES 
+${IMGGUI_H}
+${IMGGUI_C}
+${IMGGUI_BACKENDS_H}
+${IMGGUI_BACKENDS_C}
+)
+
+add_library(imgui STATIC
+${IMGUI_FILES}
+)
+
 include_directories(
   ./
   demo/
@@ -76,6 +92,8 @@ include_directories(
   external/tinygltf/
   external/nv_dds/
   external/tinyobjloader/
+  external/imgui/
+  external/imgui/backends
   lib/ktx/include/
   ${SDL2_INCLUDE_DIR}
 )
@@ -118,6 +136,7 @@ target_link_libraries(demo
   engine2
   nv_dds
   tinyobjloader
+  imgui
   ../lib/ktx/ktx
   ${OPENGL_LIBRARY}
   ${SDL2_LIBRARIES}

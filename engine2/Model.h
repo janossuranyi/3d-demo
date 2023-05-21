@@ -17,6 +17,17 @@ namespace jsr {
 		vertCacheHandle_t	vertexCache;
 		vertCacheHandle_t	indexCache;
 		bool gpuResident;
+
+		surface_t() :
+			bounds(),
+			numVerts(),
+			verts(),
+			numIndexes(),
+			indexes(),
+			topology(TP_TRIANGLES),
+			vertexCache(),
+			indexCache(),
+			gpuResident(false) {}
 	};
 
 
@@ -35,25 +46,31 @@ namespace jsr {
 	public:
 		RenderModel();
 		~RenderModel();
-		modelSurface_t* AllocSurface(int numVerts, int numIndexes, int& newIdx);
+		int AllocSurface(int numVerts, int numIndexes);
+		void FreeGeometry();
 		void UpdateSurfaceCache();
 		void SetStatic(bool b);
+		void MakeUnitRect();
+		void MakeUnitCube();
+		void SetName(const std::string& name);
+		std::string GetName() const;
 		inline bool IsStatic() const { return isStatic; }
 		inline int GetNumSurface() const { return surfs.size(); }
 		inline Bounds GetBounds() const { return bounds; }
 		inline Bounds& GetBounds() { return bounds; }
 		inline int GetId() const { return id; }
-		inline modelSurface_t const* GetSurface(int idx) const
+		inline modelSurface_t* GetSurface(int idx)
 		{
 			assert(idx < surfs.size());
-			return surfs[idx];
+			return &surfs[idx];
 		}
 
 	private:
 		int id;
 		Bounds bounds;
 		bool isStatic;
-		std::vector<modelSurface_t*> surfs;
+		std::string name;
+		std::vector<modelSurface_t> surfs;
 	};
 
 
@@ -62,8 +79,8 @@ namespace jsr {
 	public:
 		ModelManager();
 		~ModelManager();
-		RenderModel* LoadFromGLTF(const std::string& filename, int index = -1, const std::string& name = "");
 		RenderModel* CreateModel(const std::string& name);
+		RenderModel* FindByName(const std::string& name);
 		void RemoveModel(RenderModel* model);
 	private:
 		std::vector<RenderModel*> models;
