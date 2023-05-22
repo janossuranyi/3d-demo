@@ -31,6 +31,16 @@ namespace jsr {
 		void DestroyWorld();
 		Node3D* GetByName(const std::string& name);
 		Bounds GetBounds() const;
+
+		float GetExposure() const;
+		void SetExposure(float x);
+
+		float exposure;
+		glm::vec3 lightOrig;
+		glm::vec3 spotLightDir;
+		glm::vec4 lightColor;
+		glm::vec4 lightAttenuation;
+		glm::vec4 spotLightParams;
 	private:
 		void CreateImagesGLTF();
 		void CreateMaterialsGLTF();
@@ -49,11 +59,9 @@ namespace jsr {
 		std::vector<Node3D*> rootnodes;
 		std::vector<Node3D*> nodes;
 
-
 		std::unordered_set<Material*> materials;
 		std::unordered_set<Image*> images;
 		std::unordered_set<RenderModel*> models;
-
 
 		MaterialManager* materialManager;
 		ModelManager*	modelManager;

@@ -122,6 +122,15 @@ namespace jsr {
 		cube->SetScale({ .5f,.5f,.5f });
 
 		ImGuiIO& io = ImGui::GetIO();
+		world->exposure = 3.0f;
+		world->lightColor = vec4(vec3(255.f, 87.f, 51.f) / 255.0f, 5.0f);
+		world->lightAttenuation = vec4(1.0f, 0.0f, 1.0f, 0.0f);
+		world->spotLightParams.x = 45.0f;
+		world->spotLightParams.y = 40.0f;
+		world->spotLightParams.z = 0.5f;
+		world->spotLightParams.w = 0.0f;
+		bool spotOn = false;
+
 		while (!quit)
 		{
 			glm::quat rotY = glm::angleAxis(glm::radians(angle1), normalize( vec3{ 0.0f,1.0f, 0.0f } ));
@@ -131,8 +140,21 @@ namespace jsr {
 			emptyCommand_t* cmds = R_SwapCommandBuffers(this->threaded);
 			SignalWork();
 
+			ImGui::NewFrame();
+			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
+			ImGui::DragFloat("Attn. Kc", &world->lightAttenuation.x, 0.05f, 1.0f, 100.0f);
+			ImGui::DragFloat("Attn. Kl", &world->lightAttenuation.y, 0.05f, 0.0f, 100.0f);
+			ImGui::DragFloat("Attn. Kq", &world->lightAttenuation.z, 0.01f, 0.0f, 100.0f);
+			ImGui::DragFloat("Spot Exp", &world->spotLightParams.z, 0.01f, 0.0f, 100.0f);
+			ImGui::DragFloat("Spot Cone", &world->spotLightParams.x, 0.1f, 0.0f, 120.0f);
+			ImGui::DragFloat("Spot Inner", &world->spotLightParams.y, 0.1f, 0.0f, 120.0f);
+			ImGui::Checkbox("Spot On", &spotOn);
+			ImGui::ColorEdit3("Light color", &world->lightColor.x);
+			ImGui::DragFloat("Light power", &world->lightColor.w, 0.02f, 0.2f, 1000.0f);
 
 			renderSystem.Frame(cmds);
+
+			world->spotLightParams.w = spotOn ? 1.0f : 0.0f;
 
 			while (SDL_PollEvent(&e) != SDL_FALSE)
 			{
@@ -285,10 +307,20 @@ namespace jsr {
 		mat4 viewMatrix = player.GetViewMatrix();
 		mat4 vpMatrix = projMatrix * viewMatrix;
 
-		renderSystem.programManager->uniforms.clipPlanes = vec4(0.1f, R, 0.0f, 0.0f);
-		renderSystem.programManager->uniforms.viewOrigin = vec4(player.Position, 1.0f);
-
 		viewDef_t* view = (viewDef_t *)R_FrameAlloc(sizeof(*view));
+
+		view->exposure = world->exposure;
+		view->farClipDistance = R;
+		view->nearClipDistance = 0.1f;
+		view->lightColor = world->lightColor;
+		view->lightPos = vec4(player.Position,1.0f);
+		view->lightAttenuation = world->lightAttenuation;
+		view->spotLightDir = vec4(player.Front,0.0f);
+		view->spotLightParams = vec4(
+			glm::cos(glm::radians(world->spotLightParams.x)),
+			glm::cos(glm::radians(world->spotLightParams.y)),
+			world->spotLightParams.z, world->spotLightParams.w);
+
 		view->renderView.viewID = 1;
 		view->renderView.fov = player.Zoom;
 		view->renderView.vieworg = player.Position;

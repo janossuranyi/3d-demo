@@ -298,6 +298,9 @@ namespace jsr {
 		ImGui_ImplSDL2_InitForOpenGL(glconfig.hwnd, glconfig.glctx);
 		ImGui_ImplOpenGL3_Init();
 
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplSDL2_NewFrame();
+
 		return true;
 
 	}
@@ -398,7 +401,16 @@ namespace jsr {
 			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
 			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
-			renderSystem.programManager->uniforms.flags.x = uintBitsToFloat(flg_x);
+			renderSystem.programManager->uniforms.params.x = uintBitsToFloat(flg_x);
+			renderSystem.programManager->uniforms.params.y = view->exposure;
+			renderSystem.programManager->uniforms.lightOrig = view->lightPos;
+			renderSystem.programManager->uniforms.lightColor = view->lightColor;
+			renderSystem.programManager->uniforms.spotLightParams = view->spotLightParams;
+			renderSystem.programManager->uniforms.lightAttenuation = view->lightAttenuation;
+			renderSystem.programManager->uniforms.spotDirection = view->spotLightDir;
+			renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
+			renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
+
 			renderSystem.programManager->UpdateUniforms();
 
 			IndexBuffer idx;
@@ -432,21 +444,19 @@ namespace jsr {
 			}
 		}
 
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplSDL2_NewFrame();
-		ImGui::NewFrame();
-
-		ImGui::Text("Hello, world!");
-
-		// Render dear imgui into screen
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		EndFrame();
 
 	}
 	void RenderBackend::EndFrame()
 	{
+		// Render dear imgui into screen
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplSDL2_NewFrame();
+
 		glFinish();
 		SDL_GL_SwapWindow(glconfig.hwnd);
 	}

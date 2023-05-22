@@ -28,6 +28,8 @@ namespace jsr {
 		imageManager	= renderSystem.imageManager;
 		modelManager	= renderSystem.modelManager;
 		materialManager = renderSystem.materialManager;
+		exposure = 1.0f;
+		lightColor = { 1.0f,1.0f,1.0f,1.0f };		
 	}
 
 	RenderWorld::~RenderWorld()
@@ -240,6 +242,16 @@ namespace jsr {
 	Bounds RenderWorld::GetBounds() const
 	{
 		return worldBounds;
+	}
+
+	float RenderWorld::GetExposure() const
+	{
+		return exposure;
+	}
+
+	void RenderWorld::SetExposure(float x)
+	{
+		exposure = x;
 	}
 
 	eImageRepeat tiny_map_wrap(int x)

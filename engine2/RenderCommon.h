@@ -104,6 +104,15 @@ namespace jsr {
 		viewEntity_t*	viewEntites;
 		viewLight_t*	viewLights;
 		Frustum			frustum;
+		float			exposure;
+		float			farClipDistance;
+		float			nearClipDistance;
+		// temporary
+		glm::vec4		lightPos;
+		glm::vec4		lightColor;
+		glm::vec4		lightAttenuation;
+		glm::vec4		spotLightParams;
+		glm::vec4		spotLightDir;
 	};
 
 }

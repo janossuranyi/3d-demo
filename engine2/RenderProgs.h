@@ -12,6 +12,10 @@ namespace jsr {
 	const int SHADER_UNIFORMS_BINDING = 0;
 
 	// must be synchronized with uniforms.inc.glsl
+	/*
+	* params.x = FLAG_X_*
+	* params.y = exposure
+	*/
 	struct uboUniforms_t
 	{
 		alignas(16)
@@ -26,7 +30,18 @@ namespace jsr {
 		glm::vec4 alphaCutoff;
 		glm::vec4 debugFlags;
 		glm::vec4 clipPlanes;
-		glm::vec4 flags;
+		// params.x = FLAG_X_ *
+		// params.y = exposure
+		glm::vec4 params;
+		glm::vec4 lightOrig;
+		glm::vec4 lightColor;
+		glm::vec4 lightAttenuation;
+		// spotLightParams
+		// x = spotCosCutoff
+		// y = spotCosInnerCutoff
+		// z = spotExponent
+		glm::vec4 spotLightParams;
+		glm::vec4 spotDirection;
 	};
 
 	enum eVertexLayout

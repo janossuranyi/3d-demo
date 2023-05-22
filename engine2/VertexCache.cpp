@@ -155,7 +155,7 @@ namespace jsr {
 	{
 		staticBufferSet.indexAlloced.store(0, std::memory_order_relaxed);
 		staticBufferSet.vertexAlloced.store(0, std::memory_order_relaxed);
-		staticBufferSet.uniformsAlloced.store(0, std::memory_order_relaxed);
+		//staticBufferSet.uniformsAlloced.store(0, std::memory_order_relaxed);
 	}
 
 	void VertexCache::PrintStatistic() const

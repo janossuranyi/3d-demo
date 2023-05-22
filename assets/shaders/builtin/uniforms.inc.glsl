@@ -13,5 +13,10 @@ layout(binding = SHADER_UNIFORMS_BINDING, std140) uniform uboUniforms
 	vec4 alphaCutoff;
 	vec4 debugFlags;
 	vec4 clipPlanes;
-	vec4 flags;
+	vec4 params;
+	vec4 lightOrig;
+	vec4 lightColor;
+	vec4 lightAttenuation;
+	vec4 spotLightParams;
+	vec4 spotDirection;
 } ubo;

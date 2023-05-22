@@ -1,9 +1,9 @@
 @include "version.inc.glsl"
 @include "common.inc.glsl"
 @include "uniforms.inc.glsl"
-// Line 73
+// Line 1+51+17 = 78
 
-//#define LIKE_A_DOOM
+#define LIKE_A_DOOM
 
 in INTERFACE
 {
@@ -51,8 +51,8 @@ float ApproxPow ( float fBase, float fPower ) {
 }
 
 vec3 fresnelSchlick ( vec3 f0, float costheta ) {
-	//const float baked_spec_occl = saturate( 50.0 * dot( f0, vec3( 0.3333 ) ) );
-	return f0 + ( 1.0 - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );
+	const float baked_spec_occl = saturate( 50.0 * dot( f0, vec3( 0.3333 ) ) );
+	return f0 + ( baked_spec_occl - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );
 }
 
 /*******************************************************************************/
@@ -84,7 +84,7 @@ vec4 specBRDF_DOOM( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
 	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
-	spec = m / ( spec * spec + 1e-8 );
+	spec = m2 / ( spec * spec + 1e-8 );
 	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
 	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
@@ -95,7 +95,7 @@ const vec3 CANDLE_COLOR = vec3(255, 87, 51)/255.0;
 
 void main()
 {
-    lightinginput_t inputs = lightinginput_t(mat3(0),vec3(0),vec3(0),vec4(0),vec4(0),vec4(0),vec3(0),vec3(0),vec3(0),vec3(0),0);
+    lightinginput_t inputs;// = lightinginput_t(mat3(0),vec3(0),vec3(0),vec4(0),vec4(0),vec4(0),vec3(0),vec3(0),vec3(0),vec3(0),0);
     
     {
         vec3 localTangent       = normalize( In.tangent.xyz );
@@ -113,8 +113,8 @@ void main()
     inputs.sampleAmbient = ubo.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
     inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, ubo.matMRFactor.x, ubo.matMRFactor.y, 1.0);
 
-    inputs.lightPos = vec3(ubo.viewOrigin);
-    inputs.lightColor = CANDLE_COLOR * 5;
+    inputs.lightPos = vec3(ubo.lightOrig);
+    inputs.lightColor = ubo.lightColor.rgb * ubo.lightColor.w;
     /*****************************************************************/
     inputs.viewDir = normalize(ubo.viewOrigin.xyz - In.fragPos.xyz);
     {
@@ -122,13 +122,28 @@ void main()
         float Ld = length(L);
         L /= Ld;
         inputs.lightDir = L;
-        inputs.attenuation = 1.0 / (1.0 + 0.2*Ld + 1.0*Ld*Ld);
+        float Kc = ubo.lightAttenuation.x;
+        float Kl = ubo.lightAttenuation.y;
+        float Kq = ubo.lightAttenuation.z;
+        inputs.attenuation = 1.0 / (Kc + Kl*Ld + Kq*Ld*Ld);
     }
-    
+
     vec3 final = vec3(0);
     {
-        float exposure = 3;
+        float exposure = ubo.params.y;
         float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
+        if (ubo.spotLightParams.w > 0.0)
+        {
+            // spotlight
+            float spotAttenuation = 0.02;
+            float spotDdotL = saturate(dot (-inputs.lightDir, normalize(ubo.spotDirection.xyz)));
+            if (spotDdotL >= ubo.spotLightParams.x)
+            {
+                float spotValue = smoothstep(ubo.spotLightParams.x, ubo.spotLightParams.y, spotDdotL);
+                spotAttenuation += ApproxPow(spotValue, ubo.spotLightParams.z);
+            }
+            inputs.attenuation *= spotAttenuation;
+        }
 
         vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b );
 #ifdef LIKE_A_DOOM
@@ -147,7 +162,7 @@ void main()
     }
     /*****************************************************************/
 
-    uint flg_x = asuint(ubo.flags.x);
+    uint flg_x = asuint(ubo.params.x);
 
     if ( debflags == 0 )
     {

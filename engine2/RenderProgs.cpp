@@ -22,6 +22,7 @@ namespace jsr {
 		Info("size of uboUniforms_t = %d", sizeof(uboUniforms_t));
 		if (LowLevelInit())
 		{
+			memset(&uniforms, 0, sizeof(uniforms));
 			uniformsCache = renderSystem.vertexCache->AllocStaticUniform(&uniforms, sizeof(uniforms));
 
 			initialized = true;
