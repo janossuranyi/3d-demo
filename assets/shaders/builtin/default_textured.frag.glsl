@@ -3,7 +3,7 @@
 @include "uniforms.inc.glsl"
 // Line 1+51+17 = 78
 
-#define LIKE_A_DOOM
+//#define LIKE_A_DOOM
 
 in INTERFACE
 {
@@ -136,7 +136,7 @@ void main()
         {
             // spotlight
             float spotAttenuation = 0.02;
-            float spotDdotL = saturate(dot (-inputs.lightDir, normalize(ubo.spotDirection.xyz)));
+            float spotDdotL = saturate(dot (-inputs.lightDir, ubo.spotDirection.xyz));
             if (spotDdotL >= ubo.spotLightParams.x)
             {
                 float spotValue = smoothstep(ubo.spotLightParams.x, ubo.spotLightParams.y, spotDdotL);

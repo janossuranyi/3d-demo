@@ -315,7 +315,7 @@ namespace jsr {
 		view->lightColor = world->lightColor;
 		view->lightPos = vec4(player.Position,1.0f);
 		view->lightAttenuation = world->lightAttenuation;
-		view->spotLightDir = vec4(player.Front,0.0f);
+		view->spotLightDir = normalize(vec4(player.Front,0.0f));
 		view->spotLightParams = vec4(
 			glm::cos(glm::radians(world->spotLightParams.x)),
 			glm::cos(glm::radians(world->spotLightParams.y)),
