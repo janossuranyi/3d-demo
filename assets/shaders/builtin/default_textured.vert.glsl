@@ -27,7 +27,7 @@ void main()
     Out.color       = in_Color;
 	
     vec4 localTangent = in_Tangent * 2.0 - 1.0;
-    //localTangent.w = floor( in_Tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
+    localTangent.w = floor( in_Tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
 
     vec3 T = normalize( mNormal3 * localTangent.xyz );
 	vec3 N = normalize( mNormal3 * (in_Normal * 2.0 - 1.0) );
