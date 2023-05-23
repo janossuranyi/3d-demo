@@ -222,6 +222,24 @@ namespace jsr {
 	{
 		return b[1];
 	}
+	glm::vec3 Bounds::GetPositiveVertex(const glm::vec3& N) const
+	{
+		glm::vec3 v = b[0];
+		if (N.x >= 0.0f) v.x = b[1].x;
+		if (N.y >= 0.0f) v.y = b[1].y;
+		if (N.z >= 0.0f) v.z = b[1].z;
+
+		return v;
+	}
+	glm::vec3 Bounds::GetNegativeVertex(const glm::vec3& N) const
+	{
+		glm::vec3 v = b[1];
+		if (N.x >= 0.0f) v.x = b[0].x;
+		if (N.y >= 0.0f) v.y = b[0].y;
+		if (N.z >= 0.0f) v.z = b[0].z;
+
+		return v;
+	}
 	Sphere Bounds::GetSphere() const
 	{
 		const auto center = 0.5f * (b[0] + b[1]);

@@ -62,6 +62,8 @@ namespace jsr {
 		tmu_t			tmu[MAX_TEXTURE_UNITS];
 		unsigned int	currentProgram;
 		unsigned int	currentIndexBuffer;
+		eCullMode		currentCullMode;
+		bool			cullEnabled;
 		eVertexLayout	currentVertexLayout;
 		bufferBinding_t vtxBindings[MAX_BINDING];
 		bufferBinding_t uboBindings[MAX_BINDING];
@@ -90,10 +92,15 @@ namespace jsr {
 		tmu_t*		GetTextureUnit(int index);
 		void		RenderView(viewDef_t* view);
 		void		RenderCommandBuffer(const emptyCommand_t* cmds);
+		void		SetCullMode(eCullMode mode);
 	private:
-		float	clearColor[4];
-		int		currenttmu;
-		bool	initialized;
+		float		clearColor[4];
+		int			currenttmu;
+		bool		initialized;
+		viewDef_t*	view;
+		void		RenderDebugPass();
+		void		RenderDepthPass();
+		void		RenderShadow();
 	public:	
 		Framebuffer* currentFramebuffer{};
 	};

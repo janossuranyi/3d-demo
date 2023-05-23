@@ -55,6 +55,7 @@ namespace jsr {
 		IMU_DEPTH,
 		IMU_FRAGPOS,
 		IMU_HDR,
+		IMU_SHADOW,
 		IMU_DEFAULT,
 		IMU_COUNT
 	};

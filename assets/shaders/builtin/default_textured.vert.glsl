@@ -11,6 +11,7 @@ layout(location = 4) in vec4 in_Color;
 out INTERFACE
 {
     vec4 fragPos;
+    vec4 fragPosLight;
     vec2 texCoord;
     vec4 color;
     vec4 tangent;
@@ -41,4 +42,5 @@ void main()
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);
     Out.texCoord    = in_TexCoord;
+    Out.fragPosLight= ubo.lightMatrix * Out.fragPos;
 }

@@ -1,3 +1,4 @@
+#include <imgui.h>
 #include "./System.h"
 #include "./Heap.h"
 #include "./RenderBackend.h"
@@ -12,7 +13,7 @@
 
 namespace jsr {
 
-	const size_t DEFAULT_FRAME_MEM_SIZE = 64 * 1024 * 1024;
+	const size_t DEFAULT_FRAME_MEM_SIZE = 16 * 1024 * 1024;
 
 	
 	frameData_t				frames[ON_FLIGHT_FRAMES];
@@ -33,6 +34,8 @@ namespace jsr {
 		imageManager	= new ImageManager();
 		modelManager	= new ModelManager();
 		materialManager = new MaterialManager();
+		defaultMaterial = {};
+		unitrect		= {};
 	}
 
 	RenderSystem::~RenderSystem()
@@ -51,12 +54,17 @@ namespace jsr {
 		delete vertexCache;
 		delete backend;
 
+		ImGui::DestroyContext();
+
 		R_ShutdownCommandBuffers();
 
 		initialized = false;
+		Info("Max frame memory used: %d", maxFrameMemUsage.load());
 	}
 	bool RenderSystem::Init()
 	{
+		ImGui::CreateContext();
+
 		if (!backend->Init())
 		{
 			return false;
@@ -112,7 +120,7 @@ namespace jsr {
 
 		uint8_t* ret{};
 
-		const int next = frameData->frameMemoryPtr.fetch_add(bytes, std::memory_order_relaxed);
+		const int next = frameData->used.fetch_add(bytes, std::memory_order_relaxed);
 		const int end = next + bytes;
 
 		if (end > DEFAULT_FRAME_MEM_SIZE) {
@@ -152,6 +160,7 @@ namespace jsr {
 			renderFrame = activeFrame;
 			activeFrame = (activeFrame + 1) % ON_FLIGHT_FRAMES;
 			frameData = &frames[activeFrame];
+			renderData = &frames[renderFrame];
 		}
 
 		R_ResetCommandBuffer();
@@ -170,7 +179,7 @@ namespace jsr {
 
 		int size = bytesNeededForAlignment + CACHE_LINE_ALIGN(sizeof(emptyCommand_t));
 
-		frameData->frameMemoryPtr.store(size, std::memory_order_relaxed);
+		frameData->used.store(size, std::memory_order_relaxed);
 		emptyCommand_t* cmd = (emptyCommand_t*)frameData->frameMemory + bytesNeededForAlignment;
 		std::memset(cmd, 0, sizeof(*cmd));
 		cmd->command = RC_NOP;

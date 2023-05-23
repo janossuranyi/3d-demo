@@ -26,6 +26,17 @@ namespace jsr {
 		int w, h;
 		renderSystem.backend->GetScreenSize( w, h );
 
+		const int shadowRes = renderSystem.shadowResolution;
+
+		fb = new Framebuffer("shadowFBO", shadowRes, shadowRes);
+		fb->Bind();
+		fb->AttachImageDepth( imgr->globalImages.Depth32 );
+		if (!fb->Check())
+		{
+			Error("[Framebuffer]: shadowFBO init failed!");
+		}
+		globalFramebuffers.shadowFBO = fb;
+
 		fb = new Framebuffer( "defaultFBO", w, h);
 		fb->Bind();
 		fb->AttachImage2D(imgr->globalImages.defaultImage, 0);

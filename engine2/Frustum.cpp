@@ -75,5 +75,28 @@ namespace jsr {
 		return true;
 	}
 
+	bool Frustum::Intersects2(const Bounds& box) const
+	{
+		bool result = true; // inside
+
+		for (int i = 0; i < 6; i++)
+		{
+			const float pos = planes[i].w;
+			const vec3 normal = vec3(planes[i]);
+
+			if (dot(normal, box.GetPositiveVertex(normal)) + pos < 0.0f)
+			{
+				return false;	// outside
+			}
+
+			if (dot(normal, box.GetNegativeVertex(normal)) + pos < 0.0f)
+			{
+				result = true;	// intersect
+			}
+		}
+
+		return result;
+	}
+
 
 }

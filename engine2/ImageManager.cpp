@@ -70,13 +70,6 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferNormal allocation failed !");
 		}
 
-		opts.format = IMF_D32;
-		opts.usage = IMU_DEPTH;
-		if (!globalImages.Depth32->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
-		{
-			Error("[ImageManager]: Image GBufferNormal allocation failed !");
-		}
-
 		opts.format = IMF_RGBA;
 		opts.usage = IMU_AORM;
 		if (!globalImages.GBufferSpec->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
@@ -160,6 +153,23 @@ namespace jsr {
 		else
 		{
 			Error("[ImageManager]: Image flatNormal allocation failed !");
+		}
+
+		opts.format = IMF_D32;
+		opts.usage = IMU_DEPTH;
+		opts.sizeX = renderSystem.shadowResolution;
+		opts.sizeY = renderSystem.shadowResolution;
+		opts.autocompress = false;
+		opts.compressed = false;
+		if (!globalImages.Depth32->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			Error("[ImageManager]: Image Depth32 allocation failed !");
+		}
+		else
+		{
+			globalImages.Depth32->SetRepeat(IMR_CLAMP_TO_EDGE, IMR_CLAMP_TO_EDGE);
+			globalImages.Depth32->SetFilter(IFL_NEAREST, IFL_NEAREST);
+			globalImages.Depth32->SetTextureParameters();
 		}
 
 		initialized = true;

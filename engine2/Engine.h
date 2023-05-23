@@ -35,6 +35,7 @@ namespace jsr {
 	private:
 		RenderWorld* world;
 		bool	threaded;
+		int		lastNumDrawSurf;
 	};
 
 	extern engineConfig_t engineConfig;

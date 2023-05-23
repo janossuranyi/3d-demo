@@ -48,6 +48,8 @@ namespace jsr {
 		glm::vec3& operator[](size_t index);
 		glm::vec3& min();
 		glm::vec3& max();
+		glm::vec3 GetPositiveVertex(const glm::vec3& N) const;
+		glm::vec3 GetNegativeVertex(const glm::vec3& N) const;
 		const glm::vec3& min() const;
 		const glm::vec3& max() const;
 		std::vector<glm::vec3> GetCorners() const;

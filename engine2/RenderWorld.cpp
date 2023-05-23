@@ -144,9 +144,14 @@ namespace jsr {
 		CreateModelsGLTF();
 
 		delete gltf_state;
-		gltf_state = nullptr;
-
+		gltf_state = nullptr;	
 	}
+
+	struct
+	{
+		bool operator()(drawSurf_t* a, drawSurf_t* b) const { return (uint32)a->sort < (uint32)b->sort; }
+	} drawSurfLess;
+
 	void RenderWorld::RenderView(viewDef_t* view)
 	{
 		using namespace glm;
@@ -162,7 +167,7 @@ namespace jsr {
 			auto modelViewMatrix = viewMatrix * worldMatrix;
 
 			Bounds entityBounds = node->GetEntity().GetModel()->GetBounds().Transform(modelViewMatrix);
-			if (view->frustum.Intersects(entityBounds))
+			if (view->frustum.Intersects2(entityBounds))
 			{
 				viewEntity_t* ent = (viewEntity_t*) R_FrameAlloc(sizeof(*ent));
 				auto* model = node->GetEntity().GetModel();
@@ -178,7 +183,7 @@ namespace jsr {
 				{
 					const auto* surf = model->GetSurface(entSurf);
 					const Bounds surfBounds = surf->surf.bounds.Transform(modelViewMatrix);
-					if (view->frustum.Intersects(surfBounds))
+					if (view->frustum.Intersects2(surfBounds))
 					{
 						drawSurf_t* drawSurf = (drawSurf_t*)R_FrameAlloc(sizeof(*drawSurf));
 						drawSurf->frontEndGeo = &surf->surf;
@@ -197,9 +202,25 @@ namespace jsr {
 				}
 			}
 		}
-
 		//Info("visibe surface count: %d", view->numDrawSurfs);
+
+		if (view->numDrawSurfs)
+		{
+			// allocate drawSurf pointers
+			view->drawSurfs = (drawSurf_t**)R_FrameAlloc(view->numDrawSurfs * sizeof(view->drawSurfs));
+			int i = 0;
+			for (const auto* ent = view->viewEntites; ent != nullptr; ent = ent->next)
+			{
+				for (auto* drawSurf = ent->surf; drawSurf != nullptr; drawSurf = drawSurf->next)
+				{
+					view->drawSurfs[i++] = drawSurf;
+				}
+			}
+
+			std::sort(view->drawSurfs, view->drawSurfs + view->numDrawSurfs, drawSurfLess);
+		}
 	}
+
 	void RenderWorld::InsertNode(const std::string& name, RenderModel* model, const glm::vec3& pos)
 	{
 		Node3D* node = new Node3D(name);

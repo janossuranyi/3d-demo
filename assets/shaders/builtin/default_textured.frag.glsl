@@ -8,6 +8,7 @@
 in INTERFACE
 {
     vec4 fragPos;
+    vec4 fragPosLight;
     vec2 texCoord;
     vec4 color;
     vec4 tangent;
@@ -35,6 +36,7 @@ layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
 layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
 layout(binding = IMU_AORM)      uniform sampler2D tAORM;
 layout(binding = IMU_EMMISIVE)  uniform sampler2D tEmissive;
+layout(binding = IMU_SHADOW)    uniform sampler2D tShadow;
 
 vec3 ReconstructNormal(vec3 normalTS) { return normalize(normalTS * 2.0 - 1.0); }
 vec3 EncodeColor(vec3 N) { return saturate( (1.0 + N) * 0.5 ); }
@@ -93,6 +95,20 @@ vec4 specBRDF_DOOM( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 
 const vec3 CANDLE_COLOR = vec3(255, 87, 51)/255.0;
 
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(tShadow, projCoords.xy).r; 
+    // check whether current frag pos is in shadow
+    float shadow = projCoords.z > closestDepth  ? 0.3 : 1.0;
+
+    return shadow;
+}  
+
 void main()
 {
     lightinginput_t inputs;// = lightinginput_t(mat3(0),vec3(0),vec3(0),vec4(0),vec4(0),vec4(0),vec3(0),vec3(0),vec3(0),vec3(0),0);
@@ -110,12 +126,13 @@ void main()
     vec4 color = vec4( 0.0 );
     int debflags = int( ubo.debugFlags.x );
     
-    inputs.sampleAmbient = ubo.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
+    inputs.sampleAmbient = /*ubo.matDiffuseFactor */ SRGBlinear( texture( tDiffuse, In.texCoord ) );
     inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, ubo.matMRFactor.x, ubo.matMRFactor.y, 1.0);
 
     inputs.lightPos = vec3(ubo.lightOrig);
     inputs.lightColor = ubo.lightColor.rgb * ubo.lightColor.w;
     /*****************************************************************/
+    float shadow = ShadowCalculation(In.fragPosLight);
     inputs.viewDir = normalize(ubo.viewOrigin.xyz - In.fragPos.xyz);
     {
         vec3 L = (inputs.lightPos - In.fragPos.xyz);
@@ -155,7 +172,7 @@ void main()
         float Ks = spec.w;
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
-        final = (Kd * inputs.sampleAmbient.xyz + F * Ks) * NdotL * inputs.lightColor * inputs.attenuation;
+        final = (Kd * inputs.sampleAmbient.xyz + F * Ks) * NdotL * inputs.lightColor * inputs.attenuation * shadow;
         final = vec3(1.0) - exp(-final * exposure);
 
         inputs.spec = vec4(F * Ks, Ks);
@@ -183,11 +200,12 @@ void main()
     }
     else if ( debflags == 3 )
     {
-        color.xyz = inputs.spec.www;
+        color.xyz = vec3(shadow);
     }
     else if ( debflags == 4 )
     {
-        color.xyz = inputs.spec.xyz;
+        vec3 c = vec3(1.0) - exp(-inputs.spec.xyz * ubo.params.y);
+        color.xyz = c;
     }
     else if ( debflags == 5 )
     {

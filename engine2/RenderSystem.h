@@ -12,7 +12,7 @@ namespace jsr {
 
 	struct frameData_t {
 		
-		std::atomic_int				frameMemoryPtr;
+		std::atomic_int				used;
 		uint8_t*					frameMemory;
 		emptyCommand_t*				cmdTail;
 		emptyCommand_t*				cmdHead;
@@ -45,6 +45,8 @@ namespace jsr {
 		viewDef_t* view;
 
 		Material* defaultMaterial;
+
+		const int shadowResolution = 1024;
 	private:
 		bool initialized;
 		int	 frameNum;

@@ -5,7 +5,8 @@
 #define IMU_DEPTH 4
 #define IMU_FRAGPOS 5
 #define IMU_HDR 6
-#define IMU_DEFAULT 7
+#define IMU_SHADOW 7
+#define IMU_DEFAULT 8
 
 const float PI = 3.14159265359;
 const float ONE_OVER_PI = 1.0/PI;

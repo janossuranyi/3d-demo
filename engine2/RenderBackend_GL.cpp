@@ -253,6 +253,9 @@ namespace jsr {
 		// Setup default GL states
 		glEnable(GL_DEPTH_TEST);
 
+		glcontext.currentCullMode = CULL_NONE;
+		glcontext.cullEnabled = false;
+		glCullFace(GL_BACK);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_BLEND);
 		glDisable(GL_STENCIL_TEST);
@@ -262,6 +265,7 @@ namespace jsr {
 		glBlendEquation(GL_FUNC_ADD);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		if (engineConfig.r_fbsrgb)
 		{
@@ -291,10 +295,10 @@ namespace jsr {
 #endif
 		}
 
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 		R_InitVertexLayoutDefs();
 
-		ImGui::CreateContext();
-		
 		ImGui_ImplSDL2_InitForOpenGL(glconfig.hwnd, glconfig.glctx);
 		ImGui_ImplOpenGL3_Init();
 
@@ -307,6 +311,9 @@ namespace jsr {
 
 	void R_ShutdownGfxAPI()
 	{
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+
 		if (glconfig.glctx) {
 			SDL_GL_DeleteContext(glconfig.glctx);
 			glconfig.glctx = 0;
@@ -355,73 +362,15 @@ namespace jsr {
 	void RenderBackend::RenderView(viewDef_t* view)
 	{
 		using namespace glm;
+		this->view = view;
 
-		Clear(true, true, true);
 		if (!view) return;
 
-		renderSystem.programManager->BindUniforms();
-		
-		const drawSurf_t* surf;
+		RenderDepthPass();
+		RenderShadow();
+		RenderDebugPass();
 
-		for (int i = 0; i < view->numDrawSurfs; ++i)
-		{
-			surf = view->drawSurfs[i];
 
-			const Material* shader = surf->shader;
-			if (!shader || shader->IsEmpty()) continue;
-			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
-			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
-			if (stage.coverage != COVERAGE_SOLID && stage.coverage != COVERAGE_MASK) continue;
-
-			renderSystem.programManager->UseProgram(stage.shader);
-
-			// setup textures
-			for (int j = 0; j < IMU_COUNT; ++j)
-			{
-				if (stage.images[j]) {
-					this->SetCurrentTextureUnit(j);
-					stage.images[j]->Bind();
-				}
-			}
-
-			mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
-
-			// setup vertex/index buffers
-			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
-			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
-
-			uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
-
-			renderSystem.programManager->uniforms.alphaCutoff.x = stage.alphaCutoff;
-			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
-			renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
-			renderSystem.programManager->uniforms.matDiffuseFactor = stage.diffuseScale;
-			renderSystem.programManager->uniforms.matMRFactor.x = stage.roughnessScale;
-			renderSystem.programManager->uniforms.matMRFactor.y = stage.metallicScale;
-			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
-			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
-			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
-			renderSystem.programManager->uniforms.params.x = uintBitsToFloat(flg_x);
-			renderSystem.programManager->uniforms.params.y = view->exposure;
-			renderSystem.programManager->uniforms.lightOrig = view->lightPos;
-			renderSystem.programManager->uniforms.lightColor = view->lightColor;
-			renderSystem.programManager->uniforms.spotLightParams = view->spotLightParams;
-			renderSystem.programManager->uniforms.lightAttenuation = view->lightAttenuation;
-			renderSystem.programManager->uniforms.spotDirection = view->spotLightDir;
-			renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
-			renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
-
-			renderSystem.programManager->UpdateUniforms();
-
-			IndexBuffer idx;
-			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
-			GL_CHECK(glDrawElements(
-				GL_map_topology(surf->frontEndGeo->topology),
-				surf->numIndex,
-				GL_UNSIGNED_SHORT,
-				(void*)idx.GetOffset()));
-//				renderSystem.vertexCache->GetBaseVertex(surf->vertexCache, sizeof(drawVert_t)));
-		}
 		//[...]
 
 	}
@@ -448,6 +397,233 @@ namespace jsr {
 		EndFrame();
 
 	}
+	void RenderBackend::SetCullMode(eCullMode mode)
+	{
+		if (mode != glcontext.currentCullMode)
+		{
+			glcontext.currentCullMode = mode;
+			if (mode == CULL_NONE && glcontext.cullEnabled)
+			{
+				glDisable(GL_CULL_FACE);
+				glcontext.cullEnabled = false;
+			}
+			else if (mode != CULL_NONE && !glcontext.cullEnabled)
+			{
+				glEnable(GL_CULL_FACE);
+				glcontext.cullEnabled = true;
+			}
+
+			switch (mode)
+			{
+			case CULL_FRONT:
+				glCullFace(GL_FRONT);
+				break;
+			case CULL_BACK:
+				glCullFace(GL_BACK);
+				break;
+			}
+		}
+	}
+	void RenderBackend::RenderDebugPass()
+	{
+		using namespace glm;
+
+		glDepthMask(GL_FALSE);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		Clear(true, false, false);
+
+		renderSystem.programManager->BindUniforms();
+
+		const drawSurf_t* surf;
+		SetCurrentTextureUnit(IMU_SHADOW);
+		renderSystem.imageManager->globalImages.Depth32->Bind();
+
+		vec3 lightDir = view->spotLightDir;
+		vec3 lightPos = view->lightPos;
+
+		mat4 lightProj = perspective(radians(90.f), 1.0f, view->nearClipDistance, view->farClipDistance);
+		mat4 lightView = lookAt(lightPos, lightPos + 2.0f*lightDir, { 0.0f,1.0f,0.0f });
+		mat4 lightViewProj = lightProj * lightView;
+
+		renderSystem.programManager->uniforms.lightMatrix = lightViewProj;
+
+		for (int pass = 0; pass < 2; ++pass)
+		{
+			for (int i = 0; i < view->numDrawSurfs; ++i)
+			{
+				surf = view->drawSurfs[i];
+
+				const Material* shader = surf->shader;
+				if (!shader || shader->IsEmpty()) continue;
+				if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
+				const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+
+				if (stage.coverage != COVERAGE_SOLID && stage.coverage != COVERAGE_MASK) continue;
+				if (pass == 0 && stage.coverage != COVERAGE_SOLID) continue;
+				if (pass == 1 && stage.coverage == COVERAGE_SOLID) continue;
+
+				renderSystem.programManager->UseProgram(stage.shader);
+
+				// setup textures
+				for (int j = 0; j < IMU_COUNT; ++j)
+				{
+					if (stage.images[j])
+					{
+						this->SetCurrentTextureUnit(j);
+						stage.images[j]->Bind();
+					}
+				}
+
+				mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
+
+				// setup vertex/index buffers
+				renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
+				renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
+
+				uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
+
+				renderSystem.programManager->uniforms.alphaCutoff.x = stage.alphaCutoff;
+				renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
+				renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
+				renderSystem.programManager->uniforms.matDiffuseFactor = stage.diffuseScale;
+				renderSystem.programManager->uniforms.matMRFactor.x = stage.roughnessScale;
+				renderSystem.programManager->uniforms.matMRFactor.y = stage.metallicScale;
+				renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
+				renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
+				renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
+				renderSystem.programManager->uniforms.params.x = uintBitsToFloat(flg_x);
+				renderSystem.programManager->uniforms.params.y = view->exposure;
+				renderSystem.programManager->uniforms.lightOrig = view->lightPos;
+				renderSystem.programManager->uniforms.lightColor = view->lightColor;
+				renderSystem.programManager->uniforms.spotLightParams = view->spotLightParams;
+				renderSystem.programManager->uniforms.lightAttenuation = view->lightAttenuation;
+				renderSystem.programManager->uniforms.spotDirection = view->spotLightDir;
+				renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
+				renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
+
+				renderSystem.programManager->UpdateUniforms();
+				SetCullMode(stage.cullMode);
+
+				IndexBuffer idx;
+				renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
+				GL_CHECK(glDrawElements(
+					GL_map_topology(surf->frontEndGeo->topology),
+					surf->numIndex,
+					GL_UNSIGNED_SHORT,
+					(void*)idx.GetOffset()));
+				//				renderSystem.vertexCache->GetBaseVertex(surf->vertexCache, sizeof(drawVert_t)));
+			}
+		}
+	}
+	void RenderBackend::RenderDepthPass()
+	{
+		using namespace glm;
+
+		if (view == nullptr) return;
+
+		glDepthMask(GL_TRUE);
+		Clear(false, true, false);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		const drawSurf_t* surf;
+
+		renderSystem.programManager->UseProgram(PRG_ZPASS);
+		for (int i = 0; i < view->numDrawSurfs; ++i)
+		{
+			surf = view->drawSurfs[i];
+			const Material* shader = surf->shader;
+			if (!shader || shader->IsEmpty()) continue;
+			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
+			
+			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+			if (stage.coverage != COVERAGE_SOLID) continue;
+
+			mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
+
+			// setup vertex/index buffers
+			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
+			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
+
+			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
+			renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
+			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
+			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
+			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
+			renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
+			renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
+
+			renderSystem.programManager->UpdateUniforms();
+
+			SetCullMode(stage.cullMode);
+
+			IndexBuffer idx;
+			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
+			GL_CHECK(glDrawElements(
+				GL_map_topology(surf->frontEndGeo->topology),
+				surf->numIndex,
+				GL_UNSIGNED_SHORT,
+				(void*)idx.GetOffset()));
+		}
+	}
+
+	void RenderBackend::RenderShadow()
+	{
+		using namespace glm;
+
+		globalFramebuffers.shadowFBO->Bind();
+		glDepthMask(GL_TRUE);
+		Clear(false, true, false);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		vec3 lightDir = view->spotLightDir;
+		vec3 lightPos = view->lightPos;
+
+		mat4 lightProj = perspective(radians(90.f), 1.0f, view->nearClipDistance, view->farClipDistance);
+		mat4 lightView = lookAt(lightPos, lightPos + 2.0f*lightDir, { 0.0f,1.0f,0.0f });
+		mat4 lightViewProj = lightProj * lightView;
+
+		const drawSurf_t* surf;
+
+		renderSystem.programManager->UseProgram(PRG_ZPASS);
+
+		for (int i = 0; i < view->numDrawSurfs; ++i)
+		{
+			surf = view->drawSurfs[i];
+			const Material* shader = surf->shader;
+			if (!shader || shader->IsEmpty()) continue;
+			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
+
+			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+			if (stage.coverage != COVERAGE_SOLID) continue;
+
+			// setup vertex/index buffers
+			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
+			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
+
+			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
+			renderSystem.programManager->uniforms.projectionMatrix = lightProj;
+			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
+			renderSystem.programManager->uniforms.WVPMatrix = lightViewProj * surf->space->modelMatrix;
+			renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
+			renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
+
+			renderSystem.programManager->UpdateUniforms();
+
+			SetCullMode(stage.cullMode);
+
+			IndexBuffer idx;
+			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
+			GL_CHECK(glDrawElements(
+				GL_map_topology(surf->frontEndGeo->topology),
+				surf->numIndex,
+				GL_UNSIGNED_SHORT,
+				(void*)idx.GetOffset()));
+		}
+
+		Framebuffer::Unbind();
+
+	}
+
 	void RenderBackend::EndFrame()
 	{
 		// Render dear imgui into screen

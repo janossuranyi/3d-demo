@@ -60,7 +60,7 @@ namespace jsr {
 
 		player.Position = glm::vec3(0.f, 0.f, 5.f);
 		player.Front = glm::vec3(0.f, 0.f, -1.f);
-		
+
 		if (aThreaded)
 		{
 			if (!StartWorkerThread("JSR_Engine_thread"))
@@ -76,7 +76,7 @@ namespace jsr {
 	bool Engine::LoadWorld(const std::string& filename)
 	{
 		if (world) delete world;
-		
+
 		world = new RenderWorld();
 
 		world->LoadModelsFromGLTF(resourceMgr->GetResource("models/zeroOneCube.glb"));
@@ -133,14 +133,15 @@ namespace jsr {
 
 		while (!quit)
 		{
-			glm::quat rotY = glm::angleAxis(glm::radians(angle1), normalize( vec3{ 0.0f,1.0f, 0.0f } ));
-			glm::quat rotX = glm::angleAxis(glm::radians(-90.f), normalize( vec3{ 1.0f,0.0f, 0.0f }));
-			cube->SetDir(rotY*rotX);
+			glm::quat rotY = glm::angleAxis(glm::radians(angle1), normalize(vec3{ 0.0f,1.0f, 0.0f }));
+			glm::quat rotX = glm::angleAxis(glm::radians(-90.f), normalize(vec3{ 1.0f,0.0f, 0.0f }));
+			cube->SetDir(rotY * rotX);
 
 			emptyCommand_t* cmds = R_SwapCommandBuffers(this->threaded);
 			SignalWork();
 
 			ImGui::NewFrame();
+			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Attn. Kc", &world->lightAttenuation.x, 0.05f, 1.0f, 100.0f);
 			ImGui::DragFloat("Attn. Kl", &world->lightAttenuation.y, 0.05f, 0.0f, 100.0f);
@@ -275,24 +276,19 @@ namespace jsr {
 		}
 		SDL_SetRelativeMouseMode(SDL_FALSE);
 	}
-	
+
 	void Engine::Shutdown()
 	{
 		if (threaded)
 		{
 			StopThread(true);
 		}
-		
+
 		if (world) delete world;
 		world = nullptr;
 
 		renderSystem.Shutdown();
 	}
-
-	struct
-	{
-		bool operator()(drawSurf_t* a, drawSurf_t* b) const { return (uint32)a->sort < (uint32)b->sort; }
-	} drawSurfLess;
 
 	int Engine::Run()
 	{
@@ -317,8 +313,8 @@ namespace jsr {
 		view->lightAttenuation = world->lightAttenuation;
 		view->spotLightDir = normalize(vec4(player.Front,0.0f));
 		view->spotLightParams = vec4(
-			glm::cos(glm::radians(world->spotLightParams.x)),
-			glm::cos(glm::radians(world->spotLightParams.y)),
+			cos(radians(world->spotLightParams.x)),
+			cos(radians(world->spotLightParams.y)),
 			world->spotLightParams.z, world->spotLightParams.w);
 
 		view->renderView.viewID = 1;
@@ -331,35 +327,18 @@ namespace jsr {
 		view->frustum = Frustum(projMatrix);
 		view->unprojectionToCameraMatrix = glm::inverse(projMatrix);
 		view->unprojectionToWorldMatrix = glm::inverse(vpMatrix);
-		view->viewport = screenRect_t{ 0,0,x,y };
+		view->viewport = { 0,0,x,y };
 		view->scissor = view->viewport;
 		view->renderWorld = world;
 
 		world->RenderView(view);
+		lastNumDrawSurf = view->numDrawSurfs;
 
 		if (view->numDrawSurfs)
 		{
-			// allocate drawSurf pointers
-			view->drawSurfs = (drawSurf_t**)R_FrameAlloc(view->numDrawSurfs * sizeof(view->drawSurfs));
-			int i = 0;
-			for (const auto* ent = view->viewEntites; ent != nullptr; ent = ent->next)
-			{
-				for (auto* drawSurf = ent->surf; drawSurf != nullptr; drawSurf = drawSurf->next)
-				{
-					view->drawSurfs[i++] = drawSurf;
-				}
-			}
-
-			std::sort(view->drawSurfs, view->drawSurfs + view->numDrawSurfs, drawSurfLess);
 			drawViewCommand_t* cmd = (drawViewCommand_t*)R_GetCommandBuffer(sizeof(*cmd));
 			cmd->command = RC_DRAW_VIEW;
 			cmd->view = view;
-
-			//Info("Surfaces to draw: %d", view->numDrawSurfs);
-		}
-		else
-		{
-			//Info("No surface to draw !");
 		}
 
 		return 0;
