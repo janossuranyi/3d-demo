@@ -430,6 +430,7 @@ namespace jsr {
 
 		glDepthMask(GL_TRUE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glViewport(0, 0, view->scissor.w, view->scissor.h);
 		Clear(true, true, false);
 
 		renderSystem.programManager->BindUniforms();
@@ -572,7 +573,9 @@ namespace jsr {
 
 		globalFramebuffers.shadowFBO->Bind();
 		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LESS);
+		glDepthFunc(GL_LEQUAL);
+		glViewport(0, 0, renderSystem.shadowResolution, renderSystem.shadowResolution);
+
 		Clear(false, true, false);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
