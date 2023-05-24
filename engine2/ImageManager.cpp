@@ -155,7 +155,7 @@ namespace jsr {
 			Error("[ImageManager]: Image flatNormal allocation failed !");
 		}
 
-		opts.format = IMF_D32;
+		opts.format = IMF_D32F;
 		opts.usage = IMU_DEPTH;
 		opts.sizeX = renderSystem.shadowResolution;
 		opts.sizeY = renderSystem.shadowResolution;
@@ -164,12 +164,6 @@ namespace jsr {
 		if (!globalImages.Depth32->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image Depth32 allocation failed !");
-		}
-		else
-		{
-			globalImages.Depth32->SetRepeat(IMR_CLAMP_TO_EDGE, IMR_CLAMP_TO_EDGE);
-			globalImages.Depth32->SetFilter(IFL_NEAREST, IFL_NEAREST);
-			globalImages.Depth32->SetTextureParameters();
 		}
 
 		initialized = true;

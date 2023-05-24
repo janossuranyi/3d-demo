@@ -366,7 +366,7 @@ namespace jsr {
 
 		if (!view) return;
 
-		RenderDepthPass();
+		//RenderDepthPass();
 		RenderShadow();
 		RenderDebugPass();
 
@@ -428,9 +428,9 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		glDepthMask(GL_FALSE);
+		glDepthMask(GL_TRUE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		Clear(true, false, false);
+		Clear(true, true, false);
 
 		renderSystem.programManager->BindUniforms();
 
@@ -442,9 +442,19 @@ namespace jsr {
 		vec3 lightPos = view->lightPos;
 
 		mat4 lightProj = perspective(radians(90.f), 1.0f, view->nearClipDistance, view->farClipDistance);
-		mat4 lightView = lookAt(lightPos, lightPos + 2.0f*lightDir, { 0.0f,1.0f,0.0f });
+		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
 		mat4 lightViewProj = lightProj * lightView;
 
+		renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
+		renderSystem.programManager->uniforms.params.y = view->exposure;
+		renderSystem.programManager->uniforms.lightOrig = view->lightPos;
+		renderSystem.programManager->uniforms.lightColor = view->lightColor;
+		renderSystem.programManager->uniforms.spotLightParams = view->spotLightParams;
+		renderSystem.programManager->uniforms.lightAttenuation = view->lightAttenuation;
+		renderSystem.programManager->uniforms.spotDirection = view->spotLightDir;
+		renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
+		renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
+		renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
 		renderSystem.programManager->uniforms.lightMatrix = lightViewProj;
 
 		for (int pass = 0; pass < 2; ++pass)
@@ -484,22 +494,12 @@ namespace jsr {
 
 				renderSystem.programManager->uniforms.alphaCutoff.x = stage.alphaCutoff;
 				renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
-				renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
 				renderSystem.programManager->uniforms.matDiffuseFactor = stage.diffuseScale;
 				renderSystem.programManager->uniforms.matMRFactor.x = stage.roughnessScale;
 				renderSystem.programManager->uniforms.matMRFactor.y = stage.metallicScale;
-				renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 				renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
 				renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
 				renderSystem.programManager->uniforms.params.x = uintBitsToFloat(flg_x);
-				renderSystem.programManager->uniforms.params.y = view->exposure;
-				renderSystem.programManager->uniforms.lightOrig = view->lightPos;
-				renderSystem.programManager->uniforms.lightColor = view->lightColor;
-				renderSystem.programManager->uniforms.spotLightParams = view->spotLightParams;
-				renderSystem.programManager->uniforms.lightAttenuation = view->lightAttenuation;
-				renderSystem.programManager->uniforms.spotDirection = view->spotLightDir;
-				renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
-				renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
 
 				renderSystem.programManager->UpdateUniforms();
 				SetCullMode(stage.cullMode);
@@ -572,6 +572,7 @@ namespace jsr {
 
 		globalFramebuffers.shadowFBO->Bind();
 		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
 		Clear(false, true, false);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
@@ -579,12 +580,17 @@ namespace jsr {
 		vec3 lightPos = view->lightPos;
 
 		mat4 lightProj = perspective(radians(90.f), 1.0f, view->nearClipDistance, view->farClipDistance);
-		mat4 lightView = lookAt(lightPos, lightPos + 2.0f*lightDir, { 0.0f,1.0f,0.0f });
+		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
 		mat4 lightViewProj = lightProj * lightView;
 
 		const drawSurf_t* surf;
 
+		auto& uniforms = renderSystem.programManager->uniforms;
 		renderSystem.programManager->UseProgram(PRG_ZPASS);
+		uniforms.projectionMatrix = lightProj;
+		uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
+		uniforms.clipPlanes.x = view->nearClipDistance;
+		uniforms.clipPlanes.y = view->farClipDistance;
 
 		for (int i = 0; i < view->numDrawSurfs; ++i)
 		{
@@ -600,12 +606,7 @@ namespace jsr {
 			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
 			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
 
-			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
-			renderSystem.programManager->uniforms.projectionMatrix = lightProj;
-			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
-			renderSystem.programManager->uniforms.WVPMatrix = lightViewProj * surf->space->modelMatrix;
-			renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
-			renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
+			uniforms.WVPMatrix = lightViewProj * surf->space->modelMatrix;
 
 			renderSystem.programManager->UpdateUniforms();
 
@@ -621,6 +622,7 @@ namespace jsr {
 		}
 
 		Framebuffer::Unbind();
+		glDepthFunc(GL_LEQUAL);
 
 	}
 

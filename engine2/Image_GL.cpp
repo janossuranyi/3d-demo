@@ -260,7 +260,7 @@ namespace jsr {
 		wrapT = repeat;
 		this->minFilter = minFilter;
 		this->magFilter = IFL_LINEAR;
-		if (minFilter == IFL_NEAREST_NEAREST || minFilter == IFL_LINEAR_NEAREST)
+		if (minFilter == IFL_NEAREST_NEAREST || minFilter == IFL_LINEAR_NEAREST || minFilter == IFL_NEAREST)
 		{
 			this->magFilter = IFL_NEAREST;
 		}
@@ -301,7 +301,7 @@ namespace jsr {
 		}
 #endif
 		SetTextureParameters();
-
+		
 		return true;
 	}
 

@@ -107,7 +107,7 @@ namespace jsr {
 		time = (float)SDL_GetTicks();
 		player.MovementSpeed = 0.001f;
 		player.MouseSensitivity = 0.1;
-		player.Zoom = 80.0f;
+		player.Zoom = 75.0f;
 		player.ProcessMouseMovement(0.f, 0.f);
 
 		renderSystem.backend->SetClearColor(0.2f, 0.2f, 0.6f, 1.0f);
@@ -309,13 +309,14 @@ namespace jsr {
 		view->farClipDistance = R;
 		view->nearClipDistance = 0.1f;
 		view->lightColor = world->lightColor;
-		view->lightPos = vec4(player.Position,1.0f);
+		view->lightPos = vec4(player.Position, 1.0f);
 		view->lightAttenuation = world->lightAttenuation;
 		view->spotLightDir = normalize(vec4(player.Front,0.0f));
 		view->spotLightParams = vec4(
 			cos(radians(world->spotLightParams.x)),
 			cos(radians(world->spotLightParams.y)),
-			world->spotLightParams.z, world->spotLightParams.w);
+			world->spotLightParams.z,
+			world->spotLightParams.w);
 
 		view->renderView.viewID = 1;
 		view->renderView.fov = player.Zoom;

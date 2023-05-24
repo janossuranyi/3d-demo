@@ -132,7 +132,18 @@ void main()
     inputs.lightPos = vec3(ubo.lightOrig);
     inputs.lightColor = ubo.lightColor.rgb * ubo.lightColor.w;
     /*****************************************************************/
-    float shadow = ShadowCalculation(In.fragPosLight);
+    float shadow = 1.0;
+    {
+        // perform perspective divide
+        vec3 projCoords = In.fragPosLight.xyz / In.fragPosLight.w;
+        // transform to [0,1] range
+        projCoords = projCoords * 0.5 + 0.5;
+        // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+        float closestDepth = texture(tShadow, projCoords.xy).r; 
+        // check whether current frag pos is in shadow
+        shadow = closestDepth < (projCoords.z + 0.00001) ? 0.3 : 1.0;
+    }
+
     inputs.viewDir = normalize(ubo.viewOrigin.xyz - In.fragPos.xyz);
     {
         vec3 L = (inputs.lightPos - In.fragPos.xyz);
@@ -200,7 +211,7 @@ void main()
     }
     else if ( debflags == 3 )
     {
-        color.xyz = vec3(shadow);
+        color.xyz = vec3(inputs.spec.w);
     }
     else if ( debflags == 4 )
     {
