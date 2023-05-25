@@ -40,7 +40,11 @@ namespace jsr {
 
 	};
 
-
+	struct backendCounters_t
+	{
+		unsigned int drawElements{};
+		unsigned int drawIndexes{};
+	};
 	struct tmu_t
 	{
 		unsigned int	current2DMap;
@@ -107,4 +111,5 @@ namespace jsr {
 
 	extern bool R_InitGfxAPI();
 	extern void R_ShutdownGfxAPI();
+	extern backendCounters_t perfCounters;
 }

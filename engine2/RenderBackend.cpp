@@ -8,8 +8,8 @@ namespace jsr {
 
 	glcontext_t glcontext{};
 
-	RenderBackend tr{};
-	
+	backendCounters_t perfCounters;
+
 	RenderBackend::RenderBackend()
 	{
 		glcontext.frameCounter = 0;
@@ -22,6 +22,7 @@ namespace jsr {
 		clearColor[3] = 1.0f;
 		for (int i = 0; i < MAX_BINDING; ++i) glcontext.vtxBindings[i] = { 0,0,0 };
 		initialized = false;
+		view = {};
 	}
 
 	bool RenderBackend::IsInitialized() const

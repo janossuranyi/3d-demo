@@ -48,7 +48,6 @@ namespace jsr {
 		if (filename.empty()) return nullptr;
 
 		DestroyWorld();
-		vertecCache->ClearStaticCache();
 
 		gltf_state = new gltf_state_t();
 
