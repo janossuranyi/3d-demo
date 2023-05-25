@@ -424,6 +424,63 @@ namespace jsr {
 			}
 		}
 	}
+
+	void R_DrawSurf(const drawSurf_t* surf, int pass)
+	{
+		using namespace glm;
+		const Material* shader = surf->shader;
+		if (!shader || shader->IsEmpty()) return;
+		if (shader->GetStage(STAGE_DEBUG).enabled == false) return;
+		const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+
+		if (stage.coverage != COVERAGE_SOLID && stage.coverage != COVERAGE_MASK) return;
+		if (pass == 0 && stage.coverage != COVERAGE_SOLID) return;
+		if (pass == 1 && stage.coverage == COVERAGE_SOLID) return;
+
+		renderSystem.programManager->UseProgram(stage.shader);
+
+		// setup textures
+		for (int j = 0; j < IMU_COUNT; ++j)
+		{
+			if (stage.images[j])
+			{
+				renderSystem.backend->SetCurrentTextureUnit(j);
+				stage.images[j]->Bind();
+			}
+		}
+
+		mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
+
+		// setup vertex/index buffers
+		renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
+		renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
+
+		uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
+
+		uboUniforms_t& uniforms = renderSystem.programManager->uniforms;
+		uniforms.alphaCutoff.x = stage.alphaCutoff;
+		uniforms.localToWorldMatrix = surf->space->modelMatrix;
+		uniforms.matDiffuseFactor = stage.diffuseScale;
+		uniforms.matMRFactor.x = stage.roughnessScale;
+		uniforms.matMRFactor.y = stage.metallicScale;
+		uniforms.WVPMatrix = surf->space->mvp;
+		uniforms.normalMatrix = normalMatrix;
+		uniforms.params.x = uintBitsToFloat(flg_x);
+
+		renderSystem.programManager->UpdateUniforms();
+		renderSystem.backend->SetCullMode(stage.cullMode);
+
+		IndexBuffer idx;
+		renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
+		GL_CHECK(glDrawElements(
+			GL_map_topology(surf->frontEndGeo->topology),
+			surf->numIndex,
+			GL_UNSIGNED_SHORT,
+			(void*)idx.GetOffset()));
+		//				renderSystem.vertexCache->GetBaseVertex(surf->vertexCache, sizeof(drawVert_t)));
+
+	}
+
 	void RenderBackend::RenderDebugPass()
 	{
 		using namespace glm;
@@ -445,75 +502,28 @@ namespace jsr {
 		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
 		mat4 lightViewProj = lightProj * lightView;
 
-		renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
-		renderSystem.programManager->uniforms.params.y = view->exposure;
-		renderSystem.programManager->uniforms.lightOrig = view->lightPos;
-		renderSystem.programManager->uniforms.lightColor = view->lightColor;
-		renderSystem.programManager->uniforms.spotLightParams = view->spotLightParams;
-		renderSystem.programManager->uniforms.lightAttenuation = view->lightAttenuation;
-		renderSystem.programManager->uniforms.spotDirection = view->spotLightDir;
-		renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
-		renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
-		renderSystem.programManager->uniforms.lightProjMatrix = lightViewProj;
+		uboUniforms_t& uniforms = renderSystem.programManager->uniforms;
+		uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
+		uniforms.params.y = view->exposure;
+		uniforms.lightOrig = view->lightPos;
+		uniforms.lightColor = view->lightColor;
+		uniforms.spotLightParams = view->spotLightParams;
+		uniforms.lightAttenuation = view->lightAttenuation;
+		uniforms.spotDirection = view->spotLightDir;
+		uniforms.clipPlanes.x = view->nearClipDistance;
+		uniforms.clipPlanes.y = view->farClipDistance;
+		uniforms.lightProjMatrix = lightViewProj;
 
 		for (int pass = 0; pass < 2; ++pass)
 		{
 			for (int i = 0; i < view->numDrawSurfs; ++i)
 			{
 				surf = view->drawSurfs[i];
-
-				const Material* shader = surf->shader;
-				if (!shader || shader->IsEmpty()) continue;
-				if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
-				const stage_t& stage = shader->GetStage(STAGE_DEBUG);
-
-				if (stage.coverage != COVERAGE_SOLID && stage.coverage != COVERAGE_MASK) continue;
-				if (pass == 0 && stage.coverage != COVERAGE_SOLID) continue;
-				if (pass == 1 && stage.coverage == COVERAGE_SOLID) continue;
-
-				renderSystem.programManager->UseProgram(stage.shader);
-
-				// setup textures
-				for (int j = 0; j < IMU_COUNT; ++j)
-				{
-					if (stage.images[j])
-					{
-						this->SetCurrentTextureUnit(j);
-						stage.images[j]->Bind();
-					}
-				}
-
-				mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
-
-				// setup vertex/index buffers
-				renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
-				renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
-
-				uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
-
-				renderSystem.programManager->uniforms.alphaCutoff.x = stage.alphaCutoff;
-				renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
-				renderSystem.programManager->uniforms.matDiffuseFactor = stage.diffuseScale;
-				renderSystem.programManager->uniforms.matMRFactor.x = stage.roughnessScale;
-				renderSystem.programManager->uniforms.matMRFactor.y = stage.metallicScale;
-				renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
-				renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
-				renderSystem.programManager->uniforms.params.x = uintBitsToFloat(flg_x);
-
-				renderSystem.programManager->UpdateUniforms();
-				SetCullMode(stage.cullMode);
-
-				IndexBuffer idx;
-				renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
-				GL_CHECK(glDrawElements(
-					GL_map_topology(surf->frontEndGeo->topology),
-					surf->numIndex,
-					GL_UNSIGNED_SHORT,
-					(void*)idx.GetOffset()));
-				//				renderSystem.vertexCache->GetBaseVertex(surf->vertexCache, sizeof(drawVert_t)));
+				R_DrawSurf(surf, pass);
 			}
 		}
 	}
+
 	void RenderBackend::RenderDepthPass()
 	{
 		using namespace glm;
@@ -532,37 +542,7 @@ namespace jsr {
 		for (int i = 0; i < view->numDrawSurfs; ++i)
 		{
 			surf = view->drawSurfs[i];
-			const Material* shader = surf->shader;
-			if (!shader || shader->IsEmpty()) continue;
-			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
-			
-			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
-			if (stage.coverage != COVERAGE_SOLID) continue;
-
-			mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
-
-			// setup vertex/index buffers
-			renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
-			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
-
-			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
-			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
-			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
-			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
-			renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
-			renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
-
-			renderSystem.programManager->UpdateUniforms();
-
-			SetCullMode(stage.cullMode);
-
-			IndexBuffer idx;
-			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
-			GL_CHECK(glDrawElements(
-				GL_map_topology(surf->frontEndGeo->topology),
-				surf->numIndex,
-				GL_UNSIGNED_SHORT,
-				(void*)idx.GetOffset()));
+			R_DrawSurf(surf, 0);
 		}
 	}
 

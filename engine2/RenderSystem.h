@@ -24,6 +24,7 @@ namespace jsr {
 	void R_ResetCommandBuffer();
 	void R_InitCommandBuffers();
 	void R_ShutdownCommandBuffers();
+	surface_t* R_CreateFullScreenRect();
 
 	class RenderSystem
 	{
@@ -42,6 +43,7 @@ namespace jsr {
 		void Shutdown();
 		bool IsInitialized() const;
 		void Frame(const emptyCommand_t* cmds);
+		
 		viewDef_t* view;
 
 		Material* defaultMaterial;

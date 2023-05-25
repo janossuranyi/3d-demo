@@ -40,6 +40,7 @@ layout(binding = IMU_SHADOW)    uniform sampler2D tShadow;
 
 vec3 ReconstructNormal(vec3 normalTS) { return normalize(normalTS * 2.0 - 1.0); }
 vec3 EncodeColor(vec3 N) { return saturate( (1.0 + N) * 0.5 ); }
+vec3 Gamma(vec3 c) { return pow(c, vec3(1.0/2.2)); }
 
 float linearize_depth(float original_depth) {
 	float z = original_depth * 2.0 - 1.0;
@@ -53,8 +54,8 @@ float ApproxPow ( float fBase, float fPower ) {
 }
 
 vec3 fresnelSchlick ( vec3 f0, float costheta ) {
-	const float baked_spec_occl = saturate( 50.0 * dot( f0, vec3( 0.3333 ) ) );
-	return f0 + ( baked_spec_occl - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );
+	//const float baked_spec_occl = saturate( 50.0 * dot( f0, vec3( 0.3333 ) ) );
+	return f0 + ( 1.0 - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );
 }
 
 /*******************************************************************************/
@@ -123,9 +124,8 @@ void main()
     }
 
     vec4 color = vec4( 0.0 );
-    int debflags = int( ubo.debugFlags.x );
     
-    inputs.sampleAmbient = /*ubo.matDiffuseFactor */ SRGBlinear( texture( tDiffuse, In.texCoord ) );
+    inputs.sampleAmbient = ubo.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
     inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, ubo.matMRFactor.x, ubo.matMRFactor.y, 1.0);
 
     inputs.lightPos = vec3(ubo.lightOrig);
@@ -133,14 +133,13 @@ void main()
     /*****************************************************************/
     inputs.viewDir = normalize(ubo.viewOrigin.xyz - In.fragPos.xyz);
     {
-        vec3 L = (inputs.lightPos - In.fragPos.xyz);
-        float Ld = length(L);
-        L /= Ld;
-        inputs.lightDir = L;
+        vec3 L = inputs.lightPos - In.fragPos.xyz;
+        float d = length(L);
         float Kc = ubo.lightAttenuation.x;
         float Kl = ubo.lightAttenuation.y;
         float Kq = ubo.lightAttenuation.z;
-        inputs.attenuation = 1.0 / (Kc + Kl*Ld + Kq*Ld*Ld);
+        inputs.attenuation = 1.0 / (Kc + Kl*d + Kq*d*d);
+        inputs.lightDir = L / d;
     }
     
     vec3 final = vec3(0);
@@ -178,16 +177,17 @@ void main()
     }
     /*****************************************************************/
 
-    uint flg_x = asuint(ubo.params.x);
+    uint params_x = asuint(ubo.params.x);
+    uint debflags = uint( ubo.debugFlags.x );
 
     if ( debflags == 0 )
     {
-        uint localCoverage = (flg_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
+        uint localCoverage = (params_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
         if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < ubo.alphaCutoff.x )
         { 
             discard;
         }
-        color.xyz = GammaIEC( tonemap( final )); 
+        color.xyz = Gamma( tonemap( final )); 
     }
     else if ( debflags == 1 )
     {

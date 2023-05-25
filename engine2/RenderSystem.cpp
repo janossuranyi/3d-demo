@@ -212,6 +212,12 @@ namespace jsr {
 		}
 	}
 
+	surface_t* R_CreateFullScreenRect()
+	{
+
+		return nullptr;
+	}
+
 
 	RenderSystem renderSystem;
 

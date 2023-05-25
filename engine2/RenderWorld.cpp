@@ -24,12 +24,17 @@ namespace jsr {
 
 	RenderWorld::RenderWorld() : gltf_state()
 	{
-		vertecCache		= renderSystem.vertexCache;
-		imageManager	= renderSystem.imageManager;
-		modelManager	= renderSystem.modelManager;
+		vertecCache = renderSystem.vertexCache;
+		imageManager = renderSystem.imageManager;
+		modelManager = renderSystem.modelManager;
 		materialManager = renderSystem.materialManager;
 		exposure = 1.0f;
-		lightColor = { 1.0f,1.0f,1.0f,1.0f };		
+		lightColor = { 1.0f,1.0f,1.0f,1.0f };
+		lightAttenuation = {};
+		lightOrig = {};
+		spotLightDir = {};
+		spotLightParams = {};
+
 	}
 
 	RenderWorld::~RenderWorld()
@@ -43,6 +48,7 @@ namespace jsr {
 		if (filename.empty()) return nullptr;
 
 		DestroyWorld();
+		vertecCache->ClearStaticCache();
 
 		gltf_state = new gltf_state_t();
 
