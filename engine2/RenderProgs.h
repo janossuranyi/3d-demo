@@ -20,11 +20,9 @@ namespace jsr {
 	{
 		alignas(16)
 		glm::mat4 localToWorldMatrix;
-		glm::mat4 worldToViewMatrix;
-		glm::mat4 projectionMatrix;
 		glm::mat4 WVPMatrix;
 		glm::mat4 normalMatrix;
-		glm::mat4 lightMatrix;
+		glm::mat4 lightProjMatrix;
 		glm::vec4 viewOrigin;
 		glm::vec4 matDiffuseFactor;
 		glm::vec4 matMRFactor;

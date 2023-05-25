@@ -203,7 +203,7 @@ void main()
     }
     else if ( debflags == 4 )
     {
-        vec3 c = inputs.spec.xyz * inputs.spec.w;
+        vec3 c = inputs.spec.xyz;
         color.xyz = c;
     }
     else if ( debflags == 5 )

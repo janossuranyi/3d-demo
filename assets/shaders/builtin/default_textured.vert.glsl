@@ -32,7 +32,7 @@ void main()
 	T = normalize(T - dot(T, N) * N);
 
     Out.fragPos     = ubo.localToWorldMatrix * in_Position;
-    Out.fragPosLight= ubo.lightMatrix * Out.fragPos;
+    Out.fragPosLight= ubo.lightProjMatrix * Out.fragPos;
     Out.color       = in_Color;
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);

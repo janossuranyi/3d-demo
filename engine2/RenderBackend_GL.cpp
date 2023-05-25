@@ -366,8 +366,8 @@ namespace jsr {
 
 		if (!view) return;
 
-		//RenderDepthPass();
 		RenderShadow();
+		RenderDepthPass();
 		RenderDebugPass();
 
 
@@ -428,10 +428,9 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		glDepthMask(GL_TRUE);
+		glDepthMask(GL_FALSE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glViewport(0, 0, view->scissor.w, view->scissor.h);
-		Clear(true, true, false);
+		Clear(true, false, false);
 
 		renderSystem.programManager->BindUniforms();
 
@@ -455,8 +454,7 @@ namespace jsr {
 		renderSystem.programManager->uniforms.spotDirection = view->spotLightDir;
 		renderSystem.programManager->uniforms.clipPlanes.x = view->nearClipDistance;
 		renderSystem.programManager->uniforms.clipPlanes.y = view->farClipDistance;
-		renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
-		renderSystem.programManager->uniforms.lightMatrix = lightViewProj;
+		renderSystem.programManager->uniforms.lightProjMatrix = lightViewProj;
 
 		for (int pass = 0; pass < 2; ++pass)
 		{
@@ -522,9 +520,11 @@ namespace jsr {
 
 		if (view == nullptr) return;
 
+		glViewport(0, 0, view->scissor.w, view->scissor.h);
 		glDepthMask(GL_TRUE);
-		Clear(false, true, false);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		Clear(false, true, false);
 
 		const drawSurf_t* surf;
 
@@ -546,7 +546,6 @@ namespace jsr {
 			renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
 
 			renderSystem.programManager->uniforms.localToWorldMatrix = surf->space->modelMatrix;
-			renderSystem.programManager->uniforms.projectionMatrix = view->projectionMatrix;
 			renderSystem.programManager->uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 			renderSystem.programManager->uniforms.WVPMatrix = surf->space->mvp;
 			renderSystem.programManager->uniforms.normalMatrix = normalMatrix;
@@ -590,10 +589,11 @@ namespace jsr {
 
 		auto& uniforms = renderSystem.programManager->uniforms;
 		renderSystem.programManager->UseProgram(PRG_ZPASS);
-		uniforms.projectionMatrix = lightProj;
 		uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 		uniforms.clipPlanes.x = view->nearClipDistance;
 		uniforms.clipPlanes.y = view->farClipDistance;
+
+		SetCullMode(CULL_FRONT);
 
 		for (int i = 0; i < view->numDrawSurfs; ++i)
 		{
@@ -613,7 +613,6 @@ namespace jsr {
 
 			renderSystem.programManager->UpdateUniforms();
 
-			SetCullMode(stage.cullMode);
 
 			IndexBuffer idx;
 			renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
