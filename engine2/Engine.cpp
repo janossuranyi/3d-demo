@@ -122,11 +122,11 @@ namespace jsr {
 		cube->SetScale({ .5f,.5f,.5f });
 
 		ImGuiIO& io = ImGui::GetIO();
-		world->exposure = 3.0f;
-		world->lightColor = vec4(vec3(255.f, 87.f, 51.f) / 255.0f, 5.0f);
+		world->exposure = 1.0f;
+		world->lightColor = vec4(vec3(255.f, 87.f, 51.f) / 255.0f, 8.0f);
 		world->lightAttenuation = vec4(1.0f, 0.0f, 1.0f, 0.0f);
-		world->spotLightParams.x = 45.0f;
-		world->spotLightParams.y = 40.0f;
+		world->spotLightParams.x = 40.0f;
+		world->spotLightParams.y = 35.0f;
 		world->spotLightParams.z = 0.5f;
 		world->spotLightParams.w = 0.0f;
 		bool spotOn = false;
@@ -309,9 +309,9 @@ namespace jsr {
 		view->farClipDistance = R;
 		view->nearClipDistance = 0.1f;
 		view->lightColor = world->lightColor;
-		view->lightPos = vec4(player.Position, 1.0f);
+		view->lightPos = vec4(player.Position + vec3(0.2f,0.3f,0.0f), 1.0f);
 		view->lightAttenuation = world->lightAttenuation;
-		view->spotLightDir = normalize(vec4(player.Front,0.0f));
+		view->spotLightDir = vec4(player.Front, 0.0f);
 		view->spotLightParams = vec4(
 			cos(radians(world->spotLightParams.x)),
 			cos(radians(world->spotLightParams.y)),
@@ -319,7 +319,7 @@ namespace jsr {
 			world->spotLightParams.w);
 
 		view->renderView.viewID = 1;
-		view->renderView.fov = player.Zoom;
+		view->renderView.fov = radians(player.Zoom*1.5f);
 		view->renderView.vieworg = player.Position;
 		view->renderView.viewMatrix = viewMatrix;
 		view->projectionMatrix = projMatrix;

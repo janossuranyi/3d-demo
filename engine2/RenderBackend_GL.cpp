@@ -442,7 +442,7 @@ namespace jsr {
 		vec3 lightDir = view->spotLightDir;
 		vec3 lightPos = view->lightPos;
 
-		mat4 lightProj = perspective(radians(90.f), 1.0f, view->nearClipDistance, view->farClipDistance);
+		mat4 lightProj = perspective(view->renderView.fov, 1.0f, view->nearClipDistance, view->farClipDistance);
 		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
 		mat4 lightViewProj = lightProj * lightView;
 
@@ -582,7 +582,7 @@ namespace jsr {
 		vec3 lightDir = view->spotLightDir;
 		vec3 lightPos = view->lightPos;
 
-		mat4 lightProj = perspective(radians(90.f), 1.0f, view->nearClipDistance, view->farClipDistance);
+		mat4 lightProj = perspective(view->renderView.fov, 1.0f, view->nearClipDistance, view->farClipDistance);
 		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
 		mat4 lightViewProj = lightProj * lightView;
 

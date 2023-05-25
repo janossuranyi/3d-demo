@@ -3,7 +3,7 @@
 @include "uniforms.inc.glsl"
 // Line 1+51+17 = 78
 
-//#define LIKE_A_DOOM
+#define LIKE_A_DOOM
 
 in INTERFACE
 {
@@ -95,8 +95,9 @@ vec4 specBRDF_DOOM( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 
 const vec3 CANDLE_COLOR = vec3(255, 87, 51)/255.0;
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
 {
+    float bias = 0.005 * (1.0 - NdotL);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
@@ -104,10 +105,8 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     float closestDepth = texture(tShadow, projCoords.xy).r; 
     // check whether current frag pos is in shadow
-    float shadow = projCoords.z > closestDepth  ? 0.3 : 1.0;
-
-    return shadow;
-}  
+    return step(closestDepth, (projCoords.z - bias));
+}
 
 void main()
 {
@@ -132,18 +131,6 @@ void main()
     inputs.lightPos = vec3(ubo.lightOrig);
     inputs.lightColor = ubo.lightColor.rgb * ubo.lightColor.w;
     /*****************************************************************/
-    float shadow = 1.0;
-    {
-        // perform perspective divide
-        vec3 projCoords = In.fragPosLight.xyz / In.fragPosLight.w;
-        // transform to [0,1] range
-        projCoords = projCoords * 0.5 + 0.5;
-        // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-        float closestDepth = texture(tShadow, projCoords.xy).r; 
-        // check whether current frag pos is in shadow
-        shadow = closestDepth < (projCoords.z + 0.00001) ? 0.3 : 1.0;
-    }
-
     inputs.viewDir = normalize(ubo.viewOrigin.xyz - In.fragPos.xyz);
     {
         vec3 L = (inputs.lightPos - In.fragPos.xyz);
@@ -155,11 +142,10 @@ void main()
         float Kq = ubo.lightAttenuation.z;
         inputs.attenuation = 1.0 / (Kc + Kl*Ld + Kq*Ld*Ld);
     }
-
+    
     vec3 final = vec3(0);
     {
         float exposure = ubo.params.y;
-        float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
         if (ubo.spotLightParams.w > 0.0)
         {
             // spotlight
@@ -181,6 +167,8 @@ void main()
 #endif
         vec3 F = spec.rgb;
         float Ks = spec.w;
+        float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
+        float shadow = 1.0-(0.8 * ShadowCalculation(In.fragPosLight, NdotL));
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
         final = (Kd * inputs.sampleAmbient.xyz + F * Ks) * NdotL * inputs.lightColor * inputs.attenuation * shadow;
@@ -211,11 +199,11 @@ void main()
     }
     else if ( debflags == 3 )
     {
-        color.xyz = vec3(inputs.spec.w);
+        color.xyz = vec3( inputs.spec.w );
     }
     else if ( debflags == 4 )
     {
-        vec3 c = vec3(1.0) - exp(-inputs.spec.xyz * ubo.params.y);
+        vec3 c = inputs.spec.xyz * inputs.spec.w;
         color.xyz = c;
     }
     else if ( debflags == 5 )
