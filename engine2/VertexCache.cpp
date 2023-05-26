@@ -411,7 +411,7 @@ namespace jsr {
 
 		case CACHE_UNIFORM:
 			numBytes = (bytes + (uniformBufferAligment - 1)) & ~(uniformBufferAligment - 1);
-			endPos = gbs.uniformsAlloced.fetch_add(bytes, std::memory_order_relaxed) + numBytes;
+			endPos = gbs.uniformsAlloced.fetch_add(numBytes, std::memory_order_relaxed) + numBytes;
 			if (endPos > gbs.uniformMaxSize)
 			{
 				Error("Out of uniform cache !");

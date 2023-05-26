@@ -39,7 +39,7 @@ namespace jsr {
 		glm::vec4 matMRFactor;
 		glm::vec4 alphaCutoff;
 		glm::vec4 debugFlags;
-		glm::vec4 clipPlanes;
+		glm::vec4 nearFarClip;
 		// params.x = FLAG_X_ *
 		// params.y = exposure
 		// params.z = 1/Shadow resolution
@@ -68,11 +68,10 @@ namespace jsr {
 	{
 		glm::mat4 viewMatrix;
 		glm::mat4 projectMatrix;
-		glm::vec4 viewOrigin;
+		glm::mat4 lightProjMatrix;
 	};
 	struct uboFreqHighVert_t 
 	{
-		glm::mat4 lightProjMatrix;
 		glm::mat4 localToWorldMatrix;
 		glm::mat4 WVPMatrix;
 		glm::mat4 normalMatrix;
@@ -80,17 +79,13 @@ namespace jsr {
 
 	struct uboFreqLowFrag_t
 	{
-		glm::vec4 params;
+		glm::vec4 debugparams;
 		glm::vec4 shadowparams;
 		glm::vec4 screenSize;
 		glm::vec4 oneOverScreenSize;
-	};
-
-	struct uboFreqHighFrag_t 
-	{
-		glm::vec4 matDiffuseFactor;
-		glm::vec4 matMRFactor;
-		glm::vec4 alphaCutoff;
+		glm::vec4 nearFarClip;
+		glm::vec4 params;
+		glm::vec4 viewOrigin;
 		glm::vec4 lightOrig;
 		glm::vec4 lightColor;
 		glm::vec4 lightAttenuation;
@@ -100,6 +95,15 @@ namespace jsr {
 		// z = spotExponent
 		glm::vec4 spotLightParams;
 		glm::vec4 spotDirection;
+
+	};
+
+	struct uboFreqHighFrag_t 
+	{
+		glm::vec4 matDiffuseFactor;
+		glm::vec4 matMRFactor;
+		glm::vec4 alphaCutoff;
+		glm::vec4 params;
 	};
 
 	enum eVertexLayout

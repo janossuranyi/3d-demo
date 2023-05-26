@@ -1,6 +1,6 @@
 @include "version.inc.glsl"
 @include "common.inc.glsl"
-@include "uniforms.inc.glsl"
+@include "fragment_uniforms.inc.glsl"
 // Line 1+51+17 = 78
 
 #define LIKE_A_DOOM
@@ -44,8 +44,8 @@ vec3 Gamma(vec3 c) { return pow(c, vec3(1.0/2.2)); }
 
 float linearize_depth(float original_depth) {
 	float z = original_depth * 2.0 - 1.0;
-    float near = ubo.clipPlanes.x;
-    float far  = ubo.clipPlanes.y;
+    float near = g_freqLowFrag.nearFarClip.x;
+    float far  = g_freqLowFrag.nearFarClip.y;
     return (2.0 * near * far) / (far + near - z * (far - near));
 }
 
@@ -139,14 +139,14 @@ void main()
         inputs.vertexNormal = localNormal;
     }
     
-    inputs.sampleAmbient = ubo.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
+    inputs.sampleAmbient = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
     inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);
 
-    inputs.lightPos = vec3(ubo.lightOrig);
-    inputs.lightColor = ubo.lightColor.rgb * ubo.lightColor.w;
+    inputs.lightPos = vec3(g_freqLowFrag.lightOrig);
+    inputs.lightColor = g_freqLowFrag.lightColor.rgb * g_freqLowFrag.lightColor.w;
 
     /*********************** Lighting  ****************************/
-    inputs.viewDir = normalize(ubo.viewOrigin.xyz - In.fragPos.xyz);
+    inputs.viewDir = normalize(g_freqLowFrag.viewOrigin.xyz - In.fragPos.xyz);
     {
         vec3 L = inputs.lightPos - In.fragPos.xyz;
         float d = length(L);
@@ -160,7 +160,7 @@ void main()
         {
             // spotlight
             float spotAttenuation = 0.02;
-            float spotDdotL = saturate(dot (-inputs.lightDir, ubo.spotDirection.xyz));
+            float spotDdotL = saturate(dot (-inputs.lightDir, g_freqLowFrag.spotDirection.xyz));
             if (spotDdotL >= gSpotCosCutoff)
             {
                 float spotValue = smoothstep(gSpotCosCutoff, gSpotCosInnerCutoff, spotDdotL);
@@ -190,13 +190,13 @@ void main()
     /*****************************************************************/
 
     uint params_x = asuint(gFlagsX);
-    uint debflags = uint( ubo.debugFlags.x );
+    uint debflags = uint( g_freqLowFrag.params.y );
     vec4 color = vec4(vec3(0),1);
 
     if ( debflags == 0 )
     {
         uint localCoverage = (params_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
-        if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < ubo.alphaCutoff.x )
+        if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < g_freqHighFrag.alphaCutoff.x )
         { 
             discard;
         }

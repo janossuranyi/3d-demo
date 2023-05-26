@@ -365,6 +365,36 @@ namespace jsr {
 		this->view = view;
 
 		if (!view) return;
+		int x, y;
+		renderSystem.backend->GetScreenSize(x, y);
+
+		renderSystem.programManager->UniformChanged(UBB_FREQ_LOW_VERT);
+		renderSystem.programManager->UniformChanged(UBB_FREQ_LOW_FRAG);
+
+		vec3 lightDir = view->spotLightDir;
+		vec3 lightPos = view->lightPos;
+
+		mat4 lightProj = perspective(view->renderView.fov, 1.0f, view->nearClipDistance, view->farClipDistance);
+		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
+		mat4 lightViewProj = lightProj * lightView;
+
+		auto& slowvert = renderSystem.programManager->g_freqLowVert;
+		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
+
+		slowvert.viewMatrix = view->renderView.viewMatrix;
+		slowvert.projectMatrix = view->projectionMatrix;
+		slowvert.lightProjMatrix = lightViewProj;
+
+		slowfrag.nearFarClip = { view->nearClipDistance,view->farClipDistance,0.f,0.f };
+		slowfrag.oneOverScreenSize = { 1.0f / (float)x, 1.0f / (float)y,0.f,0.f };
+		slowfrag.shadowparams = { 1.0f / (float)renderGlobals.shadowResolution,renderGlobals.shadowScale,renderGlobals.shadowBias,0.0f };
+		slowfrag.params.x = view->exposure;
+		slowfrag.lightOrig = view->lightPos;
+		slowfrag.lightColor = view->lightColor;
+		slowfrag.spotLightParams = view->spotLightParams;
+		slowfrag.lightAttenuation = view->lightAttenuation;
+		slowfrag.spotDirection = view->spotLightDir;
+		slowfrag.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 
 		uboUniforms_t& uniforms = renderSystem.programManager->uniforms;
 
@@ -375,8 +405,8 @@ namespace jsr {
 		uniforms.spotLightParams = view->spotLightParams;
 		uniforms.lightAttenuation = view->lightAttenuation;
 		uniforms.spotDirection = view->spotLightDir;
-		uniforms.clipPlanes.x = view->nearClipDistance;
-		uniforms.clipPlanes.y = view->farClipDistance;
+		uniforms.nearFarClip.x = view->nearClipDistance;
+		uniforms.nearFarClip.y = view->farClipDistance;
 		uniforms.gOneOverShadowRes = 1.0f / renderGlobals.shadowResolution;
 		uniforms.gShadowScale = renderGlobals.shadowScale;
 		uniforms.gShadowBias = renderGlobals.shadowBias;
@@ -511,6 +541,18 @@ namespace jsr {
 				mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
 				uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
 
+				renderSystem.programManager->UniformChanged(UBB_FREQ_HIGH_VERT);
+				renderSystem.programManager->UniformChanged(UBB_FREQ_HIGH_FRAG);
+				auto& highvert = renderSystem.programManager->g_freqHighVert;
+				auto& highfrag = renderSystem.programManager->g_freqHighFrag;
+				highvert.localToWorldMatrix = surf->space->modelMatrix;
+				highvert.normalMatrix = normalMatrix;
+				highvert.WVPMatrix = surf->space->mvp;
+				highfrag.params.x = uintBitsToFloat(flg_x);
+				highfrag.matDiffuseFactor = stage.diffuseScale;
+				highfrag.matMRFactor.x = stage.roughnessScale;
+				highfrag.matMRFactor.y = stage.metallicScale;
+
 				auto& uniforms = renderSystem.programManager->uniforms;
 				uniforms.alphaCutoff.x = stage.alphaCutoff;
 				uniforms.localToWorldMatrix = surf->space->modelMatrix;
@@ -541,8 +583,6 @@ namespace jsr {
 
 		const drawSurf_t* surf;
 
-		uboUniforms_t& uniforms = renderSystem.programManager->uniforms;
-
 		renderSystem.programManager->UseProgram(PRG_ZPASS);
 
 		for (int i = 0; i < view->numDrawSurfs; ++i)
@@ -555,8 +595,10 @@ namespace jsr {
 			if (stage.coverage != COVERAGE_SOLID) continue;
 			SetCullMode(stage.cullMode);
 
-			uniforms.localToWorldMatrix = surf->space->modelMatrix;
-			uniforms.WVPMatrix = surf->space->mvp;
+			renderSystem.programManager->UniformChanged(UBB_FREQ_HIGH_VERT);
+			auto& highvert = renderSystem.programManager->g_freqHighVert;
+			highvert.localToWorldMatrix = surf->space->modelMatrix;
+			highvert.WVPMatrix = surf->space->mvp;
 
 			R_DrawSurf(surf);
 		}
@@ -583,7 +625,6 @@ namespace jsr {
 
 		const drawSurf_t* surf;
 
-		auto& uniforms = renderSystem.programManager->uniforms;
 		renderSystem.programManager->UseProgram(PRG_ZPASS);
 
 		SetCullMode(CULL_FRONT);
@@ -598,7 +639,8 @@ namespace jsr {
 			const stage_t& stage = shader->GetStage(STAGE_SHADOW);
 			if ( stage.coverage != COVERAGE_SOLID ) continue;
 
-			uniforms.WVPMatrix = lightViewProj * surf->space->modelMatrix;
+			renderSystem.programManager->UniformChanged(UBB_FREQ_HIGH_VERT);
+			renderSystem.programManager->g_freqHighVert.WVPMatrix = lightViewProj * surf->space->modelMatrix;
 
 			R_DrawSurf(surf);
 		}

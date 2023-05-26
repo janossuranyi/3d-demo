@@ -1,0 +1,4 @@
+#define UBB_FREQ_LOW_VERT	0
+#define UBB_FREQ_HIGH_VERT	1
+#define UBB_FREQ_LOW_FRAG	2
+#define UBB_FREQ_HIGH_FRAG	3

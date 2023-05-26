@@ -126,6 +126,7 @@ namespace jsr {
 						GL_CHECK( glDeleteProgram( k.prg ) );
 					}
 				}
+				abort();
 
 				return false;
 			}
@@ -145,8 +146,8 @@ namespace jsr {
 	void ProgramManager::UpdateUniforms()
 	{
 		UniformBuffer buffer;
-		renderSystem.vertexCache->GetUniformBuffer(uniformsCache, buffer);
-		buffer.Update(&uniforms, 0, sizeof(uniforms));
+		//renderSystem.vertexCache->GetUniformBuffer(uniformsCache, buffer);
+		//buffer.Update(&uniforms, 0, sizeof(uniforms));
 
 		if (uboChangedBits & (1UL << UBB_FREQ_LOW_VERT))
 		{
@@ -178,10 +179,17 @@ namespace jsr {
 	void ProgramManager::BindUniforms()
 	{
 		UniformBuffer ubo;
-		if (renderSystem.vertexCache->GetUniformBuffer(uniformsCache, ubo))
-		{
-			GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, SHADER_UNIFORMS_BINDING, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
-		}
+		renderSystem.vertexCache->GetUniformBuffer(uniformsCache, ubo);
+		GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, SHADER_UNIFORMS_BINDING, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
+
+		renderSystem.vertexCache->GetUniformBuffer(c_freqLowVert, ubo);
+		GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, UBB_FREQ_LOW_VERT, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
+		renderSystem.vertexCache->GetUniformBuffer(c_freqHighVert, ubo);
+		GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, UBB_FREQ_HIGH_VERT, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
+		renderSystem.vertexCache->GetUniformBuffer(c_freqLowFrag, ubo);
+		GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, UBB_FREQ_LOW_FRAG, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
+		renderSystem.vertexCache->GetUniformBuffer(c_freqHighFrag, ubo);
+		GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, UBB_FREQ_HIGH_FRAG, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
 	}
 
 	bool ProgramManager::CreateBuiltinProgram(renderProgram_t& p)

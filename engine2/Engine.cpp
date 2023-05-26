@@ -210,25 +210,25 @@ namespace jsr {
 						mover[RIGHT] = true;
 						break;
 					case SDLK_0:
-						renderSystem.programManager->uniforms.debugFlags = vec4(0.f);
+						renderSystem.programManager->g_freqLowFrag.params.y = 0.0f;
 						break;
 					case SDLK_1:
-						renderSystem.programManager->uniforms.debugFlags = vec4(1.f);
+						renderSystem.programManager->g_freqLowFrag.params.y = 1.0f;
 						break;
 					case SDLK_2:
-						renderSystem.programManager->uniforms.debugFlags = vec4(2.f);
+						renderSystem.programManager->g_freqLowFrag.params.y = 2.0f;
 						break;
 					case SDLK_3:
-						renderSystem.programManager->uniforms.debugFlags = vec4(3.f);
+						renderSystem.programManager->g_freqLowFrag.params.y = 3.0f;
 						break;
 					case SDLK_4:
-						renderSystem.programManager->uniforms.debugFlags = vec4(4.f);
+						renderSystem.programManager->g_freqLowFrag.params.y = 4.0f;
 						break;
 					case SDLK_5:
-						renderSystem.programManager->uniforms.debugFlags = vec4(5.f);
+						renderSystem.programManager->g_freqLowFrag.params.y = 5.0f;
 						break;
 					case SDLK_6:
-						renderSystem.programManager->uniforms.debugFlags = vec4(6.f);
+						renderSystem.programManager->g_freqLowFrag.params.y = 6.0f;
 						break;
 					case SDLK_ESCAPE:
 						quit = true;

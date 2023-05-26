@@ -1,6 +1,7 @@
 @include "version.inc.glsl"
 @include "common.inc.glsl"
-@include "uniforms.inc.glsl"
+@include "defs.inc"
+@include "vertex_uniforms.inc.glsl"
 
 layout(location = 0) in vec4 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
@@ -20,9 +21,9 @@ out INTERFACE
 
 void main()
 {
-    gl_Position = ubo.WVPMatrix * in_Position;
+    gl_Position = g_freqHighVert.WVPMatrix * in_Position;
 
-    mat3 mNormal3   = mat3(ubo.normalMatrix);	
+    mat3 mNormal3   = mat3(g_freqHighVert.normalMatrix);	
     vec4 localTangent = in_Tangent * 2.0 - 1.0;
     localTangent.w = floor( in_Tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
 
@@ -31,8 +32,8 @@ void main()
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 
-    Out.fragPos     = ubo.localToWorldMatrix * in_Position;
-    Out.fragPosLight= ubo.lightProjMatrix * Out.fragPos;
+    Out.fragPos     = g_freqHighVert.localToWorldMatrix * in_Position;
+    Out.fragPosLight= g_freqLowVert.lightProjMatrix * Out.fragPos;
     Out.color       = in_Color;
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);
