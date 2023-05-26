@@ -36,7 +36,7 @@ layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
 layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
 layout(binding = IMU_AORM)      uniform sampler2D tAORM;
 layout(binding = IMU_EMMISIVE)  uniform sampler2D tEmissive;
-layout(binding = IMU_SHADOW)    uniform sampler2D tShadow;
+layout(binding = IMU_SHADOW)    uniform sampler2DShadow tShadow;
 
 vec3 ReconstructNormal(vec3 normalTS) { return normalize(normalTS * 2.0 - 1.0); }
 vec3 EncodeColor(vec3 N) { return saturate( (1.0 + N) * 0.5 ); }
@@ -95,6 +95,7 @@ vec4 specBRDF_DOOM( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 }
 
 const vec3 CANDLE_COLOR = vec3(255, 87, 51)/255.0;
+const float ONE_OVER_SHADOW_RES = ubo.params.z;
 
 float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
 {
@@ -103,11 +104,25 @@ float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
+    float xOffset = ONE_OVER_SHADOW_RES;
+    float yOffset = ONE_OVER_SHADOW_RES;
+    float factor = 0.0;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(tShadow, projCoords.xy).r; 
+    // float closestDepth = texture(tShadow, projCoords.xy).r; 
     // check whether current frag pos is in shadow
-    return step(closestDepth, (projCoords.z - bias));
+    // return step(closestDepth, (projCoords.z - bias));
+
+    const float z = projCoords.z - bias;
+     for (int y = -1 ; y <= 1 ; y++) {
+        for (int x = -1 ; x <= 1 ; x++) {
+            vec2 Offsets = vec2(x * xOffset, y * yOffset);
+            vec3 UVC = vec3(projCoords.xy + Offsets, z);
+            factor += texture(tShadow, UVC);
+        }
+    }
+    return 1.0 - (factor / 9.0);
 }
+
 
 void main()
 {
@@ -167,7 +182,7 @@ void main()
         vec3 F = spec.rgb;
         float Ks = spec.w;
         float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
-        float shadow = 1.0-(0.8 * ShadowCalculation(In.fragPosLight, NdotL));
+        float shadow = 1.0-(0.8*ShadowCalculation(In.fragPosLight, NdotL));
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
         final = (Kd * inputs.sampleAmbient.xyz + F * Ks) * NdotL * inputs.lightColor * inputs.attenuation * shadow;

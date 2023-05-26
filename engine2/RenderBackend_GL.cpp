@@ -378,6 +378,7 @@ namespace jsr {
 		uniforms.spotDirection = view->spotLightDir;
 		uniforms.clipPlanes.x = view->nearClipDistance;
 		uniforms.clipPlanes.y = view->farClipDistance;
+		uniforms.params.z = 1.0f / renderSystem.shadowResolution;
 
 		RenderShadow();
 		RenderDepthPass();
@@ -590,11 +591,12 @@ namespace jsr {
 		{
 			surf = view->drawSurfs[i];
 			const Material* shader = surf->shader;
-			if (!shader || shader->IsEmpty()) continue;
-			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
+			if ( ! shader || shader->IsEmpty() ) continue;
+			if ( ! shader->GetStage(STAGE_SHADOW).enabled ) continue;
 
-			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
-			if (stage.coverage != COVERAGE_SOLID) continue;
+			const stage_t& stage = shader->GetStage(STAGE_SHADOW);
+			if ( stage.coverage != COVERAGE_SOLID ) continue;
+
 			uniforms.WVPMatrix = lightViewProj * surf->space->modelMatrix;
 
 			R_DrawSurf(surf);

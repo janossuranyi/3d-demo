@@ -241,6 +241,11 @@ namespace jsr {
 		//GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_MAX_LOD, (float)(opts.numLevel - 1)));
 		GL_CHECK(glTexParameterf(apiTarget, GL_TEXTURE_LOD_BIAS, 0.0f));
 		GL_CHECK(glTexParameterfv(apiTarget, GL_TEXTURE_BORDER_COLOR, &borderColor[0]));
+		if (GetUsage() == IMU_DEPTH)
+		{
+			GL_CHECK(glTexParameteri(apiTarget, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
+			GL_CHECK(glTexParameteri(apiTarget, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL));
+		}
 	}
 
 	bool Image::AllocImage(const imageOpts_t& opts_, eImageFilter minFilter, eImageRepeat repeat)

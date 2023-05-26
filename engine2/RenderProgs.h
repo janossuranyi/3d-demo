@@ -31,6 +31,7 @@ namespace jsr {
 		glm::vec4 clipPlanes;
 		// params.x = FLAG_X_ *
 		// params.y = exposure
+		// params.z = 1/Shadow resolution
 		glm::vec4 params;
 		glm::vec4 lightOrig;
 		glm::vec4 lightColor;

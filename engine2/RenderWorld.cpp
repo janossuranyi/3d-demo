@@ -361,6 +361,15 @@ namespace jsr {
 			stage.metallicScale = static_cast<float>(gmat.pbrMetallicRoughness.metallicFactor);
 			stage.emissiveScale = glm::vec4(glm::make_vec3((double*) gmat.emissiveFactor.data()), 0.0f);
 
+			if (gmat.name.find("noshadow") == std::string::npos)
+			{
+				stage_t& shadow = mat->GetStage(STAGE_SHADOW);
+				shadow.shader = PRG_ZPASS;
+				shadow.coverage = cov;
+				shadow.enabled = true;
+				shadow.type = STAGE_SHADOW;
+			}
+
 			if (gmat.pbrMetallicRoughness.baseColorTexture.index > -1) {
 				stage.images[IMU_DIFFUSE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.pbrMetallicRoughness.baseColorTexture.index]);
 			}
