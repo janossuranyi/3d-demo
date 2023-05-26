@@ -141,11 +141,38 @@ namespace jsr {
 			GL_CHECK( glUseProgram( (GLuint)apiObject ) );
 		}
 	}
+
 	void ProgramManager::UpdateUniforms()
 	{
 		UniformBuffer buffer;
 		renderSystem.vertexCache->GetUniformBuffer(uniformsCache, buffer);
 		buffer.Update(&uniforms, 0, sizeof(uniforms));
+
+		if (uboChangedBits & (1UL << UBB_FREQ_LOW_VERT))
+		{
+			UniformBuffer buffer;
+			renderSystem.vertexCache->GetUniformBuffer(c_freqLowVert, buffer);
+			buffer.Update(&g_freqLowVert, 0, sizeof(g_freqLowVert));
+		}
+		if (uboChangedBits & (1UL << UBB_FREQ_HIGH_VERT))
+		{
+			UniformBuffer buffer;
+			renderSystem.vertexCache->GetUniformBuffer(c_freqHighVert, buffer);
+			buffer.Update(&g_freqHighVert, 0, sizeof(g_freqHighVert));
+		}
+		if (uboChangedBits & (1UL << UBB_FREQ_LOW_FRAG))
+		{
+			UniformBuffer buffer;
+			renderSystem.vertexCache->GetUniformBuffer(c_freqLowFrag, buffer);
+			buffer.Update(&g_freqLowFrag, 0, sizeof(g_freqLowFrag));
+		}
+		if (uboChangedBits & (1UL << UBB_FREQ_HIGH_FRAG))
+		{
+			UniformBuffer buffer;
+			renderSystem.vertexCache->GetUniformBuffer(c_freqHighFrag, buffer);
+			buffer.Update(&g_freqHighFrag, 0, sizeof(g_freqHighFrag));
+		}
+		uboChangedBits = 0;
 	}
 
 	void ProgramManager::BindUniforms()
@@ -153,13 +180,7 @@ namespace jsr {
 		UniformBuffer ubo;
 		if (renderSystem.vertexCache->GetUniformBuffer(uniformsCache, ubo))
 		{
-			if (glcontext.uboBindings[SHADER_UNIFORMS_BINDING].buffer != ubo.apiObject ||
-				glcontext.uboBindings[SHADER_UNIFORMS_BINDING].offset != ubo.GetOffset())
-			{
-				GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, SHADER_UNIFORMS_BINDING, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
-				glcontext.uboBindings[SHADER_UNIFORMS_BINDING].buffer = ubo.apiObject;
-				glcontext.uboBindings[SHADER_UNIFORMS_BINDING].offset = ubo.GetOffset();
-			}
+			GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, SHADER_UNIFORMS_BINDING, ubo.apiObject, ubo.GetOffset(), ubo.GetSize()));
 		}
 	}
 

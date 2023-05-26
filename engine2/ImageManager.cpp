@@ -155,10 +155,10 @@ namespace jsr {
 			Error("[ImageManager]: Image flatNormal allocation failed !");
 		}
 
-		opts.format = IMF_D32F;
+		opts.format = IMF_D32;
 		opts.usage = IMU_DEPTH;
-		opts.sizeX = renderSystem.shadowResolution;
-		opts.sizeY = renderSystem.shadowResolution;
+		opts.sizeX = renderGlobals.shadowResolution;
+		opts.sizeY = renderGlobals.shadowResolution;
 		opts.autocompress = false;
 		opts.compressed = false;
 		if (!globalImages.Depth32->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))

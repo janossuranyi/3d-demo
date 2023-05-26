@@ -95,17 +95,18 @@ vec4 specBRDF_DOOM( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 }
 
 const vec3 CANDLE_COLOR = vec3(255, 87, 51)/255.0;
-const float ONE_OVER_SHADOW_RES = ubo.params.z;
 
+// Performs shadow calculation with PCF
+// Returns 1.0 if fragment is in shadow 0.0 otherwise
 float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
 {
-    float bias = 0.005 * (1.0 - NdotL);
+    float bias = gShadowBias * (1.0 - NdotL);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
-    float xOffset = ONE_OVER_SHADOW_RES;
-    float yOffset = ONE_OVER_SHADOW_RES;
+    float xOffset = gOneOverShadowRes;
+    float yOffset = gOneOverShadowRes;
     float factor = 0.0;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     // float closestDepth = texture(tShadow, projCoords.xy).r; 
@@ -126,7 +127,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
 
 void main()
 {
-    lightinginput_t inputs;// = lightinginput_t(mat3(0),vec3(0),vec3(0),vec4(0),vec4(0),vec4(0),vec3(0),vec3(0),vec3(0),vec3(0),0);
+    lightinginput_t inputs;
     
     {
         vec3 localTangent       = normalize( In.tangent.xyz );
@@ -137,38 +138,33 @@ void main()
         inputs.normal   = (inputs.tbn * normalTS);
         inputs.vertexNormal = localNormal;
     }
-
-    vec4 color = vec4( 0.0 );
     
     inputs.sampleAmbient = ubo.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
-    inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, ubo.matMRFactor.x, ubo.matMRFactor.y, 1.0);
+    inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);
 
     inputs.lightPos = vec3(ubo.lightOrig);
     inputs.lightColor = ubo.lightColor.rgb * ubo.lightColor.w;
-    /*****************************************************************/
+
+    /*********************** Lighting  ****************************/
     inputs.viewDir = normalize(ubo.viewOrigin.xyz - In.fragPos.xyz);
     {
         vec3 L = inputs.lightPos - In.fragPos.xyz;
         float d = length(L);
-        float Kc = ubo.lightAttenuation.x;
-        float Kl = ubo.lightAttenuation.y;
-        float Kq = ubo.lightAttenuation.z;
-        inputs.attenuation = 1.0 / (Kc + Kl*d + Kq*d*d);
+        inputs.attenuation = 1.0 / ( gConstantAttnFactor + gLinearAttnFactor * d + gQuadraticAttnFactor * d * d );
         inputs.lightDir = L / d;
     }
     
-    vec3 final = vec3(0);
+    vec3 finalColor = vec3(0.0);
     {
-        float exposure = ubo.params.y;
-        if (ubo.spotLightParams.w > 0.0)
+        if (gSpotLight > 0.0)
         {
             // spotlight
             float spotAttenuation = 0.02;
             float spotDdotL = saturate(dot (-inputs.lightDir, ubo.spotDirection.xyz));
-            if (spotDdotL >= ubo.spotLightParams.x)
+            if (spotDdotL >= gSpotCosCutoff)
             {
-                float spotValue = smoothstep(ubo.spotLightParams.x, ubo.spotLightParams.y, spotDdotL);
-                spotAttenuation += ApproxPow(spotValue, ubo.spotLightParams.z);
+                float spotValue = smoothstep(gSpotCosCutoff, gSpotCosInnerCutoff, spotDdotL);
+                spotAttenuation += ApproxPow(spotValue, gSpotExponent);
             }
             inputs.attenuation *= spotAttenuation;
         }
@@ -182,18 +178,20 @@ void main()
         vec3 F = spec.rgb;
         float Ks = spec.w;
         float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
-        float shadow = 1.0-(0.8*ShadowCalculation(In.fragPosLight, NdotL));
+        float shadow = 1.0-(gShadowScale*ShadowCalculation(In.fragPosLight, NdotL));
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
-        final = (Kd * inputs.sampleAmbient.xyz + F * Ks) * NdotL * inputs.lightColor * inputs.attenuation * shadow;
-        final = vec3(1.0) - exp(-final * exposure);
+
+        finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * NdotL * inputs.lightColor * inputs.attenuation * shadow;
+        finalColor = vec3(1.0) - exp(-finalColor * gExposure);
 
         inputs.spec = vec4(F * Ks, Ks);
     }
     /*****************************************************************/
 
-    uint params_x = asuint(ubo.params.x);
+    uint params_x = asuint(gFlagsX);
     uint debflags = uint( ubo.debugFlags.x );
+    vec4 color = vec4(vec3(0),1);
 
     if ( debflags == 0 )
     {
@@ -202,7 +200,7 @@ void main()
         { 
             discard;
         }
-        color.xyz = Gamma( tonemap( final )); 
+        color.xyz = Gamma( tonemap( finalColor ));
     }
     else if ( debflags == 1 )
     {

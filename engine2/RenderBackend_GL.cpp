@@ -366,11 +366,10 @@ namespace jsr {
 
 		if (!view) return;
 
-		renderSystem.programManager->BindUniforms();
 		uboUniforms_t& uniforms = renderSystem.programManager->uniforms;
 
 		uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
-		uniforms.params.y = view->exposure;
+		uniforms.gExposure = view->exposure;
 		uniforms.lightOrig = view->lightPos;
 		uniforms.lightColor = view->lightColor;
 		uniforms.spotLightParams = view->spotLightParams;
@@ -378,7 +377,9 @@ namespace jsr {
 		uniforms.spotDirection = view->spotLightDir;
 		uniforms.clipPlanes.x = view->nearClipDistance;
 		uniforms.clipPlanes.y = view->farClipDistance;
-		uniforms.params.z = 1.0f / renderSystem.shadowResolution;
+		uniforms.gOneOverShadowRes = 1.0f / renderGlobals.shadowResolution;
+		uniforms.gShadowScale = renderGlobals.shadowScale;
+		uniforms.gShadowBias = renderGlobals.shadowBias;
 
 		RenderShadow();
 		RenderDepthPass();
@@ -568,7 +569,7 @@ namespace jsr {
 		globalFramebuffers.shadowFBO->Bind();
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
-		glViewport(0, 0, renderSystem.shadowResolution, renderSystem.shadowResolution);
+		glViewport(0, 0, renderGlobals.shadowResolution, renderGlobals.shadowResolution);
 
 		Clear(false, true, false);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);

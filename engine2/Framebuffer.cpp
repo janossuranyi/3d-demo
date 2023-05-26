@@ -26,7 +26,7 @@ namespace jsr {
 		int w, h;
 		renderSystem.backend->GetScreenSize( w, h );
 
-		const int shadowRes = renderSystem.shadowResolution;
+		const int shadowRes = renderGlobals.shadowResolution;
 
 		fb = new Framebuffer("shadowFBO", shadowRes, shadowRes);
 		fb->Bind();

@@ -15,7 +15,7 @@ namespace jsr {
 
 	const size_t DEFAULT_FRAME_MEM_SIZE = 16 * 1024 * 1024;
 
-	
+	renderGlobals_t			renderGlobals{};
 	frameData_t				frames[ON_FLIGHT_FRAMES];
 	frameData_t*			frameData;
 	frameData_t*			renderData;

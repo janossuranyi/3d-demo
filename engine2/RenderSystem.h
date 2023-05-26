@@ -10,6 +10,18 @@
 
 namespace jsr {
 
+	struct renderGlobals_t
+	{
+		unsigned int shadowResolution;
+		float shadowScale;
+		float shadowBias;
+
+		renderGlobals_t() :
+			shadowResolution(1024),
+			shadowScale(0.8f),
+			shadowBias(0.0001f) {}
+	};
+
 	struct frameData_t {
 		
 		std::atomic_int				used;
@@ -48,7 +60,6 @@ namespace jsr {
 
 		Material* defaultMaterial;
 
-		const int shadowResolution = 1024;
 	private:
 		bool initialized;
 		int	 frameNum;
@@ -56,5 +67,5 @@ namespace jsr {
 	};
 
 	extern RenderSystem renderSystem;
-
+	extern renderGlobals_t renderGlobals;
 }
