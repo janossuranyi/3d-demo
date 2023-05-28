@@ -1,44 +1,63 @@
 @include "version.inc.glsl"
+@include "common.inc.glsl"
+@include "fragment_uniforms.inc.glsl"
 
 in INTERFACE
 {
     vec4 fragPos;
+    vec2 texCoord;
     vec4 color;
     vec4 tangent;
-    vec2 texCoord;
     vec3 normal;
 } In;
 
-layout(location = 0) out vec3 outAlbedo;
-layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec3 outSpec;
-layout(location = 3) out vec3 outFragPos;
+layout(location = 0) out vec4 outAlbedo;
+layout(location = 1) out vec2 outNormal;
+layout(location = 2) out vec4 outSpec;
+layout(location = 3) out vec4 outFragPos;
 
-layout(binding = 0) uniform sampler2D texAlbedo;
-layout(binding = 1) uniform sampler2D texNormal;
-layout(binding = 2) uniform sampler2D texSpecular;
-
-//@include "uniforms.inc.glsl"
+layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
+layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
+layout(binding = IMU_AORM)      uniform sampler2D tAORM;
+layout(binding = IMU_EMMISIVE)  uniform sampler2D tEmissive;
 
 struct input_t {
-    vec3 normal;
     mat3 tbn;
+    vec3 normal;
+    vec4 sampleAmbient;
+    vec4 samplePBR;
+    vec4 spec;
 };
+
+const float ONE_OVER_255 = 1.0/255.0;
+
+vec3 ReconstructNormal(vec3 normalTS) { return normalize(normalTS * 2.0 - 1.0); }
+
+float packR8G8B8A8(vec4 v)
+{
+    v = clamp(v * vec4(255.0), 0.0, 255.0);
+    uint i = (asuint(v.w) & 255u) << uint(24) | (asuint(v.z) & 255u) << uint(16) | (asuint(v.y) & 255u) << uint(8) | asuint(v.x) & 255u;
+    return asfloat(i);
+}
 
 void main()
 {
-    input_t inputs = input_t(vec3(0.0),mat3(1.0));
+    input_t inputs;
     {
-        vec3 localNormal = normalize( In.normal );
-        vec3 localTangent = normalize( In.tangent.xyz );
-        vec3 derivedBitangent = normalize( cross( localNormal, localTangent ) * In.tangent.w );
-
-        inputs.tbn = mat3( localTangent, derivedBitangent, localNormal );
-        inputs.normal = localNormal;
+        vec3 localTangent       = normalize( In.tangent.xyz );
+        vec3 localNormal        = normalize( In.normal );
+        vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
+        vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);
+        inputs.tbn      = mat3(localTangent,derivedBitangent,localNormal);
+        inputs.normal   = (inputs.tbn * normalTS);
     }
 
-    outFragPos = In.fragPos.xyz;
-    outAlbedo = texture(texAlbedo, In.texCoord).xyz;
-    outSpec = texture(texSpecular, In.texCoord).xyz;    
-    outNormal = inputs.normal;
+    inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
+    inputs.samplePBR        = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);
+
+    outFragPos.xyz  = In.fragPos.xyz;
+    outFragPos.w    = inputs.normal.z;
+    outAlbedo   = inputs.sampleAmbient;
+    outSpec     = inputs.samplePBR;
+    outNormal   = vec2(inputs.normal);
 }

@@ -59,7 +59,7 @@ namespace jsr {
 
 		fb = new Framebuffer( "gbufferFBO", w, h );
 		fb->Bind();
-		fb->AttachImageDepth( imgr->globalImages.Depth32 );
+		fb->AttachImageDepth( imgr->globalImages.defaultDepth );
 		fb->AttachImage2D( imgr->globalImages.GBufferAlbedo, 0 );
 		fb->AttachImage2D( imgr->globalImages.GBufferNormal, 1);
 		fb->AttachImage2D( imgr->globalImages.GBufferSpec, 2 );

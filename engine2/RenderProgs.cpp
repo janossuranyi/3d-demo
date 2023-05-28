@@ -26,9 +26,9 @@ namespace jsr {
 		Shutdown();
 	}
 
-	void ProgramManager::UniformChanged(eUboBufferBinding b)
+	void ProgramManager::UniformChanged(unsigned int b)
 	{
-		uboChangedBits |= (1UL << b);
+		uboChangedBits |= b;
 	}
 
 	bool ProgramManager::Init()

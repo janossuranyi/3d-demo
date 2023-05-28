@@ -43,23 +43,23 @@ namespace jsr {
 		if (IsInitialized())
 		{
 			Shutdown();
+
+			Framebuffer::Shutdown();
+
+			delete modelManager;
+			delete materialManager;
+			delete imageManager;
+			delete programManager;
+			delete vertexCache;
+			delete backend;
+
+			ImGui::DestroyContext();
+
+			R_ShutdownCommandBuffers();
+
+			initialized = false;
+			Info("Max frame memory used: %d", maxFrameMemUsage.load());
 		}
-
-		Framebuffer::Shutdown();
-
-		delete modelManager;
-		delete materialManager;
-		delete imageManager;
-		delete programManager;
-		delete vertexCache;
-		delete backend;
-
-		ImGui::DestroyContext();
-
-		R_ShutdownCommandBuffers();
-
-		initialized = false;
-		Info("Max frame memory used: %d", maxFrameMemUsage.load());
 	}
 	bool RenderSystem::Init()
 	{
@@ -112,6 +112,13 @@ namespace jsr {
 
 		backend->RenderCommandBuffer(cmds);
 		++frameNum;
+	}
+
+	glm::vec2 RenderSystem::GetScreenSize() const
+	{
+		int w, h;
+		backend->GetScreenSize(w, h);
+		return glm::vec2(float(w), float(h));
 	}
 
 	uint8_t* R_FrameAlloc(uint32_t bytes)
@@ -220,5 +227,4 @@ namespace jsr {
 
 
 	RenderSystem renderSystem;
-
 }

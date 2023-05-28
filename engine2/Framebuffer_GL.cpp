@@ -172,6 +172,28 @@ namespace jsr {
 		}
 	}
 
+	void Framebuffer::BlitColorBuffer(int srcX1, int srcY1, int srcX2, int srcY2, int dstX1, int dstY1, int dstX2, int dstY2)
+	{
+		GL_CHECK(glBlitFramebuffer(srcX1, srcY1, srcX2, srcY2,
+			dstX1, dstY1, dstX2, dstY2, GL_COLOR_BUFFER_BIT, GL_LINEAR));
+	}
+
+	void Framebuffer::BlitDepthBuffer(int srcX1, int srcY1, int srcX2, int srcY2, int dstX1, int dstY1, int dstX2, int dstY2)
+	{
+		GL_CHECK(glBlitFramebuffer(srcX1, srcY1, srcX2, srcY2,
+			dstX1, dstY1, dstX2, dstY2, GL_DEPTH_BUFFER_BIT, GL_LINEAR));
+	}
+
+	void Framebuffer::BindForReading()
+	{
+		GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, apiObject));
+	}
+
+	void Framebuffer::SetReadBuffer(int index) const
+	{
+		GL_CHECK(glReadBuffer(GL_COLOR_ATTACHMENT0 + index));
+	}
+
 	bool Framebuffer::IsBound() const
 	{
 		return renderSystem.backend->currentFramebuffer == this;

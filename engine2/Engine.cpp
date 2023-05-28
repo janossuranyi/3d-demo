@@ -143,7 +143,6 @@ namespace jsr {
 			ImGui::NewFrame();
 			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
-			ImGui::DragFloat("Attn. Kc", &world->lightAttenuation.x, 0.05f, 1.0f, 100.0f);
 			ImGui::DragFloat("Attn. Kl", &world->lightAttenuation.y, 0.05f, 0.0f, 100.0f);
 			ImGui::DragFloat("Attn. Kq", &world->lightAttenuation.z, 0.01f, 0.0f, 100.0f);
 			ImGui::DragFloat("Spot Exp", &world->spotLightParams.z, 0.01f, 0.0f, 100.0f);

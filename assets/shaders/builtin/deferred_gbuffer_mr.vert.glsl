@@ -9,32 +9,30 @@ layout(location = 4) in vec4 in_Color;
 out INTERFACE
 {
     vec4 fragPos;
+    vec2 texCoord;
     vec4 color;
     vec4 tangent;
-    vec2 texCoord;
     vec3 normal;
 } Out;
 
-@include "uniforms.inc.glsl"
+@include "vertex_uniforms.inc.glsl"
 
 void main()
 {
-    gl_Position = ubo.WVPMatrix * in_Position;
-    mat3 mNormal3 = transpose( mat3( ubo.localToWorldMatrix ) ) ;
+    gl_Position = g_freqHighVert.WVPMatrix * in_Position;
 
-    Out.fragPos     = ubo.localToWorldMatrix * in_Position;
-    Out.color       = in_Color;
-	
-    vec3 T = normalize( mNormal3 * vec3(in_Tangent) );
-	vec3 N = normalize( mNormal3 * in_Normal );
+    mat3 mNormal3   = mat3(g_freqHighVert.normalMatrix);	
+    vec4 localTangent = in_Tangent * 2.0 - 1.0;
+    localTangent.w = floor( in_Tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
 
+    vec3 T = normalize( mNormal3 * localTangent.xyz );
+	vec3 N = normalize( mNormal3 * (in_Normal * 2.0 - 1.0) );
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 
-	// then retrieve perpendicular vector B with the cross product of T and N
-	// vec3 B = normalize(cross(N, T) * in_Tangent.w);
-
+    Out.fragPos     = g_freqHighVert.localToWorldMatrix * in_Position;
+    Out.color       = in_Color;
     Out.normal      = N;
-    Out.tangent     = vec4(T, in_Tangent.w);
+    Out.tangent     = vec4(T, localTangent.w);
     Out.texCoord    = in_TexCoord;
 }

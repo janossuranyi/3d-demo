@@ -9,6 +9,7 @@
 #include "engine2/Engine.h"
 #include "engine2/RenderSystem.h"
 #include "engine2/Resources.h"
+#include "engine2/Logger.h"
 
 using namespace jsr;
 
@@ -27,7 +28,7 @@ int main(int argc, char** argv)
     engineConfig.r_fullscreen = 0;
 
     engineConfig.r_fbsrgb = false;
-#if 1
+#if 0
     engineConfig.r_debug = true;
 #else
     engineConfig.r_debug = false;

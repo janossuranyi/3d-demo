@@ -56,14 +56,14 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferAlbedo allocation failed !");
 		}
 
-		opts.format = IMF_RGBA16F;
+		opts.format = IMF_RGBA32F;
 		opts.usage = IMU_FRAGPOS;
 		if (!globalImages.GBufferFragPos->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image GBufferFragPos allocation failed !");
 		}
 
-		opts.format = IMF_RGBA16F;
+		opts.format = IMF_RG16F;
 		opts.usage = IMU_NORMAL;
 		if (!globalImages.GBufferNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{

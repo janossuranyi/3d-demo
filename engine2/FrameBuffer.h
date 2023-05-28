@@ -23,6 +23,10 @@ namespace jsr {
 		void	AttachImageStencil(const Image* img);
 		bool	Check();
 		void	Bind();
+		void	BlitColorBuffer(int srcX1, int srcY1, int srcX2, int srcY2, int dstX1, int dstY1, int dstX2, int dstY2);
+		void	BlitDepthBuffer(int srcX1, int srcY1, int srcX2, int srcY2, int dstX1, int dstY1, int dstX2, int dstY2);
+		void	BindForReading();
+		void	SetReadBuffer(int index) const;
 		bool	IsBound() const;
 		static void Unbind();
 		static bool IsDefaultFramebufferActive();

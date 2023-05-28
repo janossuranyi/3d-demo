@@ -105,6 +105,7 @@ namespace jsr {
 		void		RenderDebugPass();
 		void		RenderDepthPass();
 		void		RenderShadow();
+		void		RenderDeferred_GBuffer();
 	public:	
 		Framebuffer* currentFramebuffer{};
 	};

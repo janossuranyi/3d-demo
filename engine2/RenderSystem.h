@@ -55,7 +55,7 @@ namespace jsr {
 		void Shutdown();
 		bool IsInitialized() const;
 		void Frame(const emptyCommand_t* cmds);
-		
+		glm::vec2 GetScreenSize() const;
 		viewDef_t* view;
 
 		Material* defaultMaterial;

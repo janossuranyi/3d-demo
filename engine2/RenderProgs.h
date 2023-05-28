@@ -56,6 +56,14 @@ namespace jsr {
 		glm::vec4 spotDirection;
 	};
 
+	enum eUboBufferBindingBit
+	{
+		UB_FREQ_LOW_VERT_BIT = 1,
+		UB_FREQ_HIGH_VERT_BIT = 2,
+		UB_FREQ_LOW_FRAG_BIT = 4,
+		UB_FREQ_HIGH_FRAG_BIT = 8
+	};
+
 	enum eUboBufferBinding
 	{
 		UBB_FREQ_LOW_VERT,
@@ -149,7 +157,7 @@ namespace jsr {
 		bool LowLevelInit();
 		bool IsInitialized() const { return initialized; }
 		void UseProgram(eShaderProg program);
-		void UniformChanged(eUboBufferBinding b);
+		void UniformChanged(unsigned int b);
 		void UpdateUniforms();
 		void BindUniforms();
 		uboUniforms_t			uniforms;

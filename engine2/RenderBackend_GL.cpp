@@ -326,11 +326,18 @@ namespace jsr {
 
 	void RenderBackend::SetClearColor(float r, float g, float b, float a)
 	{
-		clearColor[0] = r;
-		clearColor[1] = g;
-		clearColor[2] = b;
-		clearColor[3] = a;
-		GL_CHECK( glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]) );
+		if (
+			clearColor[0] != r ||
+			clearColor[1] != g ||
+			clearColor[2] != b ||
+			clearColor[3] != a) 
+		{
+			clearColor[0] = r;
+			clearColor[1] = g;
+			clearColor[2] = b;
+			clearColor[3] = a;
+			GL_CHECK(glClearColor(r, g, b, a));
+		}
 	}
 
 	void RenderBackend::Clear(bool color, bool depth, bool stencil)
@@ -366,10 +373,10 @@ namespace jsr {
 
 		if (!view) return;
 		int x, y;
-		renderSystem.backend->GetScreenSize(x, y);
+		GetScreenSize(x, y);
+		SetClearColor(0.f, 0.f, 0.f, 1.0f);
 
-		renderSystem.programManager->UniformChanged(UBB_FREQ_LOW_VERT);
-		renderSystem.programManager->UniformChanged(UBB_FREQ_LOW_FRAG);
+		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_VERT_BIT | UB_FREQ_LOW_FRAG_BIT);
 
 		vec3 lightDir = view->spotLightDir;
 		vec3 lightPos = view->lightPos;
@@ -396,25 +403,37 @@ namespace jsr {
 		slowfrag.spotDirection = view->spotLightDir;
 		slowfrag.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 
-		uboUniforms_t& uniforms = renderSystem.programManager->uniforms;
-
-		uniforms.viewOrigin = vec4(view->renderView.vieworg, 1.f);
-		uniforms.gExposure = view->exposure;
-		uniforms.lightOrig = view->lightPos;
-		uniforms.lightColor = view->lightColor;
-		uniforms.spotLightParams = view->spotLightParams;
-		uniforms.lightAttenuation = view->lightAttenuation;
-		uniforms.spotDirection = view->spotLightDir;
-		uniforms.nearFarClip.x = view->nearClipDistance;
-		uniforms.nearFarClip.y = view->farClipDistance;
-		uniforms.gOneOverShadowRes = 1.0f / renderGlobals.shadowResolution;
-		uniforms.gShadowScale = renderGlobals.shadowScale;
-		uniforms.gShadowBias = renderGlobals.shadowBias;
-
+		/*
 		RenderShadow();
 		RenderDepthPass();
 		RenderDebugPass();
+		*/
+		RenderDeferred_GBuffer();
+		Framebuffer::Unbind();
 
+		GL_CHECK(glViewport(0, 0, x, y));
+//		Clear(true, false, false);
+
+		GLsizei HalfWidth = (GLsizei)(x / 2);
+		GLsizei HalfHeight = (GLsizei)(y / 2);
+		Framebuffer* gbuffer = globalFramebuffers.GBufferFBO;
+		
+		gbuffer->BindForReading();
+		gbuffer->SetReadBuffer(0);
+		gbuffer->BlitColorBuffer(0, 0, x, y,
+			0, 0, HalfWidth, HalfHeight);
+
+		gbuffer->SetReadBuffer(1);
+		gbuffer->BlitColorBuffer(0, 0, x, y,
+			0, HalfHeight, HalfWidth, y);
+
+		gbuffer->SetReadBuffer(2);
+		gbuffer->BlitColorBuffer(0, 0, x, y,
+			HalfWidth, HalfHeight, x, y);
+
+		gbuffer->SetReadBuffer(3);
+		gbuffer->BlitColorBuffer(0, 0, x, y,
+			HalfWidth, 0, x, HalfHeight);
 
 		//[...]
 
@@ -509,9 +528,6 @@ namespace jsr {
 		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
 		mat4 lightViewProj = lightProj * lightView;
 
-		uboUniforms_t& uniforms = renderSystem.programManager->uniforms;
-		uniforms.lightProjMatrix = lightViewProj;
-
 		for (int pass = 0; pass < 2; ++pass)
 		{
 			for (int i = 0; i < view->numDrawSurfs; ++i)
@@ -541,8 +557,7 @@ namespace jsr {
 				mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
 				uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
 
-				renderSystem.programManager->UniformChanged(UBB_FREQ_HIGH_VERT);
-				renderSystem.programManager->UniformChanged(UBB_FREQ_HIGH_FRAG);
+				renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
 				auto& highvert = renderSystem.programManager->g_freqHighVert;
 				auto& highfrag = renderSystem.programManager->g_freqHighFrag;
 				highvert.localToWorldMatrix = surf->space->modelMatrix;
@@ -553,15 +568,6 @@ namespace jsr {
 				highfrag.matMRFactor.x = stage.roughnessScale;
 				highfrag.matMRFactor.y = stage.metallicScale;
 
-				auto& uniforms = renderSystem.programManager->uniforms;
-				uniforms.alphaCutoff.x = stage.alphaCutoff;
-				uniforms.localToWorldMatrix = surf->space->modelMatrix;
-				uniforms.matDiffuseFactor = stage.diffuseScale;
-				uniforms.matMRFactor.x = stage.roughnessScale;
-				uniforms.matMRFactor.y = stage.metallicScale;
-				uniforms.WVPMatrix = surf->space->mvp;
-				uniforms.normalMatrix = normalMatrix;
-				uniforms.params.x = uintBitsToFloat(flg_x);
 				SetCullMode(stage.cullMode);
 
 				R_DrawSurf(surf);
@@ -595,7 +601,7 @@ namespace jsr {
 			if (stage.coverage != COVERAGE_SOLID) continue;
 			SetCullMode(stage.cullMode);
 
-			renderSystem.programManager->UniformChanged(UBB_FREQ_HIGH_VERT);
+			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT);
 			auto& highvert = renderSystem.programManager->g_freqHighVert;
 			highvert.localToWorldMatrix = surf->space->modelMatrix;
 			highvert.WVPMatrix = surf->space->mvp;
@@ -639,7 +645,7 @@ namespace jsr {
 			const stage_t& stage = shader->GetStage(STAGE_SHADOW);
 			if ( stage.coverage != COVERAGE_SOLID ) continue;
 
-			renderSystem.programManager->UniformChanged(UBB_FREQ_HIGH_VERT);
+			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT);
 			renderSystem.programManager->g_freqHighVert.WVPMatrix = lightViewProj * surf->space->modelMatrix;
 
 			R_DrawSurf(surf);
@@ -648,6 +654,64 @@ namespace jsr {
 		Framebuffer::Unbind();
 		glDepthFunc(GL_LEQUAL);
 
+	}
+
+	void RenderBackend::RenderDeferred_GBuffer()
+	{
+		using namespace glm;
+
+		globalFramebuffers.GBufferFBO->Bind();
+		renderSystem.programManager->UseProgram(PRG_DEFERRED_GBUFFER_MR);
+
+		glDepthMask(GL_TRUE);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+		int x, y;
+		renderSystem.backend->GetScreenSize(x, y);
+		GL_CHECK(glViewport(0, 0, x, y));
+
+		Clear(true, true, false);
+
+		const drawSurf_t* surf;
+
+		for (int i = 0; i < view->numDrawSurfs; ++i)
+		{
+			surf = view->drawSurfs[i];
+			const Material* shader = surf->shader;
+			if (!shader || shader->IsEmpty()) continue;
+			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
+			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+
+			if (stage.coverage != COVERAGE_SOLID) continue;
+
+	//		renderSystem.programManager->UseProgram(stage.shader);
+
+			// setup textures
+			for (int j = 0; j < IMU_COUNT; ++j)
+			{
+				if (stage.images[j])
+				{
+					renderSystem.backend->SetCurrentTextureUnit(j);
+					stage.images[j]->Bind();
+				}
+			}
+
+			mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
+
+			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT|UB_FREQ_HIGH_FRAG_BIT);
+			auto& highvert = renderSystem.programManager->g_freqHighVert;
+			auto& highfrag = renderSystem.programManager->g_freqHighFrag;
+			highvert.localToWorldMatrix = surf->space->modelMatrix;
+			highvert.normalMatrix = normalMatrix;
+			highvert.WVPMatrix = surf->space->mvp;
+			highfrag.matDiffuseFactor = stage.diffuseScale;
+			highfrag.matMRFactor.x = stage.roughnessScale;
+			highfrag.matMRFactor.y = stage.metallicScale;
+
+			SetCullMode(stage.cullMode);
+
+			R_DrawSurf(surf);
+		}
 	}
 
 	void RenderBackend::EndFrame()
