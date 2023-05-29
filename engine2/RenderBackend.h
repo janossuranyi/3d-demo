@@ -86,6 +86,7 @@ namespace jsr {
 		void		Shutdown();
 		void		GetScreenSize(int& x, int& y) const;
 		void		SetClearColor(float r, float g, float b, float a);
+		void		SetClearColor(glm::vec4 color);
 		glm::vec4	GetClearColor() const;
 		void		Clear(bool color, bool depth, bool stencil);
 		int			GetUniformBufferAligment() const;

@@ -340,6 +340,11 @@ namespace jsr {
 		}
 	}
 
+	void RenderBackend::SetClearColor(glm::vec4 color)
+	{
+		SetClearColor(color.r, color.g, color.b, color.a);
+	}
+
 	void RenderBackend::Clear(bool color, bool depth, bool stencil)
 	{
 		GLbitfield target{};
@@ -402,17 +407,18 @@ namespace jsr {
 		slowfrag.lightAttenuation = view->lightAttenuation;
 		slowfrag.spotDirection = view->spotLightDir;
 		slowfrag.viewOrigin = vec4(view->renderView.vieworg, 1.f);
+		slowfrag.ambientColor = vec4(vec3(0.01f), 1.0f);
+		SetClearColor(slowfrag.ambientColor);
 
-		/*
 		RenderShadow();
 		RenderDepthPass();
 		RenderDebugPass();
-		*/
+		/*
+
 		RenderDeferred_GBuffer();
 		Framebuffer::Unbind();
 
 		GL_CHECK(glViewport(0, 0, x, y));
-//		Clear(true, false, false);
 
 		GLsizei HalfWidth = (GLsizei)(x / 2);
 		GLsizei HalfHeight = (GLsizei)(y / 2);
@@ -434,6 +440,7 @@ namespace jsr {
 		gbuffer->SetReadBuffer(3);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
 			HalfWidth, 0, x, HalfHeight);
+		*/
 
 		//[...]
 
@@ -567,6 +574,7 @@ namespace jsr {
 				highfrag.matDiffuseFactor = stage.diffuseScale;
 				highfrag.matMRFactor.x = stage.roughnessScale;
 				highfrag.matMRFactor.y = stage.metallicScale;
+				highfrag.matEmissiveFactor = stage.emissiveScale;
 
 				SetCullMode(stage.cullMode);
 

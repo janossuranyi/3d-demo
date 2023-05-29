@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 //
 //
     //engine.LoadWorld("models/CesiumDrone.glb");
-    engine.LoadWorld("scenes/sponza/sponza_j.gltf");
+    engine.LoadWorld("scenes/sponza/sponza_j2.gltf");
 
     renderSystem.vertexCache->PrintStatistic();
     engine.MainLoop();

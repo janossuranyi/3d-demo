@@ -388,7 +388,7 @@ namespace jsr {
 				stage.images[IMU_EMMISIVE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.emissiveTexture.index]);
 			}
 			else {
-				stage.images[IMU_EMMISIVE] = imageManager->globalImages.blackImage;
+				stage.images[IMU_EMMISIVE] = imageManager->globalImages.whiteImage;
 			}
 			if (gmat.normalTexture.index > -1)
 			{

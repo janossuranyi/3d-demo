@@ -32,6 +32,7 @@ layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 	vec4 lightAttenuation;
 	vec4 spotLightParams;
 	vec4 spotDirection;
+	vec4 ambientColor;
 
 } g_freqLowFrag;
 
@@ -39,6 +40,7 @@ layout(binding = UBB_FREQ_HIGH_FRAG, std140) uniform uboFreqHighFrag
 {
 	vec4 matDiffuseFactor;
 	vec4 matMRFactor;
+	vec4 matEmissiveFactor;
 	vec4 alphaCutoff;
 	vec4 params;
 } g_freqHighFrag;

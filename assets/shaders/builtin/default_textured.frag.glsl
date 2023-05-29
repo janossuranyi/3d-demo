@@ -23,11 +23,13 @@ struct lightinginput_t {
     vec3 vertexNormal;
     vec4 sampleAmbient;
     vec4 samplePBR;
+    vec4 sampleEmissive;
     vec4 spec;
     vec3 lightPos;
     vec3 lightColor;
     vec3 viewDir;
     vec3 lightDir;
+    vec3 ambient;
     float attenuation;
 };
 
@@ -141,9 +143,10 @@ void main()
     
     inputs.sampleAmbient = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
     inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);
-
+    inputs.sampleEmissive = texture(tEmissive, In.texCoord) * g_freqHighFrag.matEmissiveFactor;
     inputs.lightPos = vec3(g_freqLowFrag.lightOrig);
     inputs.lightColor = g_freqLowFrag.lightColor.rgb * g_freqLowFrag.lightColor.w;
+    inputs.ambient = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w;
 
     /*********************** Lighting  ****************************/
     inputs.viewDir = normalize(g_freqLowFrag.viewOrigin.xyz - In.fragPos.xyz);
@@ -182,7 +185,10 @@ void main()
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
 
-        finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * NdotL * inputs.lightColor * inputs.attenuation * shadow;
+        vec3 light = NdotL * inputs.lightColor * inputs.attenuation * shadow;
+        light = max(light, inputs.ambient);
+        finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * light;
+        finalColor += inputs.sampleEmissive.xyz;
         finalColor = vec3(1.0) - exp(-finalColor * gExposure);
 
         inputs.spec = vec4(F * Ks, Ks);

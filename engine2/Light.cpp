@@ -46,9 +46,20 @@ namespace jsr {
 		return shader;
 	}
 
-	float Light::GetBounds() const
+	float Light::GetRadius() const
 	{
-		return opts.radius * (glm::sqrt(opts.color.power * opts.invAttnCutoff) - 1.0);
+		const auto r = -opts.linearAttn + glm::sqrt(opts.linearAttn * opts.linearAttn - 4.0f * opts.expAttn * (1.0f - 256.0f * opts.color.GetPower()));
+		return r / (2.0f * opts.expAttn);
+	}
+
+	float Light::GetRadius2() const
+	{
+		const float INTENSITY_CUTOFF = 1.0f;
+		const float ATTENUATION_CUTOFF = 1.0f / 256.0f;
+		auto power = opts.color.GetPower() / (4.0f * glm::pi<float>());
+		auto attenuation = glm::max(INTENSITY_CUTOFF, ATTENUATION_CUTOFF * power) / power;
+
+		return 1.0f / glm::sqrt(attenuation);
 	}
 
 }
