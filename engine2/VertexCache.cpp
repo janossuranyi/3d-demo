@@ -18,6 +18,8 @@
 #define CACHE_FRAME_MASK	((1ULL << CACHE_FRAME_BITS) - 1)
 #define CACHE_STATIC		(1)
 
+#define ALIGN(a) (((a) + 15) & ~15)
+
 namespace jsr {
 
 	VertexCache::VertexCache()
@@ -171,32 +173,32 @@ namespace jsr {
 
 	vertCacheHandle_t VertexCache::AllocStaticVertex(const void* data, int size)
 	{
-		return RealAlloc(staticBufferSet, data, size, CACHE_VERTEX);
+		return RealAlloc(staticBufferSet, data, ALIGN(size), CACHE_VERTEX);
 	}
 
 	vertCacheHandle_t VertexCache::AllocStaticIndex(const void* data, int size)
 	{
-		return RealAlloc(staticBufferSet, data, size, CACHE_INDEX);
+		return RealAlloc(staticBufferSet, data, ALIGN(size), CACHE_INDEX);
 	}
 
 	vertCacheHandle_t VertexCache::AllocStaticUniform(const void* data, int size)
 	{
-		return RealAlloc(staticBufferSet, data, size, CACHE_UNIFORM);
+		return RealAlloc(staticBufferSet, data, ALIGN(size), CACHE_UNIFORM);
 	}
 
 	vertCacheHandle_t VertexCache::AllocTransientVertex(const void* data, int size)
 	{
-		return RealAlloc(transientBufferSet[listNum], data, size, CACHE_VERTEX);
+		return RealAlloc(transientBufferSet[listNum], data, ALIGN(size), CACHE_VERTEX);
 	}
 
 	vertCacheHandle_t VertexCache::AllocTransientIndex(const void* data, int size)
 	{
-		return RealAlloc(transientBufferSet[listNum], data, size, CACHE_INDEX);
+		return RealAlloc(transientBufferSet[listNum], data, ALIGN(size), CACHE_INDEX);
 	}
 
 	vertCacheHandle_t VertexCache::AllocTransientUniform(const void* data, int size)
 	{
-		return RealAlloc(transientBufferSet[listNum], data, size, CACHE_UNIFORM);
+		return RealAlloc(transientBufferSet[listNum], data, ALIGN(size), CACHE_UNIFORM);
 	}
 
 	bool VertexCache::GetVertexBuffer(vertCacheHandle_t handle, VertexBuffer& dest)

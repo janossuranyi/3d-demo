@@ -3,6 +3,7 @@
 #include <string>
 #include <GL/glew.h>
 #include "./GpuTypes.h"
+#include "./RenderProgs.h"
 
 namespace jsr {
 
@@ -81,10 +82,10 @@ namespace jsr {
 		Light(eLightType type, Node3D* pNode);
 		Light(eLightType type, Node3D* pNode, Material const* pMaterial);
 		Light& SetNode(Node3D* pNode);
-		Light& SetMaterial(Material const* pMaterial);
+		Light& SetShader(eShaderProg shader);
+		eShaderProg GetShader() const;
 		Node3D* GetNode() const;
 		eLightType GetType() const;
-		Material const* GetMaterial() const;
 		void SetId(int id);
 		void SetName(const std::string& name);
 		const std::string& GetName() const;
@@ -98,6 +99,6 @@ namespace jsr {
 		std::string name;
 		eLightType type;
 		Node3D* node;
-		Material const* shader;
+		eShaderProg shader;
 	};
 }

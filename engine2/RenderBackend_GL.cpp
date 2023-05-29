@@ -26,6 +26,7 @@ void CheckOpenGLError(const char* stmt, const char* fname, int line)
 }
 
 namespace jsr {
+	void R_DrawSurf(const drawSurf_t* surf);
 
 	const imageFormatInfo_t s_image_formats[] = {
 		{GL_ZERO,				GL_ZERO,					GL_ZERO,			GL_ZERO,							true,	0}, // IMF_DEFAULT
@@ -413,6 +414,9 @@ namespace jsr {
 		RenderShadow();
 		RenderDepthPass();
 		RenderDebugPass();
+
+		R_DrawSurf(&unitRectSurface);
+
 		/*
 
 		RenderDeferred_GBuffer();
@@ -441,9 +445,6 @@ namespace jsr {
 		gbuffer->BlitColorBuffer(0, 0, x, y,
 			HalfWidth, 0, x, HalfHeight);
 		*/
-
-		//[...]
-
 	}
 	void RenderBackend::RenderCommandBuffer(const emptyCommand_t* cmds)
 	{

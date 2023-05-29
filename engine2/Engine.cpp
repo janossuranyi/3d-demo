@@ -137,9 +137,7 @@ namespace jsr {
 			glm::quat rotX = glm::angleAxis(glm::radians(-90.f), normalize(vec3{ 1.0f,0.0f, 0.0f }));
 			cube->SetDir(rotY * rotX);
 
-			emptyCommand_t* cmds = R_SwapCommandBuffers(this->threaded);
-
-			renderSystem.BeginNewFrame();
+			const emptyCommand_t* cmds = renderSystem.SwapCommandBuffer_BeginNewFrame(this->threaded);
 
 			SignalWork();
 

@@ -16,6 +16,7 @@
 #define assert_64_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) & 63 ) == 0 )
 #define assert_128_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) & 127 ) == 0 )
 #define assert_aligned_to_type_size( ptr )	assert( ( ((uintptr_t)(ptr)) & ( sizeof( (ptr)[0] ) - 1 ) ) == 0 )
+#define ALIGN_TO_16BYTE(a) (((a) + 15) & ~15)
 
 namespace jsr {
 

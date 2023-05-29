@@ -530,7 +530,8 @@ namespace jsr {
 
 			light->SetName(e.name);
 			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), static_cast<float>(e.intensity) / 54.35f };
-
+			light->SetShader(PRG_DEFERRED_LIGHT);
+			
 			if (ltype == LIGHT_SPOT) 
 			{
 				light->opts.outerConeAngle = e.spot.outerConeAngle;

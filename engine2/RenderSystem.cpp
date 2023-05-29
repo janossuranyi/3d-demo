@@ -10,6 +10,7 @@
 #define ON_FLIGHT_FRAMES 2
 
 #define CACHE_LINE_ALIGN(bytes) (((bytes) + CACHE_LINE_SIZE - 1) & ~(CACHE_LINE_SIZE - 1))
+#define ALIGN(a) (((a) + 15) & 15)
 
 namespace jsr {
 
@@ -112,17 +113,23 @@ namespace jsr {
 		++frameNum;
 	}
 
+	emptyCommand_t const* RenderSystem::SwapCommandBuffer_BeginNewFrame(bool smpMode)
+	{
+		emptyCommand_t* cmds = R_SwapCommandBuffers(smpMode);
+		
+		vertexCache->Frame();
+
+		backend->unitRectSurface = unitRectSurface_;
+		R_CreateSurfFormTris(unitRectSurface_, *unitRectTris);
+
+		return cmds;
+	}
+
 	glm::vec2 RenderSystem::GetScreenSize() const
 	{
 		int w, h;
 		backend->GetScreenSize(w, h);
 		return glm::vec2(float(w), float(h));
-	}
-
-	void RenderSystem::BeginNewFrame()
-	{
-		vertexCache->Frame();
-
 	}
 
 	uint8_t* R_FrameAlloc(uint32_t bytes)
@@ -244,7 +251,7 @@ namespace jsr {
 		rect->numVerts = 4;
 		rect->numIndexes = 6;
 		rect->verts = (drawVert_t*)MemAlloc(4 * sizeof(drawVert_t));
-		rect->indexes = (elementIndex_t*)MemAlloc(sizeof(elementIndex_t) * 6);
+		rect->indexes = (elementIndex_t*)MemAlloc(ALIGN(sizeof(elementIndex_t) * 6));
 		rect->topology = TP_TRIANGLES;
 
 		for (int i = 0; i < 4; ++i)
@@ -279,7 +286,7 @@ namespace jsr {
 		}
 		if (!renderSystem.vertexCache->IsCurrent(tris.indexCache))
 		{
-			tris.indexCache = renderSystem.vertexCache->AllocTransientIndex(tris.indexes, tris.numIndexes * sizeof(tris.indexes[0]));
+			tris.indexCache = renderSystem.vertexCache->AllocTransientIndex(tris.indexes, ( tris.numIndexes * sizeof(tris.indexes[0]) ) );
 		}
 
 		surf.indexCache = tris.indexCache;

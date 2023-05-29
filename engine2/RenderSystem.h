@@ -56,7 +56,7 @@ namespace jsr {
 		void Shutdown();
 		bool IsInitialized() const;
 		void RenderFrame(const emptyCommand_t* cmds);
-		void BeginNewFrame();
+		emptyCommand_t const* SwapCommandBuffer_BeginNewFrame(bool smpMode);
 		glm::vec2 GetScreenSize() const;
 		viewDef_t* view;
 

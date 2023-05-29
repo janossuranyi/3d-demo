@@ -12,7 +12,7 @@ namespace jsr {
 	Light::Light(eLightType type_, Node3D* pNode, Material const* pMaterial) :
 		type(type_),
 		node(pNode),
-		shader(pMaterial),
+		shader(PRG_DEFERRED_LIGHT),
 		radius(0.0f){}
 
 	Light& Light::SetNode(Node3D* pNode)
@@ -21,10 +21,15 @@ namespace jsr {
 		return *this;
 	}
 
-	Light& Light::SetMaterial(Material const* pMaterial)
+	Light& Light::SetShader(eShaderProg shader)
 	{
-		shader = pMaterial;
+		this->shader = shader;
 		return *this;
+	}
+
+	eShaderProg Light::GetShader() const
+	{
+		return shader;
 	}
 
 	Node3D* Light::GetNode() const
@@ -35,11 +40,6 @@ namespace jsr {
 	eLightType Light::GetType() const
 	{
 		return type;
-	}
-
-	Material const* Light::GetMaterial() const
-	{
-		return shader;
 	}
 
 	void Light::SetId(int id)
