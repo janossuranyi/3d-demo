@@ -3,6 +3,7 @@
 #include <vector>
 #include "./Bounds.h"
 #include "./RenderCommon.h"
+#include "./Heap.h"
 
 namespace jsr {
 
@@ -18,6 +19,11 @@ namespace jsr {
 		vertCacheHandle_t	indexCache;
 		bool gpuResident;
 
+		~surface_t()
+		{
+			if (verts) { MemFree(verts); }
+			if (indexes) { MemFree(indexes); }
+		}
 		surface_t() :
 			bounds(),
 			numVerts(),

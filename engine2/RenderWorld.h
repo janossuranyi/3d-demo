@@ -7,6 +7,8 @@
 #include <tiny_gltf.h>
 #include "./Bounds.h"
 #include "./RenderCommon.h"
+#include "./Light.h"
+
 namespace jsr {
 
 	class Node3D;
@@ -46,18 +48,21 @@ namespace jsr {
 		void CreateMaterialsGLTF();
 		void CreateNodesGLTF();
 		void CreateModelsGLTF();
+		void CreateLightsGLTF();
 		RenderModel* CreateModelGLTF(int mesh);
 
 		struct gltf_state_t {
 			tinygltf::Model map;
 			std::vector<int> map_image_idx;
 			std::vector<int> map_mater_idx;
+			std::vector<int> map_light_idx;
 			std::vector<RenderModel*> map_models;
 		} *gltf_state;
 
 		Bounds worldBounds;
 		std::vector<Node3D*> rootnodes;
 		std::vector<Node3D*> nodes;
+		std::vector<Light*> lights;
 
 		std::unordered_set<Material*> materials;
 		std::unordered_set<Image*> images;

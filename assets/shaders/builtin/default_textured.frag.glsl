@@ -146,7 +146,7 @@ void main()
     inputs.sampleEmissive = texture(tEmissive, In.texCoord) * g_freqHighFrag.matEmissiveFactor;
     inputs.lightPos = vec3(g_freqLowFrag.lightOrig);
     inputs.lightColor = g_freqLowFrag.lightColor.rgb * g_freqLowFrag.lightColor.w;
-    inputs.ambient = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w;
+    inputs.ambient = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w * inputs.sampleAmbient.xyz;
 
     /*********************** Lighting  ****************************/
     inputs.viewDir = normalize(g_freqLowFrag.viewOrigin.xyz - In.fragPos.xyz);
@@ -186,9 +186,8 @@ void main()
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
 
         vec3 light = NdotL * inputs.lightColor * inputs.attenuation * shadow;
-        light = max(light, inputs.ambient);
         finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * light;
-        finalColor += inputs.sampleEmissive.xyz;
+        finalColor += inputs.sampleEmissive.xyz + inputs.ambient;
         finalColor = vec3(1.0) - exp(-finalColor * gExposure);
 
         inputs.spec = vec4(F * Ks, Ks);

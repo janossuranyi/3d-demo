@@ -407,7 +407,7 @@ namespace jsr {
 		slowfrag.lightAttenuation = view->lightAttenuation;
 		slowfrag.spotDirection = view->spotLightDir;
 		slowfrag.viewOrigin = vec4(view->renderView.vieworg, 1.f);
-		slowfrag.ambientColor = vec4(vec3(0.01f), 1.0f);
+		slowfrag.ambientColor = vec4(vec3(0.005f), 1.0f);
 		SetClearColor(slowfrag.ambientColor);
 
 		RenderShadow();
@@ -447,7 +447,6 @@ namespace jsr {
 	}
 	void RenderBackend::RenderCommandBuffer(const emptyCommand_t* cmds)
 	{
-		renderSystem.vertexCache->Frame();
 		Framebuffer::Unbind();
 
 		for (const emptyCommand_t* cmd = cmds; cmd != nullptr; cmd = (emptyCommand_t*)cmd->next)

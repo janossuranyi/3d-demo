@@ -138,6 +138,9 @@ namespace jsr {
 			cube->SetDir(rotY * rotX);
 
 			emptyCommand_t* cmds = R_SwapCommandBuffers(this->threaded);
+
+			renderSystem.BeginNewFrame();
+
 			SignalWork();
 
 			ImGui::NewFrame();
@@ -154,7 +157,7 @@ namespace jsr {
 			ImGui::ColorEdit3("Light color", &world->lightColor.x);
 			ImGui::DragFloat("Light power", &world->lightColor.w, 0.02f, 0.2f, 1000.0f);
 
-			renderSystem.Frame(cmds);
+			renderSystem.RenderFrame(cmds);
 
 			world->spotLightParams.w = spotOn ? 1.0f : 0.0f;
 

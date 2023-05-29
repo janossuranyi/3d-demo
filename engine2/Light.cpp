@@ -1,3 +1,5 @@
+#include <string>
+
 #include "./Light.h"
 #include "./Material.h"
 #include "./Node3D.h"
@@ -10,14 +12,8 @@ namespace jsr {
 	Light::Light(eLightType type_, Node3D* pNode, Material const* pMaterial) :
 		type(type_),
 		node(pNode),
-		shader(pMaterial) {
-	
-		switch (type)
-		{
-		case LIGHT_POINT:
-			break;
-		}
-	}
+		shader(pMaterial),
+		radius(0.0f){}
 
 	Light& Light::SetNode(Node3D* pNode)
 	{
@@ -46,20 +42,19 @@ namespace jsr {
 		return shader;
 	}
 
-	float Light::GetRadius() const
+	void Light::SetId(int id)
 	{
-		const auto r = -opts.linearAttn + glm::sqrt(opts.linearAttn * opts.linearAttn - 4.0f * opts.expAttn * (1.0f - 256.0f * opts.color.GetPower()));
-		return r / (2.0f * opts.expAttn);
+		this->id = id;
 	}
 
-	float Light::GetRadius2() const
+	void Light::SetName(const std::string& name)
 	{
-		const float INTENSITY_CUTOFF = 1.0f;
-		const float ATTENUATION_CUTOFF = 1.0f / 256.0f;
-		auto power = opts.color.GetPower() / (4.0f * glm::pi<float>());
-		auto attenuation = glm::max(INTENSITY_CUTOFF, ATTENUATION_CUTOFF * power) / power;
+		this->name = name;
+	}
 
-		return 1.0f / glm::sqrt(attenuation);
+	const std::string& Light::GetName() const
+	{
+		return name;
 	}
 
 }

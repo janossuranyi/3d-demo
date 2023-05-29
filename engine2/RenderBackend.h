@@ -109,6 +109,7 @@ namespace jsr {
 		void		RenderDeferred_GBuffer();
 	public:	
 		Framebuffer* currentFramebuffer{};
+		drawSurf_t unitRectSurface{};
 	};
 
 	extern bool R_InitGfxAPI();

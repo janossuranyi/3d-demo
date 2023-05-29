@@ -35,7 +35,6 @@ namespace jsr {
 		modelManager	= new ModelManager();
 		materialManager = new MaterialManager();
 		defaultMaterial = {};
-		unitrect		= {};
 	}
 
 	RenderSystem::~RenderSystem()
@@ -52,6 +51,7 @@ namespace jsr {
 			delete programManager;
 			delete vertexCache;
 			delete backend;
+			delete unitRectTris;
 
 			ImGui::DestroyContext();
 
@@ -76,9 +76,8 @@ namespace jsr {
 
 		Framebuffer::Init();
 		R_InitCommandBuffers();
-		unitrect = modelManager->CreateModel("_unitcube");
-		unitrect->SetStatic(true);
-		unitrect->MakeUnitCube();
+
+		unitRectTris = R_CreateFullScreenRect();
 
 		defaultMaterial = materialManager->CreateMaterial("_defaultMaterial");
 		stage_t& s = defaultMaterial->GetStage(STAGE_DEBUG);
@@ -107,9 +106,8 @@ namespace jsr {
 		return initialized;
 	}
 
-	void RenderSystem::Frame(const emptyCommand_t* cmds)
+	void RenderSystem::RenderFrame(const emptyCommand_t* cmds)
 	{
-
 		backend->RenderCommandBuffer(cmds);
 		++frameNum;
 	}
@@ -119,6 +117,12 @@ namespace jsr {
 		int w, h;
 		backend->GetScreenSize(w, h);
 		return glm::vec2(float(w), float(h));
+	}
+
+	void RenderSystem::BeginNewFrame()
+	{
+		vertexCache->Frame();
+
 	}
 
 	uint8_t* R_FrameAlloc(uint32_t bytes)
@@ -221,8 +225,67 @@ namespace jsr {
 
 	surface_t* R_CreateFullScreenRect()
 	{
+		const glm::vec3 coords[] = {
+			{ 1.0f, 1.0f, 0.0f},
+			{-1.0f, 1.0f, 0.0f},
+			{-1.0f,-1.0f, 0.0f},
+			{ 1.0f,-1.0f, 0.0f}
+		};
+		const glm::vec2 uv[] = {
+			{ 1.0f, 1.0f},
+			{ 0.0f, 1.0f},
+			{ 0.0f, 0.0f},
+			{ 1.0f, 0.0f}
+		};
+		const float white[] = { 1.0f,1.0f,1.0f,1.0f };
 
-		return nullptr;
+		auto* rect = new surface_t;
+
+		rect->numVerts = 4;
+		rect->numIndexes = 6;
+		rect->verts = (drawVert_t*)MemAlloc(4 * sizeof(drawVert_t));
+		rect->indexes = (elementIndex_t*)MemAlloc(sizeof(elementIndex_t) * 6);
+		rect->topology = TP_TRIANGLES;
+
+		for (int i = 0; i < 4; ++i)
+		{
+			rect->verts[i].SetPos(coords[i]);
+			rect->verts[i].SetUV(uv[i]);
+			rect->verts[i].SetColor(white);
+			rect->verts[i].SetNormal({ 0.0f,0.0f,1.0f });
+			rect->verts[i].SetTangent({ 1.0f,0.0f,0.0f,1.0f });
+		}
+
+		const elementIndex_t idx[] = {1,2,0,0,2,3};
+		memcpy(rect->indexes, idx, 6 * sizeof(idx[0]));
+		rect->bounds.Extend({ -1.0f, -1.0f, 0.0f });
+		rect->bounds.Extend({ 1.0f, 1.0f, 0.0f });
+
+		return rect;
+	}
+
+	void R_CreateSurfFormTris(drawSurf_t& surf, surface_t& tris)
+	{
+		surf.frontEndGeo = &tris;
+		if (tris.indexes == 0)
+		{
+			surf.numIndex = 0;
+			return;
+		}
+
+		if (!renderSystem.vertexCache->IsCurrent(tris.vertexCache))
+		{
+			tris.vertexCache = renderSystem.vertexCache->AllocTransientVertex(tris.verts, tris.numVerts * sizeof(tris.verts[0]));
+		}
+		if (!renderSystem.vertexCache->IsCurrent(tris.indexCache))
+		{
+			tris.indexCache = renderSystem.vertexCache->AllocTransientIndex(tris.indexes, tris.numIndexes * sizeof(tris.indexes[0]));
+		}
+
+		surf.indexCache = tris.indexCache;
+		surf.vertexCache = tris.vertexCache;
+		surf.numIndex = tris.numIndexes;
+
 	}
 
 

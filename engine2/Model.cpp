@@ -51,11 +51,6 @@ namespace jsr {
 
 	void RenderModel::FreeGeometry()
 	{
-		for (auto& surf : surfs)
-		{
-			if (surf.surf.verts) { MemFree(surf.surf.verts); }
-			if (surf.surf.indexes) { MemFree(surf.surf.indexes); }
-		}
 		surfs.clear();
 		bounds = Bounds{};
 	}

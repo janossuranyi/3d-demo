@@ -37,6 +37,7 @@ namespace jsr {
 	void R_InitCommandBuffers();
 	void R_ShutdownCommandBuffers();
 	surface_t* R_CreateFullScreenRect();
+	void R_CreateSurfFormTris(drawSurf_t& surf, surface_t& tris);
 
 	class RenderSystem
 	{
@@ -54,16 +55,19 @@ namespace jsr {
 		bool Init();
 		void Shutdown();
 		bool IsInitialized() const;
-		void Frame(const emptyCommand_t* cmds);
+		void RenderFrame(const emptyCommand_t* cmds);
+		void BeginNewFrame();
 		glm::vec2 GetScreenSize() const;
 		viewDef_t* view;
 
 		Material* defaultMaterial;
 
+		drawSurf_t unitRectSurface_;
+
 	private:
 		bool initialized;
 		int	 frameNum;
-		RenderModel* unitrect;
+		surface_t*	unitRectTris;
 	};
 
 	extern RenderSystem renderSystem;

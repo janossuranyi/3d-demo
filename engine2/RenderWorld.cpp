@@ -11,6 +11,7 @@
 #include "./Entity3D.h"
 #include "./Node3D.h"
 #include "./Logger.h"
+#include "./Light.h"
 
 #define ACCESSOR_PTR(model, accessor) \
 (unsigned char*)(model->buffers[model->bufferViews[accessor.bufferView].buffer].data.data() + \
@@ -90,7 +91,7 @@ namespace jsr {
 
 		CreateImagesGLTF();
 		CreateMaterialsGLTF();
-		// CreateLightsGLTF
+		CreateLightsGLTF();
 		CreateModelsGLTF();
 		CreateNodesGLTF();
 
@@ -164,6 +165,13 @@ namespace jsr {
 		for (int i = 0; i < nodes.size(); ++i)
 		{
 			Node3D* node = nodes[i];
+
+			if (node->GetEntity().GetType() == ENT_LIGHT)
+			{
+
+				continue;
+			}
+
 			if (node->GetEntity().GetType() != ENT_MODEL) continue;
 
 			glm::mat4 worldMatrix = node->GetLocalToWorldMatrix();
@@ -247,12 +255,14 @@ namespace jsr {
 		for (auto* e : materials) { materialManager->RemoveMaterial(e); }
 		for (auto* e : images) { imageManager->RemoveImage(e); }
 		for (auto* e : models) { modelManager->RemoveModel(e); }
+		for (auto* e : lights) { delete e; }
 
 		nodes.clear();
 		rootnodes.clear();
 		materials.clear();
 		models.clear();
 		images.clear();
+		lights.clear();
 	}
 
 	Node3D* RenderWorld::GetByName(const std::string& name)
@@ -454,6 +464,14 @@ namespace jsr {
 				node->GetEntity().SetType(ENT_MODEL);
 				node->GetEntity().SetValue(gltf_state->map_models[gnode.mesh]);
 			}
+			else if (gnode.extensions.count("KHR_lights_punctual"))
+			{
+				node->GetEntity().SetType(ENT_LIGHT);
+				auto it = gnode.extensions.find("KHR_lights_punctual");
+				auto* light = lights.at( gltf_state->map_light_idx[ it->second.GetNumberAsInt() ] );
+				light->SetNode( node );
+				node->GetEntity().SetValue(light);
+			}
 			else
 			{
 				node->GetEntity().SetType(ENT_EMPTY);
@@ -490,6 +508,34 @@ namespace jsr {
 		{
 			gltf_state->map_models[i] = CreateModelGLTF(i);
 			gltf_state->map_models[i]->UpdateSurfaceCache();
+		}
+	}
+
+	void RenderWorld::CreateLightsGLTF()
+	{
+		if (gltf_state == nullptr) return;
+		const Model& map = gltf_state->map;
+		gltf_state->map_light_idx.resize(map.lights.size());
+
+		for (int i = 0; i < map.lights.size(); ++i)
+		{
+			const auto& e = map.lights[i];
+			eLightType ltype = LIGHT_POINT;
+			if (e.type == "pdirectional")	ltype = LIGHT_DIRECTED;
+			else if (e.type == "spot")		ltype = LIGHT_SPOT;
+
+			auto* light = lights.emplace_back(new Light(ltype));
+			light->SetId(lights.size() - 1);
+			gltf_state->map_light_idx[i] = light->GetId();
+
+			light->SetName(e.name);
+			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), static_cast<float>(e.intensity) / 54.35f };
+
+			if (ltype == LIGHT_SPOT) 
+			{
+				light->opts.outerConeAngle = e.spot.outerConeAngle;
+				light->opts.innerConeAngle = e.spot.innerConeAngle;
+			}
 		}
 	}
 
