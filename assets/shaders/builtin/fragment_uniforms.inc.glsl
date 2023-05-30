@@ -1,5 +1,11 @@
 @include "defs.inc"
 
+#define FLG_X_COVERAGE_SHIFT 0
+#define FLG_X_COVERAGE_MASK 3
+#define FLG_COVERAGE_SOLID 0
+#define FLG_COVERAGE_MASKED 1
+#define FLG_COVERAGE_BLEND 2
+
 #define gRoughnessFactor g_freqHighFrag.matMRFactor.x
 #define gMetallicFactor g_freqHighFrag.matMRFactor.y
 #define gShadowBias g_freqLowFrag.shadowparams.z
@@ -38,6 +44,7 @@ layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 
 layout(binding = UBB_FREQ_HIGH_FRAG, std140) uniform uboFreqHighFrag
 {
+	mat4 lightProjMatrix;
 	vec4 matDiffuseFactor;
 	vec4 matMRFactor;
 	vec4 matEmissiveFactor;

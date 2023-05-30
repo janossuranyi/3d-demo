@@ -231,6 +231,11 @@ namespace jsr {
 			}
 
 			std::sort(view->drawSurfs, view->drawSurfs + view->numDrawSurfs, drawSurfLess);
+			{
+				drawViewCommand_t* cmd = (drawViewCommand_t*)R_GetCommandBuffer(sizeof(*cmd));
+				cmd->command = RC_DRAW_VIEW;
+				cmd->view = view;
+			}
 		}
 	}
 

@@ -13,7 +13,7 @@
 #include "./RenderBackend_GL.h"
 #include "./FrameBuffer.h"
 #include "./Logger.h"
-
+#include "./ImageManager.h"
 
 void CheckOpenGLError(const char* stmt, const char* fname, int line)
 {
@@ -372,6 +372,7 @@ namespace jsr {
 		return glconfig.uniformBufferOffsetAligment;
 	}
 
+
 	void RenderBackend::RenderView(viewDef_t* view)
 	{
 		using namespace glm;
@@ -409,25 +410,29 @@ namespace jsr {
 		slowfrag.spotDirection = view->spotLightDir;
 		slowfrag.viewOrigin = vec4(view->renderView.vieworg, 1.f);
 		slowfrag.ambientColor = vec4(vec3(0.005f), 1.0f);
-		SetClearColor(slowfrag.ambientColor);
 
+		/*
+		SetClearColor(slowfrag.ambientColor);
 		RenderShadow();
 		RenderDepthPass();
 		RenderDebugPass();
-
-		R_DrawSurf(&unitRectSurface);
-
-		/*
+		*/
+		
 
 		RenderDeferred_GBuffer();
+		RenderShadow();
+		RenderDeferred_Lighting();
+
 		Framebuffer::Unbind();
 
 		GL_CHECK(glViewport(0, 0, x, y));
+		Clear(true, false, false);
 
 		GLsizei HalfWidth = (GLsizei)(x / 2);
 		GLsizei HalfHeight = (GLsizei)(y / 2);
 		Framebuffer* gbuffer = globalFramebuffers.GBufferFBO;
-		
+		Framebuffer* hdrbuffer = globalFramebuffers.hdrFBO;
+
 		gbuffer->BindForReading();
 		gbuffer->SetReadBuffer(0);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
@@ -441,10 +446,11 @@ namespace jsr {
 		gbuffer->BlitColorBuffer(0, 0, x, y,
 			HalfWidth, HalfHeight, x, y);
 
-		gbuffer->SetReadBuffer(3);
+		hdrbuffer->BindForReading();
+		hdrbuffer->SetReadBuffer(0);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
 			HalfWidth, 0, x, HalfHeight);
-		*/
+		
 	}
 	void RenderBackend::RenderCommandBuffer(const emptyCommand_t* cmds)
 	{
@@ -506,8 +512,9 @@ namespace jsr {
 
 		IndexBuffer idx;
 		renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
+		const GLenum mode = surf->frontEndGeo ? GL_map_topology(surf->frontEndGeo->topology) : GL_TRIANGLES;
 		GL_CHECK(glDrawElements(
-			GL_map_topology(surf->frontEndGeo->topology),
+			mode,
 			surf->numIndex,
 			GL_UNSIGNED_SHORT,
 			(void*)idx.GetOffset()));
@@ -629,6 +636,7 @@ namespace jsr {
 
 		Clear(false, true, false);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glEnable(GL_CULL_FACE);
 
 		vec3 lightDir = view->spotLightDir;
 		vec3 lightPos = view->lightPos;
@@ -671,8 +679,9 @@ namespace jsr {
 		globalFramebuffers.GBufferFBO->Bind();
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_GBUFFER_MR);
 
-		glDepthMask(GL_TRUE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
 
 		int x, y;
 		renderSystem.backend->GetScreenSize(x, y);
@@ -682,44 +691,87 @@ namespace jsr {
 
 		const drawSurf_t* surf;
 
-		for (int i = 0; i < view->numDrawSurfs; ++i)
+		for (int k = 0; k < 2; ++k)
 		{
-			surf = view->drawSurfs[i];
-			const Material* shader = surf->shader;
-			if (!shader || shader->IsEmpty()) continue;
-			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
-			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
-
-			if (stage.coverage != COVERAGE_SOLID) continue;
-
-	//		renderSystem.programManager->UseProgram(stage.shader);
-
-			// setup textures
-			for (int j = 0; j < IMU_COUNT; ++j)
+			for (int i = 0; i < view->numDrawSurfs; ++i)
 			{
-				if (stage.images[j])
+				surf = view->drawSurfs[i];
+				const Material* shader = surf->shader;
+				if (!shader || shader->IsEmpty()) continue;
+				if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
+				const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+
+				if (k == 0 && stage.coverage != COVERAGE_SOLID) continue;
+				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
+
+				//		renderSystem.programManager->UseProgram(stage.shader);
+
+						// setup textures
+				for (int j = 0; j < IMU_COUNT; ++j)
 				{
-					renderSystem.backend->SetCurrentTextureUnit(j);
-					stage.images[j]->Bind();
+					if (stage.images[j])
+					{
+						renderSystem.backend->SetCurrentTextureUnit(j);
+						stage.images[j]->Bind();
+					}
 				}
+
+				mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
+				uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
+
+				renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
+				auto& highvert = renderSystem.programManager->g_freqHighVert;
+				auto& highfrag = renderSystem.programManager->g_freqHighFrag;
+				highvert.localToWorldMatrix = surf->space->modelMatrix;
+				highvert.normalMatrix = normalMatrix;
+				highvert.WVPMatrix = surf->space->mvp;
+				highfrag.matDiffuseFactor = stage.diffuseScale;
+				highfrag.matMRFactor.x = stage.roughnessScale;
+				highfrag.matMRFactor.y = stage.metallicScale;
+				highfrag.alphaCutoff.x = stage.alphaCutoff;
+				highfrag.params.x = uintBitsToFloat(flg_x);
+
+				SetCullMode(stage.cullMode);
+
+				R_DrawSurf(surf);
 			}
-
-			mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
-
-			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT|UB_FREQ_HIGH_FRAG_BIT);
-			auto& highvert = renderSystem.programManager->g_freqHighVert;
-			auto& highfrag = renderSystem.programManager->g_freqHighFrag;
-			highvert.localToWorldMatrix = surf->space->modelMatrix;
-			highvert.normalMatrix = normalMatrix;
-			highvert.WVPMatrix = surf->space->mvp;
-			highfrag.matDiffuseFactor = stage.diffuseScale;
-			highfrag.matMRFactor.x = stage.roughnessScale;
-			highfrag.matMRFactor.y = stage.metallicScale;
-
-			SetCullMode(stage.cullMode);
-
-			R_DrawSurf(surf);
 		}
+	}
+
+	void RenderBackend::RenderDeferred_Lighting()
+	{
+		globalFramebuffers.hdrFBO->Bind();
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+		SetCullMode(CULL_NONE);
+
+		int w, h;
+		GetScreenSize(w, h);
+		glViewport(0, 0, w, h);
+
+		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
+		SetCurrentTextureUnit(IMU_DIFFUSE);
+		renderSystem.imageManager->globalImages.GBufferAlbedo->Bind();
+		SetCurrentTextureUnit(IMU_FRAGPOS);
+		renderSystem.imageManager->globalImages.GBufferFragPos->Bind();
+		SetCurrentTextureUnit(IMU_NORMAL);
+		renderSystem.imageManager->globalImages.GBufferNormal->Bind();
+		SetCurrentTextureUnit(IMU_AORM);
+		renderSystem.imageManager->globalImages.GBufferSpec->Bind();
+		SetCurrentTextureUnit(IMU_DEPTH);
+		renderSystem.imageManager->globalImages.Depth32->Bind();
+
+		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT| UB_FREQ_HIGH_FRAG_BIT);
+		auto& highvert = renderSystem.programManager->g_freqHighVert;
+		auto& highfrag = renderSystem.programManager->g_freqHighFrag;
+		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
+		highvert.WVPMatrix = glm::mat4(1.0f);
+		highfrag.lightProjMatrix = renderSystem.programManager->g_freqLowVert.lightProjMatrix;
+
+
+		R_DrawSurf(&unitRectSurface);
 	}
 
 	void RenderBackend::EndFrame()

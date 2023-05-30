@@ -207,13 +207,14 @@ namespace jsr {
 		const int		offset = int((handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK);
 		const int		size = int((handle >> CACHE_SIZE_SHIFT) & CACHE_SIZE_MASK);
 		const int		frameNum = int((handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK);
+		const int		frame = activeFrame & CACHE_FRAME_MASK;
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.vertexBuffer, offset, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & CACHE_FRAME_MASK))
+		if (frameNum != frame - 1)
 		{
 			return false;
 		}
@@ -226,13 +227,14 @@ namespace jsr {
 		const int		offset = int((handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK);
 		const int		size = int((handle >> CACHE_SIZE_SHIFT) & CACHE_SIZE_MASK);
 		const int		frameNum = int((handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK);
+		const int		frame = activeFrame & CACHE_FRAME_MASK;
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.indexBuffer, offset, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & CACHE_FRAME_MASK))
+		if (frameNum != frame - 1)
 		{
 			return false;
 		}
@@ -245,13 +247,14 @@ namespace jsr {
 		const int		offset = int((handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK);
 		const int		size = int((handle >> CACHE_SIZE_SHIFT) & CACHE_SIZE_MASK);
 		const int		frameNum = int((handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK);
+		const int		frame = activeFrame & CACHE_FRAME_MASK;
 
 		if (isStatic)
 		{
 			dest.MakeView(staticBufferSet.uniformBuffer, offset, size);
 			return true;
 		}
-		if (frameNum != ((activeFrame - 1) & CACHE_FRAME_MASK))
+		if (frameNum != frame - 1)
 		{
 			return false;
 		}
@@ -307,12 +310,13 @@ namespace jsr {
 		const bool isStatic = (handle & CACHE_STATIC) == CACHE_STATIC;
 		const uint64 offset = (handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
 		const uint64 framenum = (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+		const int frame = activeFrame & CACHE_FRAME_MASK;
 
 		if (isStatic)
 		{
 			buffer = &staticBufferSet.vertexBuffer;
 		}
-		else if (framenum == activeFrame - 1)
+		else if (framenum == frame - 1)
 		{
 			buffer = &transientBufferSet[renderFrame].vertexBuffer;
 		}
@@ -327,12 +331,13 @@ namespace jsr {
 		const bool isStatic = (handle & CACHE_STATIC) == CACHE_STATIC;
 		const uint64 offset = (handle >> CACHE_OFFSET_SHIFT) & CACHE_OFFSET_MASK;
 		const uint64 framenum = (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
+		const int frame = activeFrame & CACHE_FRAME_MASK;
 
 		if (isStatic)
 		{
 			buffer = &staticBufferSet.indexBuffer;
 		}
-		else if (framenum == activeFrame - 1)
+		else if (framenum == frame - 1)
 		{
 			buffer = &transientBufferSet[renderFrame].indexBuffer;
 		}

@@ -12,7 +12,7 @@ in INTERFACE
 } In;
 
 layout(location = 0) out vec4 outAlbedo;
-layout(location = 1) out vec2 outNormal;
+layout(location = 1) out vec4 outNormal;
 layout(location = 2) out vec4 outSpec;
 layout(location = 3) out vec4 outFragPos;
 
@@ -53,11 +53,18 @@ void main()
     }
 
     inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
+
+    uint params_x = asuint(gFlagsX);
+    uint localCoverage = (params_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
+    if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < g_freqHighFrag.alphaCutoff.x )
+    { 
+        discard;
+    }
+
     inputs.samplePBR        = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);
 
-    outFragPos.xyz  = In.fragPos.xyz;
-    outFragPos.w    = inputs.normal.z;
+    outFragPos  = In.fragPos;
     outAlbedo   = inputs.sampleAmbient;
     outSpec     = inputs.samplePBR;
-    outNormal   = vec2(inputs.normal);
+    outNormal   = vec4(inputs.normal,0.0);
 }

@@ -66,6 +66,8 @@ namespace jsr {
 		tmu_t			tmu[MAX_TEXTURE_UNITS];
 		unsigned int	currentProgram;
 		unsigned int	currentIndexBuffer;
+		unsigned int	currentFramebuffer;
+		unsigned int	currentReadFramebuffer;
 		eCullMode		currentCullMode;
 		bool			cullEnabled;
 		eVertexLayout	currentVertexLayout;
@@ -107,7 +109,8 @@ namespace jsr {
 		void		RenderDepthPass();
 		void		RenderShadow();
 		void		RenderDeferred_GBuffer();
-	public:	
+		void		RenderDeferred_Lighting();
+	public:
 		Framebuffer* currentFramebuffer{};
 		drawSurf_t unitRectSurface{};
 	};

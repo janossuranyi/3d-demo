@@ -337,12 +337,6 @@ namespace jsr {
 		world->RenderView(view);
 		lastNumDrawSurf = view->numDrawSurfs;
 
-		if (view->numDrawSurfs)
-		{
-			drawViewCommand_t* cmd = (drawViewCommand_t*)R_GetCommandBuffer(sizeof(*cmd));
-			cmd->command = RC_DRAW_VIEW;
-			cmd->view = view;
-		}
 
 		return 0;
 	}

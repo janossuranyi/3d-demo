@@ -1,7 +1,7 @@
 #ifndef JSR_VERTEX_CACHE_H
 #define JSR_VERTEX_CACHE_H
 
-#define JSE_VERTEX_CACHE_FRAMES			3
+#define JSE_VERTEX_CACHE_FRAMES	2
 
 #include "./EngineTypes.h"
 #include "./DrawVert.h"

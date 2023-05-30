@@ -11,12 +11,6 @@
 const float PI = 3.14159265359;
 const float ONE_OVER_PI = 1.0/PI;
 
-#define FLG_X_COVERAGE_SHIFT 0
-#define FLG_X_COVERAGE_MASK 3
-#define FLG_COVERAGE_SOLID 0
-#define FLG_COVERAGE_MASKED 1
-#define FLG_COVERAGE_BLEND 2
-
 float asfloat ( uint x ) { return uintBitsToFloat( x ); }
 uint asuint ( float x ) { return floatBitsToUint( x ); }
 

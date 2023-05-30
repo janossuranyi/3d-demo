@@ -109,6 +109,7 @@ namespace jsr {
 
 	struct uboFreqHighFrag_t 
 	{
+		glm::mat4 lightProjMatrix;
 		glm::vec4 matDiffuseFactor;
 		glm::vec4 matMRFactor;
 		glm::vec4 matEmissiveFactor;

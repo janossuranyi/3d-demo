@@ -250,8 +250,8 @@ namespace jsr {
 
 		rect->numVerts = 4;
 		rect->numIndexes = 6;
-		rect->verts = (drawVert_t*)MemAlloc(4 * sizeof(drawVert_t));
-		rect->indexes = (elementIndex_t*)MemAlloc(ALIGN(sizeof(elementIndex_t) * 6));
+		rect->verts = (drawVert_t*)MemAlloc16(sizeof(drawVert_t) * 4);
+		rect->indexes = (elementIndex_t*)MemAlloc16(sizeof(elementIndex_t) * 6);
 		rect->topology = TP_TRIANGLES;
 
 		for (int i = 0; i < 4; ++i)
@@ -264,7 +264,11 @@ namespace jsr {
 		}
 
 		const elementIndex_t idx[] = {1,2,0,0,2,3};
-		memcpy(rect->indexes, idx, 6 * sizeof(idx[0]));
+		for (int i = 0; i < 6; ++i)
+		{
+			rect->indexes[i] = idx[i];
+		}
+
 		rect->bounds.Extend({ -1.0f, -1.0f, 0.0f });
 		rect->bounds.Extend({ 1.0f, 1.0f, 0.0f });
 
@@ -274,17 +278,17 @@ namespace jsr {
 	void R_CreateSurfFormTris(drawSurf_t& surf, surface_t& tris)
 	{
 		surf.frontEndGeo = &tris;
-		if (tris.indexes == 0)
+		if (tris.numIndexes == 0)
 		{
 			surf.numIndex = 0;
 			return;
 		}
 
-		if (!renderSystem.vertexCache->IsCurrent(tris.vertexCache))
+		if ( ! renderSystem.vertexCache->IsCurrent(tris.vertexCache) )
 		{
 			tris.vertexCache = renderSystem.vertexCache->AllocTransientVertex(tris.verts, tris.numVerts * sizeof(tris.verts[0]));
 		}
-		if (!renderSystem.vertexCache->IsCurrent(tris.indexCache))
+		if ( ! renderSystem.vertexCache->IsCurrent(tris.indexCache) )
 		{
 			tris.indexCache = renderSystem.vertexCache->AllocTransientIndex(tris.indexes, ( tris.numIndexes * sizeof(tris.indexes[0]) ) );
 		}

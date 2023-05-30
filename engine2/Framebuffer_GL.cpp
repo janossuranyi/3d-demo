@@ -165,10 +165,10 @@ namespace jsr {
 
 	void Framebuffer::Bind()
 	{
-		if (renderSystem.backend->currentFramebuffer != this )
+		if (glcontext.currentFramebuffer != apiObject )
 		{
 			GL_CHECK( glBindFramebuffer(GL_FRAMEBUFFER, apiObject) );
-			renderSystem.backend->currentFramebuffer = this;
+			glcontext.currentFramebuffer = apiObject;
 		}
 	}
 
@@ -186,7 +186,11 @@ namespace jsr {
 
 	void Framebuffer::BindForReading()
 	{
-		GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, apiObject));
+		if (glcontext.currentReadFramebuffer != apiObject)
+		{
+			GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, apiObject));
+			glcontext.currentReadFramebuffer = apiObject;
+		}
 	}
 
 	void Framebuffer::SetReadBuffer(int index) const
@@ -196,18 +200,26 @@ namespace jsr {
 
 	bool Framebuffer::IsBound() const
 	{
-		return renderSystem.backend->currentFramebuffer == this;
+		return glcontext.currentFramebuffer == apiObject;
 	}
 
 	void Framebuffer::Unbind()
 	{
-		if (renderSystem.backend->currentFramebuffer != nullptr)
+		if (glcontext.currentFramebuffer != 0)
 		{
 			GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, 0));
 			
-			renderSystem.backend->currentFramebuffer = nullptr;
+			glcontext.currentFramebuffer = 0;
 		}
+
+		if (glcontext.currentReadFramebuffer != 0)
+		{
+			GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
+
+			glcontext.currentReadFramebuffer = 0;
+		}
+
 	}
 
 }
