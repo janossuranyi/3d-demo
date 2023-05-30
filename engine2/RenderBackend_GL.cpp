@@ -760,7 +760,7 @@ namespace jsr {
 		renderSystem.imageManager->globalImages.GBufferNormal->Bind();
 		SetCurrentTextureUnit(IMU_AORM);
 		renderSystem.imageManager->globalImages.GBufferSpec->Bind();
-		SetCurrentTextureUnit(IMU_DEPTH);
+		SetCurrentTextureUnit(IMU_SHADOW);
 		renderSystem.imageManager->globalImages.Depth32->Bind();
 
 		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT| UB_FREQ_HIGH_FRAG_BIT);

@@ -91,7 +91,7 @@ void main()
     {
         vec3 N = texture(tNormal, In.texCoord).xyz;
         //N.z = abs(sqrt(1.0 - inputs.normal.x*inputs.normal.x - inputs.normal.y*inputs.normal.y));
-        inputs.normal = N;
+        inputs.normal = (N);
     }
     
     inputs.sampleAmbient = texture( tDiffuse, In.texCoord );
@@ -141,6 +141,7 @@ void main()
         finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * light;
         finalColor += inputs.ambient;
         //inputs.spec = vec4(F * Ks, Ks);
+        //finalColor = vec3(fragPosLight.xyz / fragPosLight.w);
     }
     /*****************************************************************/
 

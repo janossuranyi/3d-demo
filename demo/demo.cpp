@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     engineConfig.r_fullscreen = 0;
 
     engineConfig.r_fbsrgb = false;
-#if 1
+#if 0
     engineConfig.r_debug = true;
 #else
     engineConfig.r_debug = false;
