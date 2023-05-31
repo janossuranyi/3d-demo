@@ -533,7 +533,7 @@ namespace jsr {
 
 		const drawSurf_t* surf;
 		SetCurrentTextureUnit(IMU_SHADOW);
-		renderSystem.imageManager->globalImages.Depth32->Bind();
+		renderSystem.imageManager->globalImages.Shadow->Bind();
 
 		vec3 lightDir = view->spotLightDir;
 		vec3 lightPos = view->lightPos;
@@ -761,15 +761,14 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_AORM);
 		renderSystem.imageManager->globalImages.GBufferSpec->Bind();
 		SetCurrentTextureUnit(IMU_SHADOW);
-		renderSystem.imageManager->globalImages.Depth32->Bind();
+		renderSystem.imageManager->globalImages.Shadow->Bind();
 
-		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT| UB_FREQ_HIGH_FRAG_BIT);
+		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
 		auto& highvert = renderSystem.programManager->g_freqHighVert;
 		auto& highfrag = renderSystem.programManager->g_freqHighFrag;
-		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
+
 		highvert.WVPMatrix = glm::mat4(1.0f);
 		highfrag.lightProjMatrix = renderSystem.programManager->g_freqLowVert.lightProjMatrix;
-
 
 		R_DrawSurf(&unitRectSurface);
 	}

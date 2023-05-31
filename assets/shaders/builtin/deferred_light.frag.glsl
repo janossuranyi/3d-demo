@@ -88,18 +88,17 @@ float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
 void main()
 {
     lightinginput_t inputs;
+
     {
-        vec3 N = texture(tNormal, In.texCoord).xyz;
-        //N.z = abs(sqrt(1.0 - inputs.normal.x*inputs.normal.x - inputs.normal.y*inputs.normal.y));
-        inputs.normal = (N);
+        vec3 ambientColor       = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w;
+        inputs.normal           = texture( tNormal, In.texCoord ).xyz;    
+        inputs.sampleAmbient    = texture( tDiffuse, In.texCoord );
+        inputs.samplePBR        = texture( tAORM, In.texCoord );
+        inputs.fragPos          = texture( tFragPos, In.texCoord );
+        inputs.ambient          = inputs.sampleAmbient.xyz * ambientColor;
+        inputs.lightPos         = g_freqLowFrag.lightOrig.xyz;
+        inputs.lightColor       = g_freqLowFrag.lightColor.rgb * g_freqLowFrag.lightColor.w;
     }
-    
-    inputs.sampleAmbient = texture( tDiffuse, In.texCoord );
-    inputs.samplePBR = texture( tAORM, In.texCoord );
-    inputs.lightPos = vec3(g_freqLowFrag.lightOrig);
-    inputs.lightColor = g_freqLowFrag.lightColor.rgb * g_freqLowFrag.lightColor.w;
-    inputs.ambient = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w * inputs.sampleAmbient.xyz;
-    inputs.fragPos = texture(tFragPos, In.texCoord);
 
     /*********************** Lighting  ****************************/
     inputs.viewDir = normalize(g_freqLowFrag.viewOrigin.xyz - inputs.fragPos.xyz);
@@ -140,10 +139,11 @@ void main()
         vec3 light = NdotL * inputs.lightColor * inputs.attenuation * shadow;
         finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * light;
         finalColor += inputs.ambient;
+        finalColor = vec3(1.0) - exp(-finalColor * gExposure);
         //inputs.spec = vec4(F * Ks, Ks);
         //finalColor = vec3(fragPosLight.xyz / fragPosLight.w);
     }
     /*****************************************************************/
 
-    hdrColor = finalColor;
+    hdrColor = GammaIEC( finalColor );
 }

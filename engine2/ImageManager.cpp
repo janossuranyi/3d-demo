@@ -26,7 +26,7 @@ namespace jsr {
 		globalImages.GBufferFragPos = AllocImage("_gbuffer_fragpos");
 		globalImages.GBufferAlbedo = AllocImage("_gbuffer_albedo");
 		globalImages.GBufferNormal = AllocImage("_gbuffer_normal");
-		globalImages.Depth32 = AllocImage("_depth");
+		globalImages.Shadow = AllocImage("_depth");
 		globalImages.defaultDepth = AllocImage("_defaultDepth");
 		globalImages.defaultImage = AllocImage("_defaultImage");
 		globalImages.GBufferSpec = AllocImage("_gbuffer_specular");
@@ -63,7 +63,7 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferFragPos allocation failed !");
 		}
 
-		opts.format = IMF_RGBA16F;
+		opts.format = IMF_RGB16F;
 		opts.usage = IMU_NORMAL;
 		if (!globalImages.GBufferNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
@@ -161,9 +161,9 @@ namespace jsr {
 		opts.sizeY = renderGlobals.shadowResolution;
 		opts.autocompress = false;
 		opts.compressed = false;
-		if (!globalImages.Depth32->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		if (!globalImages.Shadow->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
-			Error("[ImageManager]: Image Depth32 allocation failed !");
+			Error("[ImageManager]: Image Shadow allocation failed !");
 		}
 
 		initialized = true;

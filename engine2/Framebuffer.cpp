@@ -30,7 +30,7 @@ namespace jsr {
 
 		fb = new Framebuffer("shadowFBO", shadowRes, shadowRes);
 		fb->Bind();
-		fb->AttachImageDepth( imgr->globalImages.Depth32 );
+		fb->AttachImageDepth( imgr->globalImages.Shadow );
 		if (!fb->Check())
 		{
 			Error("[Framebuffer]: shadowFBO init failed!");

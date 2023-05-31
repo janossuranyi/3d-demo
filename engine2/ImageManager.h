@@ -16,7 +16,7 @@ namespace jsr {
 		Image* GBufferAlbedo;
 		Image* GBufferNormal;
 		Image* GBufferSpec;
-		Image* Depth32;
+		Image* Shadow;
 		Image* defaultImage;
 		Image* defaultDepth;
 		Image* whiteImage;
