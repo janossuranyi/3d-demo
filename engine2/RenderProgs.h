@@ -90,7 +90,6 @@ namespace jsr {
 		glm::vec4 debugparams;
 		glm::vec4 shadowparams;
 		glm::vec4 screenSize;
-		glm::vec4 oneOverScreenSize;
 		glm::vec4 nearFarClip;
 		glm::vec4 params;
 		glm::vec4 viewOrigin;

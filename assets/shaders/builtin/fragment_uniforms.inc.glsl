@@ -29,7 +29,6 @@ layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 	vec4 debugparams;
 	vec4 shadowparams;
 	vec4 screenSize;
-	vec4 oneOverScreenSize;
 	vec4 nearFarClip;
 	vec4 params;
 	vec4 viewOrigin;

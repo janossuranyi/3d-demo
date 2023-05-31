@@ -124,7 +124,7 @@ namespace jsr {
 		ImGuiIO& io = ImGui::GetIO();
 		world->exposure = 1.0f;
 		world->lightColor = vec4(vec3(255.f, 87.f, 51.f) / 255.0f, 8.0f);
-		world->lightAttenuation = vec4(1.0f, 0.0f, 1.0f, 0.0f);
+		world->lightAttenuation = vec4(1.0f, 0.0f, 2.0f, 0.0f);
 		world->spotLightParams.x = 40.0f;
 		world->spotLightParams.y = 35.0f;
 		world->spotLightParams.z = 0.5f;

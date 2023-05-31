@@ -162,7 +162,6 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		glm::mat4 viewMatrix = view->renderView.viewMatrix;
 		for (int i = 0; i < rootnodes.size(); ++i)
 		{
 			Node3D* node = nodes[i];
@@ -394,6 +393,7 @@ namespace jsr {
 			Node3D* node = new Node3D();
 			nodes.push_back(node);
 			gltfNodeToLocal[i] = (int)nodes.size() - 1;
+			node->SetName(gnode.name);
 
 			if (!gnode.matrix.empty())
 			{
@@ -494,8 +494,13 @@ namespace jsr {
 			light->SetId(lights.size() - 1);
 			gltf_state->map_light_idx[i] = light->GetId();
 
+			// Ln = (683 * watt)  / ( 4 * math.pi )
+			// watt = Ln * 4PI / 683
+			float watts = (static_cast<float>(e.intensity) * glm::pi<float>() * 4) / 683.0f;
 			light->SetName(e.name);
-			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), static_cast<float>(e.intensity) };
+			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), watts };
+			light->opts.expAttn = 1.0f;
+			light->opts.linearAttn = 0.0f;
 			light->SetShader(PRG_DEFERRED_LIGHT);
 			light->opts.CalculateRadius();
 

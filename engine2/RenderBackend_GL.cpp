@@ -400,7 +400,7 @@ namespace jsr {
 		slowvert.lightProjMatrix = lightViewProj;
 
 		slowfrag.nearFarClip = { view->nearClipDistance,view->farClipDistance,0.f,0.f };
-		slowfrag.oneOverScreenSize = { 1.0f / (float)x, 1.0f / (float)y,0.f,0.f };
+		slowfrag.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
 		slowfrag.shadowparams = { 1.0f / (float)renderGlobals.shadowResolution,renderGlobals.shadowScale,renderGlobals.shadowBias,0.0f };
 		slowfrag.params.x = view->exposure;
 		slowfrag.lightOrig = view->lightPos;
@@ -420,7 +420,7 @@ namespace jsr {
 		
 
 		RenderDeferred_GBuffer();
-		RenderShadow();
+		//RenderShadow();
 		RenderDeferred_Lighting();
 
 		Framebuffer::Unbind();
@@ -759,6 +759,9 @@ namespace jsr {
 		glViewport(0, 0, w, h);
 		Clear(true, false, false);
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 		SetCurrentTextureUnit(IMU_DIFFUSE);
 		renderSystem.imageManager->globalImages.GBufferAlbedo->Bind();
@@ -773,34 +776,36 @@ namespace jsr {
 
 		auto& highvert = renderSystem.programManager->g_freqHighVert;
 		auto& highfrag = renderSystem.programManager->g_freqHighFrag;
-		/*****************************************************************************************************
 		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
 		vec4 oldShadow = slowfrag.shadowparams;
 		slowfrag.shadowparams.x = 0.0f;
-		highfrag.lightAttenuation = { 1.0f,0.0f,1.0f,0.0f };
 
 		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_FRAG_BIT);
-		SetCullMode(CULL_FRONT);
+		SetCullMode(CULL_BACK);
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
 			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
+
 			mat4 worldMtx = translate(mat4(1.0f), light->origin);
-			worldMtx = glm::scale(worldMtx, vec3(light->radius / 10.0f));
+			worldMtx = scale(worldMtx, vec3(light->radius * 0.5f));
 			highvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMtx;
 			slowfrag.lightColor = light->color;
 			slowfrag.lightOrig = vec4(light->origin,1.0f);
 			R_DrawSurf(&unitSphereSurface);
 		}
 		slowfrag.shadowparams = oldShadow;
-		*************************************************************************************************************/
-		
+		glDisable(GL_BLEND);
+
+		/*****************************************************************************************************
+
 		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT | UB_FREQ_LOW_FRAG_BIT);
 		highvert.WVPMatrix = glm::mat4(1.0f);
 		highfrag.lightProjMatrix = renderSystem.programManager->g_freqLowVert.lightProjMatrix;
 		SetCullMode(CULL_NONE);
 
 		R_DrawSurf(&unitRectSurface);
-		
+		*************************************************************************************************************/
+
 	}
 
 	void RenderBackend::EndFrame()

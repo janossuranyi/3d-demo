@@ -92,11 +92,12 @@ void main()
     lightinginput_t inputs;
 
     {
+        vec2 texCoord           = gl_FragCoord.xy * g_freqLowFrag.screenSize.zw;
         vec3 ambientColor       = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w;
-        inputs.normal           = texture( tNormal, In.texCoord ).xyz;    
-        inputs.sampleAmbient    = texture( tDiffuse, In.texCoord );
-        inputs.samplePBR        = texture( tAORM, In.texCoord );
-        inputs.fragPos          = texture( tFragPos, In.texCoord );
+        inputs.normal           = texture( tNormal, texCoord ).xyz;    
+        inputs.sampleAmbient    = texture( tDiffuse, texCoord );
+        inputs.samplePBR        = texture( tAORM, texCoord );
+        inputs.fragPos          = texture( tFragPos, texCoord );
         inputs.ambient          = inputs.sampleAmbient.xyz * ambientColor;
         inputs.lightPos         = g_freqLowFrag.lightOrig.xyz;
         inputs.lightColor       = g_freqLowFrag.lightColor.rgb * g_freqLowFrag.lightColor.w;
@@ -150,5 +151,5 @@ void main()
     }
     /*****************************************************************/
 
-    hdrColor = Gamma( finalColor );
+    hdrColor =( finalColor );
 }
