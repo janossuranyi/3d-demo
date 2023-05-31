@@ -747,6 +747,7 @@ namespace jsr {
 	void RenderBackend::RenderDeferred_Lighting()
 	{
 		using namespace glm;
+
 		globalFramebuffers.hdrFBO->Bind();
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
@@ -756,6 +757,7 @@ namespace jsr {
 		int w, h;
 		GetScreenSize(w, h);
 		glViewport(0, 0, w, h);
+		Clear(true, false, false);
 
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 		SetCurrentTextureUnit(IMU_DIFFUSE);
@@ -771,9 +773,10 @@ namespace jsr {
 
 		auto& highvert = renderSystem.programManager->g_freqHighVert;
 		auto& highfrag = renderSystem.programManager->g_freqHighFrag;
-		auto& lowfrag = renderSystem.programManager->g_freqLowFrag;
-		vec4 oldShadow = lowfrag.shadowparams;
-		lowfrag.shadowparams.x = 0.0f;
+		/*****************************************************************************************************
+		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
+		vec4 oldShadow = slowfrag.shadowparams;
+		slowfrag.shadowparams.x = 0.0f;
 		highfrag.lightAttenuation = { 1.0f,0.0f,1.0f,0.0f };
 
 		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_FRAG_BIT);
@@ -784,18 +787,20 @@ namespace jsr {
 			mat4 worldMtx = translate(mat4(1.0f), light->origin);
 			worldMtx = glm::scale(worldMtx, vec3(light->radius / 10.0f));
 			highvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMtx;
-			highfrag.lightColor = light->color;
-			highfrag.lightOrig = vec4(light->origin,1.0f);
+			slowfrag.lightColor = light->color;
+			slowfrag.lightOrig = vec4(light->origin,1.0f);
 			R_DrawSurf(&unitSphereSurface);
 		}
-		lowfrag.shadowparams = oldShadow;
-
+		slowfrag.shadowparams = oldShadow;
+		*************************************************************************************************************/
+		
 		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT | UB_FREQ_LOW_FRAG_BIT);
 		highvert.WVPMatrix = glm::mat4(1.0f);
 		highfrag.lightProjMatrix = renderSystem.programManager->g_freqLowVert.lightProjMatrix;
 		SetCullMode(CULL_NONE);
 
 		R_DrawSurf(&unitRectSurface);
+		
 	}
 
 	void RenderBackend::EndFrame()
