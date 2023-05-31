@@ -11,7 +11,7 @@ namespace jsr {
 
     ResourceManager ResourceManager::instance{};
 
-    ResourceManager* resourceMgr = &ResourceManager::instance;
+    ResourceManager* resourceManager = &ResourceManager::instance;
 
     static void dir_traversal(const fs::path& start, std::function<void(const fs::path&)> callback)
     {

@@ -114,6 +114,11 @@ namespace jsr {
 		glm::vec4 matMRFactor;
 		glm::vec4 matEmissiveFactor;
 		glm::vec4 alphaCutoff;
+		glm::vec4 lightOrig;
+		glm::vec4 lightColor;
+		glm::vec4 lightAttenuation;
+		glm::vec4 spotLightParams;
+		glm::vec4 spotDirection;
 		glm::vec4 params;
 	};
 
@@ -131,16 +136,6 @@ namespace jsr {
 		SHADER_STAGE_GEOMETRY = 4,
 		SHADER_STAGE_COMPUTE = 8,
 		SHADER_STAGE_DEFAULT = SHADER_STAGE_VERTEX | SHADER_STAGE_FRAGMENT
-	};
-
-	enum eShaderProg
-	{
-		PRG_TEXTURED,
-		PRG_ZPASS,
-		PRG_EQUIRECT_TEXTURE,
-		PRG_DEFERRED_GBUFFER_MR,
-		PRG_DEFERRED_LIGHT,
-		PRG_COUNT
 	};
 
 	struct renderProgram_t

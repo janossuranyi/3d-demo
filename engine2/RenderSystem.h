@@ -36,8 +36,6 @@ namespace jsr {
 	void R_ResetCommandBuffer();
 	void R_InitCommandBuffers();
 	void R_ShutdownCommandBuffers();
-	surface_t* R_CreateFullScreenRect();
-	void R_CreateSurfFormTris(drawSurf_t& surf, surface_t& tris);
 
 	class RenderSystem
 	{
@@ -63,11 +61,15 @@ namespace jsr {
 		Material* defaultMaterial;
 
 		drawSurf_t unitRectSurface_;
+		drawSurf_t unitCubeSurface_;
+		drawSurf_t unitSphereSurface_;
 
 	private:
 		bool initialized;
 		int	 frameNum;
 		surface_t*	unitRectTris;
+		surface_t*	unitCubeTris;
+		surface_t*	unitSphereTris;
 	};
 
 	extern RenderSystem renderSystem;

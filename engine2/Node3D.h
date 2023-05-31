@@ -29,7 +29,7 @@ namespace jsr {
 		Entity3D&			GetEntity();
 		std::string			GetName() const;
 		void				SetName(const std::string& name);
-		const Node3D* const* GetChildren() const;
+		Node3D**			GetChildren();
 		void				AddChild(Node3D* child);
 	private:
 		void				Changed();

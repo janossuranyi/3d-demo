@@ -79,9 +79,9 @@ namespace jsr {
 
 		world = new RenderWorld();
 
-		world->LoadModelsFromGLTF(resourceMgr->GetResource("models/zeroOneCube.glb"));
+		world->LoadModelsFromGLTF(resourceManager->GetResource("models/zeroOneCube.glb"));
 
-		if (!world->LoadMapFromGLTF(resourceMgr->GetResource(filename)))
+		if (!world->LoadMapFromGLTF(resourceManager->GetResource(filename)))
 		{
 			Error("Error loading map!");
 			return false;

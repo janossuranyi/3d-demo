@@ -25,7 +25,9 @@ namespace jsr {
 		inline eEntityType GetType() const		{ return type; }
 		inline Light* GetLight() const			{ return reinterpret_cast<Light*>( value ); }
 		inline RenderModel* GetModel() const	{ return reinterpret_cast<RenderModel*>( value ); }
-	private: 
+		inline bool IsLight() const				{ return type == ENT_LIGHT; }
+		inline bool IsModel() const				{ return type == ENT_MODEL; }
+	private:
 		eEntityType type;
 		void* value;
 	};

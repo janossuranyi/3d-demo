@@ -162,58 +162,17 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		for (int i = 0; i < nodes.size(); ++i)
+		glm::mat4 viewMatrix = view->renderView.viewMatrix;
+		for (int i = 0; i < rootnodes.size(); ++i)
 		{
 			Node3D* node = nodes[i];
-
-			if (node->GetEntity().GetType() == ENT_LIGHT)
+			int numChildren = node->GetNumChildren();
+			Node3D** children = node->GetChildren();
+			for (int k = 0; k < numChildren; ++k)
 			{
-
-				continue;
+				RenderNode(children[k], view);
 			}
-
-			if (node->GetEntity().GetType() != ENT_MODEL) continue;
-
-			glm::mat4 worldMatrix = node->GetLocalToWorldMatrix();
-			glm::mat4 viewMatrix = view->renderView.viewMatrix;
-			// W-V-P -> P-V-W
-			auto modelViewMatrix = viewMatrix * worldMatrix;
-
-			Bounds entityBounds = node->GetEntity().GetModel()->GetBounds().Transform(modelViewMatrix);
-			if (view->frustum.Intersects2(entityBounds))
-			{
-				viewEntity_t* ent = (viewEntity_t*) R_FrameAlloc(sizeof(*ent));
-				auto* model = node->GetEntity().GetModel();
-
-				// entity chain
-				ent->next = view->viewEntites;
-				view->viewEntites = ent;
-				ent->modelMatrix = worldMatrix;
-				ent->modelViewMatrix = modelViewMatrix;
-				ent->mvp = view->projectionMatrix * ent->modelViewMatrix;
-
-				for (int entSurf = 0; entSurf < model->GetNumSurface(); ++entSurf)
-				{
-					const auto* surf = model->GetSurface(entSurf);
-					const Bounds surfBounds = surf->surf.bounds.Transform(modelViewMatrix);
-					if (view->frustum.Intersects2(surfBounds))
-					{
-						drawSurf_t* drawSurf = (drawSurf_t*)R_FrameAlloc(sizeof(*drawSurf));
-						drawSurf->frontEndGeo = &surf->surf;
-						drawSurf->numIndex = surf->surf.numIndexes;
-						drawSurf->indexCache = surf->surf.indexCache;
-						drawSurf->vertexCache = surf->surf.vertexCache;
-						drawSurf->shader = surf->shader;
-						drawSurf->space = ent;
-						const vec4 p = ent->modelViewMatrix * vec4(surf->surf.bounds.GetSphere().GetCenter(), 1.0f);
-						drawSurf->sort = static_cast<float>((surf->shader->GetId() << 24) - p.z);
-						drawSurf->next = ent->surf;
-						ent->surf = drawSurf;
-
-						view->numDrawSurfs++;
-					}
-				}
-			}
+			RenderNode(node, view);
 		}
 		//Info("visibe surface count: %d", view->numDrawSurfs);
 
@@ -425,6 +384,8 @@ namespace jsr {
 		}
 
 		Model* map = &gltf_state->map;
+		std::vector<int> gltfNodeToLocal;
+		gltfNodeToLocal.resize(map->nodes.size());
 
 		for (int i = 0; i < map->nodes.size(); ++i)
 		{
@@ -432,6 +393,7 @@ namespace jsr {
 
 			Node3D* node = new Node3D();
 			nodes.push_back(node);
+			gltfNodeToLocal[i] = (int)nodes.size() - 1;
 
 			if (!gnode.matrix.empty())
 			{
@@ -473,9 +435,8 @@ namespace jsr {
 			{
 				node->GetEntity().SetType(ENT_LIGHT);
 				auto it = gnode.extensions.find("KHR_lights_punctual");
-				auto* light = lights.at( gltf_state->map_light_idx[ it->second.GetNumberAsInt() ] );
-				light->SetNode( node );
-				node->GetEntity().SetValue(light);
+				int idx = it->second.Get("light").GetNumberAsInt();
+				node->GetEntity().SetValue( lights[ gltf_state->map_light_idx[ idx ] ] );
 			}
 			else
 			{
@@ -486,12 +447,12 @@ namespace jsr {
 		for (int i = 0; i < map->nodes.size(); ++i)
 		{
 			const auto& gnode = map->nodes[i];
-			if (gnode.mesh == -1) continue;
-			auto* p = nodes[gnode.mesh];
+			Node3D* n = nodes[gltfNodeToLocal[i]];
 			for (auto child : gnode.children)
 			{
-				p->AddChild(nodes[child]);
-				nodes[child]->SetParent(p);
+				Node3D* ch = nodes[gltfNodeToLocal[child]];
+				n->AddChild(ch);
+				ch->SetParent(n);
 			}
 		}
 
@@ -534,9 +495,10 @@ namespace jsr {
 			gltf_state->map_light_idx[i] = light->GetId();
 
 			light->SetName(e.name);
-			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), static_cast<float>(e.intensity) / 54.35f };
+			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), static_cast<float>(e.intensity) };
 			light->SetShader(PRG_DEFERRED_LIGHT);
-			
+			light->opts.CalculateRadius();
+
 			if (ltype == LIGHT_SPOT) 
 			{
 				light->opts.outerConeAngle = e.spot.outerConeAngle;
@@ -713,5 +675,76 @@ namespace jsr {
 			}
 		}
 		return RM;
+	}
+
+	void RenderWorld::RenderNode(Node3D* node, viewDef_t* view)
+	{
+		using namespace glm;
+
+		mat4 viewMatrix = view->renderView.viewMatrix;
+
+		if (node->GetEntity().IsLight())
+		{
+			Light* light = node->GetEntity().GetLight();
+			mat4 worldMatrix = node->GetLocalToWorldMatrix();
+			mat4 modelViewMatrix = viewMatrix * worldMatrix;
+
+			Bounds lightBounds = Bounds(-vec3(light->opts.radius / 2.0f), vec3(light->opts.radius / 2.0f)).Transform(modelViewMatrix);
+			if (view->frustum.Intersects2(lightBounds))
+			{
+				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
+				e->next = view->viewLights;
+				e->origin = worldMatrix[3];
+				e->axis = mat3(worldMatrix);
+				e->radius = light->opts.radius;
+				e->shader = light->GetShader();
+				e->color = light->opts.color.color;
+				e->remove = false;
+				view->viewLights = e;
+			}
+			return;
+		}
+
+		if (node->GetEntity().GetType() != ENT_MODEL) return;
+
+		glm::mat4 worldMatrix = node->GetLocalToWorldMatrix();
+		// W-V-P -> P-V-W
+		auto modelViewMatrix = viewMatrix * worldMatrix;
+
+		Bounds entityBounds = node->GetEntity().GetModel()->GetBounds().Transform(modelViewMatrix);
+		if (view->frustum.Intersects2(entityBounds))
+		{
+			viewEntity_t* ent = (viewEntity_t*)R_FrameAlloc(sizeof(*ent));
+			auto* model = node->GetEntity().GetModel();
+
+			// entity chain
+			ent->next = view->viewEntites;
+			view->viewEntites = ent;
+			ent->modelMatrix = worldMatrix;
+			ent->modelViewMatrix = modelViewMatrix;
+			ent->mvp = view->projectionMatrix * ent->modelViewMatrix;
+
+			for (int entSurf = 0; entSurf < model->GetNumSurface(); ++entSurf)
+			{
+				const auto* surf = model->GetSurface(entSurf);
+				const Bounds surfBounds = surf->surf.bounds.Transform(modelViewMatrix);
+				if (view->frustum.Intersects2(surfBounds))
+				{
+					drawSurf_t* drawSurf = (drawSurf_t*)R_FrameAlloc(sizeof(*drawSurf));
+					drawSurf->frontEndGeo = &surf->surf;
+					drawSurf->numIndex = surf->surf.numIndexes;
+					drawSurf->indexCache = surf->surf.indexCache;
+					drawSurf->vertexCache = surf->surf.vertexCache;
+					drawSurf->shader = surf->shader;
+					drawSurf->space = ent;
+					const vec4 p = ent->modelViewMatrix * vec4(surf->surf.bounds.GetSphere().GetCenter(), 1.0f);
+					drawSurf->sort = static_cast<float>((surf->shader->GetId() << 24) - p.z);
+					drawSurf->next = ent->surf;
+					ent->surf = drawSurf;
+
+					view->numDrawSurfs++;
+				}
+			}
+		}
 	}
 }

@@ -54,11 +54,13 @@ void main()
 
     inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
 
-    uint params_x = asuint(gFlagsX);
-    uint localCoverage = (params_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
-    if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < g_freqHighFrag.alphaCutoff.x )
-    { 
-        discard;
+    {
+        uint params_x = asuint(gFlagsX);
+        uint localCoverage = (params_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
+        if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < g_freqHighFrag.alphaCutoff.x )
+        { 
+            discard;
+        }
     }
 
     inputs.samplePBR        = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);

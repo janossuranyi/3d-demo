@@ -123,7 +123,7 @@ namespace jsr {
 		this->name = name;
 	}
 
-	const Node3D* const* Node3D::GetChildren() const
+	Node3D** Node3D::GetChildren()
 	{
 		return children.data();
 	}

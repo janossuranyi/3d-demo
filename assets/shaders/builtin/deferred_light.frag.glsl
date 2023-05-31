@@ -34,6 +34,8 @@ float ApproxPow ( float fBase, float fPower ) {
 	return asfloat( uint( fPower * float( asuint( fBase ) ) - ( fPower - 1 ) * 127 * ( 1 << 23 ) ) );
 }
 
+vec3 Gamma(vec3 c) { return pow(c, vec3(1.0/2.2)); }
+
 vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 	//const float baked_spec_occl = saturate( 50.0 * dot( f0, vec3( 0.3333 ) ) );
 	return f0 + ( 1.0 - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );
@@ -129,10 +131,13 @@ void main()
         vec3 F = spec.rgb;
         float Ks = spec.w;
         float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
-        
-        vec4 fragPosLight = g_freqHighFrag.lightProjMatrix * inputs.fragPos;
 
-        float shadow = 1.0 - (gShadowScale * ShadowCalculation(fragPosLight, NdotL));
+        float shadow = 1.0;
+        if (gShadowScale > 0.0)
+        {
+            vec4 fragPosLight = g_freqHighFrag.lightProjMatrix * inputs.fragPos;
+            shadow = 1.0 - (gShadowScale * ShadowCalculation(fragPosLight, NdotL));
+        }
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
 
@@ -145,5 +150,5 @@ void main()
     }
     /*****************************************************************/
 
-    hdrColor = GammaIEC( finalColor );
+    hdrColor = Gamma( finalColor );
 }

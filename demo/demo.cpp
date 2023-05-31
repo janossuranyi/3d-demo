@@ -16,10 +16,12 @@ using namespace jsr;
 int main(int argc, char** argv)
 {
 
-    resourceMgr->AddResourcePath("../assets/shaders"); 
-    resourceMgr->AddResourcePath("../assets/textures");
-    resourceMgr->AddResourcePath("../assets/scenes");
-    resourceMgr->AddResourcePath("../assets/models");
+    ResourceManager& rm = ResourceManager::instance;
+
+    rm.AddResourcePath("../assets/shaders"); 
+    rm.AddResourcePath("../assets/textures");
+    rm.AddResourcePath("../assets/scenes");
+    rm.AddResourcePath("../assets/models");
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 

@@ -10,9 +10,14 @@
 #define ON_FLIGHT_FRAMES 2
 
 #define CACHE_LINE_ALIGN(bytes) (((bytes) + CACHE_LINE_SIZE - 1) & ~(CACHE_LINE_SIZE - 1))
-#define ALIGN(a) (((a) + 15) & 15)
+#define ALIGN(a) (((a) + 15) & ~15)
 
 namespace jsr {
+
+	surface_t* R_MakeFullScreenRect();
+	surface_t* R_MakeZeroOneCube();
+	surface_t* R_MakeZeroOneSphere();
+	void R_CreateSurfFromTris(drawSurf_t& surf, surface_t& tris);
 
 	const size_t DEFAULT_FRAME_MEM_SIZE = 16 * 1024 * 1024;
 
@@ -36,6 +41,13 @@ namespace jsr {
 		modelManager	= new ModelManager();
 		materialManager = new MaterialManager();
 		defaultMaterial = {};
+
+		unitCubeSurface_	= {};
+		unitCubeTris		= {};
+		unitRectSurface_	= {};
+		unitRectTris		= {};
+		unitSphereSurface_	= {};
+		unitSphereTris		= {};
 	}
 
 	RenderSystem::~RenderSystem()
@@ -52,7 +64,10 @@ namespace jsr {
 			delete programManager;
 			delete vertexCache;
 			delete backend;
-			delete unitRectTris;
+
+			MemFree( unitRectTris );
+			MemFree( unitCubeTris );
+			MemFree( unitSphereTris );
 
 			ImGui::DestroyContext();
 
@@ -78,7 +93,9 @@ namespace jsr {
 		Framebuffer::Init();
 		R_InitCommandBuffers();
 
-		unitRectTris = R_CreateFullScreenRect();
+		unitRectTris = R_MakeFullScreenRect();
+		unitCubeTris = R_MakeZeroOneCube();
+		unitSphereTris = R_MakeZeroOneSphere();
 
 		defaultMaterial = materialManager->CreateMaterial("_defaultMaterial");
 		stage_t& s = defaultMaterial->GetStage(STAGE_DEBUG);
@@ -120,7 +137,11 @@ namespace jsr {
 		vertexCache->Frame();
 
 		backend->unitRectSurface = unitRectSurface_;
-		R_CreateSurfFormTris(unitRectSurface_, *unitRectTris);
+		backend->unitCubeSurface = unitCubeSurface_;
+		backend->unitSphereSurface = unitSphereSurface_;
+		R_CreateSurfFromTris(unitRectSurface_, *unitRectTris);
+		R_CreateSurfFromTris(unitCubeSurface_, *unitCubeTris);
+		R_CreateSurfFromTris(unitSphereSurface_, *unitSphereTris);
 
 		return cmds;
 	}
@@ -230,7 +251,7 @@ namespace jsr {
 		}
 	}
 
-	surface_t* R_CreateFullScreenRect()
+	static surface_t* R_MakeFullScreenRect()
 	{
 		const glm::vec3 coords[] = {
 			{ 1.0f, 1.0f, 0.0f},
@@ -246,12 +267,15 @@ namespace jsr {
 		};
 		const float white[] = { 1.0f,1.0f,1.0f,1.0f };
 
-		auto* rect = new surface_t;
+//		surface_t* rect = (surface_t*)MemAlloc(sizeof(*rect));
+		surface_t* rect = new (MemAlloc(sizeof(*rect))) surface_t();
 
 		rect->numVerts = 4;
 		rect->numIndexes = 6;
-		rect->verts = (drawVert_t*)MemAlloc16(sizeof(drawVert_t) * 4);
-		rect->indexes = (elementIndex_t*)MemAlloc16(sizeof(elementIndex_t) * 6);
+		int vertsBytes = ALIGN(sizeof(drawVert_t) * 4);
+		rect->verts = (drawVert_t*)MemAlloc(vertsBytes);
+		int indexBytes = ALIGN(sizeof(elementIndex_t) * 6);
+		rect->indexes = (elementIndex_t*)MemAlloc(indexBytes);
 		rect->topology = TP_TRIANGLES;
 
 		for (int i = 0; i < 4; ++i)
@@ -275,7 +299,177 @@ namespace jsr {
 		return rect;
 	}
 
-	void R_CreateSurfFormTris(drawSurf_t& surf, surface_t& tris)
+	/*
+=============
+R_MakeZeroOneCubeTris
+=============
+*/
+	static surface_t* R_MakeZeroOneCube()
+	{
+		using namespace glm;
+		surface_t* tri = new (MemAlloc(sizeof(*tri))) surface_t();
+		memset(tri, 0, sizeof(*tri));
+
+		tri->numVerts = 8;
+		tri->numIndexes = 36;
+
+		const int indexSize = tri->numIndexes * sizeof(tri->indexes[0]);
+		const int allocatedIndexBytes = ALIGN(indexSize);
+		tri->indexes = (elementIndex_t*)MemAlloc16(allocatedIndexBytes);
+		memset(tri->indexes, 0, allocatedIndexBytes);
+
+		const int vertexSize = tri->numVerts * sizeof(tri->verts[0]);
+		const int allocatedVertexBytes = ALIGN(vertexSize);
+		tri->verts = (drawVert_t*)MemAlloc16(allocatedVertexBytes);
+		memset(tri->verts, 0, allocatedVertexBytes);
+
+		tri->topology = TP_TRIANGLES;
+
+		drawVert_t* verts = tri->verts;
+
+		const float low = 0.0f;
+		const float high = 1.0f;
+
+		vec3 center(0.0f);
+		vec3 mx(low, 0.0f, 0.0f);
+		vec3 px(high, 0.0f, 0.0f);
+		vec3 my(0.0f, low, 0.0f);
+		vec3 py(0.0f, high, 0.0f);
+		vec3 mz(0.0f, 0.0f, low);
+		vec3 pz(0.0f, 0.0f, high);
+
+		verts[0].xyz = center + mx + my + mz;
+		verts[1].xyz = center + px + my + mz;
+		verts[2].xyz = center + px + py + mz;
+		verts[3].xyz = center + mx + py + mz;
+		verts[4].xyz = center + mx + my + pz;
+		verts[5].xyz = center + px + my + pz;
+		verts[6].xyz = center + px + py + pz;
+		verts[7].xyz = center + mx + py + pz;
+
+		// bottom
+		tri->indexes[0 * 3 + 0] = 2;
+		tri->indexes[0 * 3 + 1] = 3;
+		tri->indexes[0 * 3 + 2] = 0;
+		tri->indexes[1 * 3 + 0] = 1;
+		tri->indexes[1 * 3 + 1] = 2;
+		tri->indexes[1 * 3 + 2] = 0;
+		// back
+		tri->indexes[2 * 3 + 0] = 5;
+		tri->indexes[2 * 3 + 1] = 1;
+		tri->indexes[2 * 3 + 2] = 0;
+		tri->indexes[3 * 3 + 0] = 4;
+		tri->indexes[3 * 3 + 1] = 5;
+		tri->indexes[3 * 3 + 2] = 0;
+		// left
+		tri->indexes[4 * 3 + 0] = 7;
+		tri->indexes[4 * 3 + 1] = 4;
+		tri->indexes[4 * 3 + 2] = 0;
+		tri->indexes[5 * 3 + 0] = 3;
+		tri->indexes[5 * 3 + 1] = 7;
+		tri->indexes[5 * 3 + 2] = 0;
+		// right
+		tri->indexes[6 * 3 + 0] = 1;
+		tri->indexes[6 * 3 + 1] = 5;
+		tri->indexes[6 * 3 + 2] = 6;
+		tri->indexes[7 * 3 + 0] = 2;
+		tri->indexes[7 * 3 + 1] = 1;
+		tri->indexes[7 * 3 + 2] = 6;
+		// front
+		tri->indexes[8 * 3 + 0] = 3;
+		tri->indexes[8 * 3 + 1] = 2;
+		tri->indexes[8 * 3 + 2] = 6;
+		tri->indexes[9 * 3 + 0] = 7;
+		tri->indexes[9 * 3 + 1] = 3;
+		tri->indexes[9 * 3 + 2] = 6;
+		// top
+		tri->indexes[10 * 3 + 0] = 4;
+		tri->indexes[10 * 3 + 1] = 7;
+		tri->indexes[10 * 3 + 2] = 6;
+		tri->indexes[11 * 3 + 0] = 5;
+		tri->indexes[11 * 3 + 1] = 4;
+		tri->indexes[11 * 3 + 2] = 6;
+
+		for (int i = 0; i < 8; i++)
+		{
+			verts[i].SetColor(vec4(1.0));
+		}
+
+		return tri;
+	}
+
+	static surface_t* R_MakeZeroOneSphere()
+	{
+		using namespace glm;
+		surface_t* tri = new (MemAlloc(sizeof(*tri))) surface_t();
+		memset(tri, 0, sizeof(*tri));
+
+		const float radius = 1.0f;
+		const int rings = 8.0f; // 20.0f;
+		const int sectors = 8.0f; // 20.0f;
+
+		tri->numVerts = (rings * sectors);
+		tri->numIndexes = ((rings - 1) * sectors) * 6;
+
+		const int indexSize = tri->numIndexes * sizeof(tri->indexes[0]);
+		const int allocatedIndexBytes = ALIGN(indexSize);
+		tri->indexes = (elementIndex_t*)MemAlloc16(allocatedIndexBytes);
+
+		const int vertexSize = tri->numVerts * sizeof(tri->verts[0]);
+		const int allocatedVertexBytes = ALIGN(vertexSize);
+		tri->verts = (drawVert_t*)MemAlloc16(allocatedVertexBytes);
+
+		tri->topology = TP_TRIANGLES;
+
+		drawVert_t* verts = tri->verts;
+
+		float const R = 1.0f / (float)(rings - 1);
+		float const S = 1.0f / (float)(sectors - 1);
+
+		int numTris = 0;
+		int numVerts = 0;
+		const float HALF_PI = glm::pi<float>() / 2.0f;
+		const float PI = glm::pi<float>();
+
+		for (int r = 0; r < rings; ++r)
+		{
+			for (int s = 0; s < sectors; ++s)
+			{
+				const float y = sin(-HALF_PI + PI * r * R);
+				const float x = cos(2 * PI * s * S) * sin(PI * r * R);
+				const float z = sin(2 * PI * s * S) * sin(PI * r * R);
+
+				verts[numVerts].SetUV(s * S, r * R);
+				verts[numVerts].xyz = vec3(x, y, z) * radius;
+				verts[numVerts].SetNormal(x, y, z);
+				verts[numVerts].SetColor(vec4(1.0f));
+				numVerts++;
+
+				if (r < (rings - 1))
+				{
+					int curRow = r * sectors;
+					int nextRow = (r + 1) * sectors;
+					int nextS = (s + 1) % sectors;
+
+					tri->indexes[(numTris * 3) + 2] = (curRow + s);
+					tri->indexes[(numTris * 3) + 1] = (nextRow + s);
+					tri->indexes[(numTris * 3) + 0] = (nextRow + nextS);
+
+					numTris += 1;
+
+					tri->indexes[(numTris * 3) + 2] = (curRow + s);
+					tri->indexes[(numTris * 3) + 1] = (nextRow + nextS);
+					tri->indexes[(numTris * 3) + 0] = (curRow + nextS);
+
+					numTris += 1;
+				}
+			}
+		}
+
+		return tri;
+	}
+
+	void R_CreateSurfFromTris(drawSurf_t& surf, surface_t& tris)
 	{
 		surf.frontEndGeo = &tris;
 		if (tris.numIndexes == 0)

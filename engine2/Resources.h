@@ -44,5 +44,5 @@ namespace jsr {
 
 	};
 
-	extern ResourceManager* resourceMgr;
+	extern ResourceManager* resourceManager;
 }

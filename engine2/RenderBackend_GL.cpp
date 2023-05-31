@@ -660,6 +660,10 @@ namespace jsr {
 
 			const stage_t& stage = shader->GetStage(STAGE_SHADOW);
 			if ( stage.coverage != COVERAGE_SOLID ) continue;
+			/**
+			if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f)))
+				|| stage.images[IMU_EMMISIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
+				**/
 
 			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT);
 			renderSystem.programManager->g_freqHighVert.WVPMatrix = lightViewProj * surf->space->modelMatrix;
@@ -703,6 +707,8 @@ namespace jsr {
 
 				if (k == 0 && stage.coverage != COVERAGE_SOLID) continue;
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
+				if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f)))
+					|| stage.images[IMU_EMMISIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
 
 				//		renderSystem.programManager->UseProgram(stage.shader);
 
@@ -740,12 +746,12 @@ namespace jsr {
 
 	void RenderBackend::RenderDeferred_Lighting()
 	{
+		using namespace glm;
 		globalFramebuffers.hdrFBO->Bind();
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-		SetCullMode(CULL_NONE);
 
 		int w, h;
 		GetScreenSize(w, h);
@@ -763,12 +769,31 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_SHADOW);
 		renderSystem.imageManager->globalImages.Shadow->Bind();
 
-		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
 		auto& highvert = renderSystem.programManager->g_freqHighVert;
 		auto& highfrag = renderSystem.programManager->g_freqHighFrag;
+		auto& lowfrag = renderSystem.programManager->g_freqLowFrag;
+		vec4 oldShadow = lowfrag.shadowparams;
+		lowfrag.shadowparams.x = 0.0f;
+		highfrag.lightAttenuation = { 1.0f,0.0f,1.0f,0.0f };
 
+		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_FRAG_BIT);
+		SetCullMode(CULL_FRONT);
+		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
+		{
+			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
+			mat4 worldMtx = translate(mat4(1.0f), light->origin);
+			worldMtx = glm::scale(worldMtx, vec3(light->radius / 10.0f));
+			highvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMtx;
+			highfrag.lightColor = light->color;
+			highfrag.lightOrig = vec4(light->origin,1.0f);
+			R_DrawSurf(&unitSphereSurface);
+		}
+		lowfrag.shadowparams = oldShadow;
+
+		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT | UB_FREQ_LOW_FRAG_BIT);
 		highvert.WVPMatrix = glm::mat4(1.0f);
 		highfrag.lightProjMatrix = renderSystem.programManager->g_freqLowVert.lightProjMatrix;
+		SetCullMode(CULL_NONE);
 
 		R_DrawSurf(&unitRectSurface);
 	}

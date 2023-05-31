@@ -103,7 +103,7 @@ namespace jsr {
 		GLuint modul = glCreateShader(stage);
 		if (!modul) return 0;
 
-		auto source = resourceMgr->GetShaderSource("shaders/builtin/" + r_name);
+		auto source = resourceManager->GetShaderSource("shaders/builtin/" + r_name);
 		const char* pStr = source.c_str();
 		GL_CHECK(glShaderSource(modul, 1, &pStr, nullptr));
 

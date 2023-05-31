@@ -113,6 +113,8 @@ namespace jsr {
 	public:
 		Framebuffer* currentFramebuffer{};
 		drawSurf_t unitRectSurface{};
+		drawSurf_t unitCubeSurface{};
+		drawSurf_t unitSphereSurface{};
 	};
 
 	extern bool R_InitGfxAPI();

@@ -6,9 +6,20 @@
 #include "./VertexCache.h"
 #include "./Bounds.h"
 #include "./Frustum.h"
+
 //#include "./Model.h"
 
 namespace jsr {
+
+	enum eShaderProg
+	{
+		PRG_TEXTURED,
+		PRG_ZPASS,
+		PRG_EQUIRECT_TEXTURE,
+		PRG_DEFERRED_GBUFFER_MR,
+		PRG_DEFERRED_LIGHT,
+		PRG_COUNT
+	};
 
 	enum eCullMode
 	{
@@ -82,8 +93,9 @@ namespace jsr {
 		viewLight_t*	next;
 		glm::vec3		origin;
 		glm::mat3		axis;
+		glm::vec4		color;
 		float			radius;
-		const Material* shader;
+		eShaderProg		shader;
 		bool			remove;
 	};
 

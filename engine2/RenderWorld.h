@@ -51,6 +51,8 @@ namespace jsr {
 		void CreateLightsGLTF();
 		RenderModel* CreateModelGLTF(int mesh);
 
+		void RenderNode(Node3D* node, viewDef_t* view);
+
 		struct gltf_state_t {
 			tinygltf::Model map;
 			std::vector<int> map_image_idx;
