@@ -422,7 +422,8 @@ namespace jsr {
 		RenderDeferred_GBuffer();
 		RenderShadow();
 		RenderDeferred_Lighting();
-
+		RenderHDRtoLDR();
+#if 0
 		Framebuffer::Unbind();
 
 		GL_CHECK(glViewport(0, 0, x, y));
@@ -450,8 +451,9 @@ namespace jsr {
 		hdrbuffer->SetReadBuffer(0);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
 			HalfWidth, 0, x, HalfHeight);
-		
+#endif		
 	}
+
 	void RenderBackend::RenderCommandBuffer(const emptyCommand_t* cmds)
 	{
 		Framebuffer::Unbind();
@@ -818,11 +820,16 @@ namespace jsr {
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		SetCullMode(CULL_NONE);
 
+		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_FRAG_BIT);
 		Framebuffer::Unbind();
 		SetCurrentTextureUnit(IMU_HDR);
 		globalImages.HDRaccum->Bind();
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
+		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
+		slowfrag.params.x = view->exposure;
+		R_DrawSurf(&unitRectSurface);
 	}
 
 	void RenderBackend::EndFrame()

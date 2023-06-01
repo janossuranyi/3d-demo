@@ -407,8 +407,8 @@ R_MakeZeroOneCubeTris
 		memset(tri, 0, sizeof(*tri));
 
 		const float radius = 1.0f;
-		const int rings = 8.0f; // 20.0f;
-		const int sectors = 8.0f; // 20.0f;
+		const int rings = 10.0f; // 20.0f;
+		const int sectors = 10.0f; // 20.0f;
 
 		tri->numVerts = (rings * sectors);
 		tri->numIndexes = ((rings - 1) * sectors) * 6;

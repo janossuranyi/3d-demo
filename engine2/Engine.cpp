@@ -126,7 +126,7 @@ namespace jsr {
 		ImGuiIO& io = ImGui::GetIO();
 		world->exposure = 1.0f;
 		world->lightColor = vec4(vec3(255.f, 87.f, 51.f) / 255.0f, 8.0f);
-		world->lightAttenuation = vec4(1.0f, 0.0f, 2.0f, 0.0f);
+		world->lightAttenuation = vec4(1.0f, 0.0f, 1.0f, 0.0f);
 		world->spotLightParams.x = 40.0f;
 		world->spotLightParams.y = 35.0f;
 		world->spotLightParams.z = 0.5f;
@@ -301,8 +301,8 @@ namespace jsr {
 		int x, y;
 		renderSystem.backend->GetScreenSize(x, y);
 		
-		const float R = world->GetBounds().GetRadius() * 4.0f;
-
+		//const float R = world->GetBounds().GetRadius() * 4.0f;
+		constexpr float R = 1000.0f;
 		mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, R);
 		mat4 viewMatrix = player.GetViewMatrix();
 		mat4 vpMatrix = projMatrix * viewMatrix;
@@ -311,7 +311,7 @@ namespace jsr {
 
 		view->exposure = world->exposure;
 		view->farClipDistance = R;
-		view->nearClipDistance = 0.01f;
+		view->nearClipDistance = 0.1f;
 		view->lightColor = world->lightColor;
 		view->lightPos = vec4(player.Position + vec3(0.2f,0.3f,0.0f), 1.0f);
 		view->lightAttenuation = world->lightAttenuation;
