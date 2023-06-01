@@ -16,6 +16,8 @@
 model.bufferViews[accessor.bufferView].byteOffset + \
 accessor.byteOffset)
 
+#define ALIGN16(a) (((a) + 15) & ~15)
+
 namespace jsr {
 
 	using namespace tinygltf;
@@ -141,43 +143,28 @@ namespace jsr {
 	{
 		isStatic = b;
 	}
-	void RenderModel::MakeUnitRect()
-	{
-		static const glm::vec3 verts[] = {
-			{-1.0f, -1.0f, 0.0f},
-			{-1.0f, 1.0f, 0.0f},
-			{1.0f, 1.0f, 0.0f},
-			{1.0f, 1.0f, 0.0f}
-		};
-
-		if (!surfs.empty())
-		{
-			FreeGeometry();
-		}
-		int surfId = AllocSurface(4, 6);
-		auto* rectSurf = GetSurface(surfId);
-		for (int i = 0; i < 4; ++i)
-		{
-			rectSurf->surf.verts[i].SetPos(verts[i]);
-			rectSurf->surf.verts[i].SetUV(glm::vec2((verts[i] + 1.0f) * 0.5f));
-			rectSurf->surf.verts[i].SetNormal(0.0f, 0.0f, 1.0f);
-			rectSurf->surf.verts[i].SetTangent(1.0f, 0.0f, 0.0f, 1.0f);
-			rectSurf->surf.verts[i].SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-			bounds << rectSurf->surf.verts[i].GetPos();
-		}
-		const elementIndex_t indices[] = { 0,1,2,2,3,0 };
-		memcpy(rectSurf->surf.indexes, indices, sizeof(indices));
-		if (isStatic)
-		{
-			UpdateSurfaceCache();
-		}
-	}
-	void RenderModel::MakeUnitCube()
-	{
-	}
 	void RenderModel::SetName(const std::string& name)
 	{
 		this->name = name;
+	}
+	void RenderModel::CreateFromTris(surface_t* tris)
+	{
+		isStatic = true;
+		modelSurface_t& surf = surfs.emplace_back();
+		surf.id = jsr::GetTimeMillisecond() + GetUniqId();
+		surf.shader = renderSystem.defaultMaterial;
+		surf.surf = *tris;
+		surf.surf.gpuResident = false;
+		surf.surf.indexCache = 0;
+		surf.surf.vertexCache = 0;
+
+		int numBytes = tris->numIndexes * sizeof(elementIndex_t);
+		surf.surf.indexes = (elementIndex_t*)MemAlloc16(ALIGN16(numBytes));
+		memcpy(surf.surf.indexes, tris->indexes, numBytes);
+
+		numBytes = tris->numVerts * sizeof(drawVert_t);
+		surf.surf.verts = (drawVert_t*)MemAlloc16(ALIGN16(numBytes));
+		memcpy(surf.surf.verts, tris->verts, numBytes);
 	}
 	std::string RenderModel::GetName() const
 	{

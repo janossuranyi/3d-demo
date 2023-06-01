@@ -347,28 +347,28 @@ namespace jsr {
 				stage.images[IMU_DIFFUSE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.pbrMetallicRoughness.baseColorTexture.index]);
 			}
 			else {
-				stage.images[IMU_DIFFUSE] = imageManager->globalImages.whiteImage;
+				stage.images[IMU_DIFFUSE] = globalImages.whiteImage;
 			}
 			if (gmat.pbrMetallicRoughness.metallicRoughnessTexture.index > -1)
 			{
 				stage.images[IMU_AORM] = imageManager->GetImage(gltf_state->map_image_idx[gmat.pbrMetallicRoughness.metallicRoughnessTexture.index]);
 			}
 			else {
-				stage.images[IMU_AORM] = imageManager->globalImages.grayImage;
+				stage.images[IMU_AORM] = globalImages.grayImage;
 			}
 			if (gmat.emissiveTexture.index > -1)
 			{
 				stage.images[IMU_EMMISIVE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.emissiveTexture.index]);
 			}
 			else {
-				stage.images[IMU_EMMISIVE] = imageManager->globalImages.whiteImage;
+				stage.images[IMU_EMMISIVE] = globalImages.whiteImage;
 			}
 			if (gmat.normalTexture.index > -1)
 			{
 				stage.images[IMU_NORMAL] = imageManager->GetImage(gltf_state->map_image_idx[gmat.normalTexture.index]);
 			}
 			else {
-				stage.images[IMU_NORMAL] = imageManager->globalImages.flatNormal;
+				stage.images[IMU_NORMAL] = globalImages.flatNormal;
 			}
 		}
 
@@ -496,9 +496,9 @@ namespace jsr {
 
 			// Ln = (683 * watt)  / ( 4 * math.pi )
 			// watt = Ln * 4PI / 683
-			float watts = (static_cast<float>(e.intensity) * glm::pi<float>() * 4) / 683.0f;
+			float watts = (static_cast<float>(e.intensity) * glm::pi<float>() * 4.0f) / 683.0f;
 			light->SetName(e.name);
-			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), watts };
+			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), watts / 10.0f };
 			light->opts.expAttn = 1.0f;
 			light->opts.linearAttn = 0.0f;
 			light->SetShader(PRG_DEFERRED_LIGHT);

@@ -168,6 +168,7 @@ namespace jsr {
 		if (glcontext.currentFramebuffer != apiObject )
 		{
 			GL_CHECK( glBindFramebuffer(GL_FRAMEBUFFER, apiObject) );
+			//GL_CHECK( glBindFramebuffer(GL_DRAW_FRAMEBUFFER, apiObject) );
 			glcontext.currentFramebuffer = apiObject;
 		}
 	}
@@ -181,7 +182,7 @@ namespace jsr {
 	void Framebuffer::BlitDepthBuffer(int srcX1, int srcY1, int srcX2, int srcY2, int dstX1, int dstY1, int dstX2, int dstY2)
 	{
 		GL_CHECK(glBlitFramebuffer(srcX1, srcY1, srcX2, srcY2,
-			dstX1, dstY1, dstX2, dstY2, GL_DEPTH_BUFFER_BIT, GL_LINEAR));
+			dstX1, dstY1, dstX2, dstY2, GL_DEPTH_BUFFER_BIT, GL_NEAREST));
 	}
 
 	void Framebuffer::BindForReading()

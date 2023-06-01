@@ -420,7 +420,7 @@ namespace jsr {
 		
 
 		RenderDeferred_GBuffer();
-		//RenderShadow();
+		RenderShadow();
 		RenderDeferred_Lighting();
 
 		Framebuffer::Unbind();
@@ -533,7 +533,7 @@ namespace jsr {
 
 		const drawSurf_t* surf;
 		SetCurrentTextureUnit(IMU_SHADOW);
-		renderSystem.imageManager->globalImages.Shadow->Bind();
+		globalImages.Shadow->Bind();
 
 		vec3 lightDir = view->spotLightDir;
 		vec3 lightPos = view->lightPos;
@@ -708,7 +708,7 @@ namespace jsr {
 				if (k == 0 && stage.coverage != COVERAGE_SOLID) continue;
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
 				if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f)))
-					|| stage.images[IMU_EMMISIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
+					|| stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
 
 				//		renderSystem.programManager->UseProgram(stage.shader);
 
@@ -748,40 +748,50 @@ namespace jsr {
 	{
 		using namespace glm;
 
+		int w, h;
+		GetScreenSize(w, h);
+		glViewport(0, 0, w, h);
 		globalFramebuffers.hdrFBO->Bind();
+
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-
-		int w, h;
-		GetScreenSize(w, h);
-		glViewport(0, 0, w, h);
 		Clear(true, false, false);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
 
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 		SetCurrentTextureUnit(IMU_DIFFUSE);
-		renderSystem.imageManager->globalImages.GBufferAlbedo->Bind();
+		globalImages.GBufferAlbedo->Bind();
 		SetCurrentTextureUnit(IMU_FRAGPOS);
-		renderSystem.imageManager->globalImages.GBufferFragPos->Bind();
+		globalImages.GBufferFragPos->Bind();
 		SetCurrentTextureUnit(IMU_NORMAL);
-		renderSystem.imageManager->globalImages.GBufferNormal->Bind();
+		globalImages.GBufferNormal->Bind();
 		SetCurrentTextureUnit(IMU_AORM);
-		renderSystem.imageManager->globalImages.GBufferSpec->Bind();
+		globalImages.GBufferSpec->Bind();
 		SetCurrentTextureUnit(IMU_SHADOW);
-		renderSystem.imageManager->globalImages.Shadow->Bind();
+		globalImages.Shadow->Bind();
 
 		auto& highvert = renderSystem.programManager->g_freqHighVert;
 		auto& highfrag = renderSystem.programManager->g_freqHighFrag;
 		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
+
+
+		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT | UB_FREQ_LOW_FRAG_BIT);
+		highvert.WVPMatrix = glm::mat4(1.0f);
+		highfrag.lightProjMatrix = renderSystem.programManager->g_freqLowVert.lightProjMatrix;
+		SetCullMode(CULL_NONE);
+
+//		R_DrawSurf(&unitRectSurface);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+
 		vec4 oldShadow = slowfrag.shadowparams;
-		slowfrag.shadowparams.x = 0.0f;
+		slowfrag.shadowparams.y = 0.0f;
 
 		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_FRAG_BIT);
-		SetCullMode(CULL_BACK);
+		SetCullMode(CULL_FRONT);
+
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
 			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
@@ -796,16 +806,23 @@ namespace jsr {
 		slowfrag.shadowparams = oldShadow;
 		glDisable(GL_BLEND);
 
-		/*****************************************************************************************************
+	}
 
-		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT | UB_FREQ_LOW_FRAG_BIT);
-		highvert.WVPMatrix = glm::mat4(1.0f);
-		highfrag.lightProjMatrix = renderSystem.programManager->g_freqLowVert.lightProjMatrix;
-		SetCullMode(CULL_NONE);
+	void RenderBackend::RenderHDRtoLDR()
+	{
+		using namespace glm;
 
-		R_DrawSurf(&unitRectSurface);
-		*************************************************************************************************************/
+		int w, h;
+		GetScreenSize(w, h);
+		glViewport(0, 0, w, h);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
+		Framebuffer::Unbind();
+		SetCurrentTextureUnit(IMU_HDR);
+		globalImages.HDRaccum->Bind();
+		renderSystem.programManager->UseProgram(PRG_PP_HDR);
 	}
 
 	void RenderBackend::EndFrame()

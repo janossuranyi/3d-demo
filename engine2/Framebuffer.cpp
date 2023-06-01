@@ -30,7 +30,7 @@ namespace jsr {
 
 		fb = new Framebuffer("shadowFBO", shadowRes, shadowRes);
 		fb->Bind();
-		fb->AttachImageDepth( imgr->globalImages.Shadow );
+		fb->AttachImageDepth( globalImages.Shadow );
 		if (!fb->Check())
 		{
 			Error("[Framebuffer]: shadowFBO init failed!");
@@ -39,8 +39,8 @@ namespace jsr {
 
 		fb = new Framebuffer( "defaultFBO", w, h);
 		fb->Bind();
-		fb->AttachImage2D(imgr->globalImages.defaultImage, 0);
-		fb->AttachImageDepth( imgr->globalImages.defaultDepth );
+		fb->AttachImage2D( globalImages.defaultImage, 0);
+		fb->AttachImageDepth( globalImages.defaultDepth );
 		if ( ! fb->Check() )
 		{
 			Error("[Framebuffer]: defaultFBO init failed!");
@@ -49,8 +49,8 @@ namespace jsr {
 
 		fb = new Framebuffer( "hdrFBO", w, h );
 		fb->Bind();
-		fb->AttachImage2D( imgr->globalImages.HDRaccum, 0 );
-		fb->AttachImageDepth(imgr->globalImages.HDRdepth);
+		fb->AttachImage2D( globalImages.HDRaccum, 0 );
+		fb->AttachImageDepth( globalImages.HDRdepth );
 		if ( ! fb->Check() )
 		{
 			Error("[Framebuffer]: hdrFBO init failed!");
@@ -59,11 +59,11 @@ namespace jsr {
 
 		fb = new Framebuffer( "gbufferFBO", w, h );
 		fb->Bind();
-		fb->AttachImageDepth( imgr->globalImages.defaultDepth );
-		fb->AttachImage2D( imgr->globalImages.GBufferAlbedo, 0 );
-		fb->AttachImage2D( imgr->globalImages.GBufferNormal, 1);
-		fb->AttachImage2D( imgr->globalImages.GBufferSpec, 2 );
-		fb->AttachImage2D( imgr->globalImages.GBufferFragPos, 3);
+		fb->AttachImageDepth( globalImages.defaultDepth );
+		fb->AttachImage2D( globalImages.GBufferAlbedo, 0 );
+		fb->AttachImage2D( globalImages.GBufferNormal, 1);
+		fb->AttachImage2D( globalImages.GBufferSpec, 2 );
+		fb->AttachImage2D( globalImages.GBufferFragPos, 3);
 		if ( ! fb->Check() )
 		{
 			Error("[Framebuffer]: GBufferFBO init failed!");

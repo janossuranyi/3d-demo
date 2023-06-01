@@ -103,12 +103,14 @@ namespace jsr {
 		s.coverage = COVERAGE_SOLID;
 		s.cullMode = CULL_NONE;
 		s.diffuseScale = glm::vec4(0.1f,0.00f,0.1f,1.0f);
+		s.emissiveScale = glm::vec4(0.0f);
 		s.roughnessScale = 0.4f;
 		s.metallicScale = 0.0f;
 		s.enabled = true;
-		s.SetImage(IMU_DIFFUSE, imageManager->globalImages.whiteImage);
-		s.SetImage(IMU_AORM, imageManager->globalImages.whiteImage);
-		s.SetImage(IMU_NORMAL, imageManager->globalImages.flatNormal);
+		s.SetImage(IMU_DIFFUSE, globalImages.whiteImage);
+		s.SetImage(IMU_AORM, globalImages.whiteImage);
+		s.SetImage(IMU_NORMAL, globalImages.flatNormal);
+		s.SetImage(IMU_EMMISIVE, globalImages.whiteImage);
 		s.shader = PRG_TEXTURED;
 
 		initialized = true;
@@ -428,8 +430,8 @@ R_MakeZeroOneCubeTris
 
 		int numTris = 0;
 		int numVerts = 0;
-		const float HALF_PI = glm::pi<float>() / 2.0f;
-		const float PI = glm::pi<float>();
+		constexpr float HALF_PI = glm::pi<float>() / 2.0f;
+		constexpr float PI = glm::pi<float>();
 
 		for (int r = 0; r < rings; ++r)
 		{
@@ -444,6 +446,7 @@ R_MakeZeroOneCubeTris
 				verts[numVerts].SetNormal(x, y, z);
 				verts[numVerts].SetColor(vec4(1.0f));
 				numVerts++;
+				tri->bounds.Extend(vec3(x, y, z) * radius);
 
 				if (r < (rings - 1))
 				{
@@ -451,15 +454,15 @@ R_MakeZeroOneCubeTris
 					int nextRow = (r + 1) * sectors;
 					int nextS = (s + 1) % sectors;
 
-					tri->indexes[(numTris * 3) + 2] = (curRow + s);
+					tri->indexes[(numTris * 3) + 0] = (curRow + s);
 					tri->indexes[(numTris * 3) + 1] = (nextRow + s);
-					tri->indexes[(numTris * 3) + 0] = (nextRow + nextS);
+					tri->indexes[(numTris * 3) + 2] = (nextRow + nextS);
 
 					numTris += 1;
 
-					tri->indexes[(numTris * 3) + 2] = (curRow + s);
+					tri->indexes[(numTris * 3) + 0] = (curRow + s);
 					tri->indexes[(numTris * 3) + 1] = (nextRow + nextS);
-					tri->indexes[(numTris * 3) + 0] = (curRow + nextS);
+					tri->indexes[(numTris * 3) + 2] = (curRow + nextS);
 
 					numTris += 1;
 				}

@@ -5,10 +5,10 @@
 #include "./RenderSystem.h"
 
 namespace jsr {
-	ImageManager::ImageManager() :
-		initialized(false),
-		globalImages()
-	{}
+
+	globalImages_t globalImages;
+
+	ImageManager::ImageManager() : initialized(false) {}
 
 	ImageManager::~ImageManager()
 	{

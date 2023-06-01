@@ -144,12 +144,10 @@ void main()
 
         vec3 light = NdotL * inputs.lightColor * inputs.attenuation * shadow;
         finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * light;
-        finalColor += inputs.ambient;
-        finalColor = vec3(1.0) - exp(-finalColor * gExposure);
-        //inputs.spec = vec4(F * Ks, Ks);
-        //finalColor = vec3(fragPosLight.xyz / fragPosLight.w);
+        //finalColor += inputs.ambient;
+        //finalColor = vec3(1.0) - exp(-finalColor * gExposure);
     }
     /*****************************************************************/
 
-    hdrColor =( finalColor );
+    hdrColor = ( finalColor );
 }

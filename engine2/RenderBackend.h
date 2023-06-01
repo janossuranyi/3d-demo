@@ -110,6 +110,7 @@ namespace jsr {
 		void		RenderShadow();
 		void		RenderDeferred_GBuffer();
 		void		RenderDeferred_Lighting();
+		void		RenderHDRtoLDR();
 	public:
 		Framebuffer* currentFramebuffer{};
 		drawSurf_t unitRectSurface{};

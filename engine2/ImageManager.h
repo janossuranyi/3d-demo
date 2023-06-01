@@ -8,6 +8,7 @@
 
 namespace jsr {
 
+
 	struct globalImages_t
 	{
 		Image* HDRaccum;
@@ -25,6 +26,8 @@ namespace jsr {
 		Image* flatNormal;
 	};
 
+	extern globalImages_t globalImages;
+
 	class ImageManager
 	{
 	public:
@@ -37,7 +40,6 @@ namespace jsr {
 		void RemoveImage(Image* img);
 		Image* GetImage(int idx);
 		Image* GetImage(std::string const& name);
-		globalImages_t globalImages;
 		Image* AllocImage(std::string const& name = "_default_");
 	private:
 		bool initialized;

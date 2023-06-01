@@ -63,13 +63,13 @@ namespace jsr {
 		drawSurf_t unitRectSurface_;
 		drawSurf_t unitCubeSurface_;
 		drawSurf_t unitSphereSurface_;
+		surface_t* unitRectTris;
+		surface_t* unitCubeTris;
+		surface_t* unitSphereTris;
 
 	private:
 		bool initialized;
 		int	 frameNum;
-		surface_t*	unitRectTris;
-		surface_t*	unitCubeTris;
-		surface_t*	unitSphereTris;
 	};
 
 	extern RenderSystem renderSystem;

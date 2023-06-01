@@ -87,11 +87,13 @@ namespace jsr {
 			return false;
 		}
 
-		RenderModel* cube = renderSystem.modelManager->FindByName("_zeroOneCube");
-		if (cube) world->InsertNode("cube1", cube, { -1.0f,5.0f,3.0f });
+		RenderModel* test = renderSystem.modelManager->CreateModel("_testmodel");
+		test->CreateFromTris(renderSystem.unitSphereTris);
+		test->UpdateSurfaceCache();
+		world->InsertNode("testnode", test, { 0.0f,1.2f,0.0f });		
+//		Material* m = renderSystem.materialManager->FindMaterial("Material_15");
 
-		Material* m = renderSystem.materialManager->FindMaterial("Material_19");
-		if (m) cube->GetSurface(0)->shader = m;
+		test->GetSurface(0)->shader = renderSystem.defaultMaterial;
 
 		return true;
 	}
@@ -118,7 +120,7 @@ namespace jsr {
 		bool mouseCapture = false;
 		bool mover[4]{};
 		float angle1 = 0.0f;
-		auto* cube = world->GetByName("cube1");
+		auto* cube = world->GetByName("testnode");
 		cube->SetScale({ .5f,.5f,.5f });
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -299,7 +301,7 @@ namespace jsr {
 		int x, y;
 		renderSystem.backend->GetScreenSize(x, y);
 		
-		const float R = world->GetBounds().GetRadius() * 2.0f;
+		const float R = world->GetBounds().GetRadius() * 4.0f;
 
 		mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, R);
 		mat4 viewMatrix = player.GetViewMatrix();
@@ -309,7 +311,7 @@ namespace jsr {
 
 		view->exposure = world->exposure;
 		view->farClipDistance = R;
-		view->nearClipDistance = 0.1f;
+		view->nearClipDistance = 0.01f;
 		view->lightColor = world->lightColor;
 		view->lightPos = vec4(player.Position + vec3(0.2f,0.3f,0.0f), 1.0f);
 		view->lightAttenuation = world->lightAttenuation;

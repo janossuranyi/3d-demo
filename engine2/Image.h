@@ -114,6 +114,7 @@ namespace jsr {
 	{
 		friend class Framebuffer;
 		friend class ImageManager;
+		friend class RenderBackend;
 	public:
 		Image();
 		Image(const std::string& name);

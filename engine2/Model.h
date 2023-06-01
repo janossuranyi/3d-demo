@@ -56,9 +56,8 @@ namespace jsr {
 		void FreeGeometry();
 		void UpdateSurfaceCache();
 		void SetStatic(bool b);
-		void MakeUnitRect();
-		void MakeUnitCube();
 		void SetName(const std::string& name);
+		void CreateFromTris(surface_t* tris);
 		std::string GetName() const;
 		inline bool IsStatic() const { return isStatic; }
 		inline int GetNumSurface() const { return surfs.size(); }
