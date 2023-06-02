@@ -47,7 +47,6 @@ namespace jsr {
 		Framebuffer*	shadowFBO;
 		Framebuffer*	hdrFBO;
 		Framebuffer*	GBufferFBO;
-		Framebuffer*	defaultFBO;
 	};
 
 	extern globalFramebuffers_t globalFramebuffers;

@@ -56,14 +56,14 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferAlbedo allocation failed !");
 		}
 
-		opts.format = IMF_RGBA32F;
+		opts.format = IMF_RGBA16F;
 		opts.usage = IMU_FRAGPOS;
 		if (!globalImages.GBufferFragPos->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image GBufferFragPos allocation failed !");
 		}
 
-		opts.format = IMF_RGB16F;
+		opts.format = IMF_RGBA16F;
 		opts.usage = IMU_NORMAL;
 		if (!globalImages.GBufferNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
@@ -77,7 +77,7 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferSpec allocation failed !");
 		}
 
-		opts.format = IMF_R11G11B10F;
+		opts.format = IMF_RGBA16F;
 		opts.usage = IMU_HDR;
 		if (!globalImages.HDRaccum->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
@@ -92,14 +92,14 @@ namespace jsr {
 			Error("[ImageManager]: defaultImage allocation failed !");
 		}
 
-		opts.format = IMF_D32;
+		opts.format = IMF_D24S8;
 		opts.usage = IMU_DEPTH;
 		if (!globalImages.defaultDepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image defaultDepth allocation failed !");
 		}
 
-		opts.format = IMF_D32;
+		opts.format = IMF_D24S8;
 		opts.usage = IMU_DEPTH;
 		if (!globalImages.HDRdepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{

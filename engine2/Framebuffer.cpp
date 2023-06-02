@@ -37,20 +37,11 @@ namespace jsr {
 		}
 		globalFramebuffers.shadowFBO = fb;
 
-		fb = new Framebuffer( "defaultFBO", w, h);
-		fb->Bind();
-		fb->AttachImage2D( globalImages.defaultImage, 0);
-		fb->AttachImageDepth( globalImages.defaultDepth );
-		if ( ! fb->Check() )
-		{
-			Error("[Framebuffer]: defaultFBO init failed!");
-		}
-		globalFramebuffers.defaultFBO = fb;
-
 		fb = new Framebuffer( "hdrFBO", w, h );
 		fb->Bind();
 		fb->AttachImage2D( globalImages.HDRaccum, 0 );
 		fb->AttachImageDepth( globalImages.HDRdepth );
+		fb->AttachImageStencil(globalImages.HDRdepth);
 		if ( ! fb->Check() )
 		{
 			Error("[Framebuffer]: hdrFBO init failed!");
@@ -60,6 +51,7 @@ namespace jsr {
 		fb = new Framebuffer( "gbufferFBO", w, h );
 		fb->Bind();
 		fb->AttachImageDepth( globalImages.defaultDepth );
+		fb->AttachImageStencil(globalImages.defaultDepth);
 		fb->AttachImage2D( globalImages.GBufferAlbedo, 0 );
 		fb->AttachImage2D( globalImages.GBufferNormal, 1);
 		fb->AttachImage2D( globalImages.GBufferSpec, 2 );
