@@ -23,6 +23,8 @@ namespace jsr {
 	using namespace tinygltf;
 	namespace fs = std::filesystem;
 
+	const float BLENDER_LIGHT_POWER_FACTOR = 1.0f / 100.0f;
+
 	RenderWorld::RenderWorld() : gltf_state()
 	{
 		vertecCache = renderSystem.vertexCache;
@@ -496,14 +498,20 @@ namespace jsr {
 
 			// Ln = (683 * watt)  / ( 4 * math.pi )
 			// watt = Ln * 4PI / 683
-			float watts = (static_cast<float>(e.intensity) * glm::pi<float>() * 4.0f) / 683.0f;
-			//float watts = static_cast<float>(e.intensity);
+			float watts = BLENDER_LIGHT_POWER_FACTOR * (static_cast<float>(e.intensity) * glm::pi<float>() * 4.0f) / 683.0f;
 			light->SetName(e.name);
 			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), watts};
 			light->opts.expAttn = renderGlobals.defaultExpAttn;
 			light->opts.linearAttn = 0.0f;
 			light->SetShader(PRG_DEFERRED_LIGHT);
-			light->opts.CalculateRadius();
+			if (e.range > 0.0)
+			{
+				light->opts.range = static_cast<float>(e.range);
+			}
+			else
+			{
+				light->opts.CalculateRange();
+			}
 
 			if (ltype == LIGHT_SPOT) 
 			{
@@ -695,14 +703,14 @@ namespace jsr {
 			mat4 worldMatrix = node->GetLocalToWorldMatrix();
 			mat4 modelViewMatrix = viewMatrix * worldMatrix;
 
-			Bounds lightBounds = Bounds(-vec3(light->opts.radius / 2.0f), vec3(light->opts.radius / 2.0f)).Transform(modelViewMatrix);
+			Bounds lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
 			if (view->frustum.Intersects2(lightBounds))
 			{
 				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
 				e->next = view->viewLights;
 				e->origin = worldMatrix[3];
 				e->axis = mat3(worldMatrix);
-				e->radius = light->opts.radius;
+				e->range = light->opts.range;
 				e->shader = light->GetShader();
 				e->color = light->opts.color.color;
 				e->remove = false;

@@ -93,15 +93,6 @@ namespace jsr {
 		glm::vec4 nearFarClip;
 		glm::vec4 params;
 		glm::vec4 viewOrigin;
-		glm::vec4 lightOrig;
-		glm::vec4 lightColor;
-		glm::vec4 lightAttenuation;
-		// spotLightParams
-		// x = spotCosCutoff
-		// y = spotCosInnerCutoff
-		// z = spotExponent
-		glm::vec4 spotLightParams;
-		glm::vec4 spotDirection;
 		glm::vec4 ambientColor;
 
 	};
@@ -113,9 +104,13 @@ namespace jsr {
 		glm::vec4 matMRFactor;
 		glm::vec4 matEmissiveFactor;
 		glm::vec4 alphaCutoff;
-		glm::vec4 lightOrig;
+		glm::vec4 lightOrigin;
 		glm::vec4 lightColor;
 		glm::vec4 lightAttenuation;
+		// spotLightParams
+		// x = spotCosCutoff
+		// y = spotCosInnerCutoff
+		// z = spotExponent
 		glm::vec4 spotLightParams;
 		glm::vec4 spotDirection;
 		glm::vec4 params;

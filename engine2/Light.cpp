@@ -13,7 +13,7 @@ namespace jsr {
 		type(type_),
 		node(pNode),
 		shader(PRG_DEFERRED_LIGHT),
-		radius(0.0f){}
+		range(0.0f){}
 
 	Light& Light::SetNode(Node3D* pNode)
 	{
@@ -57,11 +57,12 @@ namespace jsr {
 		return name;
 	}
 
-	void lightOpts_t::CalculateRadius()
+	void lightOpts_t::CalculateRange()
 	{
+		float x = linearAttn * linearAttn - 4.0f * expAttn * (1.0f - 256.0f * color.GetPower());
+		float r = -linearAttn + glm::sqrt(x);
+		range = r / (2.0f * expAttn);
 
-		const auto r = -linearAttn + glm::sqrt(linearAttn * linearAttn - 4.0f * expAttn * (1.0f - 256.0f * color.GetPower()));
-		radius = r / (2.0f * expAttn);
 		/*
 
 		constexpr float INTENSITY_CUTOFF = 1.0f;
@@ -72,7 +73,7 @@ namespace jsr {
 		radius = 1.0f / glm::sqrt(attenuation);
 		*/
 
-		Info("int: %f, radius: %f", color.GetPower(), radius);
+		Info("int: %f, radius: %f", color.GetPower(), range);
 	}	
 
 }

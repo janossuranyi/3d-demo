@@ -46,12 +46,12 @@ namespace jsr {
 	{
 		const auto sphere = box.GetSphere();
 		const auto center = vec4(sphere.GetCenter(),1.0f);
-		const auto radius = sphere.GetRadius();
+		const auto range = sphere.GetRadius();
 
 		for (int pid = 0; pid < 6; ++pid)
 		{
 			const auto dist = dot(planes[pid], center);
-			if (dist + radius < 0.0f)
+			if (dist + range < 0.0f)
 			{
 				return false;
 			}

@@ -43,8 +43,8 @@ namespace jsr {
 		float outerConeAngle;
 		float diffuseFactor;
 		float specularFactor;
-		float radius;
-		void CalculateRadius();
+		float range;
+		void CalculateRange();
 
 		lightOpts_t()
 		{
@@ -55,7 +55,7 @@ namespace jsr {
 			innerConeAngle = outerConeAngle;
 			linearAttn = 0.0f;
 			expAttn = 1.0f;
-			radius = 0.0f;
+			range = 0.0f;
 		}
 	};
 
@@ -82,7 +82,7 @@ namespace jsr {
 
 	private:
 		int id;
-		float radius;
+		float range;
 		std::string name;
 		eLightType type;
 		Node3D* node;

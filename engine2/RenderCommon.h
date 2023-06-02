@@ -95,7 +95,7 @@ namespace jsr {
 		glm::vec3		origin;
 		glm::mat3		axis;
 		glm::vec4		color;
-		float			radius;
+		float			range;
 		eShaderProg		shader;
 		bool			remove;
 	};

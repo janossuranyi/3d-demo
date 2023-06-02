@@ -132,6 +132,7 @@ namespace jsr {
 		world->spotLightParams.z = 0.5f;
 		world->spotLightParams.w = 0.0f;
 		bool spotOn = false;
+		renderSystem.programManager->g_freqLowFrag.ambientColor = vec4(vec3(0.5f), 0.01);
 
 		while (!quit)
 		{
@@ -146,8 +147,6 @@ namespace jsr {
 			ImGui::NewFrame();
 			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
-			ImGui::DragFloat("Attn. Kl", &world->lightAttenuation.y, 0.05f, 0.0f, 100.0f);
-			ImGui::DragFloat("Attn. Kq", &world->lightAttenuation.z, 0.01f, 0.0f, 100.0f);
 			ImGui::DragFloat("Spot Exp", &world->spotLightParams.z, 0.01f, 0.0f, 100.0f);
 			ImGui::DragFloat("Spot Cone", &world->spotLightParams.x, 0.1f, 0.0f, 120.0f);
 			ImGui::DragFloat("Spot Inner", &world->spotLightParams.y, 0.1f, 0.0f, 120.0f);
@@ -156,6 +155,8 @@ namespace jsr {
 			ImGui::Checkbox("Spot On", &spotOn);
 			ImGui::ColorEdit3("Light color", &world->lightColor.x);
 			ImGui::DragFloat("Light power", &world->lightColor.w, 0.02f, 0.2f, 1000.0f);
+			ImGui::ColorEdit3("Ambient light", &renderSystem.programManager->g_freqLowFrag.ambientColor.x);
+			ImGui::DragFloat("Ambient scale", &renderSystem.programManager->g_freqLowFrag.ambientColor.w, 0.001f, 0.001f, 1.0f);
 
 			renderSystem.RenderFrame(cmds);
 

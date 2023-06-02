@@ -99,8 +99,8 @@ void main()
         inputs.samplePBR        = texture( tAORM, texCoord );
         inputs.fragPos          = texture( tFragPos, texCoord );
         inputs.ambient          = inputs.sampleAmbient.xyz * ambientColor;
-        inputs.lightPos         = g_freqLowFrag.lightOrig.xyz;
-        inputs.lightColor       = g_freqLowFrag.lightColor.rgb * g_freqLowFrag.lightColor.w;
+        inputs.lightPos         = g_freqHighFrag.lightOrigin.xyz;
+        inputs.lightColor       = g_freqHighFrag.lightColor.rgb * g_freqHighFrag.lightColor.w;
     }
 
     /*********************** Lighting  ****************************/
@@ -108,7 +108,10 @@ void main()
     {
         vec3 L = inputs.lightPos - inputs.fragPos.xyz;
         float d = length(L);
-        inputs.attenuation = 1.0 / ( 1.0 + gQuadraticAttnFactor * d * d * d);
+        float Kr = d / gLightRange ;
+        Kr *= Kr;
+        Kr *= Kr;
+        inputs.attenuation = max( min( 1.0 - Kr, 1 ), 0 ) / ( 1.0 + d*d);
         inputs.lightDir = L / d;
     }
     
@@ -118,7 +121,7 @@ void main()
         {
             // spotlight
             float spotAttenuation = 0.02;
-            float spotDdotL = saturate(dot (-inputs.lightDir, g_freqLowFrag.spotDirection.xyz));
+            float spotDdotL = saturate(dot (-inputs.lightDir, g_freqHighFrag.spotDirection.xyz));
             if (spotDdotL >= gSpotCosCutoff)
             {
                 float spotValue = smoothstep(gSpotCosCutoff, gSpotCosInnerCutoff, spotDdotL);

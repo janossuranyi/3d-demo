@@ -144,8 +144,8 @@ void main()
     inputs.sampleAmbient = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
     inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);
     inputs.sampleEmissive = texture(tEmissive, In.texCoord) * g_freqHighFrag.matEmissiveFactor;
-    inputs.lightPos = vec3(g_freqLowFrag.lightOrig);
-    inputs.lightColor = g_freqLowFrag.lightColor.rgb * g_freqLowFrag.lightColor.w;
+    inputs.lightPos = vec3(g_freqHighFrag.lightOrigin);
+    inputs.lightColor = g_freqHighFrag.lightColor.rgb * g_freqHighFrag.lightColor.w;
     inputs.ambient = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w * inputs.sampleAmbient.xyz;
 
     /*********************** Lighting  ****************************/
@@ -163,7 +163,7 @@ void main()
         {
             // spotlight
             float spotAttenuation = 0.02;
-            float spotDdotL = saturate(dot (-inputs.lightDir, g_freqLowFrag.spotDirection.xyz));
+            float spotDdotL = saturate(dot (-inputs.lightDir, g_freqHighFrag.spotDirection.xyz));
             if (spotDdotL >= gSpotCosCutoff)
             {
                 float spotValue = smoothstep(gSpotCosCutoff, gSpotCosInnerCutoff, spotDdotL);

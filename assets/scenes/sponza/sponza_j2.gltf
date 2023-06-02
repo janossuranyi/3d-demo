@@ -14,13 +14,36 @@
             "lights" : [
                 {
                     "color" : [
+                        0.699999988079071,
+                        0.4000000059604645,
+                        0.20000000298023224
+                    ],
+                    "intensity" : 5435.141306588225,
+                    "type" : "point",
+                    "range" : 5,
+                    "name" : "Point"
+                },
+                {
+                    "color" : [
+                        0.800000011920929,
+                        0.5,
+                        0.4000000059604645
+                    ],
+                    "intensity" : 5435.141306588225,
+                    "type" : "point",
+                    "range" : 5,
+                    "name" : "Point.005"
+                },
+                {
+                    "color" : [
                         1,
                         1,
                         1
                     ],
                     "intensity" : 5435.141306588225,
                     "type" : "point",
-                    "name" : "Point.001"
+                    "range" : 5,
+                    "name" : "Point.006"
                 }
             ]
         }
@@ -55,30 +78,14 @@
                 22,
                 23,
                 24,
-                25
+                25,
+                26,
+                27,
+                28
             ]
         }
     ],
     "nodes" : [
-        {
-            "extensions" : {
-                "KHR_lights_punctual" : {
-                    "light" : 0
-                }
-            },
-            "name" : "Point.022",
-            "rotation" : [
-                -0.7071068286895752,
-                0,
-                0,
-                0.7071068286895752
-            ],
-            "translation" : [
-                -9.586179733276367,
-                2.155665636062622,
-                -0.3266163170337677
-            ]
-        },
         {
             "mesh" : 0,
             "name" : "Mesh_0",
@@ -428,26 +435,70 @@
                 1.3959466218948364,
                 -0.2873521149158478
             ]
-        }
-    ],
-    "animations" : [
+        },
         {
-            "channels" : [
-                {
-                    "sampler" : 0,
-                    "target" : {
-                        "node" : 0,
-                        "path" : "translation"
-                    }
+            "name" : "Empty",
+            "translation" : [
+                -8.91174602508545,
+                2.167266845703125,
+                -0.42298170924186707
+            ]
+        },
+        {
+            "extensions" : {
+                "KHR_lights_punctual" : {
+                    "light" : 0
                 }
+            },
+            "name" : "Point",
+            "rotation" : [
+                -0.7071068286895752,
+                0,
+                0,
+                0.7071068286895752
             ],
-            "name" : "Point.022Action",
-            "samplers" : [
-                {
-                    "input" : 124,
-                    "interpolation" : "LINEAR",
-                    "output" : 125
+            "translation" : [
+                -9.590096473693848,
+                2.6210217475891113,
+                -0.4469960033893585
+            ]
+        },
+        {
+            "extensions" : {
+                "KHR_lights_punctual" : {
+                    "light" : 1
                 }
+            },
+            "name" : "Point.001",
+            "rotation" : [
+                -0.7071068286895752,
+                0,
+                0,
+                0.7071068286895752
+            ],
+            "translation" : [
+                -3.5900964736938477,
+                2.6210217475891113,
+                -0.4469960033893585
+            ]
+        },
+        {
+            "extensions" : {
+                "KHR_lights_punctual" : {
+                    "light" : 2
+                }
+            },
+            "name" : "Point.002",
+            "rotation" : [
+                -0.7071068286895752,
+                0,
+                0,
+                0.7071068286895752
+            ],
+            "translation" : [
+                3.744466781616211,
+                2.6210217475891113,
+                -0.22794772684574127
             ]
         }
     ],
@@ -2969,24 +3020,6 @@
             "componentType" : 5123,
             "count" : 9126,
             "type" : "SCALAR"
-        },
-        {
-            "bufferView" : 124,
-            "componentType" : 5126,
-            "count" : 200,
-            "max" : [
-                8.333333333333334
-            ],
-            "min" : [
-                0.041666666666666664
-            ],
-            "type" : "SCALAR"
-        },
-        {
-            "bufferView" : 125,
-            "componentType" : 5126,
-            "count" : 200,
-            "type" : "VEC3"
         }
     ],
     "bufferViews" : [
@@ -3733,16 +3766,6 @@
             "byteLength" : 18252,
             "byteOffset" : 11885144,
             "target" : 34963
-        },
-        {
-            "buffer" : 0,
-            "byteLength" : 800,
-            "byteOffset" : 11903396
-        },
-        {
-            "buffer" : 0,
-            "byteLength" : 2400,
-            "byteOffset" : 11904196
         }
     ],
     "samplers" : [
@@ -3753,7 +3776,7 @@
     ],
     "buffers" : [
         {
-            "byteLength" : 11906596,
+            "byteLength" : 11903396,
             "uri" : "sponza_j2.bin"
         }
     ]

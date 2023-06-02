@@ -406,7 +406,7 @@ R_MakeZeroOneCubeTris
 		surface_t* tri = new (MemAlloc(sizeof(*tri))) surface_t();
 		memset(tri, 0, sizeof(*tri));
 
-		const float radius = 1.0f;
+		const float range = 1.0f;
 		const int rings = 10.0f; // 20.0f;
 		const int sectors = 10.0f; // 20.0f;
 
@@ -442,11 +442,11 @@ R_MakeZeroOneCubeTris
 				const float z = sin(2 * PI * s * S) * sin(PI * r * R);
 
 				verts[numVerts].SetUV(s * S, r * R);
-				verts[numVerts].xyz = vec3(x, y, z) * radius;
+				verts[numVerts].xyz = vec3(x, y, z) * range;
 				verts[numVerts].SetNormal(x, y, z);
 				verts[numVerts].SetColor(vec4(1.0f));
 				numVerts++;
-				tri->bounds.Extend(vec3(x, y, z) * radius);
+				tri->bounds.Extend(vec3(x, y, z) * range);
 
 				if (r < (rings - 1))
 				{

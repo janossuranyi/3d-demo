@@ -16,11 +16,13 @@ namespace jsr {
 		float shadowScale;
 		float shadowBias;
 		float defaultExpAttn;
+		float defaultLinearAttn;
 
 		renderGlobals_t() :
 			shadowResolution(1024),
 			shadowScale(0.8f),
-			defaultExpAttn(25.0f),
+			defaultExpAttn(1.0f),
+			defaultLinearAttn(0.0f),
 			shadowBias(0.0001f) {}
 	};
 

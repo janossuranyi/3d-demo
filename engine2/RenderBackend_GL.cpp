@@ -383,7 +383,7 @@ namespace jsr {
 		GetScreenSize(x, y);
 		SetClearColor(0.f, 0.f, 0.f, 1.0f);
 
-		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_VERT_BIT | UB_FREQ_LOW_FRAG_BIT);
+		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_VERT_BIT | UB_FREQ_LOW_FRAG_BIT | UB_FREQ_HIGH_FRAG_BIT);
 
 		vec3 lightDir = view->spotLightDir;
 		vec3 lightPos = view->lightPos;
@@ -394,6 +394,7 @@ namespace jsr {
 
 		auto& slowvert = renderSystem.programManager->g_freqLowVert;
 		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
+		auto& fastfrag = renderSystem.programManager->g_freqHighFrag;
 
 		slowvert.viewMatrix = view->renderView.viewMatrix;
 		slowvert.projectMatrix = view->projectionMatrix;
@@ -403,13 +404,14 @@ namespace jsr {
 		slowfrag.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
 		slowfrag.shadowparams = { 1.0f / (float)renderGlobals.shadowResolution,renderGlobals.shadowScale,renderGlobals.shadowBias,0.0f };
 		slowfrag.params.x = view->exposure;
-		slowfrag.lightOrig = view->lightPos;
-		slowfrag.lightColor = view->lightColor;
-		slowfrag.spotLightParams = view->spotLightParams;
-		slowfrag.lightAttenuation = view->lightAttenuation;
-		slowfrag.spotDirection = view->spotLightDir;
 		slowfrag.viewOrigin = vec4(view->renderView.vieworg, 1.f);
-		slowfrag.ambientColor = vec4(vec3(0.005f), 1.0f);
+//		slowfrag.ambientColor = vec4(vec3(0.005f), 1.0f);
+
+		fastfrag.lightOrigin = view->lightPos;
+		fastfrag.lightColor = view->lightColor;
+		fastfrag.spotLightParams = view->spotLightParams;
+		fastfrag.lightAttenuation = view->lightAttenuation;
+		fastfrag.spotDirection = view->spotLightDir;
 
 		/*
 		SetClearColor(slowfrag.ambientColor);
@@ -667,9 +669,9 @@ namespace jsr {
 				|| stage.images[IMU_EMMISIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
 				**/
 
-			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT);
+			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT|UB_FREQ_HIGH_FRAG_BIT);
 			renderSystem.programManager->g_freqHighVert.WVPMatrix = lightViewProj * surf->space->modelMatrix;
-
+			renderSystem.programManager->g_freqHighFrag.lightProjMatrix = lightViewProj;
 			R_DrawSurf(surf);
 		}
 
@@ -753,8 +755,12 @@ namespace jsr {
 		int w, h;
 		GetScreenSize(w, h);
 		glViewport(0, 0, w, h);
+		
 		globalFramebuffers.hdrFBO->Bind();
-
+		
+		//globalFramebuffers.GBufferFBO->BindForReading();
+		//globalFramebuffers.GBufferFBO->BlitDepthBuffer(0, 0, w, h, 0, 0, w, h);
+		
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -799,10 +805,11 @@ namespace jsr {
 			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
 
 			mat4 worldMtx = translate(mat4(1.0f), light->origin);
-			worldMtx = scale(worldMtx, vec3(light->radius * 0.5f));
+			worldMtx = scale(worldMtx, vec3(light->range));
 			highvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMtx;
-			slowfrag.lightColor = light->color;
-			slowfrag.lightOrig = vec4(light->origin,1.0f);
+			highfrag.lightColor = light->color;
+			highfrag.lightOrigin = vec4(light->origin,1.0f);
+			highfrag.lightAttenuation.x = light->range;
 			R_DrawSurf(&unitSphereSurface);
 		}
 		slowfrag.shadowparams = oldShadow;
@@ -826,6 +833,8 @@ namespace jsr {
 		Framebuffer::Unbind();
 		SetCurrentTextureUnit(IMU_HDR);
 		globalImages.HDRaccum->Bind();
+		SetCurrentTextureUnit(IMU_DIFFUSE);
+		globalImages.GBufferAlbedo->Bind();
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
 		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
 		slowfrag.params.x = view->exposure;
