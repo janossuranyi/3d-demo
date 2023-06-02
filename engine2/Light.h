@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include "./GpuTypes.h"
 #include "./RenderProgs.h"
+#include "./Logger.h"
 
 namespace jsr {
 
@@ -43,21 +44,7 @@ namespace jsr {
 		float diffuseFactor;
 		float specularFactor;
 		float radius;
-		void CalculateRadius()
-		{
-			const auto r = -linearAttn + glm::sqrt(linearAttn * linearAttn - 4.0f * expAttn * (1.0f - 256.0f * color.GetPower()));
-			radius = r / (2.0f * expAttn);
-
-			/*
-		const float INTENSITY_CUTOFF = 1.0f;
-		const float ATTENUATION_CUTOFF = 1.0f / 256.0f;
-		auto power = opts.color.GetPower() / (4.0f * glm::pi<float>());
-		auto attenuation = glm::max(INTENSITY_CUTOFF, ATTENUATION_CUTOFF * power) / power;
-
-		radius = 1.0f / glm::sqrt(attenuation);
-
-			*/
-		}
+		void CalculateRadius();
 
 		lightOpts_t()
 		{

@@ -108,7 +108,7 @@ void main()
     {
         vec3 L = inputs.lightPos - inputs.fragPos.xyz;
         float d = length(L);
-        inputs.attenuation = 1.0 / ( 1.0 + gLinearAttnFactor * d + gQuadraticAttnFactor * d * d );
+        inputs.attenuation = 1.0 / ( 1.0 + gQuadraticAttnFactor * d * d * d);
         inputs.lightDir = L / d;
     }
     

@@ -57,4 +57,22 @@ namespace jsr {
 		return name;
 	}
 
+	void lightOpts_t::CalculateRadius()
+	{
+
+		const auto r = -linearAttn + glm::sqrt(linearAttn * linearAttn - 4.0f * expAttn * (1.0f - 256.0f * color.GetPower()));
+		radius = r / (2.0f * expAttn);
+		/*
+
+		constexpr float INTENSITY_CUTOFF = 1.0f;
+		constexpr float ATTENUATION_CUTOFF = 1.0f / 256.0f;
+		auto power = color.GetPower() / (4.0f * glm::pi<float>());
+		auto attenuation = glm::max(INTENSITY_CUTOFF, ATTENUATION_CUTOFF * power) / power;
+
+		radius = 1.0f / glm::sqrt(attenuation);
+		*/
+
+		Info("int: %f, radius: %f", color.GetPower(), radius);
+	}	
+
 }
