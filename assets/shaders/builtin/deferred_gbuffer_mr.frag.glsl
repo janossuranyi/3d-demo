@@ -63,7 +63,7 @@ void main()
         }
     }
 
-    inputs.samplePBR        = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);
+    inputs.samplePBR        = texture( tAORM, In.texCoord ).yzxw * vec4(gRoughnessFactor, gMetallicFactor, 1.0, 1.0);
 
     outFragPos  = In.fragPos;
     outAlbedo   = inputs.sampleAmbient;

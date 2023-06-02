@@ -20,7 +20,7 @@ out INTERFACE
 void main()
 {
     gl_Position = g_freqHighVert.WVPMatrix * in_Position;
-
+    
     mat3 mNormal3   = mat3(g_freqHighVert.normalMatrix);	
     vec4 localTangent = in_Tangent * 2.0 - 1.0;
     localTangent.w = floor( in_Tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;

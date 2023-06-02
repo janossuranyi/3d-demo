@@ -127,8 +127,8 @@ void main()
             inputs.attenuation *= spotAttenuation;
         }
 
-        vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.b );
-        vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.g);
+        vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.y );
+        vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.x);
         vec3 F = spec.rgb;
         float Ks = spec.w;
         float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
@@ -140,7 +140,7 @@ void main()
             shadow = 1.0 - (gShadowScale * ShadowCalculation(fragPosLight, NdotL));
         }
 
-        vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.b);
+        vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.y);
 
         vec3 light = NdotL * inputs.lightColor * inputs.attenuation * shadow;
         finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * light;
