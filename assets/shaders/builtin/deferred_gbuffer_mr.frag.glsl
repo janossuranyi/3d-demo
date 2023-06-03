@@ -4,7 +4,7 @@
 
 in INTERFACE
 {
-    vec4 fragPos;
+    vec2 depthCS;
     vec2 texCoord;
     vec4 color;
     vec4 tangent;
@@ -57,7 +57,7 @@ void main()
     {
         uint params_x = asuint(gFlagsX);
         uint localCoverage = (params_x >> FLG_X_COVERAGE_SHIFT) & FLG_X_COVERAGE_MASK;
-        if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < g_freqHighFrag.alphaCutoff.x )
+        if ( localCoverage == FLG_COVERAGE_MASKED && inputs.sampleAmbient.a < gAlphaCutoff )
         { 
             discard;
         }
@@ -65,8 +65,8 @@ void main()
 
     inputs.samplePBR        = texture( tAORM, In.texCoord ).yzxw * vec4(gRoughnessFactor, gMetallicFactor, 1.0, 1.0);
 
-    outFragPos  = In.fragPos;
-    outAlbedo   = inputs.sampleAmbient;
-    outSpec     = inputs.samplePBR;
-    outNormal   = inputs.normal;
+    outFragPos.x = In.depthCS.x / In.depthCS.y;
+    outAlbedo    = inputs.sampleAmbient;
+    outSpec      = inputs.samplePBR;
+    outNormal    = (1.0 + inputs.normal) * 0.5;
 }

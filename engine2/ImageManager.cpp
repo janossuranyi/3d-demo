@@ -26,10 +26,10 @@ namespace jsr {
 		globalImages.GBufferFragPos = AllocImage("_gbuffer_fragpos");
 		globalImages.GBufferAlbedo = AllocImage("_gbuffer_albedo");
 		globalImages.GBufferNormal = AllocImage("_gbuffer_normal");
-		globalImages.Shadow = AllocImage("_depth");
-		globalImages.defaultDepth = AllocImage("_defaultDepth");
-		globalImages.defaultImage = AllocImage("_defaultImage");
+		globalImages.GBufferDepth = AllocImage("_gbuffer_depth");
 		globalImages.GBufferSpec = AllocImage("_gbuffer_specular");
+		globalImages.Shadow = AllocImage("_shadow");
+		globalImages.defaultImage = AllocImage("_defaultImage");
 		globalImages.HDRaccum = AllocImage("_hdrimage");
 		globalImages.HDRdepth = AllocImage("_hdrDepth");
 		globalImages.whiteImage = AllocImage("_white");
@@ -56,14 +56,14 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferAlbedo allocation failed !");
 		}
 
-		opts.format = IMF_RGBA16F;
+		opts.format = IMF_R32F;
 		opts.usage = IMU_FRAGPOS;
 		if (!globalImages.GBufferFragPos->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image GBufferFragPos allocation failed !");
 		}
 
-		opts.format = IMF_RGBA16F;
+		opts.format = IMF_RGBA;
 		opts.usage = IMU_NORMAL;
 		if (!globalImages.GBufferNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
@@ -94,7 +94,7 @@ namespace jsr {
 
 		opts.format = IMF_D24S8;
 		opts.usage = IMU_DEPTH;
-		if (!globalImages.defaultDepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		if (!globalImages.GBufferDepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image defaultDepth allocation failed !");
 		}

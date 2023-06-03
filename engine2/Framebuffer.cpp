@@ -50,8 +50,8 @@ namespace jsr {
 
 		fb = new Framebuffer( "gbufferFBO", w, h );
 		fb->Bind();
-		fb->AttachImageDepth( globalImages.defaultDepth );
-		fb->AttachImageStencil(globalImages.defaultDepth);
+		fb->AttachImageDepth( globalImages.GBufferDepth );
+		fb->AttachImageStencil(globalImages.GBufferDepth);
 		fb->AttachImage2D( globalImages.GBufferAlbedo, 0 );
 		fb->AttachImage2D( globalImages.GBufferNormal, 1);
 		fb->AttachImage2D( globalImages.GBufferSpec, 2 );
@@ -66,7 +66,7 @@ namespace jsr {
 	}
 	bool Framebuffer::IsDefaultFramebufferActive()
 	{
-		return (renderSystem.backend->currentFramebuffer == NULL);
+		return (glcontext.currentFramebuffer == 0);
 	}
 
 }

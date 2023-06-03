@@ -292,7 +292,7 @@ namespace jsr {
 
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
-			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_TRUE);
+			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_TRUE);
 #endif
 		}
 
@@ -404,7 +404,8 @@ namespace jsr {
 		slowfrag.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
 		slowfrag.shadowparams = { 1.0f / (float)renderGlobals.shadowResolution,renderGlobals.shadowScale,renderGlobals.shadowBias,0.0f };
 		slowfrag.params.x = view->exposure;
-		slowfrag.viewOrigin = vec4(view->renderView.vieworg, 1.f);
+		slowfrag.viewOrigin = vec4(0.f,0.f,0.f, 1.f);
+		slowfrag.invProjMatrix = glm::inverse(view->projectionMatrix);
 //		slowfrag.ambientColor = vec4(vec3(0.005f), 1.0f);
 
 		fastfrag.lightOrigin = view->lightPos;
@@ -697,6 +698,9 @@ namespace jsr {
 
 		Clear(true, true, false);
 
+		vec4 v1(1.0f);
+		globalFramebuffers.GBufferFBO->ClearAttachment(3, v1);
+
 		const drawSurf_t* surf;
 
 		for (int k = 0; k < 2; ++k)
@@ -726,13 +730,16 @@ namespace jsr {
 					}
 				}
 
-				mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
+				//const mat4& viewMatrix = view->renderView.viewMatrix;
+				const mat4& modelMatrix = surf->space->modelMatrix;
+				const mat4 normalMatrix = transpose(inverse(mat3(modelMatrix)));
+
 				uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
 
 				renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
 				auto& highvert = renderSystem.programManager->g_freqHighVert;
 				auto& highfrag = renderSystem.programManager->g_freqHighFrag;
-				highvert.localToWorldMatrix = surf->space->modelMatrix;
+				highvert.localToWorldMatrix = modelMatrix;
 				highvert.normalMatrix = normalMatrix;
 				highvert.WVPMatrix = surf->space->mvp;
 				highfrag.matDiffuseFactor = stage.diffuseScale;
@@ -808,7 +815,7 @@ namespace jsr {
 			worldMtx = scale(worldMtx, vec3(light->range));
 			highvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMtx;
 			highfrag.lightColor = light->color;
-			highfrag.lightOrigin = vec4(light->origin,1.0f);
+			highfrag.lightOrigin = view->renderView.viewMatrix * vec4(light->origin,1.0f);
 			highfrag.lightAttenuation.x = light->range;
 			R_DrawSurf(&unitSphereSurface);
 		}

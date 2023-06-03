@@ -59,20 +59,19 @@ namespace jsr {
 
 	void lightOpts_t::CalculateRange()
 	{
-		float x = linearAttn * linearAttn - 4.0f * expAttn * (1.0f - 256.0f * color.GetPower());
+#if 0
+		float x = linearAttn * linearAttn - 4.0f * expAttn * (1.0f - 32.0f * color.GetPower());
 		float r = -linearAttn + glm::sqrt(x);
 		range = r / (2.0f * expAttn);
 
-		/*
-
-		constexpr float INTENSITY_CUTOFF = 1.0f;
-		constexpr float ATTENUATION_CUTOFF = 1.0f / 256.0f;
+#else
+		constexpr float INTENSITY_CUTOFF = 0.005f;
+		constexpr float ATTENUATION_CUTOFF = 1.0f / 255.0f;
 		auto power = color.GetPower() / (4.0f * glm::pi<float>());
 		auto attenuation = glm::max(INTENSITY_CUTOFF, ATTENUATION_CUTOFF * power) / power;
 
-		radius = 1.0f / glm::sqrt(attenuation);
-		*/
-
+		range = 1.0f / glm::sqrt(attenuation);
+#endif
 		Info("int: %f, radius: %f", color.GetPower(), range);
 	}	
 

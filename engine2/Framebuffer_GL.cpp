@@ -173,6 +173,11 @@ namespace jsr {
 		}
 	}
 
+	void Framebuffer::ClearAttachment(int i, const glm::vec4& color) const
+	{
+		GL_CHECK(glClearBufferfv(GL_COLOR, i, &color.x));
+	}
+
 	void Framebuffer::BlitColorBuffer(int srcX1, int srcY1, int srcX2, int srcY2, int dstX1, int dstY1, int dstX2, int dstY2)
 	{
 		GL_CHECK(glBlitFramebuffer(srcX1, srcY1, srcX2, srcY2,

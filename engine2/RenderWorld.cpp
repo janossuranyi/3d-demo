@@ -23,7 +23,7 @@ namespace jsr {
 	using namespace tinygltf;
 	namespace fs = std::filesystem;
 
-	const float BLENDER_LIGHT_POWER_FACTOR = 1.0f / 100.0f;
+	const float BLENDER_LIGHT_POWER_FACTOR = 1.0f/100.0f;
 
 	RenderWorld::RenderWorld() : gltf_state()
 	{
@@ -33,7 +33,7 @@ namespace jsr {
 		materialManager = renderSystem.materialManager;
 		exposure = 1.0f;
 		lightColor = { 1.0f,1.0f,1.0f,1.0f };
-		lightAttenuation = {};
+		lightAttenuation = {1.0f,0.0f,1.0f,0.0f};
 		lightOrig = {};
 		spotLightDir = {};
 		spotLightParams = {};
@@ -498,7 +498,7 @@ namespace jsr {
 
 			// Ln = (683 * watt)  / ( 4 * math.pi )
 			// watt = Ln * 4PI / 683
-			float watts = BLENDER_LIGHT_POWER_FACTOR * (static_cast<float>(e.intensity) * glm::pi<float>() * 4.0f) / 683.0f;
+			float watts = .05f * (static_cast<float>(e.intensity) * glm::pi<float>() * 4.0f) / 683.0f;
 			light->SetName(e.name);
 			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), watts};
 			light->opts.expAttn = renderGlobals.defaultExpAttn;
@@ -695,7 +695,7 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		mat4 viewMatrix = view->renderView.viewMatrix;
+		const mat4& viewMatrix = view->renderView.viewMatrix;
 
 		if (node->GetEntity().IsLight())
 		{

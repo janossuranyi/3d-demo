@@ -8,7 +8,7 @@ layout(location = 4) in vec4 in_Color;
 
 out INTERFACE
 {
-    vec4 fragPos;
+    vec2 depthCS;
     vec2 texCoord;
     vec4 color;
     vec4 tangent;
@@ -20,8 +20,9 @@ out INTERFACE
 void main()
 {
     gl_Position = g_freqHighVert.WVPMatrix * in_Position;
-    
-    mat3 mNormal3   = mat3(g_freqHighVert.normalMatrix);	
+    Out.depthCS = gl_Position.zw;
+
+    mat3 mNormal3   = mat3(gViewMatrix * gNormalMatrix);
     vec4 localTangent = in_Tangent * 2.0 - 1.0;
     localTangent.w = floor( in_Tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
 
@@ -30,7 +31,7 @@ void main()
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 
-    Out.fragPos     = g_freqHighVert.localToWorldMatrix * in_Position;
+    //Out.fragPosVS   = gViewMatrix * gModelMatrix * in_Position;
     Out.color       = in_Color;
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);

@@ -20,7 +20,6 @@
                     ],
                     "intensity" : 5435.141306588225,
                     "type" : "point",
-                    "range" : 5,
                     "name" : "Point"
                 },
                 {
@@ -31,7 +30,6 @@
                     ],
                     "intensity" : 5435.141306588225,
                     "type" : "point",
-                    "range" : 5,
                     "name" : "Point.005"
                 },
                 {
@@ -40,9 +38,8 @@
                         1,
                         1
                     ],
-                    "intensity" : 5435.141306588225,
+                    "intensity" : 858.7524923082892,
                     "type" : "point",
-                    "range" : 5,
                     "name" : "Point.006"
                 }
             ]

@@ -87,6 +87,7 @@ namespace jsr {
 
 	struct uboFreqLowFrag_t
 	{
+		glm::mat4 invProjMatrix;
 		glm::vec4 debugparams;
 		glm::vec4 shadowparams;
 		glm::vec4 screenSize;

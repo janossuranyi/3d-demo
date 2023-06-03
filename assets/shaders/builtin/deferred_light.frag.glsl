@@ -7,6 +7,7 @@ out vec3 hdrColor;
 in INTERFACE
 {
     vec2 texCoord;
+    vec4 positionVS;
 } In;
 
 struct lightinginput_t {
@@ -19,7 +20,6 @@ struct lightinginput_t {
     vec3 lightColor;
     vec3 viewDir;
     vec3 lightDir;
-    vec3 ambient;
     float attenuation;
 };
 
@@ -90,19 +90,26 @@ float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
 void main()
 {
     lightinginput_t inputs;
-
+    
     {
         vec2 texCoord           = gl_FragCoord.xy * g_freqLowFrag.screenSize.zw;
-        vec3 ambientColor       = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w;
-        inputs.normal           = texture( tNormal, texCoord ).xyz;    
+        inputs.normal           = texture( tNormal, texCoord ).xyz * 2.0 - 1.0;
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
-        inputs.fragPos          = texture( tFragPos, texCoord );
-        inputs.ambient          = inputs.sampleAmbient.xyz * ambientColor;
+        //inputs.fragPos          = texture( tFragPos, texCoord );
         inputs.lightPos         = g_freqHighFrag.lightOrigin.xyz;
         inputs.lightColor       = g_freqHighFrag.lightColor.rgb * g_freqHighFrag.lightColor.w;
+        inputs.normal           = normalize(inputs.normal);
+
+        vec4 fragPosProj = vec4(texCoord * 2 - 1, texture( tFragPos, texCoord ).x, 1.0);
+        vec4 fragPosVS = g_freqLowFrag.invProjMatrix * fragPosProj;
+        fragPosVS.xyz /= fragPosVS.w;
+        inputs.fragPos = fragPosVS;
     }
 
+    //g_freqLowFrag.nearFarClip
+
+    
     /*********************** Lighting  ****************************/
     inputs.viewDir = normalize(g_freqLowFrag.viewOrigin.xyz - inputs.fragPos.xyz);
     {
@@ -111,7 +118,7 @@ void main()
         float Kr = d / gLightRange ;
         Kr *= Kr;
         Kr *= Kr;
-        inputs.attenuation = max( min( 1.0 - Kr, 1 ), 0 ) / ( 1.0 + d*d);
+        inputs.attenuation = max( min( 1.0 - Kr, 1 ), 0 ) / ( 1.0 + gLinearAttnFactor * d + gQuadraticAttnFactor * d*d);
         inputs.lightDir = L / d;
     }
     
@@ -147,7 +154,7 @@ void main()
 
         vec3 light = NdotL * inputs.lightColor * inputs.attenuation * shadow;
         finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * light;
-        //finalColor += inputs.ambient;
+        //finalColor = max( inputs.fragPos.xyz, 0.01);
         //finalColor = vec3(1.0) - exp(-finalColor * gExposure);
     }
     /*****************************************************************/

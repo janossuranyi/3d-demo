@@ -1,5 +1,9 @@
 @include "defs.inc"
 
+#define gViewMatrix g_freqLowVert.viewMatrix
+#define gModelMatrix g_freqHighVert.localToWorldMatrix
+#define gNormalMatrix g_freqHighVert.normalMatrix
+
 layout(binding = UBB_FREQ_LOW_VERT, std140) uniform uboFreqLowVert
 {
 	mat4 viewMatrix;

@@ -1,6 +1,7 @@
 #ifndef JSR_FRAMEBUFFER_H
 #define JSR_FRAMEBUFFER_H
 
+#include <glm/glm.hpp>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,7 @@ namespace jsr {
 		void	AttachImageStencil(const Image* img);
 		bool	Check();
 		void	Bind();
+		void	ClearAttachment(int i, const glm::vec4& color) const;
 		void	BlitColorBuffer(int srcX1, int srcY1, int srcX2, int srcY2, int dstX1, int dstY1, int dstX2, int dstY2);
 		void	BlitDepthBuffer(int srcX1, int srcY1, int srcX2, int srcY2, int dstX1, int dstY1, int dstX2, int dstY2);
 		void	BindForReading();

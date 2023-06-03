@@ -11,6 +11,7 @@
 #define gShadowBias g_freqLowFrag.shadowparams.z
 #define gShadowScale g_freqLowFrag.shadowparams.y
 #define gOneOverShadowRes g_freqLowFrag.shadowparams.x
+#define gAlphaCutoff g_freqHighFrag.alphaCutoff.x
 
 #define gSpotCosCutoff g_freqHighFrag.spotLightParams.x
 #define gSpotCosInnerCutoff g_freqHighFrag.spotLightParams.y
@@ -24,8 +25,12 @@
 #define gExposure g_freqLowFrag.params.x
 #define gFlagsX g_freqHighFrag.params.x
 
+#define gNearClipDistance g_freqLowFrag.nearFarClip.x
+#define gFarClipDistance g_freqLowFrag.nearFarClip.y
+
 layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 {
+	mat4 invProjMatrix;
 	vec4 debugparams;
 	vec4 shadowparams;
 	vec4 screenSize;

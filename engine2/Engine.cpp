@@ -152,6 +152,10 @@ namespace jsr {
 			ImGui::DragFloat("Spot Inner", &world->spotLightParams.y, 0.1f, 0.0f, 120.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
 			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.0001f, 0.0001f, 0.005f, "%.5f");
+
+			ImGui::DragFloat("Al", &world->lightAttenuation.y, 0.01f, 0.0f, 100.0f);
+			ImGui::DragFloat("Aq", &world->lightAttenuation.z, 0.01f, 0.0f, 100.0f);
+
 			ImGui::Checkbox("Spot On", &spotOn);
 			ImGui::ColorEdit3("Light color", &world->lightColor.x);
 			ImGui::DragFloat("Light power", &world->lightColor.w, 0.02f, 0.2f, 1000.0f);
