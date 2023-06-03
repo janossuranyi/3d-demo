@@ -405,7 +405,7 @@ namespace jsr {
 		slowfrag.shadowparams = { 1.0f / (float)renderGlobals.shadowResolution,renderGlobals.shadowScale,renderGlobals.shadowBias,0.0f };
 		slowfrag.params.x = view->exposure;
 		slowfrag.viewOrigin = vec4(0.f,0.f,0.f, 1.f);
-		slowfrag.invProjMatrix = glm::inverse(view->projectionMatrix);
+		slowfrag.invProjMatrix = view->unprojectionToCameraMatrix;
 //		slowfrag.ambientColor = vec4(vec3(0.005f), 1.0f);
 
 		fastfrag.lightOrigin = view->lightPos;
@@ -814,6 +814,7 @@ namespace jsr {
 			mat4 worldMtx = translate(mat4(1.0f), light->origin);
 			worldMtx = scale(worldMtx, vec3(light->range));
 			highvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMtx;
+			highvert.localToWorldMatrix = worldMtx;
 			highfrag.lightColor = light->color;
 			highfrag.lightOrigin = view->renderView.viewMatrix * vec4(light->origin,1.0f);
 			highfrag.lightAttenuation.x = light->range;

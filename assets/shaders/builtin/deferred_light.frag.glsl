@@ -12,7 +12,7 @@ in INTERFACE
 
 struct lightinginput_t {
     vec3 normal;
-    vec4 fragPos;
+    vec4 fragPosVS;
     vec4 sampleAmbient;
     vec4 samplePBR;
     vec4 spec;
@@ -87,6 +87,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
     return 1.0 - (factor / 9.0);
 }
 
+
 void main()
 {
     lightinginput_t inputs;
@@ -96,24 +97,18 @@ void main()
         inputs.normal           = texture( tNormal, texCoord ).xyz * 2.0 - 1.0;
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
-        //inputs.fragPos          = texture( tFragPos, texCoord );
         inputs.lightPos         = g_freqHighFrag.lightOrigin.xyz;
         inputs.lightColor       = g_freqHighFrag.lightColor.rgb * g_freqHighFrag.lightColor.w;
         inputs.normal           = normalize(inputs.normal);
 
-        vec4 fragPosProj = vec4(texCoord * 2 - 1, texture( tFragPos, texCoord ).x, 1.0);
-        vec4 fragPosVS = g_freqLowFrag.invProjMatrix * fragPosProj;
-        fragPosVS.xyz /= fragPosVS.w;
-        inputs.fragPos = fragPosVS;
+        vec3 viewRay = vec3(In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance);
+        float nDepth = -texture( tFragPos, texCoord ).x;
+        inputs.fragPosVS = vec4(viewRay * nDepth, 1.0);
     }
-
-    //g_freqLowFrag.nearFarClip
-
-    
     /*********************** Lighting  ****************************/
-    inputs.viewDir = normalize(g_freqLowFrag.viewOrigin.xyz - inputs.fragPos.xyz);
+    inputs.viewDir = normalize(g_freqLowFrag.viewOrigin.xyz - inputs.fragPosVS.xyz);
     {
-        vec3 L = inputs.lightPos - inputs.fragPos.xyz;
+        vec3 L = inputs.lightPos - inputs.fragPosVS.xyz;
         float d = length(L);
         float Kr = d / gLightRange ;
         Kr *= Kr;
@@ -146,7 +141,7 @@ void main()
         float shadow = 1.0;
         if (gShadowScale > 0.0)
         {
-            vec4 fragPosLight = g_freqHighFrag.lightProjMatrix * inputs.fragPos;
+            vec4 fragPosLight = g_freqHighFrag.lightProjMatrix * inputs.fragPosVS;
             shadow = 1.0 - (gShadowScale * ShadowCalculation(fragPosLight, NdotL));
         }
 

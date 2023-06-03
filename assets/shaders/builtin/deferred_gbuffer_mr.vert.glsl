@@ -1,4 +1,5 @@
 @include "version.inc.glsl"
+@include "vertex_uniforms.inc.glsl"
 
 layout(location = 0) in vec4 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
@@ -8,20 +9,15 @@ layout(location = 4) in vec4 in_Color;
 
 out INTERFACE
 {
-    vec2 depthCS;
+    vec4 positionVS;
     vec2 texCoord;
     vec4 color;
     vec4 tangent;
     vec3 normal;
 } Out;
 
-@include "vertex_uniforms.inc.glsl"
-
 void main()
 {
-    gl_Position = g_freqHighVert.WVPMatrix * in_Position;
-    Out.depthCS = gl_Position.zw;
-
     mat3 mNormal3   = mat3(gViewMatrix * gNormalMatrix);
     vec4 localTangent = in_Tangent * 2.0 - 1.0;
     localTangent.w = floor( in_Tangent.w * 255.1 / 128.0 ) * 2.0 - 1.0;
@@ -31,9 +27,11 @@ void main()
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 
-    //Out.fragPosVS   = gViewMatrix * gModelMatrix * in_Position;
+    Out.positionVS  = gViewMatrix * g_freqHighVert.localToWorldMatrix * in_Position;
     Out.color       = in_Color;
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);
     Out.texCoord    = in_TexCoord;
+
+    gl_Position = g_freqHighVert.WVPMatrix * in_Position;
 }
