@@ -2,8 +2,9 @@
 #include "./VertexCache.h"
 #include "./Logger.h"
 
-#define DEFAULT_MAX_STATIC_CACHE	(128*1024*1024)
-#define DEFAULT_MAX_TRANSIENT_CACHE (16*1024*1024)
+#define STATIC_CACHE_SIZE		(64*1024*1024)
+#define TRANSIENT_CACHE_SIZE	(2*1024*1024)
+#define UNIFORM_CACHE_SIZE		(2*1024*1024)
 
 #define CACHE_OFFSET_BITS	27
 #define CACHE_SIZE_BITS		24	// 16MB
@@ -24,16 +25,17 @@ namespace jsr {
 
 	VertexCache::VertexCache()
 	{		
-		staticCacheSize			= DEFAULT_MAX_STATIC_CACHE;
-		transientCacheSize		= DEFAULT_MAX_TRANSIENT_CACHE;
-		staticUboCacheSize		= 4 * 1024 * 1024;
-		transientUboCacheSize	= 8 * 1024 * 1024;
+		staticCacheSize			= STATIC_CACHE_SIZE;
+		transientCacheSize		= TRANSIENT_CACHE_SIZE;
+		staticUboCacheSize		= UNIFORM_CACHE_SIZE;
+		transientUboCacheSize	= UNIFORM_CACHE_SIZE;
 		uniformBufferAligment	= 256;
 		uniformBufferAligmentBits = 8;
 	}
 
 	VertexCache::~VertexCache()
 	{
+		PrintStatistic();
 		Shutdown();
 	}
 
@@ -54,34 +56,34 @@ namespace jsr {
 
 	static void MapBufferSet(geoBufferSet_t& gbs)
 	{
-		if (gbs.vertexPtr == nullptr)
+		if (gbs.pVerts == nullptr)
 		{
-			gbs.vertexPtr = (byte*)gbs.vertexBuffer.MapBuffer(BM_WRITE);
+			gbs.pVerts = (byte*)gbs.vertexBuffer.MapBuffer(BM_WRITE);
 		}
-		if (gbs.indexPtr == nullptr)
+		if (gbs.pIndexes == nullptr)
 		{
-			gbs.indexPtr = (byte*)gbs.indexBuffer.MapBuffer(BM_WRITE);
+			gbs.pIndexes = (byte*)gbs.indexBuffer.MapBuffer(BM_WRITE);
 		}
-		if (gbs.uniformsPtr == nullptr)
+		if (gbs.pUniforms == nullptr)
 		{
-			gbs.uniformsPtr = (byte*)gbs.uniformBuffer.MapBuffer(BM_WRITE);
+			gbs.pUniforms = (byte*)gbs.uniformBuffer.MapBuffer(BM_WRITE);
 		}
 	}
 	static void UnmapBufferSet(geoBufferSet_t& gbs)
 	{
-		if (gbs.vertexPtr != nullptr)
+		if (gbs.pVerts != nullptr)
 		{
-			gbs.vertexPtr = nullptr;
+			gbs.pVerts = nullptr;
 			gbs.vertexBuffer.UnmapBuffer();
 		}
-		if (gbs.indexPtr != nullptr)
+		if (gbs.pIndexes != nullptr)
 		{
-			gbs.indexPtr = nullptr;
+			gbs.pIndexes = nullptr;
 			gbs.indexBuffer.UnmapBuffer();
 		}
-		if (gbs.uniformsPtr != nullptr)
+		if (gbs.pUniforms != nullptr)
 		{
-			gbs.uniformsPtr = nullptr;
+			gbs.pUniforms = nullptr;
 			gbs.uniformBuffer.UnmapBuffer();
 		}
 	}
@@ -142,15 +144,15 @@ namespace jsr {
 	void VertexCache::Frame()
 	{
 		++activeFrame;
-		UnmapBufferSet(transientBufferSet[listNum]);
+		UnmapBufferSet(transientBufferSet[activeBufferSet]);
 		UnmapBufferSet(staticBufferSet);
 
-		renderFrame = listNum;
-		listNum = activeFrame % JSE_VERTEX_CACHE_FRAMES;
+		renderBufferSet = activeBufferSet;
+		activeBufferSet = activeFrame % JSE_VERTEX_CACHE_FRAMES;
 
-		MapBufferSet(transientBufferSet[listNum]);
+		MapBufferSet(transientBufferSet[activeBufferSet]);
 
-		ClearGeoBufferSet(transientBufferSet[listNum]);
+		ClearGeoBufferSet(transientBufferSet[activeBufferSet]);
 	}
 
 	void VertexCache::ClearStaticCache()
@@ -162,43 +164,50 @@ namespace jsr {
 
 	void VertexCache::PrintStatistic() const
 	{
-		Info("Allocated static vertex     :   %d", staticBufferSet.vertexAlloced.load());
-		Info("Allocated static index      :   %d", staticBufferSet.indexAlloced.load());
-		Info("Allocated static uniform    :   %d", staticBufferSet.uniformsAlloced.load());
-		Info("Allocated transient vertex  :   %d", transientBufferSet[activeFrame].vertexAlloced.load());
-		Info("Allocated transient index   :   %d", transientBufferSet[activeFrame].indexAlloced.load());
-		Info("Allocated transient uniform :   %d", transientBufferSet[activeFrame].uniformsAlloced.load());
+		Info("============= Vertex Cache statistics ================");
+		Info("Allocated static vertex     :   %d", maxStaticVertex);
+		Info("Allocated static index      :   %d", maxStaticIndex);
+		Info("Allocated static uniform    :   %d", maxStaticUniform);
+		Info("Allocated transient vertex  :   %d", maxTransientVertex);
+		Info("Allocated transient index   :   %d", maxTransientIndex);
+		Info("Allocated transient uniform :   %d", maxTransientUniform);
 
 	}
 
 	vertCacheHandle_t VertexCache::AllocStaticVertex(const void* data, int size)
 	{
+		maxStaticVertex = std::max(maxStaticVertex, staticBufferSet.vertexAlloced.load(std::memory_order_relaxed) + size);
 		return RealAlloc(staticBufferSet, data, ALIGN(size), CACHE_VERTEX);
 	}
 
 	vertCacheHandle_t VertexCache::AllocStaticIndex(const void* data, int size)
 	{
+		maxStaticIndex = std::max(maxStaticIndex, staticBufferSet.indexAlloced.load(std::memory_order_relaxed) + size);
 		return RealAlloc(staticBufferSet, data, ALIGN(size), CACHE_INDEX);
 	}
 
 	vertCacheHandle_t VertexCache::AllocStaticUniform(const void* data, int size)
 	{
+		maxStaticUniform = std::max(maxStaticUniform, staticBufferSet.uniformsAlloced.load(std::memory_order_relaxed) + size);
 		return RealAlloc(staticBufferSet, data, ALIGN(size), CACHE_UNIFORM);
 	}
 
 	vertCacheHandle_t VertexCache::AllocTransientVertex(const void* data, int size)
 	{
-		return RealAlloc(transientBufferSet[listNum], data, ALIGN(size), CACHE_VERTEX);
+		maxTransientVertex = std::max(maxTransientVertex, transientBufferSet[activeBufferSet].vertexAlloced.load(std::memory_order_relaxed) + size);
+		return RealAlloc(transientBufferSet[activeBufferSet], data, ALIGN(size), CACHE_VERTEX);
 	}
 
 	vertCacheHandle_t VertexCache::AllocTransientIndex(const void* data, int size)
 	{
-		return RealAlloc(transientBufferSet[listNum], data, ALIGN(size), CACHE_INDEX);
+		maxTransientIndex = std::max(maxTransientIndex, transientBufferSet[activeBufferSet].indexAlloced.load(std::memory_order_relaxed) + size);
+		return RealAlloc(transientBufferSet[activeBufferSet], data, ALIGN(size), CACHE_INDEX);
 	}
 
 	vertCacheHandle_t VertexCache::AllocTransientUniform(const void* data, int size)
 	{
-		return RealAlloc(transientBufferSet[listNum], data, ALIGN(size), CACHE_UNIFORM);
+		maxTransientUniform = std::max(maxTransientUniform, transientBufferSet[activeBufferSet].uniformsAlloced.load(std::memory_order_relaxed) + size);
+		return RealAlloc(transientBufferSet[activeBufferSet], data, ALIGN(size), CACHE_UNIFORM);
 	}
 
 	bool VertexCache::GetVertexBuffer(vertCacheHandle_t handle, VertexBuffer& dest)
@@ -218,7 +227,7 @@ namespace jsr {
 		{
 			return false;
 		}
-		dest.MakeView(transientBufferSet[renderFrame].vertexBuffer, offset, size);
+		dest.MakeView(transientBufferSet[renderBufferSet].vertexBuffer, offset, size);
 	}
 
 	bool VertexCache::GetIndexBuffer(vertCacheHandle_t handle, IndexBuffer& dest)
@@ -238,7 +247,7 @@ namespace jsr {
 		{
 			return false;
 		}
-		dest.MakeView(transientBufferSet[renderFrame].indexBuffer, offset, size);
+		dest.MakeView(transientBufferSet[renderBufferSet].indexBuffer, offset, size);
 	}
 
 	bool VertexCache::GetUniformBuffer(vertCacheHandle_t handle, UniformBuffer& dest)
@@ -258,7 +267,7 @@ namespace jsr {
 		{
 			return false;
 		}
-		dest.MakeView(transientBufferSet[renderFrame].uniformBuffer, offset, size);
+		dest.MakeView(transientBufferSet[renderBufferSet].uniformBuffer, offset, size);
 	}
 
 	bool VertexCache::IsStatic(vertCacheHandle_t handle) const
@@ -283,7 +292,7 @@ namespace jsr {
 		const uint64 framenum	= (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
 		assert(framenum == (activeFrame & CACHE_FRAME_MASK));
 
-		return transientBufferSet[listNum].vertexPtr + offset;
+		return transientBufferSet[activeBufferSet].pVerts + offset;
 	}
 	byte* VertexCache::MappedIndex(vertCacheHandle_t handle) const
 	{
@@ -292,7 +301,7 @@ namespace jsr {
 		const uint64 framenum = (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
 		assert(framenum == (activeFrame & CACHE_FRAME_MASK));
 
-		return transientBufferSet[listNum].indexPtr + offset;
+		return transientBufferSet[activeBufferSet].pIndexes + offset;
 	}
 	byte* VertexCache::MappedUniform(vertCacheHandle_t handle) const
 	{
@@ -301,7 +310,7 @@ namespace jsr {
 		const uint64 framenum = (handle >> CACHE_FRAME_SHIFT) & CACHE_FRAME_MASK;
 		assert(framenum == (activeFrame & CACHE_FRAME_MASK));
 
-		return transientBufferSet[listNum].uniformsPtr + offset;
+		return transientBufferSet[activeBufferSet].pUniforms + offset;
 	}
 
 	void VertexCache::BindVertexBuffer(vertCacheHandle_t handle, int binding, uint32 stride) const
@@ -318,7 +327,7 @@ namespace jsr {
 		}
 		else if (framenum == frame - 1)
 		{
-			buffer = &transientBufferSet[renderFrame].vertexBuffer;
+			buffer = &transientBufferSet[renderBufferSet].vertexBuffer;
 		}
 		else return;
 
@@ -339,7 +348,7 @@ namespace jsr {
 		}
 		else if (framenum == frame - 1)
 		{
-			buffer = &transientBufferSet[renderFrame].indexBuffer;
+			buffer = &transientBufferSet[renderBufferSet].indexBuffer;
 		}
 		else return;
 

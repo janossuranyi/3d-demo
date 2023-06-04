@@ -11,6 +11,78 @@
 
 namespace jsr {
 
+	enum eFace
+	{
+		FACE_FRONT,
+		FACE_BACK,
+		FACE_FRONT_AND_BACK
+	};
+
+	enum eCompOp
+	{
+		CMP_NEVER,
+		CMP_ALWAYS,
+		CMP_LT,
+		CMP_LEQ,
+		CMP_EQ,
+		CMP_GT,
+		CMP_GEQ,
+		CMP_NOTEQ
+	};
+
+	enum eBlendFunc
+	{
+		BFUNC_ZERO,
+		BFUNC_ONE,
+		BFUNC_SRC_ALPHA,
+		BFUNC_DST_ALPHA,
+		BFUNC_SRC_COLOR,
+		BFUNC_DST_COLOR,
+		BFUNC_ONE_MINUS_SRC_ALPHA,
+		BFUNC_ONE_MINUS_DST_ALPHA,
+		BFUNC_ONE_MINUS_SRC_COLOR,
+		BFUNC_ONE_MINUS_DST_COLOR
+	};
+
+	enum eBlendOp
+	{
+		BOP_ADD,
+		BOP_SUB,
+		BOP_RSUB,
+		BOP_MIN,
+		BOP_MAX
+	};
+
+	enum eStencilOp
+	{
+		SO_KEEP,
+		SO_ZERO,
+		SO_REPLACE,
+		SO_INC,
+		SO_INC_WRAP,
+		SO_DEC,
+		SO_DEC_WRAP,
+		SO_INVERT
+	};
+
+	enum eCoverage
+	{
+		COVERAGE_SOLID,
+		COVERAGE_MASK,
+		COVERAGE_BLEND
+	};
+
+	enum eStageType
+	{
+		STAGE_GBUFFER,
+		STAGE_PRELIGHT,
+		STAGE_POSTLIGHT,
+		STAGE_SHADOW,
+		STAGE_PP,
+		STAGE_DEBUG,
+		STAGE_COUNT
+	};
+
 	enum eShaderProg
 	{
 		PRG_TEXTURED,
@@ -72,6 +144,7 @@ namespace jsr {
 		glm::mat4		modelViewMatrix;	// local coords to eye coords
 		glm::mat4		mvp;
 		drawSurf_t*		surf;
+		vertCacheHandle_t highFreqVert;
 		bool			visible;
 	};
 
@@ -82,9 +155,10 @@ namespace jsr {
 		int					numIndex;
 		vertCacheHandle_t	indexCache;
 		vertCacheHandle_t	vertexCache;
+		vertCacheHandle_t	highFreqFrag[STAGE_COUNT];
 		const viewEntity_t* space;
 		const Material*		shader;
-		drawSurf_t*			next;
+		const drawSurf_t*	next;
 		float				sort;
 	};
 
@@ -92,11 +166,13 @@ namespace jsr {
 	struct viewLight_t
 	{
 		viewLight_t*	next;
-		glm::vec3		origin;
+		glm::vec3		origin;	// view space position
 		glm::mat3		axis;
 		glm::vec4		color;
 		float			range;
 		eShaderProg		shader;
+		vertCacheHandle_t highFreqVert;
+		vertCacheHandle_t highFreqFrag;
 		bool			remove;
 	};
 
@@ -112,7 +188,7 @@ namespace jsr {
 		bool			isSubview;
 		bool			isMirror;
 		RenderWorld*	renderWorld;
-		drawSurf_t**	drawSurfs;
+		const drawSurf_t**	drawSurfs;
 		int				numDrawSurfs;
 		viewEntity_t*	viewEntites;
 		viewLight_t*	viewLights;
@@ -120,12 +196,8 @@ namespace jsr {
 		float			exposure;
 		float			farClipDistance;
 		float			nearClipDistance;
-		// temporary
-		glm::vec4		lightPos;
-		glm::vec4		lightColor;
-		glm::vec4		lightAttenuation;
-		glm::vec4		spotLightParams;
-		glm::vec4		spotLightDir;
+		vertCacheHandle_t freqLowVert;
+		vertCacheHandle_t freqLowFrag;
 	};
 
 }

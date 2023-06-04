@@ -38,11 +38,6 @@ namespace jsr {
 		void SetExposure(float x);
 
 		float exposure;
-		glm::vec3 lightOrig;
-		glm::vec3 spotLightDir;
-		glm::vec4 lightColor;
-		glm::vec4 lightAttenuation;
-		glm::vec4 spotLightParams;
 	private:
 		void CreateImagesGLTF();
 		void CreateMaterialsGLTF();
@@ -73,7 +68,7 @@ namespace jsr {
 		MaterialManager* materialManager;
 		ModelManager*	modelManager;
 		ImageManager*	imageManager;
-		VertexCache*	vertecCache;
+		VertexCache*	vertexCache;
 	};
 }
 #endif // !JSR_RENDERWORLD_H

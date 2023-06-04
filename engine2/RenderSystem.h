@@ -17,12 +17,16 @@ namespace jsr {
 		float shadowBias;
 		float defaultExpAttn;
 		float defaultLinearAttn;
+		glm::vec3 ambientColor;
+		float ambientScale;
 
 		renderGlobals_t() :
 			shadowResolution(1024),
 			shadowScale(0.8f),
 			defaultExpAttn(1.0f),
 			defaultLinearAttn(0.0f),
+			ambientColor(1.0f),
+			ambientScale(.01f),
 			shadowBias(0.0001f) {}
 	};
 

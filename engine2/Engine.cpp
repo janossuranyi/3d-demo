@@ -125,14 +125,7 @@ namespace jsr {
 
 		ImGuiIO& io = ImGui::GetIO();
 		world->exposure = 1.0f;
-		world->lightColor = vec4(vec3(255.f, 87.f, 51.f) / 255.0f, 8.0f);
-		world->lightAttenuation = vec4(1.0f, 0.0f, renderGlobals.defaultExpAttn, 0.0f);
-		world->spotLightParams.x = 40.0f;
-		world->spotLightParams.y = 35.0f;
-		world->spotLightParams.z = 0.5f;
-		world->spotLightParams.w = 0.0f;
 		bool spotOn = false;
-		renderSystem.programManager->g_freqLowFrag.ambientColor = vec4(vec3(0.5f), 0.01);
 
 		while (!quit)
 		{
@@ -147,24 +140,13 @@ namespace jsr {
 			ImGui::NewFrame();
 			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
-			ImGui::DragFloat("Spot Exp", &world->spotLightParams.z, 0.01f, 0.0f, 100.0f);
-			ImGui::DragFloat("Spot Cone", &world->spotLightParams.x, 0.1f, 0.0f, 120.0f);
-			ImGui::DragFloat("Spot Inner", &world->spotLightParams.y, 0.1f, 0.0f, 120.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
 			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.0001f, 0.0001f, 0.005f, "%.5f");
 
-			ImGui::DragFloat("Al", &world->lightAttenuation.y, 0.01f, 0.0f, 100.0f);
-			ImGui::DragFloat("Aq", &world->lightAttenuation.z, 0.01f, 0.0f, 100.0f);
-
-			ImGui::Checkbox("Spot On", &spotOn);
-			ImGui::ColorEdit3("Light color", &world->lightColor.x);
-			ImGui::DragFloat("Light power", &world->lightColor.w, 0.02f, 0.2f, 1000.0f);
-			ImGui::ColorEdit3("Ambient light", &renderSystem.programManager->g_freqLowFrag.ambientColor.x);
-			ImGui::DragFloat("Ambient scale", &renderSystem.programManager->g_freqLowFrag.ambientColor.w, 0.001f, 0.001f, 1.0f);
+			ImGui::ColorEdit3("Ambient light", &renderGlobals.ambientColor.r);
+			ImGui::DragFloat("Ambient scale", &renderGlobals.ambientScale, 0.001f, 0.001f, 1.0f);
 
 			renderSystem.RenderFrame(cmds);
-
-			world->spotLightParams.w = spotOn ? 1.0f : 0.0f;
 
 			while (SDL_PollEvent(&e) != SDL_FALSE)
 			{
@@ -215,27 +197,6 @@ namespace jsr {
 						break;
 					case SDLK_d:
 						mover[RIGHT] = true;
-						break;
-					case SDLK_0:
-						renderSystem.programManager->g_freqLowFrag.params.y = 0.0f;
-						break;
-					case SDLK_1:
-						renderSystem.programManager->g_freqLowFrag.params.y = 1.0f;
-						break;
-					case SDLK_2:
-						renderSystem.programManager->g_freqLowFrag.params.y = 2.0f;
-						break;
-					case SDLK_3:
-						renderSystem.programManager->g_freqLowFrag.params.y = 3.0f;
-						break;
-					case SDLK_4:
-						renderSystem.programManager->g_freqLowFrag.params.y = 4.0f;
-						break;
-					case SDLK_5:
-						renderSystem.programManager->g_freqLowFrag.params.y = 5.0f;
-						break;
-					case SDLK_6:
-						renderSystem.programManager->g_freqLowFrag.params.y = 6.0f;
 						break;
 					case SDLK_ESCAPE:
 						quit = true;
@@ -299,36 +260,30 @@ namespace jsr {
 		renderSystem.Shutdown();
 	}
 
-	int Engine::Run()
+	void Engine::GameLogic()
 	{
 		using namespace glm;
-		
+
 		int x, y;
 		renderSystem.backend->GetScreenSize(x, y);
-		
+
+		alignas(16) uboFreqLowVert_t vertUbo{};
+		alignas(16) uboFreqLowFrag_t fragUbo{};
+
 		//const float R = world->GetBounds().GetRadius() * 4.0f;
-		constexpr float R = 1000.0f;
+		constexpr float R = 500.0f;
 		mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, R);
 		mat4 viewMatrix = player.GetViewMatrix();
 		mat4 vpMatrix = projMatrix * viewMatrix;
 
-		viewDef_t* view = (viewDef_t *)R_FrameAlloc(sizeof(*view));
+		viewDef_t* view = (viewDef_t*)R_FrameAlloc(sizeof(*view));
 
 		view->exposure = world->exposure;
 		view->farClipDistance = R;
 		view->nearClipDistance = 0.1f;
-		view->lightColor = world->lightColor;
-		view->lightPos = vec4(player.Position + vec3(0.2f,0.3f,0.0f), 1.0f);
-		view->lightAttenuation = world->lightAttenuation;
-		view->spotLightDir = vec4(player.Front, 0.0f);
-		view->spotLightParams = vec4(
-			cos(radians(world->spotLightParams.x)),
-			cos(radians(world->spotLightParams.y)),
-			world->spotLightParams.z,
-			world->spotLightParams.w);
 
 		view->renderView.viewID = 1;
-		view->renderView.fov = radians(player.Zoom*1.5f);
+		view->renderView.fov = radians(player.Zoom * 1.5f);
 		view->renderView.vieworg = player.Position;
 		view->renderView.viewMatrix = viewMatrix;
 		view->projectionMatrix = projMatrix;
@@ -341,10 +296,26 @@ namespace jsr {
 		view->scissor = view->viewport;
 		view->renderWorld = world;
 
+		vertUbo.viewMatrix = view->renderView.viewMatrix;
+		vertUbo.projectMatrix = view->projectionMatrix;
+		fragUbo.nearFarClip = { view->nearClipDistance,view->farClipDistance,0.f,0.f };
+		fragUbo.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
+		fragUbo.params.x = view->exposure;
+		fragUbo.viewOrigin = vec4(0.f, 0.f, 0.f, 1.f);
+		fragUbo.invProjMatrix = view->unprojectionToCameraMatrix;
+		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
+
+		view->freqLowVert = renderSystem.vertexCache->AllocTransientUniform(&vertUbo, sizeof(vertUbo));
+		view->freqLowFrag = renderSystem.vertexCache->AllocTransientUniform(&fragUbo, sizeof(fragUbo));		
+
 		world->RenderView(view);
 		lastNumDrawSurf = view->numDrawSurfs;
 
+	}
 
+	int Engine::Run()
+	{
+		GameLogic();
 		return 0;
 	}
 }

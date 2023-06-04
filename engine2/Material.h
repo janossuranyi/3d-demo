@@ -15,24 +15,6 @@
 
 namespace jsr {
 
-	enum eCoverage
-	{
-		COVERAGE_SOLID,
-		COVERAGE_MASK,
-		COVERAGE_BLEND
-	};
-
-	enum eStageType
-	{
-		STAGE_GBUFFER,
-		STAGE_PRELIGHT,
-		STAGE_POSTLIGHT,
-		STAGE_SHADOW,
-		STAGE_PP,
-		STAGE_DEBUG,
-		STAGE_COUNT
-	};
-
 	struct stage_t
 	{
 		bool enabled;

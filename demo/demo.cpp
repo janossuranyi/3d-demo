@@ -28,9 +28,10 @@ int main(int argc, char** argv)
     engineConfig.r_resX = 1800;
     engineConfig.r_resY = 1000;
     engineConfig.r_fullscreen = 0;
+    engineConfig.r_vsync = 1;
 
     engineConfig.r_fbsrgb = false;
-#if 1
+#if 0
     engineConfig.r_debug = true;
 #else
     engineConfig.r_debug = false;

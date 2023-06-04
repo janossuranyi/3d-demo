@@ -6,6 +6,7 @@
 #include "./Math.h"
 #include "./RenderSystem.h"
 #include "./RenderWorld.h"
+#include "./RenderCommon.h"
 #include "./ImageManager.h"
 #include "./Material.h"
 #include "./Entity3D.h"
@@ -27,17 +28,11 @@ namespace jsr {
 
 	RenderWorld::RenderWorld() : gltf_state()
 	{
-		vertecCache = renderSystem.vertexCache;
+		vertexCache = renderSystem.vertexCache;
 		imageManager = renderSystem.imageManager;
 		modelManager = renderSystem.modelManager;
 		materialManager = renderSystem.materialManager;
 		exposure = 1.0f;
-		lightColor = { 1.0f,1.0f,1.0f,1.0f };
-		lightAttenuation = {1.0f,0.0f,1.0f,0.0f};
-		lightOrig = {};
-		spotLightDir = {};
-		spotLightParams = {};
-
 	}
 
 	RenderWorld::~RenderWorld()
@@ -157,7 +152,7 @@ namespace jsr {
 
 	struct
 	{
-		bool operator()(drawSurf_t* a, drawSurf_t* b) const { return (uint32)a->sort < (uint32)b->sort; }
+		bool operator()(const drawSurf_t* a, const drawSurf_t* b) const { return (uint32)a->sort < (uint32)b->sort; }
 	} drawSurfLess;
 
 	void RenderWorld::RenderView(viewDef_t* view)
@@ -180,11 +175,11 @@ namespace jsr {
 		if (view->numDrawSurfs)
 		{
 			// allocate drawSurf pointers
-			view->drawSurfs = (drawSurf_t**)R_FrameAlloc(view->numDrawSurfs * sizeof(view->drawSurfs));
+			view->drawSurfs = (const drawSurf_t**)R_FrameAlloc(view->numDrawSurfs * sizeof(view->drawSurfs));
 			int i = 0;
 			for (const auto* ent = view->viewEntites; ent != nullptr; ent = ent->next)
 			{
-				for (auto* drawSurf = ent->surf; drawSurf != nullptr; drawSurf = drawSurf->next)
+				for (const auto* drawSurf = ent->surf; drawSurf != nullptr; drawSurf = drawSurf->next)
 				{
 					view->drawSurfs[i++] = drawSurf;
 				}
@@ -461,7 +456,7 @@ namespace jsr {
 		int scene = map->defaultScene >= 0 ? map->defaultScene : 0;
 		for (int i = 0; i < map->scenes[scene].nodes.size(); ++i)
 		{
-			rootnodes.push_back(nodes[map->scenes[scene].nodes[i]]);
+			rootnodes.push_back(nodes[ gltfNodeToLocal[ map->scenes[scene].nodes[i] ] ]);
 		}
 	}
 
@@ -696,25 +691,43 @@ namespace jsr {
 		using namespace glm;
 
 		const mat4& viewMatrix = view->renderView.viewMatrix;
+		VertexCache& vc = *renderSystem.vertexCache;
+
+		alignas(16) uboFreqHighVert_t fastvert {};
+		alignas(16) uboFreqHighFrag_t fastfrag {};
 
 		if (node->GetEntity().IsLight())
 		{
 			Light* light = node->GetEntity().GetLight();
-			mat4 worldMatrix = node->GetLocalToWorldMatrix();
+
+			mat4 modelMatrix = node->GetLocalToWorldMatrix();
+			vec4 origin = modelMatrix[3];
+			mat4 worldMatrix = translate(mat4(1.0f), vec3(origin));
+			worldMatrix = scale(worldMatrix, vec3(light->opts.range));
+
 			mat4 modelViewMatrix = viewMatrix * worldMatrix;
 
 			Bounds lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
 			if (view->frustum.Intersects2(lightBounds))
 			{
+
 				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
 				e->next = view->viewLights;
-				e->origin = worldMatrix[3];
-				e->axis = mat3(worldMatrix);
+				e->origin = view->renderView.viewMatrix * origin;
+				e->axis = mat3(modelMatrix);
 				e->range = light->opts.range;
 				e->shader = light->GetShader();
 				e->color = light->opts.color.color;
 				e->remove = false;
 				view->viewLights = e;
+
+				fastvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMatrix;
+				fastvert.localToWorldMatrix = worldMatrix;
+				fastfrag.lightColor = light->opts.color.color;
+				fastfrag.lightAttenuation = vec4(e->range, light->opts.linearAttn, light->opts.expAttn, 0.0f);
+				fastfrag.lightOrigin = { e->origin,1.0f };
+				e->highFreqFrag = renderSystem.vertexCache->AllocTransientUniform(&fastfrag, sizeof(fastfrag));
+				e->highFreqVert = renderSystem.vertexCache->AllocTransientUniform(&fastvert, sizeof(fastvert));
 			}
 			return;
 		}
@@ -730,13 +743,17 @@ namespace jsr {
 		{
 			viewEntity_t* ent = (viewEntity_t*)R_FrameAlloc(sizeof(*ent));
 			auto* model = node->GetEntity().GetModel();
-
 			// entity chain
 			ent->next = view->viewEntites;
-			view->viewEntites = ent;
 			ent->modelMatrix = worldMatrix;
 			ent->modelViewMatrix = modelViewMatrix;
 			ent->mvp = view->projectionMatrix * ent->modelViewMatrix;
+			view->viewEntites = ent;
+
+			fastvert.localToWorldMatrix = worldMatrix;
+			fastvert.WVPMatrix = ent->mvp;
+			fastvert.normalMatrix = transpose(inverse(mat3(worldMatrix)));
+			ent->highFreqVert = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
 
 			for (int entSurf = 0; entSurf < model->GetNumSurface(); ++entSurf)
 			{
@@ -755,6 +772,22 @@ namespace jsr {
 					drawSurf->sort = static_cast<float>((surf->shader->GetId() << 24) - p.z);
 					drawSurf->next = ent->surf;
 					ent->surf = drawSurf;
+
+					for (int stage = 0; stage < STAGE_COUNT; ++stage)
+					{
+						const stage_t& stageref = surf->shader->GetStage(static_cast<eStageType>(stage));
+						if (stageref.enabled)
+						{
+							uint32 flg_x = (stageref.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
+							fastfrag.alphaCutoff.x = stageref.alphaCutoff;
+							fastfrag.matDiffuseFactor = stageref.diffuseScale;
+							fastfrag.matEmissiveFactor = stageref.emissiveScale;
+							fastfrag.matMRFactor.x = stageref.roughnessScale;
+							fastfrag.matMRFactor.y = stageref.metallicScale;
+							fastfrag.params.x = uintBitsToFloat(flg_x);
+							drawSurf->highFreqFrag[stage] = vc.AllocTransientUniform(&fastfrag, sizeof(fastfrag));
+						}
+					}
 
 					view->numDrawSurfs++;
 				}

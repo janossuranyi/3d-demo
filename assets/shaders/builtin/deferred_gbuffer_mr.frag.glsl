@@ -2,15 +2,9 @@
 @include "common.inc.glsl"
 @include "fragment_uniforms.inc.glsl"
 
-//#define STOREZ_V1
-
 in INTERFACE
 {
-#ifdef STOREZ_V1
-    vec2 depthCS;
-#else
     vec4 positionVS;
-#endif
     vec2 texCoord;
     vec4 color;
     vec4 tangent;
@@ -55,7 +49,7 @@ void main()
         vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
         vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);
         inputs.tbn      = mat3(localTangent,derivedBitangent,localNormal);
-        inputs.normal   = (inputs.tbn * normalTS);
+        inputs.normal   = inputs.tbn * normalTS;
     }
 
     inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
@@ -71,11 +65,7 @@ void main()
 
     inputs.samplePBR        = texture( tAORM, In.texCoord ).yzxw * vec4(gRoughnessFactor, gMetallicFactor, 1.0, 1.0);
 
-#ifdef STOREZ_V1
-    outFragPos.x = In.depthCS.x / In.depthCS.y;
-#else
     outFragPos.x = -In.positionVS.z / gFarClipDistance;
-#endif
     outAlbedo    = inputs.sampleAmbient;
     outSpec      = inputs.samplePBR;
     outNormal    = (1.0 + inputs.normal) * 0.5;

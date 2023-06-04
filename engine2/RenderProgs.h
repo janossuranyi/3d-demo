@@ -9,7 +9,6 @@
 namespace jsr {
 
 	const unsigned int INVALID_PROGRAM = 0xFFFF;
-	const int SHADER_UNIFORMS_BINDING = 4;
 
 #define gShadowBias shadowparams.z
 #define gShadowScale shadowparams.y
@@ -25,44 +24,6 @@ namespace jsr {
 #define gConstantAttnFactor lightAttenuation.x
 #define gLinearAttnFactor lightAttenuation.y
 #define gQuadraticAttnFactor lightAttenuation.z
-
-	// must be synchronized with uniforms.inc.glsl
-	struct uboUniforms_t
-	{
-		alignas(16)
-		glm::mat4 localToWorldMatrix;
-		glm::mat4 WVPMatrix;
-		glm::mat4 normalMatrix;
-		glm::mat4 lightProjMatrix;
-		glm::vec4 viewOrigin;
-		glm::vec4 matDiffuseFactor;
-		glm::vec4 matMRFactor;
-		glm::vec4 alphaCutoff;
-		glm::vec4 debugFlags;
-		glm::vec4 nearFarClip;
-		// params.x = FLAG_X_ *
-		// params.y = exposure
-		// params.z = 1/Shadow resolution
-		glm::vec4 params;
-		glm::vec4 shadowparams;
-		glm::vec4 lightOrig;
-		glm::vec4 lightColor;
-		glm::vec4 lightAttenuation;
-		// spotLightParams
-		// x = spotCosCutoff
-		// y = spotCosInnerCutoff
-		// z = spotExponent
-		glm::vec4 spotLightParams;
-		glm::vec4 spotDirection;
-	};
-
-	enum eUboBufferBindingBit
-	{
-		UB_FREQ_LOW_VERT_BIT = 1,
-		UB_FREQ_HIGH_VERT_BIT = 2,
-		UB_FREQ_LOW_FRAG_BIT = 4,
-		UB_FREQ_HIGH_FRAG_BIT = 8
-	};
 
 	enum eUboBufferBinding
 	{
@@ -151,28 +112,12 @@ namespace jsr {
 		bool LowLevelInit();
 		bool IsInitialized() const { return initialized; }
 		void UseProgram(eShaderProg program);
-		void UniformChanged(unsigned int b);
-		void UpdateUniforms();
-		void BindUniforms();
-		uboUniforms_t			uniforms;
-
-		uboFreqLowVert_t		g_freqLowVert;
-		uboFreqHighVert_t		g_freqHighVert;
-		uboFreqLowFrag_t		g_freqLowFrag;
-		uboFreqHighFrag_t		g_freqHighFrag;
+		void BindUniformBlock(eUboBufferBinding binding, const UniformBuffer& buffer);
+		void BindUniformBlock(eUboBufferBinding binding, vertCacheHandle_t handle);
 
 	private:
 		unsigned int			currentProgram;
 		bool					initialized;
-		vertCacheHandle_t		uniformsCache;
-
-		vertCacheHandle_t		c_freqLowVert;
-		vertCacheHandle_t		c_freqHighVert;
-		vertCacheHandle_t		c_freqLowFrag;
-		vertCacheHandle_t		c_freqHighFrag;
-
-		unsigned int			uboChangedBits;
-
 		static renderProgram_t	builtins[PRG_COUNT];
 
 		bool CreateBuiltinProgram(renderProgram_t& p);

@@ -69,4 +69,32 @@ namespace jsr {
 	{
 		return currenttmu;
 	}
+	bool blendingState_t::operator==(const blendingState_t& other) const
+	{
+		return memcmp(this, &other, sizeof(other)) == 0;
+	}
+	bool blendingState_t::operator!=(const blendingState_t& other) const
+	{
+		return memcmp(this, &other, sizeof(other)) != 0;
+	}
+	bool blendingState_t::operator()(const blendingState_t* a, const blendingState_t* b) const
+	{
+		return memcmp(a, b, sizeof(this)) < 0;
+	}
+	bool depthState_t::operator==(const depthState_t& other) const
+	{
+		return enabled == other.enabled && depthMask == other.depthMask && func == other.func;
+	}
+	bool depthState_t::operator!=(const depthState_t& other) const
+	{
+		return !operator==(other);
+	}
+	bool rasterizerState_t::operator==(const rasterizerState_t& other) const
+	{
+		return fillMode == other.fillMode && currentCullMode == other.currentCullMode && cullEnabled == other.cullEnabled;
+	}
+	bool rasterizerState_t::operator!=(const rasterizerState_t& other) const
+	{
+		return !operator==(other);
+	}
 }

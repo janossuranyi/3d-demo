@@ -254,8 +254,8 @@ namespace jsr {
 		// Setup default GL states
 		glEnable(GL_DEPTH_TEST);
 
-		glcontext.currentCullMode = CULL_NONE;
-		glcontext.cullEnabled = false;
+		glcontext.rasterizer.currentCullMode = CULL_NONE;
+		glcontext.rasterizer.cullEnabled = false;
 		glCullFace(GL_BACK);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_BLEND);
@@ -276,6 +276,13 @@ namespace jsr {
 		{
 			glDisable(GL_FRAMEBUFFER_SRGB);
 		}
+		glcontext.blendState.alphaDst = BFUNC_ZERO;
+		glcontext.blendState.colDst = BFUNC_ZERO;
+		glcontext.blendState.alphaSrc = BFUNC_ONE;
+		glcontext.blendState.colSrc = BFUNC_ONE;
+		glcontext.blendState.colorOp = BOP_ADD;
+		glcontext.blendState.alphaOp = BOP_ADD;
+		glcontext.blendState.enabled = false;
 
 		// end
 		if (engineConfig.r_debug && glconfig.extensions.count("GL_ARB_debug_output"))
@@ -383,47 +390,16 @@ namespace jsr {
 		GetScreenSize(x, y);
 		SetClearColor(0.f, 0.f, 0.f, 1.0f);
 
-		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_VERT_BIT | UB_FREQ_LOW_FRAG_BIT | UB_FREQ_HIGH_FRAG_BIT);
-
-		vec3 lightDir = view->spotLightDir;
-		vec3 lightPos = view->lightPos;
-
+		/**
 		mat4 lightProj = perspective(view->renderView.fov, 1.0f, view->nearClipDistance, view->farClipDistance);
 		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
 		mat4 lightViewProj = lightProj * lightView;
+		**/
 
-		auto& slowvert = renderSystem.programManager->g_freqLowVert;
-		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
-		auto& fastfrag = renderSystem.programManager->g_freqHighFrag;
-
-		slowvert.viewMatrix = view->renderView.viewMatrix;
-		slowvert.projectMatrix = view->projectionMatrix;
-		slowvert.lightProjMatrix = lightViewProj;
-
-		slowfrag.nearFarClip = { view->nearClipDistance,view->farClipDistance,0.f,0.f };
-		slowfrag.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
-		slowfrag.shadowparams = { 1.0f / (float)renderGlobals.shadowResolution,renderGlobals.shadowScale,renderGlobals.shadowBias,0.0f };
-		slowfrag.params.x = view->exposure;
-		slowfrag.viewOrigin = vec4(0.f,0.f,0.f, 1.f);
-		slowfrag.invProjMatrix = view->unprojectionToCameraMatrix;
-//		slowfrag.ambientColor = vec4(vec3(0.005f), 1.0f);
-
-		fastfrag.lightOrigin = view->lightPos;
-		fastfrag.lightColor = view->lightColor;
-		fastfrag.spotLightParams = view->spotLightParams;
-		fastfrag.lightAttenuation = view->lightAttenuation;
-		fastfrag.spotDirection = view->spotLightDir;
-
-		/*
-		SetClearColor(slowfrag.ambientColor);
-		RenderShadow();
-		RenderDepthPass();
-		RenderDebugPass();
-		*/
-		
+		renderSystem.programManager->BindUniformBlock(UBB_FREQ_LOW_VERT, view->freqLowVert);
+		renderSystem.programManager->BindUniformBlock(UBB_FREQ_LOW_FRAG, view->freqLowFrag);
 
 		RenderDeferred_GBuffer();
-		RenderShadow();
 		RenderDeferred_Lighting();
 		RenderHDRtoLDR();
 #if 0
@@ -481,18 +457,18 @@ namespace jsr {
 	}
 	void RenderBackend::SetCullMode(eCullMode mode)
 	{
-		if (mode != glcontext.currentCullMode)
+		if (mode != glcontext.rasterizer.currentCullMode)
 		{
-			glcontext.currentCullMode = mode;
-			if (mode == CULL_NONE && glcontext.cullEnabled)
+			glcontext.rasterizer.currentCullMode = mode;
+			if (mode == CULL_NONE && glcontext.rasterizer.cullEnabled)
 			{
 				glDisable(GL_CULL_FACE);
-				glcontext.cullEnabled = false;
+				glcontext.rasterizer.cullEnabled = false;
 			}
-			else if (mode != CULL_NONE && !glcontext.cullEnabled)
+			else if (mode != CULL_NONE && !glcontext.rasterizer.cullEnabled)
 			{
 				glEnable(GL_CULL_FACE);
-				glcontext.cullEnabled = true;
+				glcontext.rasterizer.cullEnabled = true;
 			}
 
 			switch (mode)
@@ -513,8 +489,6 @@ namespace jsr {
 		renderSystem.vertexCache->BindVertexBuffer(surf->vertexCache, 0, sizeof(drawVert_t));
 		renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
 
-		renderSystem.programManager->UpdateUniforms();
-
 		IndexBuffer idx;
 		renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
 		const GLenum mode = surf->frontEndGeo ? GL_map_topology(surf->frontEndGeo->topology) : GL_TRIANGLES;
@@ -527,81 +501,13 @@ namespace jsr {
 		perfCounters.drawElements++;
 		perfCounters.drawIndexes += surf->numIndex;
 	}
-
-	void RenderBackend::RenderDebugPass()
-	{
-		using namespace glm;
-
-		glDepthMask(GL_FALSE);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		Clear(true, false, false);
-
-		const drawSurf_t* surf;
-		SetCurrentTextureUnit(IMU_SHADOW);
-		globalImages.Shadow->Bind();
-
-		vec3 lightDir = view->spotLightDir;
-		vec3 lightPos = view->lightPos;
-
-		mat4 lightProj = perspective(view->renderView.fov, 1.0f, view->nearClipDistance, view->farClipDistance);
-		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
-		mat4 lightViewProj = lightProj * lightView;
-
-		for (int pass = 0; pass < 2; ++pass)
-		{
-			for (int i = 0; i < view->numDrawSurfs; ++i)
-			{
-				surf = view->drawSurfs[i];
-				const Material* shader = surf->shader;
-				if (!shader || shader->IsEmpty()) continue;
-				if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
-				const stage_t& stage = shader->GetStage(STAGE_DEBUG);
-
-				if (stage.coverage != COVERAGE_SOLID && stage.coverage != COVERAGE_MASK) continue;
-				if (pass == 0 && stage.coverage != COVERAGE_SOLID) continue;
-				if (pass == 1 && stage.coverage == COVERAGE_SOLID) continue;
-
-				renderSystem.programManager->UseProgram(stage.shader);
-
-				// setup textures
-				for (int j = 0; j < IMU_COUNT; ++j)
-				{
-					if (stage.images[j])
-					{
-						renderSystem.backend->SetCurrentTextureUnit(j);
-						stage.images[j]->Bind();
-					}
-				}
-
-				mat4 normalMatrix = transpose(inverse(mat3(surf->space->modelMatrix)));
-				uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
-
-				renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
-				auto& highvert = renderSystem.programManager->g_freqHighVert;
-				auto& highfrag = renderSystem.programManager->g_freqHighFrag;
-				highvert.localToWorldMatrix = surf->space->modelMatrix;
-				highvert.normalMatrix = normalMatrix;
-				highvert.WVPMatrix = surf->space->mvp;
-				highfrag.params.x = uintBitsToFloat(flg_x);
-				highfrag.matDiffuseFactor = stage.diffuseScale;
-				highfrag.matMRFactor.x = stage.roughnessScale;
-				highfrag.matMRFactor.y = stage.metallicScale;
-				highfrag.matEmissiveFactor = stage.emissiveScale;
-
-				SetCullMode(stage.cullMode);
-
-				R_DrawSurf(surf);
-			}
-		}
-	}
-
 	void RenderBackend::RenderDepthPass()
 	{
 		using namespace glm;
 
 		if (view == nullptr) return;
 
-		glViewport(0, 0, view->scissor.w, view->scissor.h);
+		glViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
 		glDepthMask(GL_TRUE);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
@@ -619,12 +525,10 @@ namespace jsr {
 			if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
 			const stage_t& stage = shader->GetStage(STAGE_DEBUG);
 			if (stage.coverage != COVERAGE_SOLID) continue;
+
 			SetCullMode(stage.cullMode);
 
-			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT);
-			auto& highvert = renderSystem.programManager->g_freqHighVert;
-			highvert.localToWorldMatrix = surf->space->modelMatrix;
-			highvert.WVPMatrix = surf->space->mvp;
+			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
 
 			R_DrawSurf(surf);
 		}
@@ -643,8 +547,8 @@ namespace jsr {
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 		glEnable(GL_CULL_FACE);
 
-		vec3 lightDir = view->spotLightDir;
-		vec3 lightPos = view->lightPos;
+		vec3 lightDir = { 0,0,-1 };
+		vec3 lightPos = { 0,0,0 };
 
 		mat4 lightProj = perspective(view->renderView.fov, 1.0f, view->nearClipDistance, view->farClipDistance);
 		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
@@ -670,9 +574,6 @@ namespace jsr {
 				|| stage.images[IMU_EMMISIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
 				**/
 
-			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT|UB_FREQ_HIGH_FRAG_BIT);
-			renderSystem.programManager->g_freqHighVert.WVPMatrix = lightViewProj * surf->space->modelMatrix;
-			renderSystem.programManager->g_freqHighFrag.lightProjMatrix = lightViewProj;
 			R_DrawSurf(surf);
 		}
 
@@ -688,13 +589,11 @@ namespace jsr {
 		globalFramebuffers.GBufferFBO->Bind();
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_GBUFFER_MR);
 
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LEQUAL);
+		GL_CHECK(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+		GL_CHECK(glDepthMask(GL_TRUE));
+		GL_CHECK(glDepthFunc(GL_LEQUAL));
 
-		int x, y;
-		renderSystem.backend->GetScreenSize(x, y);
-		GL_CHECK(glViewport(0, 0, x, y));
+		GL_CHECK(glViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h));
 
 		Clear(true, true, false);
 
@@ -703,6 +602,8 @@ namespace jsr {
 
 		const drawSurf_t* surf;
 
+		const eStageType ACTIVE_STAGE = STAGE_DEBUG;
+
 		for (int k = 0; k < 2; ++k)
 		{
 			for (int i = 0; i < view->numDrawSurfs; ++i)
@@ -710,17 +611,15 @@ namespace jsr {
 				surf = view->drawSurfs[i];
 				const Material* shader = surf->shader;
 				if (!shader || shader->IsEmpty()) continue;
-				if (shader->GetStage(STAGE_DEBUG).enabled == false) continue;
-				const stage_t& stage = shader->GetStage(STAGE_DEBUG);
+				if (shader->GetStage(ACTIVE_STAGE).enabled == false) continue;
+				const stage_t& stage = shader->GetStage(ACTIVE_STAGE);
 
 				if (k == 0 && stage.coverage != COVERAGE_SOLID) continue;
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
-				if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f)))
-					|| stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
 
-				//		renderSystem.programManager->UseProgram(stage.shader);
-
-						// setup textures
+				if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
+				
+				// setup textures
 				for (int j = 0; j < IMU_COUNT; ++j)
 				{
 					if (stage.images[j])
@@ -730,25 +629,10 @@ namespace jsr {
 					}
 				}
 
-				//const mat4& viewMatrix = view->renderView.viewMatrix;
-				const mat4& modelMatrix = surf->space->modelMatrix;
-				const mat4 normalMatrix = transpose(inverse(mat3(modelMatrix)));
-
-				uint32 flg_x = (stage.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
-
-				renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
-				auto& highvert = renderSystem.programManager->g_freqHighVert;
-				auto& highfrag = renderSystem.programManager->g_freqHighFrag;
-				highvert.localToWorldMatrix = modelMatrix;
-				highvert.normalMatrix = normalMatrix;
-				highvert.WVPMatrix = surf->space->mvp;
-				highfrag.matDiffuseFactor = stage.diffuseScale;
-				highfrag.matMRFactor.x = stage.roughnessScale;
-				highfrag.matMRFactor.y = stage.metallicScale;
-				highfrag.alphaCutoff.x = stage.alphaCutoff;
-				highfrag.params.x = uintBitsToFloat(flg_x);
-
 				SetCullMode(stage.cullMode);
+
+				renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
+				renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, surf->highFreqFrag[ACTIVE_STAGE]);
 
 				R_DrawSurf(surf);
 			}
@@ -759,10 +643,8 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		int w, h;
-		GetScreenSize(w, h);
-		glViewport(0, 0, w, h);
-		
+		GL_CHECK(glViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h));
+
 		globalFramebuffers.hdrFBO->Bind();
 		
 		//globalFramebuffers.GBufferFBO->BindForReading();
@@ -786,14 +668,6 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_SHADOW);
 		globalImages.Shadow->Bind();
 
-		auto& highvert = renderSystem.programManager->g_freqHighVert;
-		auto& highfrag = renderSystem.programManager->g_freqHighFrag;
-		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
-
-
-		renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT | UB_FREQ_LOW_FRAG_BIT);
-		highvert.WVPMatrix = glm::mat4(1.0f);
-		highfrag.lightProjMatrix = renderSystem.programManager->g_freqLowVert.lightProjMatrix;
 		SetCullMode(CULL_NONE);
 
 //		R_DrawSurf(&unitRectSurface);
@@ -801,28 +675,16 @@ namespace jsr {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 
-		vec4 oldShadow = slowfrag.shadowparams;
-		slowfrag.shadowparams.y = 0.0f;
-
-		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_FRAG_BIT);
 		SetCullMode(CULL_FRONT);
 
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
-			renderSystem.programManager->UniformChanged(UB_FREQ_HIGH_VERT_BIT | UB_FREQ_HIGH_FRAG_BIT);
+			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
+			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
 
-			mat4 worldMtx = translate(mat4(1.0f), light->origin);
-			worldMtx = scale(worldMtx, vec3(light->range));
-			highvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMtx;
-			highvert.localToWorldMatrix = worldMtx;
-			highfrag.lightColor = light->color;
-			highfrag.lightOrigin = view->renderView.viewMatrix * vec4(light->origin,1.0f);
-			highfrag.lightAttenuation.x = light->range;
 			R_DrawSurf(&unitSphereSurface);
 		}
-		slowfrag.shadowparams = oldShadow;
 		glDisable(GL_BLEND);
-
 	}
 
 	void RenderBackend::RenderHDRtoLDR()
@@ -837,16 +699,19 @@ namespace jsr {
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		SetCullMode(CULL_NONE);
 
-		renderSystem.programManager->UniformChanged(UB_FREQ_LOW_FRAG_BIT);
 		Framebuffer::Unbind();
 		SetCurrentTextureUnit(IMU_HDR);
 		globalImages.HDRaccum->Bind();
 		SetCurrentTextureUnit(IMU_DIFFUSE);
 		globalImages.GBufferAlbedo->Bind();
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
-		auto& slowfrag = renderSystem.programManager->g_freqLowFrag;
-		slowfrag.params.x = view->exposure;
 		R_DrawSurf(&unitRectSurface);
+	}
+
+	void RenderBackend::RenderDebugPass()
+	{
+		using namespace glm;
+
 	}
 
 	void RenderBackend::EndFrame()

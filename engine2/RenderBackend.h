@@ -10,6 +10,12 @@ namespace jsr {
 	const int MAX_TEXTURE_UNITS = 14;
 	const int MAX_BINDING = 8;
 
+	enum eFillMode
+	{
+		FM_SOLID,
+		FM_WIREFRAME
+	};
+
 	enum eRenderCommand
 	{
 		RC_NOP,
@@ -32,12 +38,35 @@ namespace jsr {
 
 	struct rasterizerState_t
 	{
+		eFillMode		fillMode;
+		eCullMode		currentCullMode;
+		bool			cullEnabled;
+		bool operator==(const rasterizerState_t& other) const;
+		bool operator!=(const rasterizerState_t& other) const;
+	};
 
+	struct depthState_t
+	{
+		bool	enabled;
+		bool	depthMask;
+		eCompOp	func;
+		bool operator==(const depthState_t& other) const;
+		bool operator!=(const depthState_t& other) const;
 	};
 
 	struct blendingState_t
 	{
+		bool enabled;
+		eBlendFunc colSrc;
+		eBlendFunc colDst;
+		eBlendFunc alphaSrc;
+		eBlendFunc alphaDst;
+		eBlendOp colorOp;
+		eBlendOp alphaOp;
 
+		bool operator==(const blendingState_t& other) const;
+		bool operator!=(const blendingState_t& other) const;
+		bool operator()(const blendingState_t* a, const blendingState_t* b) const;
 	};
 
 	struct backendCounters_t
@@ -58,7 +87,9 @@ namespace jsr {
 		unsigned int buffer;
 		unsigned int offset;
 		unsigned int stride;
+		bool operator==(const bufferBinding_t& other) const;
 	};
+
 
 	struct glcontext_t
 	{
@@ -68,11 +99,14 @@ namespace jsr {
 		unsigned int	currentIndexBuffer;
 		unsigned int	currentFramebuffer;
 		unsigned int	currentReadFramebuffer;
-		eCullMode		currentCullMode;
-		bool			cullEnabled;
+		glm::bvec4		writeMask;
+		glm::vec4		clearColor;
 		eVertexLayout	currentVertexLayout;
+		blendingState_t blendState;
+		depthState_t	depthState;
 		bufferBinding_t vtxBindings[MAX_BINDING];
 		bufferBinding_t uboBindings[MAX_BINDING];
+		rasterizerState_t rasterizer;
 	};
 
 	extern glcontext_t glcontext;

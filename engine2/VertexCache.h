@@ -29,9 +29,9 @@ namespace jsr {
 		int					vertexMaxSize;
 		int					indexMaxSize;
 		int					uniformMaxSize;
-		byte* vertexPtr;
-		byte* indexPtr;
-		byte* uniformsPtr;
+		byte* pVerts;
+		byte* pIndexes;
+		byte* pUniforms;
 	};
 
 	class VertexCache {
@@ -73,10 +73,17 @@ namespace jsr {
 		int transientCacheSize{};
 		int transientUboCacheSize{};
 		int activeFrame{ 0 };
-		int renderFrame{ 1 };
-		int listNum{ 0 };
+		int renderBufferSet{ 1 };
+		int activeBufferSet{ 0 };
 		int uniformBufferAligment{};
 		int uniformBufferAligmentBits{};
+		int maxStaticVertex{};
+		int maxStaticIndex{};
+		int maxStaticUniform{};
+		int maxTransientVertex{};
+		int maxTransientIndex{};
+		int maxTransientUniform{};
+
 		bool initialized{};
 		geoBufferSet_t staticBufferSet{};
 		geoBufferSet_t transientBufferSet[JSE_VERTEX_CACHE_FRAMES]{};

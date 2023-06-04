@@ -6,7 +6,6 @@ out vec3 hdrColor;
 
 in INTERFACE
 {
-    vec2 texCoord;
     vec4 positionVS;
 } In;
 
@@ -33,9 +32,6 @@ layout(binding = IMU_SHADOW)    uniform sampler2DShadow tShadow;
 float ApproxPow ( float fBase, float fPower ) {
 	return asfloat( uint( fPower * float( asuint( fBase ) ) - ( fPower - 1 ) * 127 * ( 1 << 23 ) ) );
 }
-
-vec3 Gamma(vec3 c) { return pow(c, vec3(1.0/2.2)); }
-
 vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 	//const float baked_spec_occl = saturate( 50.0 * dot( f0, vec3( 0.3333 ) ) );
 	return f0 + ( 1.0 - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );

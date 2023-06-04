@@ -28,6 +28,7 @@ namespace jsr {
 		bool LoadWorld(const std::string& filename);
 		void MainLoop();
 		void Shutdown();
+		void GameLogic();
 		int Run() override;
 
 		Camera player{};
