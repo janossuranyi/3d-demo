@@ -167,7 +167,7 @@ namespace jsr {
 	{
 		viewLight_t*	next;
 		glm::vec3		origin;	// view space position
-		glm::mat3		axis;
+		glm::vec3		axis;
 		glm::vec4		color;
 		float			range;
 		eShaderProg		shader;

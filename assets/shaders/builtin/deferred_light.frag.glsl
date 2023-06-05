@@ -128,11 +128,16 @@ void main()
             inputs.attenuation *= spotAttenuation;
         }
 
+        float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
+        
+        inputs.attenuation *= NdotL;
+
+        if (inputs.attenuation * g_freqHighFrag.lightColor.w < 0.005) discard;
+
         vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.y );
         vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.x);
         vec3 F = spec.rgb;
         float Ks = spec.w;
-        float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
 
         float shadow = 1.0;
         if (gShadowScale > 0.0)
@@ -143,8 +148,7 @@ void main()
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.y);
 
-        vec3 light = NdotL * inputs.lightColor * inputs.attenuation * shadow;
-        finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * light;
+        finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * inputs.lightColor * inputs.attenuation * shadow;
         //finalColor = max( inputs.fragPos.xyz, 0.01);
         //finalColor = vec3(1.0) - exp(-finalColor * gExposure);
     }

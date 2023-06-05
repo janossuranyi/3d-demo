@@ -434,6 +434,7 @@ namespace jsr {
 				auto it = gnode.extensions.find("KHR_lights_punctual");
 				int idx = it->second.Get("light").GetNumberAsInt();
 				node->GetEntity().SetValue( lights[ gltf_state->map_light_idx[ idx ] ] );
+				lights[gltf_state->map_light_idx[idx]]->SetNode(node);
 			}
 			else
 			{
@@ -702,8 +703,7 @@ namespace jsr {
 
 			mat4 modelMatrix = node->GetLocalToWorldMatrix();
 			vec4 origin = modelMatrix[3];
-			mat4 worldMatrix = translate(mat4(1.0f), vec3(origin));
-			worldMatrix = scale(worldMatrix, vec3(light->opts.range));
+			mat4 worldMatrix = scale(modelMatrix, vec3(light->opts.range));
 
 			mat4 modelViewMatrix = viewMatrix * worldMatrix;
 
@@ -714,18 +714,26 @@ namespace jsr {
 				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
 				e->next = view->viewLights;
 				e->origin = view->renderView.viewMatrix * origin;
-				e->axis = mat3(modelMatrix);
+				e->axis = viewMatrix * mat4(node->GetDir()) * vec4(0.0f, 0.0f, -1.0f, 0.0f);
 				e->range = light->opts.range;
 				e->shader = light->GetShader();
 				e->color = light->opts.color.color;
 				e->remove = false;
 				view->viewLights = e;
 
-				fastvert.WVPMatrix = view->projectionMatrix * view->renderView.viewMatrix * worldMatrix;
+				fastvert.WVPMatrix = view->projectionMatrix * modelViewMatrix;
 				fastvert.localToWorldMatrix = worldMatrix;
 				fastfrag.lightColor = light->opts.color.color;
 				fastfrag.lightAttenuation = vec4(e->range, light->opts.linearAttn, light->opts.expAttn, 0.0f);
 				fastfrag.lightOrigin = { e->origin,1.0f };
+				if (light->GetType() == LIGHT_SPOT)
+				{
+					fastfrag.spotLightParams.w = 1.0f;
+					fastfrag.spotLightParams.x = cos(light->opts.outerConeAngle);
+					fastfrag.spotLightParams.y = cos(light->opts.innerConeAngle);
+					fastfrag.spotLightParams.z = 5.0f;
+					fastfrag.spotDirection = { e->axis,0.0f };
+				}
 				e->highFreqFrag = renderSystem.vertexCache->AllocTransientUniform(&fastfrag, sizeof(fastfrag));
 				e->highFreqVert = renderSystem.vertexCache->AllocTransientUniform(&fastvert, sizeof(fastvert));
 			}

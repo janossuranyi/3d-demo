@@ -49,7 +49,7 @@ namespace jsr {
 
 	mat4 const& Node3D::GetLocalToWorldMatrix()
 	{
-		static mat4 IDENT(1.0f);
+		static const mat4 IDENT(1.0f);
 
 		if (changed)
 		{
