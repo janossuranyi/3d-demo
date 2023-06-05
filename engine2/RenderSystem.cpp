@@ -1,11 +1,12 @@
 #include <imgui.h>
+#include <tiny_obj_loader.h>
 #include "./System.h"
 #include "./Heap.h"
 #include "./RenderBackend.h"
 #include "./RenderSystem.h"
 #include "./FrameBuffer.h"
 #include "./Logger.h"
-
+#include "./Resources.h"
 
 #define ON_FLIGHT_FRAMES 2
 
@@ -17,6 +18,7 @@ namespace jsr {
 	surface_t* R_MakeFullScreenRect();
 	surface_t* R_MakeZeroOneCube();
 	surface_t* R_MakeZeroOneSphere();
+	surface_t* R_MakeZeroOneCone();
 	void R_CreateSurfFromTris(drawSurf_t& surf, surface_t& tris);
 
 	const size_t DEFAULT_FRAME_MEM_SIZE = 16 * 1024 * 1024;
@@ -96,6 +98,7 @@ namespace jsr {
 		unitRectTris = R_MakeFullScreenRect();
 		unitCubeTris = R_MakeZeroOneCube();
 		unitSphereTris = R_MakeZeroOneSphere();
+		R_MakeZeroOneCone();
 
 		defaultMaterial = materialManager->CreateMaterial("_defaultMaterial");
 		stage_t& s = defaultMaterial->GetStage(STAGE_DEBUG);
@@ -470,6 +473,50 @@ R_MakeZeroOneCubeTris
 		}
 
 		return tri;
+	}
+
+	surface_t* R_MakeZeroOneCone()
+	{
+		using namespace tinyobj;
+		using namespace glm;
+
+		attrib_t attrib;
+		std::vector<shape_t> shapes;
+		std::vector<material_t> materials;
+		std::string warn;
+		std::string err;
+
+		if (tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, ResourceManager::instance.GetResource("models/unitcone.obj").c_str()))
+		{
+			if (shapes.empty()) return nullptr;
+
+			surface_t* tri = new (MemAlloc(sizeof(*tri))) surface_t();
+			memset(tri, 0, sizeof(*tri));
+			tri->numVerts = attrib.vertices.size();
+			const int vertexSize = tri->numVerts * sizeof(tri->verts[0]);
+			const int allocatedVertexBytes = ALIGN(vertexSize);
+			tri->verts = (drawVert_t*)MemAlloc16(allocatedVertexBytes);
+			tri->numIndexes = shapes[0].mesh.indices.size();
+			const int indexSize = tri->numIndexes * sizeof(tri->indexes[0]);
+			const int allocatedIndexBytes = ALIGN(indexSize);
+			tri->indexes = (elementIndex_t*)MemAlloc16(allocatedIndexBytes);
+
+			for (auto i = 0; i < attrib.vertices.size() / 3; ++i)
+			{
+				tri->verts[i].SetPos(&attrib.vertices[i * 3]);
+			}
+
+			const auto& shape = shapes[0];
+			for (int f = 0; f < shape.mesh.indices.size() / 3; ++f)
+			{
+				auto idx0 = shape.mesh.indices[3 * f + 0];
+				auto idx1 = shape.mesh.indices[3 * f + 1];
+				auto idx2 = shape.mesh.indices[3 * f + 2];
+
+			}
+
+		}
+		return nullptr;
 	}
 
 	void R_CreateSurfFromTris(drawSurf_t& surf, surface_t& tris)
