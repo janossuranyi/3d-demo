@@ -113,6 +113,11 @@ namespace jsr {
 		return entity;
 	}
 
+	const Entity3D& Node3D::GetEntity() const
+	{
+		return entity;
+	}
+
 	std::string Node3D::GetName() const
 	{
 		return name;

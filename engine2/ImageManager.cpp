@@ -63,7 +63,7 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferFragPos allocation failed !");
 		}
 
-		opts.format = IMF_RGBA;
+		opts.format = IMF_RGBA16F;
 		opts.usage = IMU_NORMAL;
 		if (!globalImages.GBufferNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{

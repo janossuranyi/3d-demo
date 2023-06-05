@@ -9,7 +9,7 @@ layout(location = 4) in vec4 in_Color;
 
 out INTERFACE
 {
-    vec4 positionVS;
+    vec3 positionVS;
     vec2 texCoord;
     vec4 color;
     vec4 tangent;
@@ -27,7 +27,7 @@ void main()
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 
-    Out.positionVS  = gViewMatrix * g_freqHighVert.localToWorldMatrix * in_Position;
+    Out.positionVS  = vec3(gViewMatrix * g_freqHighVert.localToWorldMatrix * in_Position);
     Out.color       = in_Color;
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);

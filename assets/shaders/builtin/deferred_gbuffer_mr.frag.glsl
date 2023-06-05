@@ -4,7 +4,7 @@
 
 in INTERFACE
 {
-    vec4 positionVS;
+    vec3 positionVS;
     vec2 texCoord;
     vec4 color;
     vec4 tangent;
@@ -12,7 +12,7 @@ in INTERFACE
 } In;
 
 layout(location = 0) out vec4 outAlbedo;
-layout(location = 1) out vec3 outNormal;
+layout(location = 1) out vec4 outNormal;
 layout(location = 2) out vec4 outSpec;
 layout(location = 3) out vec4 outFragPos;
 
@@ -63,10 +63,11 @@ void main()
         }
     }
 
-    inputs.samplePBR        = texture( tAORM, In.texCoord ).yzxw * vec4(gRoughnessFactor, gMetallicFactor, 1.0, 1.0);
+    inputs.samplePBR = texture( tAORM, In.texCoord ).yzxw * vec4(gRoughnessFactor, gMetallicFactor, 1.0, 1.0);
 
     outFragPos.x = -In.positionVS.z / gFarClipDistance;
     outAlbedo    = inputs.sampleAmbient;
     outSpec      = inputs.samplePBR;
-    outNormal    = (1.0 + inputs.normal) * 0.5;
+    //outNormal    = inputs.normal;
+    outNormal    = vec4((1.0 + inputs.normal) * 0.5, 1.0);
 }

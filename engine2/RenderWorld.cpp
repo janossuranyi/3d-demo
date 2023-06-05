@@ -495,9 +495,9 @@ namespace jsr {
 			// watt = Ln * 4PI / 683
 			float watts = .05f * (static_cast<float>(e.intensity) * glm::pi<float>() * 4.0f) / 683.0f;
 			light->SetName(e.name);
-			light->opts.color = lightColor_t{ glm::make_vec3((double*)e.color.data()), watts};
+			light->opts.color = lightColor_t{ glm::make_vec3(e.color.data()), watts};
 			light->opts.expAttn = renderGlobals.defaultExpAttn;
-			light->opts.linearAttn = 0.0f;
+			light->opts.linearAttn = renderGlobals.defaultLinearAttn;
 			light->SetShader(PRG_DEFERRED_LIGHT);
 			if (e.range > 0.0)
 			{

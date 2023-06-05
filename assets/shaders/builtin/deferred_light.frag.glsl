@@ -6,7 +6,7 @@ out vec3 hdrColor;
 
 in INTERFACE
 {
-    vec4 positionVS;
+    vec3 positionVS;
 } In;
 
 struct lightinginput_t {
@@ -37,22 +37,22 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 	return f0 + ( 1.0 - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );
 }
 
-/*****************************************************/
-/* Cook-Torrance specular BRDF. Based on DOOM 2016   */
-/*****************************************************/
+/*******************************************************************************/
+/* Cook-Torrance specular BRDF. Based on https://learnopengl.com/PBR/Lighting   */
+/*******************************************************************************/
 vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 	const vec3 H = normalize( V + L );
-	float m = ( 0.2 + roughness * 0.8 );
+	float m = roughness*roughness;
 	m *= m;
-	m *= m;
-	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
-	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
-	spec = m2 / ( spec * spec + 1e-8 );
-	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
-	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
+	float spec = (NdotH * NdotH) * (m - 1) + 1;
+	spec = m / ( spec * spec + 1e-8 );
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+	float Gv = saturate( dot( N, V ) ) * (1.0 - k) + k;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-	return vec4(fresnelSchlick( f0, dot( L, H ) ), spec);
+	return vec4(fresnelSchlick( f0, dot( H, V ) ), spec);
 }
 
 // Performs shadow calculation with PCF
@@ -95,7 +95,7 @@ void main()
         inputs.samplePBR        = texture( tAORM, texCoord );
         inputs.lightPos         = g_freqHighFrag.lightOrigin.xyz;
         inputs.lightColor       = g_freqHighFrag.lightColor.rgb * g_freqHighFrag.lightColor.w;
-        inputs.normal           = normalize(inputs.normal);
+        //inputs.normal           = normalize(inputs.normal);
 
         vec3 viewRay = vec3(In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance);
         float nDepth = -texture( tFragPos, texCoord ).x;

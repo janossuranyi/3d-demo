@@ -27,6 +27,7 @@ namespace jsr {
 		int					GetNumChildren() const;
 		int					GetNumEntities() const;
 		Entity3D&			GetEntity();
+		Entity3D const&		GetEntity() const;
 		std::string			GetName() const;
 		void				SetName(const std::string& name);
 		Node3D**			GetChildren();
