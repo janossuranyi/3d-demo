@@ -1,5 +1,5 @@
 #include <imgui.h>
-#include <tiny_obj_loader.h>
+#include <tiny_gltf.h>
 #include "./System.h"
 #include "./Heap.h"
 #include "./RenderBackend.h"
@@ -98,7 +98,7 @@ namespace jsr {
 		unitRectTris = R_MakeFullScreenRect();
 		unitCubeTris = R_MakeZeroOneCube();
 		unitSphereTris = R_MakeZeroOneSphere();
-		R_MakeZeroOneCone();
+		unitConeTris = R_MakeZeroOneCone();
 
 		defaultMaterial = materialManager->CreateMaterial("_defaultMaterial");
 		stage_t& s = defaultMaterial->GetStage(STAGE_DEBUG);
@@ -144,9 +144,11 @@ namespace jsr {
 		backend->unitRectSurface = unitRectSurface_;
 		backend->unitCubeSurface = unitCubeSurface_;
 		backend->unitSphereSurface = unitSphereSurface_;
+		backend->unitConeSurface = unitConeSurface_;
 		R_CreateSurfFromTris(unitRectSurface_, *unitRectTris);
 		R_CreateSurfFromTris(unitCubeSurface_, *unitCubeTris);
 		R_CreateSurfFromTris(unitSphereSurface_, *unitSphereTris);
+		R_CreateSurfFromTris(unitConeSurface_, *unitConeTris);
 
 		return cmds;
 	}
@@ -474,47 +476,59 @@ R_MakeZeroOneCubeTris
 
 		return tri;
 	}
-
 	surface_t* R_MakeZeroOneCone()
 	{
-		using namespace tinyobj;
+		using namespace tinygltf;
 		using namespace glm;
 
-		attrib_t attrib;
-		std::vector<shape_t> shapes;
-		std::vector<material_t> materials;
-		std::string warn;
-		std::string err;
-
-		if (tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, ResourceManager::instance.GetResource("models/unitcone.obj").c_str()))
+		std::string warn, err;
+		TinyGLTF loader;
+		Model model;
+		const std::string filename = ResourceManager::instance.GetResource("models/zeroOneCone.glb");
+		if (loader.LoadBinaryFromFile(&model, &err,&warn,filename))
 		{
-			if (shapes.empty()) return nullptr;
-
-			surface_t* tri = new (MemAlloc(sizeof(*tri))) surface_t();
+			surface_t* tri = new (MemAlloc16(sizeof(*tri))) surface_t();
 			memset(tri, 0, sizeof(*tri));
-			tri->numVerts = attrib.vertices.size();
+			tri->topology = TP_TRIANGLES;
+
+			int posIdx = model.meshes[0].primitives[0].attributes.at("POSITION");
+			int norIdx = model.meshes[0].primitives[0].attributes.at("NORMAL");
+			int tanIdx = model.meshes[0].primitives[0].attributes.at("TANGENT");
+			int texIdx = model.meshes[0].primitives[0].attributes.at("TEXCOORD_0");
+
+			const auto& posAccess = model.accessors[posIdx];
+			const auto& norAccess = model.accessors[norIdx];
+			const auto& tanAccess = model.accessors[tanIdx];
+			const auto& texAccess = model.accessors[texIdx];
+			const auto& idxAccess = model.accessors[model.meshes[0].primitives[0].indices];
+
+			tri->numVerts = posAccess.count;
 			const int vertexSize = tri->numVerts * sizeof(tri->verts[0]);
 			const int allocatedVertexBytes = ALIGN(vertexSize);
 			tri->verts = (drawVert_t*)MemAlloc16(allocatedVertexBytes);
-			tri->numIndexes = shapes[0].mesh.indices.size();
+			tri->numIndexes = idxAccess.count;
 			const int indexSize = tri->numIndexes * sizeof(tri->indexes[0]);
 			const int allocatedIndexBytes = ALIGN(indexSize);
 			tri->indexes = (elementIndex_t*)MemAlloc16(allocatedIndexBytes);
 
-			for (auto i = 0; i < attrib.vertices.size() / 3; ++i)
+			AccessorArray<vec3>		posarray(model, posAccess);
+			AccessorArray<vec3>		norarray(model, norAccess);
+			AccessorArray<vec4>		tanarray(model, tanAccess);
+			AccessorArray<vec2>		texarray(model, texAccess);
+			AccessorArray<unsigned short> idxarray(model, idxAccess);
+
+			for (auto i = 0; i < tri->numVerts; ++i)
 			{
-				tri->verts[i].SetPos(&attrib.vertices[i * 3]);
+				tri->verts[i].SetPos(*posarray[i]);
+				tri->verts[i].SetNormal(*norarray[i]);
+				tri->verts[i].SetTangent(*tanarray[i]);
+				tri->verts[i].SetUV(*texarray[i]);
+				tri->verts[i].SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 			}
 
-			const auto& shape = shapes[0];
-			for (int f = 0; f < shape.mesh.indices.size() / 3; ++f)
-			{
-				auto idx0 = shape.mesh.indices[3 * f + 0];
-				auto idx1 = shape.mesh.indices[3 * f + 1];
-				auto idx2 = shape.mesh.indices[3 * f + 2];
+			memcpy(tri->indexes, idxarray[0], tri->numIndexes * 2);
 
-			}
-
+			return tri;
 		}
 		return nullptr;
 	}

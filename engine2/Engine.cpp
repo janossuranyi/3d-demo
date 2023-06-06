@@ -119,19 +119,22 @@ namespace jsr {
 
 		bool mouseCapture = false;
 		bool mover[4]{};
-		float angle1 = 0.0f;
-		auto* cube = world->GetByName("testnode");
-		cube->SetScale({ .5f,.5f,.5f });
+		bool angle[2]{};
+		auto* cube = world->GetByName("Spot");
+		//cube->SetScale({ .5f,.5f,.5f });
 
 		ImGuiIO& io = ImGui::GetIO();
 		world->exposure = 1.0f;
 		bool spotOn = false;
 
+		float angles[3]{};
+
 		while (!quit)
 		{
-			glm::quat rotY = glm::angleAxis(glm::radians(angle1), normalize(vec3{ 0.0f,1.0f, 0.0f }));
-			glm::quat rotX = glm::angleAxis(glm::radians(-90.f), normalize(vec3{ 1.0f,0.0f, 0.0f }));
-			cube->SetDir(rotY * rotX);
+			glm::quat rotX = glm::angleAxis(glm::radians(angles[0]), normalize(vec3{1.0f,0.0f,0.0f}));
+			glm::quat rotY = glm::angleAxis(glm::radians(angles[1]), normalize(vec3{0.0f,1.0f,0.0f}));
+			glm::quat rotZ = glm::angleAxis(glm::radians(angles[2]), normalize(vec3{0.0f,0.0f,1.0f }));
+			//cube->SetDir(rotX * rotY * rotZ);
 
 			const emptyCommand_t* cmds = renderSystem.SwapCommandBuffer_BeginNewFrame(this->threaded);
 
@@ -178,6 +181,12 @@ namespace jsr {
 					case SDLK_d:
 						mover[RIGHT] = false;
 						break;
+					case SDLK_LEFT:
+						angle[0] = false;
+						break;
+					case SDLK_RIGHT:
+						angle[1] = false;
+						break;
 					}
 				}
 
@@ -200,6 +209,12 @@ namespace jsr {
 						break;
 					case SDLK_ESCAPE:
 						quit = true;
+						break;
+					case SDLK_LEFT:
+						angle[0] = true;
+						break;
+					case SDLK_RIGHT:
+						angle[1] = true;
 						break;
 					}
 					//Info("x: %f, y: %f, z: %f", player.Position.x, player.Position.y, player.Position.z);
@@ -233,12 +248,21 @@ namespace jsr {
 			if (mover[LEFT])		player.ProcessKeyboard(LEFT, dt);
 			if (mover[RIGHT])		player.ProcessKeyboard(RIGHT, dt);
 
+			int x = 1;
+			if (angle[0])
+			{
+				angles[x] += 1.f;
+				angles[x] = std::fmodf(angles[x], 360.f);
+			}
+			if (angle[1])
+			{
+				angles[x] -= 1.f;
+				angles[x] = std::fmodf(angles[x], 360.f);
+			}
+
 			float now = (float)SDL_GetTicks();
 			dt = now - time;
 			time = now;
-
-			angle1 += .02f * dt;
-			angle1 = std::fmodf(angle1, 360.f);
 
 			//std::this_thread::yield();
 			WaitForThread();

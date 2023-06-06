@@ -11,6 +11,15 @@
 
 namespace jsr {
 
+	enum eLightType
+	{
+		LIGHT_DIRECTED,
+		LIGHT_POINT,
+		LIGHT_SPOT,
+		LIGHT_BOX,
+		LIGHT_COUNT
+	};
+
 	enum eFace
 	{
 		FACE_FRONT,
@@ -91,6 +100,7 @@ namespace jsr {
 		PRG_DEFERRED_GBUFFER_MR,
 		PRG_DEFERRED_LIGHT,
 		PRG_PP_HDR,
+		PRG_COLOR,
 		PRG_COUNT
 	};
 
@@ -171,6 +181,7 @@ namespace jsr {
 		glm::vec4		color;
 		float			range;
 		eShaderProg		shader;
+		eLightType		type;
 		vertCacheHandle_t highFreqVert;
 		vertCacheHandle_t highFreqFrag;
 		bool			remove;

@@ -25,8 +25,8 @@ int main(int argc, char** argv)
 
     //jsr::MessageBox(jsr::MESSAGEBOX_INFO, "Info", "JSR-Engine Demo");
 
-    engineConfig.r_resX = 1800;
-    engineConfig.r_resY = 1000;
+    engineConfig.r_resX = 1750;
+    engineConfig.r_resY = 980;
     engineConfig.r_fullscreen = 0;
     engineConfig.r_vsync = 1;
 

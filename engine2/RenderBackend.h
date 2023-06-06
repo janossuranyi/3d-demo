@@ -150,6 +150,7 @@ namespace jsr {
 		drawSurf_t unitRectSurface{};
 		drawSurf_t unitCubeSurface{};
 		drawSurf_t unitSphereSurface{};
+		drawSurf_t unitConeSurface{};
 	};
 
 	extern bool R_InitGfxAPI();

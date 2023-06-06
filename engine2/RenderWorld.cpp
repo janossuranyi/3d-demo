@@ -702,19 +702,32 @@ namespace jsr {
 			Light* light = node->GetEntity().GetLight();
 
 			mat4 modelMatrix = node->GetLocalToWorldMatrix();
-			vec4 origin = modelMatrix[3];
-			mat4 worldMatrix = scale(modelMatrix, vec3(light->opts.range));
+			vec4 const origin = modelMatrix[3];
 
-			mat4 modelViewMatrix = viewMatrix * worldMatrix;
+			mat4 worldMatrix = modelMatrix;
 
-			Bounds lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
+			if (light->GetType() == LIGHT_POINT)
+			{
+				worldMatrix = scale(worldMatrix, vec3(light->opts.range));
+			}
+			else if (light->GetType() == LIGHT_SPOT)
+			{
+				float yScale = light->opts.range;
+				float xzScale = 2.0f * yScale * tan(light->opts.outerConeAngle / 2.0f);
+				//worldMatrix = scale(worldMatrix, vec3(xzScale,yScale,xzScale));
+			}
+
+			mat4 const modelViewMatrix = viewMatrix * worldMatrix;
+
+			Bounds const lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
 			if (view->frustum.Intersects2(lightBounds))
 			{
 
 				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
+				e->type = light->GetType();
 				e->next = view->viewLights;
-				e->origin = view->renderView.viewMatrix * origin;
-				e->axis = viewMatrix * mat4(node->GetDir()) * vec4(0.0f, 0.0f, -1.0f, 0.0f);
+				e->origin = viewMatrix * origin;
+				e->axis = viewMatrix * (node->GetDir() * vec4(0.0f, 0.0f, -1.0f, 0.0f));
 				e->range = light->opts.range;
 				e->shader = light->GetShader();
 				e->color = light->opts.color.color;
@@ -734,8 +747,8 @@ namespace jsr {
 					fastfrag.spotLightParams.z = 5.0f;
 					fastfrag.spotDirection = { e->axis,0.0f };
 				}
-				e->highFreqFrag = renderSystem.vertexCache->AllocTransientUniform(&fastfrag, sizeof(fastfrag));
-				e->highFreqVert = renderSystem.vertexCache->AllocTransientUniform(&fastvert, sizeof(fastvert));
+				e->highFreqFrag = vc.AllocTransientUniform(&fastfrag, sizeof(fastfrag));
+				e->highFreqVert = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
 			}
 			return;
 		}

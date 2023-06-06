@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <tiny_gltf.h>
 #include "./Bounds.h"
 #include "./RenderCommon.h"
 #include "./Heap.h"
@@ -77,6 +78,37 @@ namespace jsr {
 		std::string name;
 		std::vector<modelSurface_t> surfs;
 	};
+
+	template<class T>
+	struct AccessorArray
+	{
+		AccessorArray(const tinygltf::Model& model, const tinygltf::Accessor& accessor)
+		{
+
+			const auto& view = model.bufferViews[accessor.bufferView];
+			const auto& buff = model.buffers[view.buffer];
+
+			size_t offset1 = accessor.byteOffset;
+			size_t offset2 = view.byteOffset;
+			size = view.byteLength;
+
+			stride = accessor.ByteStride(view);
+
+			ptr = (const char*)(buff.data.data() + offset1 + offset2);
+		}
+
+		const T* operator[](size_t index) const
+		{
+			size_t offset = index * stride;
+			assert(offset < size);
+			return (const T*)(ptr + offset);
+		}
+
+		const char* ptr;
+		size_t stride;
+		size_t size;
+	};
+
 
 
 	class ModelManager

@@ -71,9 +71,11 @@ namespace jsr {
 		drawSurf_t unitRectSurface_;
 		drawSurf_t unitCubeSurface_;
 		drawSurf_t unitSphereSurface_;
+		drawSurf_t unitConeSurface_;
 		surface_t* unitRectTris;
 		surface_t* unitCubeTris;
 		surface_t* unitSphereTris;
+		surface_t* unitConeTris;
 
 	private:
 		bool initialized;

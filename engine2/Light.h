@@ -4,18 +4,10 @@
 #include <GL/glew.h>
 #include "./GpuTypes.h"
 #include "./RenderProgs.h"
+#include "./RenderCommon.h"
 #include "./Logger.h"
 
 namespace jsr {
-
-	enum eLightType
-	{
-		LIGHT_DIRECTED,
-		LIGHT_POINT,
-		LIGHT_SPOT,
-		LIGHT_BOX,
-		LIGHT_COUNT
-	};
 
 	struct lightColor_t
 	{

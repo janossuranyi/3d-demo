@@ -682,7 +682,26 @@ namespace jsr {
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
 
-			R_DrawSurf(&unitSphereSurface);
+			if (light->type == LIGHT_POINT)
+				R_DrawSurf(&unitSphereSurface);
+			else if (light->type == LIGHT_SPOT)
+			{
+				R_DrawSurf(&unitConeSurface);
+			}
+
+			renderSystem.programManager->UseProgram(PRG_COLOR);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+			if (light->type == LIGHT_POINT)
+				R_DrawSurf(&unitSphereSurface);
+			else if (light->type == LIGHT_SPOT)
+			{
+				R_DrawSurf(&unitConeSurface);
+			}
+
+			renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 		}
 		glDisable(GL_BLEND);
 	}
