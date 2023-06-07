@@ -724,7 +724,7 @@ namespace jsr {
 				e->type = light->GetType();
 				e->next = view->viewLights;
 				e->origin = viewMatrix * origin;
-				e->axis = viewMatrix * (node->GetDir() * vec4(0.0f, 0.0f, -1.0f, 0.0f));
+				e->axis = viewMatrix * (node->GetDir() * vec4(0.0f, -1.0f, 0.0f, 0.0f));
 				e->range = light->opts.range;
 				e->shader = light->GetShader();
 				e->color = light->opts.color.color;

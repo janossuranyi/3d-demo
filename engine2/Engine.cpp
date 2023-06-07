@@ -119,7 +119,7 @@ namespace jsr {
 
 		bool mouseCapture = false;
 		bool mover[4]{};
-		bool angle[2]{};
+		bool angle[4]{};
 		auto* cube = world->GetByName("Spot");
 		//cube->SetScale({ .5f,.5f,.5f });
 
@@ -132,8 +132,8 @@ namespace jsr {
 		while (!quit)
 		{
 			glm::quat rotX = glm::angleAxis(glm::radians(angles[0]), normalize(vec3{1.0f,0.0f,0.0f}));
-			glm::quat rotY = glm::angleAxis(glm::radians(angles[1]), normalize(vec3{0.0f,1.0f,0.0f}));
-			glm::quat rotZ = glm::angleAxis(glm::radians(angles[2]), normalize(vec3{0.0f,0.0f,1.0f }));
+			glm::quat rotY = glm::angleAxis(glm::radians(angles[2]), normalize(vec3{0.0f,1.0f,0.0f}));
+			glm::quat rotZ = glm::angleAxis(glm::radians(angles[1]), normalize(vec3{0.0f,0.0f,1.0f}));
 			//cube->SetDir(rotX * rotY * rotZ);
 
 			const emptyCommand_t* cmds = renderSystem.SwapCommandBuffer_BeginNewFrame(this->threaded);
@@ -187,6 +187,12 @@ namespace jsr {
 					case SDLK_RIGHT:
 						angle[1] = false;
 						break;
+					case SDLK_UP:
+						angle[2] = false;
+						break;
+					case SDLK_DOWN:
+						angle[3] = false;
+						break;
 					}
 				}
 
@@ -215,6 +221,12 @@ namespace jsr {
 						break;
 					case SDLK_RIGHT:
 						angle[1] = true;
+						break;
+					case SDLK_UP:
+						angle[2] = true;
+						break;
+					case SDLK_DOWN:
+						angle[3] = true;
 						break;
 					}
 					//Info("x: %f, y: %f, z: %f", player.Position.x, player.Position.y, player.Position.z);
@@ -248,16 +260,25 @@ namespace jsr {
 			if (mover[LEFT])		player.ProcessKeyboard(LEFT, dt);
 			if (mover[RIGHT])		player.ProcessKeyboard(RIGHT, dt);
 
-			int x = 1;
 			if (angle[0])
 			{
-				angles[x] += 1.f;
-				angles[x] = std::fmodf(angles[x], 360.f);
+				angles[0] += 1.f;
+				angles[0] = std::fmodf(angles[0], 360.f);
 			}
 			if (angle[1])
 			{
-				angles[x] -= 1.f;
-				angles[x] = std::fmodf(angles[x], 360.f);
+				angles[0] -= 1.f;
+				angles[0] = std::fmodf(angles[0], 360.f);
+			}
+			if (angle[2])
+			{
+				angles[1] += 1.f;
+				angles[1] = std::fmodf(angles[1], 360.f);
+			}
+			if (angle[3])
+			{
+				angles[1] -= 1.f;
+				angles[1] = std::fmodf(angles[1], 360.f);
 			}
 
 			float now = (float)SDL_GetTicks();
