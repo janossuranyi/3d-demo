@@ -688,22 +688,28 @@ namespace jsr {
 			{
 				R_DrawSurf(&unitConeSurface);
 			}
+		}
 
-			renderSystem.programManager->UseProgram(PRG_COLOR);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		SetCullMode(CULL_NONE);
+		renderSystem.programManager->UseProgram(PRG_COLOR);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		
+		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
+		{
+			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
+			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
 
 			if (light->type == LIGHT_POINT)
-				R_DrawSurf(&unitSphereSurface);
+				//R_DrawSurf(&unitSphereSurface);
+				;
 			else if (light->type == LIGHT_SPOT)
 			{
 				R_DrawSurf(&unitConeSurface);
 			}
 
-			renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 		}
 		glDisable(GL_BLEND);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
 	void RenderBackend::RenderHDRtoLDR()

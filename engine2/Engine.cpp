@@ -107,7 +107,7 @@ namespace jsr {
 		float time, dt;
 		dt = 0.0f;
 		time = (float)SDL_GetTicks();
-		player.MovementSpeed = 0.001f;
+		player.MovementSpeed = 0.003f;
 		player.MouseSensitivity = 0.1;
 		player.Zoom = 75.0f;
 		player.ProcessMouseMovement(0.f, 0.f);

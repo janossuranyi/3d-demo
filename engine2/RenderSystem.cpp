@@ -449,7 +449,7 @@ R_MakeZeroOneCubeTris
 				verts[numVerts].SetUV(s * S, r * R);
 				verts[numVerts].xyz = vec3(x, y, z) * range;
 				verts[numVerts].SetNormal(x, y, z);
-				verts[numVerts].SetColor(vec4(1.0f));
+				verts[numVerts].SetColor(vec4(0.0f, 0.0f, 1.0f, 1.0f));
 				numVerts++;
 				tri->bounds.Extend(vec3(x, y, z) * range);
 

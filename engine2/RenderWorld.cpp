@@ -701,10 +701,8 @@ namespace jsr {
 		{
 			Light* light = node->GetEntity().GetLight();
 
-			mat4 modelMatrix = node->GetLocalToWorldMatrix();
-			vec4 const origin = modelMatrix[3];
-
-			mat4 worldMatrix = modelMatrix;
+			mat4 worldMatrix = node->GetLocalToWorldMatrix();
+			vec4 const origin = worldMatrix[3];
 
 			if (light->GetType() == LIGHT_POINT)
 			{
@@ -714,7 +712,7 @@ namespace jsr {
 			{
 				float yScale = light->opts.range;
 				float xzScale = 2.0f * yScale * tan(light->opts.outerConeAngle / 2.0f);
-				//worldMatrix = scale(worldMatrix, vec3(xzScale,yScale,xzScale));
+				worldMatrix = scale(worldMatrix, vec3(xzScale, yScale, xzScale));
 			}
 
 			mat4 const modelViewMatrix = viewMatrix * worldMatrix;
@@ -722,7 +720,6 @@ namespace jsr {
 			Bounds const lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
 			if (view->frustum.Intersects2(lightBounds))
 			{
-
 				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
 				e->type = light->GetType();
 				e->next = view->viewLights;
