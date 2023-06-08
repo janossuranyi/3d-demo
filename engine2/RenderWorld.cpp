@@ -1,8 +1,6 @@
 #include <tiny_gltf.h>
 #include <memory>
 #include <filesystem>
-#include <glm/gtx/matrix_decompose.hpp>
-
 #include "./Math.h"
 #include "./RenderSystem.h"
 #include "./RenderWorld.h"
@@ -372,6 +370,9 @@ namespace jsr {
 	}
 	void RenderWorld::CreateNodesGLTF()
 	{
+		using namespace glm;
+		using namespace std;
+
 		if (gltf_state == nullptr) return;
 		if (!nodes.empty())
 		{
@@ -380,7 +381,7 @@ namespace jsr {
 		}
 
 		Model* map = &gltf_state->map;
-		std::vector<int> gltfNodeToLocal;
+		vector<int> gltfNodeToLocal;
 		gltfNodeToLocal.resize(map->nodes.size());
 
 		for (int i = 0; i < map->nodes.size(); ++i)
@@ -392,16 +393,16 @@ namespace jsr {
 			gltfNodeToLocal[i] = (int)nodes.size() - 1;
 			node->SetName(gnode.name);
 
-			if (!gnode.matrix.empty())
+			if ( ! gnode.matrix.empty() )
 			{
-				glm::vec3 scale{}, translation{}, skew{};
-				glm::vec4 persp{};
-				glm::quat orient{};
-				std::vector<float> m4(16);
-				for (int i = 0; i < 16; ++i) m4[i] = (float)gnode.matrix[i];
+				vec3 scale{}, translation{}, skew{};
+				vec4 persp{};
+				quat orient{};
+				vector<float> m4(16);
+				for ( int i = 0; i < 16; ++i ) m4[ i ] = (float)gnode.matrix[ i ];
 
-				glm::mat4 m = glm::make_mat4(m4.data());
-				if (glm::decompose(m, scale, orient, translation, skew, persp))
+				auto m = make_mat4( m4.data() );
+				if ( decompose( m, scale, orient, translation, skew, persp ) )
 				{
 					node->SetOrigin(translation);
 					node->SetDir(orient);
@@ -410,14 +411,14 @@ namespace jsr {
 			}
 			else
 			{
-				if (!gnode.translation.empty()) {
-					node->SetOrigin(glm::vec3((float)gnode.translation[0], (float)gnode.translation[1], (float)gnode.translation[2]));
+				if ( ! gnode.translation.empty() ) {
+					node->SetOrigin( make_vec3 ( &gnode.translation[0] ) );
 				}
-				if (!gnode.scale.empty()) {
-					node->SetScale(glm::vec3((float)gnode.scale[0], (float)gnode.scale[1], (float)gnode.scale[2]));
+				if ( ! gnode.scale.empty() ) {
+					node->SetScale( make_vec3( &gnode.scale[0] ) );
 				}
-				if (!gnode.rotation.empty()) {
-					node->SetDir(glm::quat((float)gnode.rotation[3], (float)gnode.rotation[0], (float)gnode.rotation[1], (float)gnode.rotation[2]));
+				if ( ! gnode.rotation.empty() ) {
+					node->SetDir( quat( (float)gnode.rotation[3], (float)gnode.rotation[0], (float)gnode.rotation[1], (float)gnode.rotation[2] ) );
 				}
 			}
 
@@ -432,9 +433,29 @@ namespace jsr {
 			{
 				node->GetEntity().SetType(ENT_LIGHT);
 				auto it = gnode.extensions.find("KHR_lights_punctual");
-				int idx = it->second.Get("light").GetNumberAsInt();
-				node->GetEntity().SetValue( lights[ gltf_state->map_light_idx[ idx ] ] );
-				lights[gltf_state->map_light_idx[idx]]->SetNode(node);
+				auto idx = it->second.Get("light").GetNumberAsInt();
+				
+				auto* light = lights[ gltf_state->map_light_idx[ idx ] ];
+
+				node->GetEntity().SetValue( light );
+
+				light->SetNode( node );
+				if ( light->GetType() == LIGHT_POINT )
+				{
+					node->SetScale( vec3( light->opts.range ) );
+				}
+				else if ( light->GetType() == LIGHT_SPOT )
+				{
+					auto const yScale = light->opts.range;
+					auto const xzScale = 2.0f * yScale * tan(light->opts.outerConeAngle / 2.0f);
+					node->SetScale( vec3( xzScale, yScale, xzScale ) );
+
+					auto angular = eulerAngles(node->GetDir());
+					//node->SetDir(angular.x + 90.0f,angular.y,angular.z);
+
+					Info("Spot dir: %f,%f,%f", degrees(angular.x), degrees(angular.y), degrees(angular.z));
+
+				}
 			}
 			else
 			{
@@ -699,32 +720,18 @@ namespace jsr {
 
 		if (node->GetEntity().IsLight())
 		{
-			Light* light = node->GetEntity().GetLight();
-
-			mat4 worldMatrix = node->GetLocalToWorldMatrix();
-			vec4 const origin = worldMatrix[3];
-
-			if (light->GetType() == LIGHT_POINT)
-			{
-				worldMatrix = scale(worldMatrix, vec3(light->opts.range));
-			}
-			else if (light->GetType() == LIGHT_SPOT)
-			{
-				float yScale = light->opts.range;
-				float xzScale = 2.0f * yScale * tan(light->opts.outerConeAngle / 2.0f);
-				worldMatrix = scale(worldMatrix, vec3(xzScale, yScale, xzScale));
-			}
-
-			mat4 const modelViewMatrix = viewMatrix * worldMatrix;
-
-			Bounds const lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
+			auto const* light = node->GetEntity().GetLight();
+			auto const worldMatrix = node->GetLocalToWorldMatrix();
+			auto const origin = worldMatrix[3];
+			auto const modelViewMatrix = viewMatrix * worldMatrix;
+			auto const lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
 			if (view->frustum.Intersects2(lightBounds))
 			{
 				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
 				e->type = light->GetType();
 				e->next = view->viewLights;
 				e->origin = viewMatrix * origin;
-				e->axis = viewMatrix * (node->GetDir() * vec4(0.0f, -1.0f, 0.0f, 0.0f));
+				e->axis = viewMatrix * (node->GetDir() * vec4(0.0f, 0.0f, -1.0f, 0.0f));
 				e->range = light->opts.range;
 				e->shader = light->GetShader();
 				e->color = light->opts.color.color;
@@ -733,7 +740,7 @@ namespace jsr {
 
 				fastvert.WVPMatrix = view->projectionMatrix * modelViewMatrix;
 				fastvert.localToWorldMatrix = worldMatrix;
-				fastfrag.lightColor = light->opts.color.color;
+				fastfrag.lightColor = e->color;
 				fastfrag.lightAttenuation = vec4(e->range, light->opts.linearAttn, light->opts.expAttn, 0.0f);
 				fastfrag.lightOrigin = { e->origin,1.0f };
 				if (light->GetType() == LIGHT_SPOT)
@@ -752,7 +759,7 @@ namespace jsr {
 
 		if (node->GetEntity().GetType() != ENT_MODEL) return;
 
-		glm::mat4 worldMatrix = node->GetLocalToWorldMatrix();
+		mat4 worldMatrix = node->GetLocalToWorldMatrix();
 		// W-V-P -> P-V-W
 		auto modelViewMatrix = viewMatrix * worldMatrix;
 
@@ -796,6 +803,7 @@ namespace jsr {
 						const stage_t& stageref = surf->shader->GetStage(static_cast<eStageType>(stage));
 						if (stageref.enabled)
 						{
+							memset(&fastfrag, 0, sizeof(fastfrag));
 							uint32 flg_x = (stageref.coverage & FLG_X_COVERAGE_MASK) << FLG_X_COVERAGE_SHIFT;
 							fastfrag.alphaCutoff.x = stageref.alphaCutoff;
 							fastfrag.matDiffuseFactor = stageref.diffuseScale;

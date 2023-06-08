@@ -23,6 +23,7 @@ namespace jsr {
 		void				SetScale(glm::vec3 const& v);
 		void				SetDir(glm::quat const& v);
 		void				SetDir(float radX, float radY, float radZ);
+		void				SetDir(const glm::vec3& angular);
 		void				SetParent(Node3D* parent);
 		int					GetNumChildren() const;
 		int					GetNumEntities() const;

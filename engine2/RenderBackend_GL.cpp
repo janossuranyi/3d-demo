@@ -647,13 +647,11 @@ namespace jsr {
 
 		globalFramebuffers.hdrFBO->Bind();
 		
-		//globalFramebuffers.GBufferFBO->BindForReading();
-		//globalFramebuffers.GBufferFBO->BlitDepthBuffer(0, 0, w, h, 0, 0, w, h);
+		globalFramebuffers.GBufferFBO->BindForReading();
+		globalFramebuffers.GBufferFBO->BlitDepthBuffer(0, 0, view->viewport.w, view->viewport.h, 0, 0, view->viewport.w, view->viewport.h);
 		
-		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_ALWAYS);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		Clear(true, false, false);
 
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
@@ -668,48 +666,55 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_SHADOW);
 		globalImages.Shadow->Bind();
 
-		SetCullMode(CULL_NONE);
-
-//		R_DrawSurf(&unitRectSurface);
-
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 
-		SetCullMode(CULL_FRONT);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_LEQUAL);
 
+		glEnable(GL_STENCIL_TEST);
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
 
+			SetCullMode(CULL_NONE);
+			Clear(false, false, true);
+			// We need the stencil test to be enabled but we want it
+			// to succeed always. Only the depth test matters.
+			glStencilFunc(GL_ALWAYS, 0, 0);
+			glStencilOpSeparate(GL_BACK, GL_KEEP, GL_INCR_WRAP, GL_KEEP);
+			glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_DECR_WRAP, GL_KEEP);
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			glDepthFunc(GL_LEQUAL);
+
 			if (light->type == LIGHT_POINT)
+			{
 				R_DrawSurf(&unitSphereSurface);
+			}
 			else if (light->type == LIGHT_SPOT)
 			{
 				R_DrawSurf(&unitConeSurface);
 			}
-		}
 
-		SetCullMode(CULL_NONE);
-		renderSystem.programManager->UseProgram(PRG_COLOR);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		
-		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
-		{
-			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
-			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
+			glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
+			glDepthFunc(GL_ALWAYS);
+			SetCullMode(CULL_FRONT);
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 			if (light->type == LIGHT_POINT)
-				//R_DrawSurf(&unitSphereSurface);
-				;
+			{
+				R_DrawSurf(&unitSphereSurface);
+			}
 			else if (light->type == LIGHT_SPOT)
 			{
 				R_DrawSurf(&unitConeSurface);
 			}
-
 		}
 		glDisable(GL_BLEND);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDisable(GL_STENCIL_TEST);
+		SetCullMode(CULL_BACK);
+
 	}
 
 	void RenderBackend::RenderHDRtoLDR()
@@ -723,6 +728,7 @@ namespace jsr {
 		glDepthFunc(GL_ALWAYS);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		SetCullMode(CULL_NONE);
+		glBlendFunc(GL_ONE, GL_ZERO);
 
 		Framebuffer::Unbind();
 		SetCurrentTextureUnit(IMU_HDR);

@@ -79,21 +79,11 @@ namespace jsr {
 
 		world = new RenderWorld();
 
-		world->LoadModelsFromGLTF(resourceManager->GetResource("models/zeroOneCube.glb"));
-
 		if (!world->LoadMapFromGLTF(resourceManager->GetResource(filename)))
 		{
 			Error("Error loading map!");
 			return false;
 		}
-
-		RenderModel* test = renderSystem.modelManager->CreateModel("_testmodel");
-		test->CreateFromTris(renderSystem.unitSphereTris);
-		test->UpdateSurfaceCache();
-		world->InsertNode("testnode", test, { 0.0f,1.2f,0.0f });		
-//		Material* m = renderSystem.materialManager->FindMaterial("Material_15");
-
-		test->GetSurface(0)->shader = renderSystem.defaultMaterial;
 
 		return true;
 	}

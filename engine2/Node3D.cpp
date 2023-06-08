@@ -92,6 +92,11 @@ namespace jsr {
 		dir *= glm::angleAxis(radZ, vec3(0.0f, 0.0f, 1.0f));
 	}
 
+	void Node3D::SetDir(const glm::vec3& angular)
+	{
+		SetDir(angular.x, angular.y, angular.z);
+	}
+
 	void Node3D::SetParent(Node3D* parent)
 	{
 		pParent = parent;
