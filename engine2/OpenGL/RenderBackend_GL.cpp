@@ -27,6 +27,10 @@ void CheckOpenGLError(const char* stmt, const char* fname, int line)
 }
 
 namespace jsr {
+
+	GLenum GL_map_blendFunc(eBlendFunc x);
+	GLenum GL_map_blendEq(eBlendOp x);
+
 	void R_DrawSurf(const drawSurf_t* surf);
 
 	const imageFormatInfo_t s_image_formats[] = {
@@ -277,12 +281,12 @@ namespace jsr {
 		{
 			glDisable(GL_FRAMEBUFFER_SRGB);
 		}
-		glcontext.blendState.alphaDst = BFUNC_ZERO;
-		glcontext.blendState.colDst = BFUNC_ZERO;
-		glcontext.blendState.alphaSrc = BFUNC_ONE;
-		glcontext.blendState.colSrc = BFUNC_ONE;
-		glcontext.blendState.colorOp = BOP_ADD;
-		glcontext.blendState.alphaOp = BOP_ADD;
+		glcontext.blendState.opts.alphaDst = BFUNC_ZERO;
+		glcontext.blendState.opts.colDst = BFUNC_ZERO;
+		glcontext.blendState.opts.alphaSrc = BFUNC_ONE;
+		glcontext.blendState.opts.colSrc = BFUNC_ONE;
+		glcontext.blendState.opts.colorOp = BOP_ADD;
+		glcontext.blendState.opts.alphaOp = BOP_ADD;
 		glcontext.blendState.enabled = false;
 
 		// end
@@ -349,9 +353,133 @@ namespace jsr {
 		}
 	}
 
-	void RenderBackend::SetClearColor(glm::vec4 color)
+	void RenderBackend::SetClearColor(const glm::vec4& color)
 	{
 		SetClearColor(color.r, color.g, color.b, color.a);
+	}
+
+	void RenderBackend::SetWriteMask(const glm::bvec4& mask)
+	{
+		if (glcontext.writeMask != mask)
+		{
+			glcontext.writeMask = mask;
+			GLboolean r = mask.r ? GL_TRUE : GL_FALSE;
+			GLboolean g = mask.g ? GL_TRUE : GL_FALSE;
+			GLboolean b = mask.b ? GL_TRUE : GL_FALSE;
+			GLboolean a = mask.a ? GL_TRUE : GL_FALSE;
+			GL_CHECK(glColorMask(r, g, b, a));
+		}
+	}
+
+	void RenderBackend::SetDepthState(const depthState_t& state)
+	{
+		if (glcontext.depthState != state)
+		{
+			if (state.enabled != glcontext.depthState.enabled)
+			{
+				if (state.enabled)
+				{
+					GL_CHECK(glEnable(GL_DEPTH_TEST));
+				}
+				else
+				{
+					GL_CHECK(glDisable(GL_DEPTH_TEST));
+				}
+			}
+			if (state.depthMask != glcontext.depthState.depthMask)
+			{
+				if (state.depthMask)
+				{
+					GL_CHECK(glDepthMask(GL_TRUE));
+				}
+				else
+				{
+					GL_CHECK(glDepthMask(GL_FALSE));
+				}
+			}
+			if (state.func != glcontext.depthState.func)
+			{
+				GLenum fn;
+				switch (state.func)
+				{
+				case CMP_ALWAYS: fn = GL_ALWAYS;
+					break;
+				case CMP_NEVER: fn = GL_NEVER;
+					break;
+				case CMP_GEQ: fn = GL_GEQUAL;
+					break;
+				case CMP_EQ: fn = GL_EQUAL;
+					break;
+				case CMP_NOTEQ: fn = GL_NOTEQUAL;
+					break;
+				case CMP_GT: fn = GL_GREATER;
+					break;
+				case CMP_LEQ: fn = GL_LEQUAL;
+					break;
+				case CMP_LT: fn = GL_LESS;
+					break;
+				default:
+					assert(false);
+				}
+				GL_CHECK(glDepthFunc(fn));
+			}
+			glcontext.depthState = state;
+		}
+	}
+
+	void RenderBackend::SetStencilState(const stencilState_t& state)
+	{
+		if (glcontext.stencilState == state) return;
+		if (glcontext.stencilState.enabled != state.enabled)
+		{
+			glcontext.stencilState.enabled = state.enabled;
+			if (state.enabled)
+			{
+				GL_CHECK(glEnable(GL_STENCIL_TEST));
+			}
+			else
+			{
+				GL_CHECK(glDisable(GL_STENCIL_TEST));
+			}
+		}
+		if (
+			glcontext.stencilState.fail != state.fail ||
+			glcontext.stencilState.zfail != state.zfail ||
+			glcontext.stencilState.pass != state.pass ||
+
+			glcontext.stencilState.back_fail != state.back_fail ||
+			glcontext.stencilState.back_zfail != state.back_zfail ||
+			glcontext.stencilState.back_pass != state.back_pass)
+		{
+			memcpy(&glcontext.stencilState, &state, sizeof(state));
+			GLenum fail;
+			GLenum zfail;
+			GLenum pass;
+
+			
+
+			if (state.separate)
+			{
+				//glStencilFuncSeparate(GL_FRONT, )
+			}
+		}
+
+	}
+
+	void RenderBackend::SetFillMode(eFillMode state)
+	{
+		if (glcontext.rasterizer.fillMode != state)
+		{
+			glcontext.rasterizer.fillMode = state;
+			if (state == FM_SOLID)
+			{
+				GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+			}
+			else
+			{
+				GL_CHECK(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+			}
+		}
 	}
 
 	void RenderBackend::Clear(bool color, bool depth, bool stencil)
@@ -458,24 +586,10 @@ namespace jsr {
 	}
 	void RenderBackend::SetCullMode(eCullMode mode)
 	{
-//		if (mode != glcontext.rasterizer.currentCullMode)
+		if (mode != glcontext.rasterizer.currentCullMode)
 		{
-			//glcontext.rasterizer.currentCullMode = mode;
+			glcontext.rasterizer.currentCullMode = mode;
 			
-			if (mode == CULL_BACK)
-			{
-				GL_State(GLS_CULL_FRONTSIDED);
-			}
-			else if (mode == CULL_FRONT)
-			{
-				GL_State(GLS_CULL_BACKSIDED);
-			}
-			else
-			{
-				GL_State(GLS_CULL_TWOSIDED);
-			}
-			/*
-
 			if (mode == CULL_NONE && glcontext.rasterizer.cullEnabled)
 			{
 				glDisable(GL_CULL_FACE);
@@ -495,7 +609,53 @@ namespace jsr {
 			case CULL_BACK:
 				glCullFace(GL_BACK);
 				break;
-			}*/
+			}
+		}
+	}
+
+	void RenderBackend::SetBlendingState(const blendingState_t& state)
+	{
+		if (glcontext.blendState == state)
+		{
+			return;
+		}
+		if (glcontext.blendState.enabled != state.enabled)
+		{
+			glcontext.blendState.enabled = state.enabled;
+			if (state.enabled)
+			{
+				glEnable(GL_BLEND);
+			}
+			else
+			{
+				glDisable(GL_BLEND);
+			}
+		}
+		if (memcmp(&glcontext.blendState.opts, &state.opts, sizeof(state.opts)) != 0)
+		{
+			memcpy(&glcontext.blendState.opts, &state.opts, sizeof(state.opts));
+			GLenum srcCol;
+			GLenum dstCol;
+			GLenum srcAlpha;
+			GLenum dstAlpha;
+
+			srcCol = GL_map_blendFunc(state.opts.colSrc);
+			dstCol = GL_map_blendFunc(state.opts.colDst);
+			srcAlpha = GL_map_blendFunc(state.opts.alphaSrc);
+			dstAlpha = GL_map_blendFunc(state.opts.alphaDst);
+
+			GL_CHECK(glBlendFuncSeparate(srcCol, dstCol, srcAlpha, dstAlpha));
+		}
+		if (glcontext.blendState.opts.colorOp != state.opts.colorOp || glcontext.blendState.opts.alphaOp != state.opts.alphaOp)
+		{
+			glcontext.blendState.opts.colorOp = state.opts.colorOp;
+			glcontext.blendState.opts.alphaOp = state.opts.alphaOp;
+			GLenum alphaOp;
+			GLenum colOp;
+
+			alphaOp = GL_map_blendEq(state.opts.alphaOp);
+			colOp = GL_map_blendEq(state.opts.colorOp);
+			GL_CHECK(glBlendEquationSeparate(alphaOp, colOp));
 		}
 	}
 
@@ -604,13 +764,15 @@ namespace jsr {
 
 		globalFramebuffers.GBufferFBO->Bind();
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_GBUFFER_MR);
-
-		GL_State(GLS_DEPTHFUNC_LESS);
 	
-		//glDepthFunc(GL_LEQUAL);
-		//glDepthMask(GL_TRUE);
-		//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		
+		SetDepthState({ true, true, CMP_LEQ });
+		SetWriteMask(bvec4{ true });
+
+		blendingState_t blendState = glcontext.blendState;
+		blendState.enabled = false;
+
+		SetBlendingState(blendState);
+
 		GL_CHECK(glViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h));
 
 		Clear(true, true, false);
@@ -668,7 +830,7 @@ namespace jsr {
 		globalFramebuffers.GBufferFBO->BlitDepthBuffer(0, 0, view->viewport.w, view->viewport.h, 0, 0, view->viewport.w, view->viewport.h);
 		
 
-		//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		SetWriteMask(bvec4{ true });
 		Clear(true, false, false);
 
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
@@ -683,31 +845,36 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_SHADOW);
 		globalImages.Shadow->Bind();
 
-		/*glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
-		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_LEQUAL);
-		glEnable(GL_STENCIL_TEST);*/
+		glEnable(GL_STENCIL_TEST);
 
-		GL_State(GLS_BLENDOP_ADD | GLS_DSTBLEND_ONE | GLS_SRCBLEND_ONE | GLS_DEPTHMASK );
+		SetDepthState({ true, false, CMP_ALWAYS });
+
+		blendingState_t blendState{};
+		blendState.enabled = true;
+		blendState.opts.alphaOp = BOP_ADD;
+		blendState.opts.colorOp = BOP_ADD;
+		blendState.opts.alphaDst = BFUNC_ONE;
+		blendState.opts.colDst = BFUNC_ONE;
+		blendState.opts.alphaSrc = BFUNC_ONE;
+		blendState.opts.colSrc = BFUNC_ONE;
+
+		SetBlendingState(blendState);
 
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
-
+#if 1
 			SetCullMode(CULL_NONE);
 			Clear(false, false, true);
 			// We need the stencil test to be enabled but we want it
 			// to succeed always. Only the depth test matters.
-			/*
+			
 			glStencilFunc(GL_ALWAYS, 0, 0);
 			glStencilOpSeparate(GL_BACK, GL_KEEP, GL_INCR_WRAP, GL_KEEP);
 			glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_DECR_WRAP, GL_KEEP);
-			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-			glDepthFunc(GL_LEQUAL);*/
-
-			GL_State(GLS_STENCIL_FUNC_ALWAYS | GLS_BACK_STENCIL_OP_ZFAIL_INCR_WRAP | GLS_STENCIL_OP_ZFAIL_DECR_WRAP| GLS_SEPARATE_STENCIL | GLS_COLORMASK|GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS);
+			SetWriteMask(bvec4{ false });
+			SetDepthState({ true, false, CMP_LEQ });
 
 			if (light->type == LIGHT_POINT)
 			{
@@ -718,15 +885,11 @@ namespace jsr {
 				R_DrawSurf(&unitConeSurface);
 			}
 
-			/*glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
-			glDepthFunc(GL_ALWAYS);
+			glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
+			SetDepthState({ true, false, CMP_ALWAYS });
 			SetCullMode(CULL_FRONT);
-			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);*/
-
-			uint64 stencilParms = 0 << GLS_STENCIL_FUNC_REF_SHIFT | 0xFF << GLS_STENCIL_FUNC_MASK_SHIFT;
-
-			GL_State(GLS_STENCIL_FUNC_NOTEQUAL | stencilParms | GLS_DEPTHFUNC_ALWAYS);
-
+			SetWriteMask(bvec4{ true });
+#endif
 			if (light->type == LIGHT_POINT)
 			{
 				R_DrawSurf(&unitSphereSurface);
@@ -737,8 +900,7 @@ namespace jsr {
 			}
 		}
 		
-		SetCullMode(CULL_BACK);
-
+		glDisable(GL_STENCIL_TEST);
 	}
 
 	void RenderBackend::RenderHDRtoLDR()
@@ -748,14 +910,15 @@ namespace jsr {
 		int w, h;
 		GetScreenSize(w, h);
 		glViewport(0, 0, w, h);
-		/*
+		
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		SetCullMode(CULL_NONE);
-		glBlendFunc(GL_ONE, GL_ZERO);
-		*/
-		GL_State(GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO);
+
+		blendingState_t blendState = glcontext.blendState;
+		blendState.enabled = false;
+		SetBlendingState(blendState);
 
 		Framebuffer::Unbind();
 		SetCurrentTextureUnit(IMU_HDR);
@@ -795,374 +958,6 @@ namespace jsr {
 		if (unit >= MAX_TEXTURE_UNITS) return;
 
 		currenttmu = unit;
-	}
-
-	/*
-	====================
-	idRenderBackend::GL_State
-
-	This routine is responsible for setting the most commonly changed state
-	====================
-	*/
-	void RenderBackend::GL_State(uint64 stateBits, bool forceGlState)
-	{
-		uint64 diff = stateBits ^ glStateBits;
-
-		if (!engineConfig.r_useStateCaching || forceGlState)
-		{
-			// make sure everything is set all the time, so we
-			// can see if our delta checking is screwing up
-			diff = 0xFFFFFFFFFFFFFFFF;
-		}
-		else if (diff == 0)
-		{
-			return;
-		}
-
-		//
-		// culling
-		//
-		if (diff & (GLS_CULL_BITS))//| GLS_MIRROR_VIEW ) )
-		{
-			switch (stateBits & GLS_CULL_BITS)
-			{
-			case GLS_CULL_TWOSIDED:
-				glDisable(GL_CULL_FACE);
-				break;
-
-			case GLS_CULL_FRONTSIDED:
-				glEnable(GL_CULL_FACE);
-				/*if (viewDef != NULL && viewDef->isMirror)
-				{
-					stateBits |= GLS_MIRROR_VIEW;
-					glCullFace(GL_FRONT);
-				}
-				else*/
-				{
-					glCullFace(GL_BACK);
-				}
-				break;
-
-			case GLS_CULL_BACKSIDED:
-			default:
-				glEnable(GL_CULL_FACE);
-				/*if (viewDef != NULL && viewDef->isMirror)
-				{
-					stateBits |= GLS_MIRROR_VIEW;
-					glCullFace(GL_BACK);
-				}
-				else*/
-				{
-					glCullFace(GL_FRONT);
-				}
-				break;
-			}
-		}
-
-		//
-		// check depthFunc bits
-		//
-		if (diff & GLS_DEPTHFUNC_BITS)
-		{
-			switch (stateBits & GLS_DEPTHFUNC_BITS)
-			{
-			case GLS_DEPTHFUNC_EQUAL:
-				glDepthFunc(GL_EQUAL);
-				break;
-			case GLS_DEPTHFUNC_ALWAYS:
-				glDepthFunc(GL_ALWAYS);
-				break;
-			case GLS_DEPTHFUNC_LESS:
-				glDepthFunc(GL_LEQUAL);
-				break;
-			case GLS_DEPTHFUNC_GREATER:
-				glDepthFunc(GL_GEQUAL);
-				break;
-			}
-		}
-
-		//
-		// check blend bits
-		//
-		if (diff & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS))
-		{
-			GLenum srcFactor = GL_ONE;
-			GLenum dstFactor = GL_ZERO;
-
-			switch (stateBits & GLS_SRCBLEND_BITS)
-			{
-			case GLS_SRCBLEND_ZERO:
-				srcFactor = GL_ZERO;
-				break;
-			case GLS_SRCBLEND_ONE:
-				srcFactor = GL_ONE;
-				break;
-			case GLS_SRCBLEND_DST_COLOR:
-				srcFactor = GL_DST_COLOR;
-				break;
-			case GLS_SRCBLEND_ONE_MINUS_DST_COLOR:
-				srcFactor = GL_ONE_MINUS_DST_COLOR;
-				break;
-			case GLS_SRCBLEND_SRC_ALPHA:
-				srcFactor = GL_SRC_ALPHA;
-				break;
-			case GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA:
-				srcFactor = GL_ONE_MINUS_SRC_ALPHA;
-				break;
-			case GLS_SRCBLEND_DST_ALPHA:
-				srcFactor = GL_DST_ALPHA;
-				break;
-			case GLS_SRCBLEND_ONE_MINUS_DST_ALPHA:
-				srcFactor = GL_ONE_MINUS_DST_ALPHA;
-				break;
-			default:
-				assert(!"GL_State: invalid src blend state bits\n");
-				break;
-			}
-
-			switch (stateBits & GLS_DSTBLEND_BITS)
-			{
-			case GLS_DSTBLEND_ZERO:
-				dstFactor = GL_ZERO;
-				break;
-			case GLS_DSTBLEND_ONE:
-				dstFactor = GL_ONE;
-				break;
-			case GLS_DSTBLEND_SRC_COLOR:
-				dstFactor = GL_SRC_COLOR;
-				break;
-			case GLS_DSTBLEND_ONE_MINUS_SRC_COLOR:
-				dstFactor = GL_ONE_MINUS_SRC_COLOR;
-				break;
-			case GLS_DSTBLEND_SRC_ALPHA:
-				dstFactor = GL_SRC_ALPHA;
-				break;
-			case GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA:
-				dstFactor = GL_ONE_MINUS_SRC_ALPHA;
-				break;
-			case GLS_DSTBLEND_DST_ALPHA:
-				dstFactor = GL_DST_ALPHA;
-				break;
-			case GLS_DSTBLEND_ONE_MINUS_DST_ALPHA:
-				dstFactor = GL_ONE_MINUS_DST_ALPHA;
-				break;
-			default:
-				assert(!"GL_State: invalid dst blend state bits\n");
-				break;
-			}
-
-			// Only actually update GL's blend func if blending is enabled.
-			if (srcFactor == GL_ONE && dstFactor == GL_ZERO)
-			{
-				glDisable(GL_BLEND);
-			}
-			else
-			{
-				glEnable(GL_BLEND);
-				glBlendFunc(srcFactor, dstFactor);
-			}
-		}
-
-		//
-		// check depthmask
-		//
-		if (diff & GLS_DEPTHMASK)
-		{
-			if (stateBits & GLS_DEPTHMASK)
-			{
-				glDepthMask(GL_FALSE);
-			}
-			else
-			{
-				glDepthMask(GL_TRUE);
-			}
-		}
-
-		//
-		// check colormask
-		//
-		if (diff & (GLS_REDMASK | GLS_GREENMASK | GLS_BLUEMASK | GLS_ALPHAMASK))
-		{
-			GLboolean r = (stateBits & GLS_REDMASK) ? GL_FALSE : GL_TRUE;
-			GLboolean g = (stateBits & GLS_GREENMASK) ? GL_FALSE : GL_TRUE;
-			GLboolean b = (stateBits & GLS_BLUEMASK) ? GL_FALSE : GL_TRUE;
-			GLboolean a = (stateBits & GLS_ALPHAMASK) ? GL_FALSE : GL_TRUE;
-			glColorMask(r, g, b, a);
-		}
-
-		//
-		// fill/line mode
-		//
-		if (diff & GLS_POLYMODE_LINE)
-		{
-			if (stateBits & GLS_POLYMODE_LINE)
-			{
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			}
-			else
-			{
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			}
-		}
-
-		//
-		// polygon offset
-		//
-		if (diff & GLS_POLYGON_OFFSET)
-		{
-			if (stateBits & GLS_POLYGON_OFFSET)
-			{
-				glPolygonOffset(polyOfsScale, polyOfsBias);
-				glEnable(GL_POLYGON_OFFSET_FILL);
-				glEnable(GL_POLYGON_OFFSET_LINE);
-			}
-			else
-			{
-				glDisable(GL_POLYGON_OFFSET_FILL);
-				glDisable(GL_POLYGON_OFFSET_LINE);
-			}
-		}
-
-		//
-		// stencil
-		//
-		if (diff & (GLS_STENCIL_FUNC_BITS | GLS_STENCIL_OP_BITS))
-		{
-			if ((stateBits & (GLS_STENCIL_FUNC_BITS | GLS_STENCIL_OP_BITS)) != 0)
-			{
-				glEnable(GL_STENCIL_TEST);
-			}
-			else
-			{
-				glDisable(GL_STENCIL_TEST);
-			}
-		}
-		if (diff & (GLS_STENCIL_FUNC_BITS | GLS_STENCIL_FUNC_REF_BITS | GLS_STENCIL_FUNC_MASK_BITS))
-		{
-			GLuint ref = GLuint((stateBits & GLS_STENCIL_FUNC_REF_BITS) >> GLS_STENCIL_FUNC_REF_SHIFT);
-			GLuint mask = GLuint((stateBits & GLS_STENCIL_FUNC_MASK_BITS) >> GLS_STENCIL_FUNC_MASK_SHIFT);
-			GLenum func = 0;
-
-			switch (stateBits & GLS_STENCIL_FUNC_BITS)
-			{
-			case GLS_STENCIL_FUNC_NEVER:
-				func = GL_NEVER;
-				break;
-			case GLS_STENCIL_FUNC_LESS:
-				func = GL_LESS;
-				break;
-			case GLS_STENCIL_FUNC_EQUAL:
-				func = GL_EQUAL;
-				break;
-			case GLS_STENCIL_FUNC_LEQUAL:
-				func = GL_LEQUAL;
-				break;
-			case GLS_STENCIL_FUNC_GREATER:
-				func = GL_GREATER;
-				break;
-			case GLS_STENCIL_FUNC_NOTEQUAL:
-				func = GL_NOTEQUAL;
-				break;
-			case GLS_STENCIL_FUNC_GEQUAL:
-				func = GL_GEQUAL;
-				break;
-			case GLS_STENCIL_FUNC_ALWAYS:
-				func = GL_ALWAYS;
-				break;
-			}
-			glStencilFunc(func, ref, mask);
-		}
-		if (diff & (GLS_STENCIL_OP_FAIL_BITS | GLS_STENCIL_OP_ZFAIL_BITS | GLS_STENCIL_OP_PASS_BITS))
-		{
-			GLenum sFail = 0;
-			GLenum zFail = 0;
-			GLenum pass = 0;
-
-			switch (stateBits & GLS_STENCIL_OP_FAIL_BITS)
-			{
-			case GLS_STENCIL_OP_FAIL_KEEP:
-				sFail = GL_KEEP;
-				break;
-			case GLS_STENCIL_OP_FAIL_ZERO:
-				sFail = GL_ZERO;
-				break;
-			case GLS_STENCIL_OP_FAIL_REPLACE:
-				sFail = GL_REPLACE;
-				break;
-			case GLS_STENCIL_OP_FAIL_INCR:
-				sFail = GL_INCR;
-				break;
-			case GLS_STENCIL_OP_FAIL_DECR:
-				sFail = GL_DECR;
-				break;
-			case GLS_STENCIL_OP_FAIL_INVERT:
-				sFail = GL_INVERT;
-				break;
-			case GLS_STENCIL_OP_FAIL_INCR_WRAP:
-				sFail = GL_INCR_WRAP;
-				break;
-			case GLS_STENCIL_OP_FAIL_DECR_WRAP:
-				sFail = GL_DECR_WRAP;
-				break;
-			}
-			switch (stateBits & GLS_STENCIL_OP_ZFAIL_BITS)
-			{
-			case GLS_STENCIL_OP_ZFAIL_KEEP:
-				zFail = GL_KEEP;
-				break;
-			case GLS_STENCIL_OP_ZFAIL_ZERO:
-				zFail = GL_ZERO;
-				break;
-			case GLS_STENCIL_OP_ZFAIL_REPLACE:
-				zFail = GL_REPLACE;
-				break;
-			case GLS_STENCIL_OP_ZFAIL_INCR:
-				zFail = GL_INCR;
-				break;
-			case GLS_STENCIL_OP_ZFAIL_DECR:
-				zFail = GL_DECR;
-				break;
-			case GLS_STENCIL_OP_ZFAIL_INVERT:
-				zFail = GL_INVERT;
-				break;
-			case GLS_STENCIL_OP_ZFAIL_INCR_WRAP:
-				zFail = GL_INCR_WRAP;
-				break;
-			case GLS_STENCIL_OP_ZFAIL_DECR_WRAP:
-				zFail = GL_DECR_WRAP;
-				break;
-			}
-			switch (stateBits & GLS_STENCIL_OP_PASS_BITS)
-			{
-			case GLS_STENCIL_OP_PASS_KEEP:
-				pass = GL_KEEP;
-				break;
-			case GLS_STENCIL_OP_PASS_ZERO:
-				pass = GL_ZERO;
-				break;
-			case GLS_STENCIL_OP_PASS_REPLACE:
-				pass = GL_REPLACE;
-				break;
-			case GLS_STENCIL_OP_PASS_INCR:
-				pass = GL_INCR;
-				break;
-			case GLS_STENCIL_OP_PASS_DECR:
-				pass = GL_DECR;
-				break;
-			case GLS_STENCIL_OP_PASS_INVERT:
-				pass = GL_INVERT;
-				break;
-			case GLS_STENCIL_OP_PASS_INCR_WRAP:
-				pass = GL_INCR_WRAP;
-				break;
-			case GLS_STENCIL_OP_PASS_DECR_WRAP:
-				pass = GL_DECR_WRAP;
-				break;
-			}
-			glStencilOp(sFail, zFail, pass);
-		}
-
-		glStateBits = stateBits;
 	}
 
 	static void GLAPIENTRY GL_DebugMessageCallback(GLenum source,
@@ -1318,5 +1113,37 @@ namespace jsr {
 			default:
 				assert(false);
 			}
+		}
+		static GLenum GL_map_blendFunc(eBlendFunc x)
+		{
+			switch (x)
+			{
+			case BFUNC_ZERO: return GL_ZERO;
+			case BFUNC_ONE: return GL_ONE;
+			case BFUNC_SRC_ALPHA: return GL_SRC_ALPHA;
+			case BFUNC_ONE_MINUS_DST_COLOR: return GL_ONE_MINUS_DST_COLOR;
+			case BFUNC_ONE_MINUS_SRC_ALPHA: return GL_ONE_MINUS_SRC_ALPHA;
+			case BFUNC_SRC_COLOR: return GL_SRC_COLOR;
+			case BFUNC_DST_ALPHA: return GL_DST_ALPHA;
+			case BFUNC_DST_COLOR: return GL_DST_COLOR;
+			case BFUNC_ONE_MINUS_DST_ALPHA: return GL_ONE_MINUS_DST_ALPHA;
+			case BFUNC_ONE_MINUS_SRC_COLOR: return GL_ONE_MINUS_SRC_COLOR;
+			default:
+				assert(false);
+			}
+		}
+		static GLenum GL_map_blendEq(eBlendOp x)
+		{
+			switch (x)
+			{
+			case BOP_MAX: return GL_MAX;
+			case BOP_MIN: return GL_MIN;
+			case BOP_RSUB: return GL_FUNC_REVERSE_SUBTRACT;
+			case BOP_SUB: return GL_FUNC_SUBTRACT;
+			case BOP_ADD: return GL_FUNC_ADD;
+			default:
+				assert(false);
+			}
+			
 		}
 }

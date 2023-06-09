@@ -47,7 +47,19 @@ namespace jsr {
 		{
 			return false;
 		}
-		GL_State(GLS_DEFAULT,true);
+
+		blendingState_t blendState{};
+		blendState.enabled = false;
+		blendState.opts.alphaOp = BOP_ADD;
+		blendState.opts.colorOp = BOP_ADD;
+		blendState.opts.alphaDst = BFUNC_ZERO;
+		blendState.opts.colDst = BFUNC_ZERO;
+		blendState.opts.alphaSrc = BFUNC_ONE;
+		blendState.opts.colSrc = BFUNC_ONE;
+
+		SetBlendingState(blendState);
+		SetDepthState({ true, true, CMP_LEQ });
+
 		initialized = true;
 		return true;
 	}
@@ -97,5 +109,13 @@ namespace jsr {
 	bool rasterizerState_t::operator!=(const rasterizerState_t& other) const
 	{
 		return !operator==(other);
+	}
+	bool bufferBinding_t::operator==(const bufferBinding_t& other) const
+	{
+		return other.offset == offset && other.stride == stride && other.buffer == buffer;
+	}
+	bool stencilState_t::operator==(const stencilState_t& other) const
+	{
+		return memcmp(this, &other, sizeof(*this)) == 0;
 	}
 }

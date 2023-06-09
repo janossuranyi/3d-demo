@@ -20,11 +20,12 @@ namespace jsr {
 		LIGHT_COUNT
 	};
 
-	enum eFace
+	enum eFaceSide
 	{
 		FACE_FRONT,
 		FACE_BACK,
-		FACE_FRONT_AND_BACK
+		FACE_FRONT_AND_BACK,
+		FACE_COUNT
 	};
 
 	enum eCompOp
@@ -36,7 +37,8 @@ namespace jsr {
 		CMP_EQ,
 		CMP_GT,
 		CMP_GEQ,
-		CMP_NOTEQ
+		CMP_NOTEQ,
+		CMP_COUNT
 	};
 
 	enum eBlendFunc
@@ -50,7 +52,8 @@ namespace jsr {
 		BFUNC_ONE_MINUS_SRC_ALPHA,
 		BFUNC_ONE_MINUS_DST_ALPHA,
 		BFUNC_ONE_MINUS_SRC_COLOR,
-		BFUNC_ONE_MINUS_DST_COLOR
+		BFUNC_ONE_MINUS_DST_COLOR,
+		BFUNC_COUNT
 	};
 
 	enum eBlendOp
@@ -59,7 +62,8 @@ namespace jsr {
 		BOP_SUB,
 		BOP_RSUB,
 		BOP_MIN,
-		BOP_MAX
+		BOP_MAX,
+		BOP_COUNT
 	};
 
 	enum eStencilOp
@@ -71,14 +75,16 @@ namespace jsr {
 		SO_INC_WRAP,
 		SO_DEC,
 		SO_DEC_WRAP,
-		SO_INVERT
+		SO_INVERT,
+		SO_COUNT
 	};
 
 	enum eCoverage
 	{
 		COVERAGE_SOLID,
 		COVERAGE_MASK,
-		COVERAGE_BLEND
+		COVERAGE_BLEND,
+		COVERAGE_COUNT
 	};
 
 	enum eStageType
@@ -108,7 +114,8 @@ namespace jsr {
 	{
 		CULL_NONE,
 		CULL_FRONT,
-		CULL_BACK
+		CULL_BACK,
+		CULL_COUNT
 	};
 
 	enum eTopology
@@ -118,7 +125,8 @@ namespace jsr {
 		TP_LINE_STRIPS,
 		TP_TRIANGLE_FANS,
 		TP_TRIANGLE_STRIPS,
-		TP_TRIANGLES
+		TP_TRIANGLES,
+		TP_COUNT
 	};
 
 	struct screenRect_t

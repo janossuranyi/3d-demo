@@ -132,7 +132,7 @@ void main()
         
         inputs.attenuation *= NdotL;
 
-        if (inputs.attenuation * g_freqHighFrag.lightColor.w < 0.005) discard;
+        //if (inputs.attenuation * g_freqHighFrag.lightColor.w < 0.005) discard;
 
         vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.y );
         vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.x);

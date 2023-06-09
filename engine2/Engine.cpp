@@ -119,6 +119,8 @@ namespace jsr {
 		bool spotOn = false;
 
 		float angles[3]{};
+		uint frameTimeCounter = 100;
+		float frameTime{};
 
 		while (!quit)
 		{
@@ -129,10 +131,17 @@ namespace jsr {
 
 			const emptyCommand_t* cmds = renderSystem.SwapCommandBuffer_BeginNewFrame(this->threaded);
 
+			if ((frameTimeCounter--) == 0)
+			{
+				frameTime = dt;
+				frameTimeCounter = 100;
+			}
+
 			SignalWork();
 
 			ImGui::NewFrame();
 			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
+			ImGui::LabelText("Frame time", "%.2f", frameTime);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
 			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.0001f, 0.0001f, 0.005f, "%.5f");

@@ -23,6 +23,19 @@ namespace jsr {
 		RC_COUNT
 	};
 
+	struct stencilState_t
+	{
+		bool enabled;
+		bool separate;
+		eStencilOp fail;
+		eStencilOp zfail;
+		eStencilOp pass;
+		eStencilOp back_fail;
+		eStencilOp back_zfail;
+		eStencilOp back_pass;
+		bool operator==(const stencilState_t& other) const;
+	};
+
 	struct emptyCommand_t
 	{
 		eRenderCommand command;
@@ -57,13 +70,14 @@ namespace jsr {
 	struct blendingState_t
 	{
 		bool enabled;
-		eBlendFunc colSrc;
-		eBlendFunc colDst;
-		eBlendFunc alphaSrc;
-		eBlendFunc alphaDst;
-		eBlendOp colorOp;
-		eBlendOp alphaOp;
-
+		struct {
+			eBlendFunc colSrc;
+			eBlendFunc colDst;
+			eBlendFunc alphaSrc;
+			eBlendFunc alphaDst;
+			eBlendOp colorOp;
+			eBlendOp alphaOp;
+		} opts;
 		bool operator==(const blendingState_t& other) const;
 		bool operator!=(const blendingState_t& other) const;
 		bool operator()(const blendingState_t* a, const blendingState_t* b) const;
@@ -107,6 +121,7 @@ namespace jsr {
 		bufferBinding_t vtxBindings[MAX_BINDING];
 		bufferBinding_t uboBindings[MAX_BINDING];
 		rasterizerState_t rasterizer;
+		stencilState_t stencilState;
 	};
 
 	extern glcontext_t glcontext;
@@ -122,7 +137,11 @@ namespace jsr {
 		void		Shutdown();
 		void		GetScreenSize(int& x, int& y) const;
 		void		SetClearColor(float r, float g, float b, float a);
-		void		SetClearColor(glm::vec4 color);
+		void		SetClearColor(const glm::vec4& color);
+		void		SetWriteMask(const glm::bvec4& mask);
+		void		SetDepthState(const depthState_t& state);
+		void		SetStencilState(const stencilState_t& state);
+		void		SetFillMode(eFillMode state);
 		glm::vec4	GetClearColor() const;
 		void		Clear(bool color, bool depth, bool stencil);
 		int			GetUniformBufferAligment() const;
@@ -134,7 +153,7 @@ namespace jsr {
 		void		RenderView(viewDef_t* view);
 		void		RenderCommandBuffer(const emptyCommand_t* cmds);
 		void		SetCullMode(eCullMode mode);
-		void		GL_State(uint64 stateBits, bool forceGlState = false);
+		void		SetBlendingState(const blendingState_t& state);
 	private:
 		float		clearColor[4];
 		int			currenttmu;
