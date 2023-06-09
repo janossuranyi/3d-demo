@@ -2,8 +2,8 @@
 
 #include <set>
 #include <SDL.h>
-#include "./Image.h"
-#include "./RenderCommon.h"
+#include "engine2/Image.h"
+#include "engine2/RenderCommon.h"
 
 namespace jsr {
     struct imageFormatInfo_t

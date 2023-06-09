@@ -14,7 +14,7 @@ namespace jsr {
 		int		r_msaa;
 		bool	r_fbsrgb;
 		bool	r_debug;
-
+		bool	r_useStateCaching;
 		engineConfig_t();
 		void LoadFromFile();
 	};

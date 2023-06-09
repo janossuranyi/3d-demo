@@ -134,11 +134,14 @@ namespace jsr {
 		void		RenderView(viewDef_t* view);
 		void		RenderCommandBuffer(const emptyCommand_t* cmds);
 		void		SetCullMode(eCullMode mode);
+		void		GL_State(uint64 stateBits, bool forceGlState = false);
 	private:
 		float		clearColor[4];
 		int			currenttmu;
 		bool		initialized;
 		viewDef_t*	view;
+		uint64		glStateBits;
+		float		polyOfsScale, polyOfsBias;
 		void		RenderDebugPass();
 		void		RenderDepthPass();
 		void		RenderShadow();

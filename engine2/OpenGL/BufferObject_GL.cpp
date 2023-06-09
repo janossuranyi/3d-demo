@@ -1,10 +1,10 @@
 #include <cassert>
 #include <GL/glew.h>
-#include "./EngineTypes.h"
+#include "engine2/EngineTypes.h"
 #include "./RenderBackend_GL.h"
-#include "./RenderBackend.h"
-#include "./BufferObject.h"
-#include "./Logger.h"
+#include "engine2/RenderBackend.h"
+#include "engine2/BufferObject.h"
+#include "engine2/Logger.h"
 
 namespace jsr {
 

@@ -29,6 +29,7 @@ namespace jsr {
 		r_fullscreen = 0;
 		r_msaa = 0;
 		r_vsync = 1;
+		r_useStateCaching = true;
 	}
 
 	void engineConfig_t::LoadFromFile()

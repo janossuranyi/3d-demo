@@ -1,11 +1,11 @@
 #include <cassert>
 #include <cmath>
 #include <GL/glew.h>
-#include "./Image.h"
-#include "./Logger.h"
-#include "./FrameBuffer.h"
+#include "engine2/Image.h"
+#include "engine2/Logger.h"
+#include "engine2/FrameBuffer.h"
 #include "./RenderBackend_GL.h"
-#include "./RenderSystem.h"
+#include "engine2/RenderSystem.h"
 
 namespace jsr {
 

@@ -1,7 +1,7 @@
 #include "./RenderBackend.h"
 #include "./RenderProgs.h"
 #include "./Logger.h"
-
+#include "./GLState.h"
 #include <memory>
 
 namespace jsr {
@@ -47,6 +47,7 @@ namespace jsr {
 		{
 			return false;
 		}
+		GL_State(GLS_DEFAULT,true);
 		initialized = true;
 		return true;
 	}

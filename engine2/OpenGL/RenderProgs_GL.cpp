@@ -2,11 +2,11 @@
 #include <string>
 #include <vector>
 
-#include "RenderProgs.h"
-#include "RenderSystem.h"
-#include "RenderBackend_GL.h"
-#include "Resources.h"
-#include "Logger.h"
+#include "engine2/RenderProgs.h"
+#include "engine2/RenderSystem.h"
+#include "./RenderBackend_GL.h"
+#include "engine2/Resources.h"
+#include "engine2/Logger.h"
 
 namespace jsr {
 

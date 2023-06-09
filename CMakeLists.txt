@@ -22,10 +22,14 @@ file(GLOB DEMO_C demo/*.cpp)
 
 file(GLOB ENGINE2_I engine2/*.h)
 file(GLOB ENGINE2_S engine2/*.cpp)
+file(GLOB GFX_OPENGL_H engine2/OpenGL/*.h)
+file(GLOB GFX_OPENGL_C engine2/OpenGL/*.cpp)
 
 set(ENGINE2_FILES
   ${ENGINE2_I}
   ${ENGINE2_S}
+  ${GFX_OPENGL_H}
+  ${GFX_OPENGL_C}
 )
 
 
@@ -165,10 +169,11 @@ if(WIN32)
      $<TARGET_FILE_DIR:demo>)
 endif()
 
-set(ENGINE_OGL
-  ${ENGINE_GFX_OGL_H}
-  ${ENGINE_GFX_OGL_C}
+set(GFX_OPENGL
+  ${GFX_OPENGL_H}
+  ${GFX_OPENGL_C}
 )
 
+source_group("renderer/OpenGL" FILES ${GFX_OPENGL} )
 source_group("Shaders" FILES ${SHADERS_DEV} )
 source_group("Shaders/builtin" FILES ${SHADERS_BUILTIN} )

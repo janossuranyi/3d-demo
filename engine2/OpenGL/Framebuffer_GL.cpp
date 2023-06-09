@@ -1,9 +1,9 @@
 #include <vector>
 #include <GL/glew.h>
-#include "./FrameBuffer.h"
-#include "./RenderSystem.h"
+#include "engine2/FrameBuffer.h"
+#include "engine2/RenderSystem.h"
 #include "./RenderBackend_GL.h"
-#include "./Logger.h"
+#include "engine2/Logger.h"
 
 namespace jsr {
 	
