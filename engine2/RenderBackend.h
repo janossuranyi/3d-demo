@@ -33,6 +33,9 @@ namespace jsr {
 		eStencilOp back_fail;
 		eStencilOp back_zfail;
 		eStencilOp back_pass;
+		eCompOp stencilFunc;
+		unsigned int ref;
+		unsigned int mask;
 		bool operator==(const stencilState_t& other) const;
 	};
 

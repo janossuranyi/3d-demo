@@ -30,6 +30,8 @@ namespace jsr {
 
 	GLenum GL_map_blendFunc(eBlendFunc x);
 	GLenum GL_map_blendEq(eBlendOp x);
+	GLenum GL_map_stencilOp(eStencilOp x);
+	GLenum GL_map_CmpOp(eCompOp x);
 
 	void R_DrawSurf(const drawSurf_t* surf);
 
@@ -399,28 +401,7 @@ namespace jsr {
 			}
 			if (state.func != glcontext.depthState.func)
 			{
-				GLenum fn;
-				switch (state.func)
-				{
-				case CMP_ALWAYS: fn = GL_ALWAYS;
-					break;
-				case CMP_NEVER: fn = GL_NEVER;
-					break;
-				case CMP_GEQ: fn = GL_GEQUAL;
-					break;
-				case CMP_EQ: fn = GL_EQUAL;
-					break;
-				case CMP_NOTEQ: fn = GL_NOTEQUAL;
-					break;
-				case CMP_GT: fn = GL_GREATER;
-					break;
-				case CMP_LEQ: fn = GL_LEQUAL;
-					break;
-				case CMP_LT: fn = GL_LESS;
-					break;
-				default:
-					assert(false);
-				}
+				GLenum fn = GL_map_CmpOp(state.func);
 				GL_CHECK(glDepthFunc(fn));
 			}
 			glcontext.depthState = state;
@@ -442,6 +423,14 @@ namespace jsr {
 				GL_CHECK(glDisable(GL_STENCIL_TEST));
 			}
 		}
+		if (glcontext.stencilState.stencilFunc != state.stencilFunc || glcontext.stencilState.ref != state.ref || glcontext.stencilState.mask != state.mask)
+		{
+			glcontext.stencilState.stencilFunc = state.stencilFunc;
+			glcontext.stencilState.mask = state.mask;
+			glcontext.stencilState.ref = state.ref;
+			GLenum op = GL_map_CmpOp(state.stencilFunc);
+			GL_CHECK(glStencilFunc(op, (GLint)state.ref, (GLuint)state.mask));
+		}
 		if (
 			glcontext.stencilState.fail != state.fail ||
 			glcontext.stencilState.zfail != state.zfail ||
@@ -449,18 +438,29 @@ namespace jsr {
 
 			glcontext.stencilState.back_fail != state.back_fail ||
 			glcontext.stencilState.back_zfail != state.back_zfail ||
-			glcontext.stencilState.back_pass != state.back_pass)
+			glcontext.stencilState.back_pass != state.back_pass ||
+			glcontext.stencilState.separate != state.separate)
 		{
 			memcpy(&glcontext.stencilState, &state, sizeof(state));
-			GLenum fail;
-			GLenum zfail;
-			GLenum pass;
+			GLenum fail{};
+			GLenum zfail{};
+			GLenum pass{};
 
-			
+			fail = GL_map_stencilOp(state.fail);
+			zfail = GL_map_stencilOp(state.zfail);
+			pass = GL_map_stencilOp(state.pass);
 
 			if (state.separate)
 			{
-				//glStencilFuncSeparate(GL_FRONT, )
+				GL_CHECK(glStencilOpSeparate(GL_FRONT, fail, zfail, pass));
+				fail = GL_map_stencilOp(state.back_fail);
+				zfail = GL_map_stencilOp(state.back_zfail);
+				pass = GL_map_stencilOp(state.back_pass);
+				GL_CHECK(glStencilOpSeparate(GL_BACK, fail, zfail, pass));
+			}
+			else
+			{
+				GL_CHECK(glStencilOp(fail, zfail, pass));
 			}
 		}
 
@@ -586,21 +586,23 @@ namespace jsr {
 	}
 	void RenderBackend::SetCullMode(eCullMode mode)
 	{
+		if (mode == CULL_NONE && glcontext.rasterizer.cullEnabled)
+		{
+			glcontext.rasterizer.cullEnabled = false;
+			glDisable(GL_CULL_FACE);
+			return;
+		}
+		if (mode == CULL_NONE && !glcontext.rasterizer.cullEnabled) return;
+
+		if (!glcontext.rasterizer.cullEnabled)
+		{
+			glEnable(GL_CULL_FACE);
+			glcontext.rasterizer.cullEnabled = true;
+		}
+
 		if (mode != glcontext.rasterizer.currentCullMode)
 		{
 			glcontext.rasterizer.currentCullMode = mode;
-			
-			if (mode == CULL_NONE && glcontext.rasterizer.cullEnabled)
-			{
-				glDisable(GL_CULL_FACE);
-				glcontext.rasterizer.cullEnabled = false;
-			}
-			else if (mode != CULL_NONE && !glcontext.rasterizer.cullEnabled)
-			{
-				glEnable(GL_CULL_FACE);
-				glcontext.rasterizer.cullEnabled = true;
-			}
-
 			switch (mode)
 			{
 			case CULL_FRONT:
@@ -845,8 +847,6 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_SHADOW);
 		globalImages.Shadow->Bind();
 
-		glEnable(GL_STENCIL_TEST);
-
 		SetDepthState({ true, false, CMP_ALWAYS });
 
 		blendingState_t blendState{};
@@ -857,8 +857,17 @@ namespace jsr {
 		blendState.opts.colDst = BFUNC_ONE;
 		blendState.opts.alphaSrc = BFUNC_ONE;
 		blendState.opts.colSrc = BFUNC_ONE;
-
 		SetBlendingState(blendState);
+
+		stencilState_t stencilSt{};
+		stencilSt.enabled = true;
+		stencilSt.separate = true;
+		stencilSt.fail = SO_KEEP;
+		stencilSt.zfail = SO_DEC_WRAP;
+		stencilSt.pass = SO_KEEP;
+		stencilSt.back_fail = SO_KEEP;
+		stencilSt.back_zfail = SO_INC_WRAP;
+		stencilSt.back_pass = SO_KEEP;
 
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
@@ -866,16 +875,19 @@ namespace jsr {
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
 #if 1
 			SetCullMode(CULL_NONE);
-			Clear(false, false, true);
 			// We need the stencil test to be enabled but we want it
 			// to succeed always. Only the depth test matters.
 			
-			glStencilFunc(GL_ALWAYS, 0, 0);
-			glStencilOpSeparate(GL_BACK, GL_KEEP, GL_INCR_WRAP, GL_KEEP);
-			glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_DECR_WRAP, GL_KEEP);
-			SetWriteMask(bvec4{ false });
-			SetDepthState({ true, false, CMP_LEQ });
+			stencilSt.mask = 0;
+			stencilSt.ref = 0;
+			stencilSt.stencilFunc = CMP_ALWAYS;
+			SetStencilState(stencilSt);
+			Clear(false, false, true);
+			//glStencilFunc(GL_ALWAYS, 0, 0);
 
+			SetWriteMask(glm::bvec4{ false });
+			SetDepthState({ true, false, CMP_LEQ });
+			
 			if (light->type == LIGHT_POINT)
 			{
 				R_DrawSurf(&unitSphereSurface);
@@ -885,10 +897,14 @@ namespace jsr {
 				R_DrawSurf(&unitConeSurface);
 			}
 
-			glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
+			stencilSt.mask = 255;
+			stencilSt.ref = 0;
+			stencilSt.stencilFunc = CMP_NOTEQ;
+			SetStencilState(stencilSt);
+			//glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
 			SetDepthState({ true, false, CMP_ALWAYS });
 			SetCullMode(CULL_FRONT);
-			SetWriteMask(bvec4{ true });
+			SetWriteMask(glm::bvec4{ true });
 #endif
 			if (light->type == LIGHT_POINT)
 			{
@@ -899,8 +915,9 @@ namespace jsr {
 				R_DrawSurf(&unitConeSurface);
 			}
 		}
-		
-		glDisable(GL_STENCIL_TEST);
+		stencilSt.enabled = false;
+		SetStencilState(stencilSt);
+		//glDisable(GL_STENCIL_TEST);
 	}
 
 	void RenderBackend::RenderHDRtoLDR()
@@ -1136,14 +1153,53 @@ namespace jsr {
 		{
 			switch (x)
 			{
-			case BOP_MAX: return GL_MAX;
-			case BOP_MIN: return GL_MIN;
-			case BOP_RSUB: return GL_FUNC_REVERSE_SUBTRACT;
-			case BOP_SUB: return GL_FUNC_SUBTRACT;
-			case BOP_ADD: return GL_FUNC_ADD;
+			case BOP_MAX:	return GL_MAX;
+			case BOP_MIN:	return GL_MIN;
+			case BOP_RSUB:	return GL_FUNC_REVERSE_SUBTRACT;
+			case BOP_SUB:	return GL_FUNC_SUBTRACT;
+			case BOP_ADD:	return GL_FUNC_ADD;
+			default:
+				assert(false);
+			}			
+		}
+		static GLenum GL_map_stencilOp(eStencilOp x)
+		{
+			switch (x)
+			{
+			case SO_DEC:		return GL_DECR;
+			case SO_DEC_WRAP:	return GL_DECR_WRAP;
+			case SO_INC:		return GL_INCR;
+			case SO_INC_WRAP:	return GL_INCR_WRAP;
+			case SO_KEEP:		return GL_KEEP;
+			case SO_REPLACE:	return GL_REPLACE;
+			case SO_ZERO:		return GL_ZERO;
+			case SO_INVERT:		return GL_INVERT;
 			default:
 				assert(false);
 			}
-			
+		}
+		static GLenum GL_map_CmpOp(eCompOp x)
+		{
+			switch (x)
+			{
+			case CMP_ALWAYS: return GL_ALWAYS;
+				break;
+			case CMP_NEVER: return GL_NEVER;
+				break;
+			case CMP_GEQ: return GL_GEQUAL;
+				break;
+			case CMP_EQ: return GL_EQUAL;
+				break;
+			case CMP_NOTEQ: return GL_NOTEQUAL;
+				break;
+			case CMP_GT: return GL_GREATER;
+				break;
+			case CMP_LEQ: return GL_LEQUAL;
+				break;
+			case CMP_LT: return GL_LESS;
+				break;
+			default:
+				assert(false);
+			}
 		}
 }
