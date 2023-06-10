@@ -12,5 +12,5 @@ out INTERFACE
 void main()
 {
     gl_Position = g_freqHighVert.WVPMatrix * in_Position;
-    Out.positionVS = vec3(g_freqLowVert.viewMatrix * g_freqHighVert.localToWorldMatrix * in_Position);
+    Out.positionVS = vec3(gViewMatrix * gModelMatrix * in_Position);
 }
