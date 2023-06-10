@@ -1,5 +1,6 @@
 @include "version.inc.glsl"
 @include "common.inc.glsl"
+@include "defs.inc"
 @include "fragment_uniforms.inc.glsl"
 
 out vec3 hdrColor;
@@ -109,7 +110,7 @@ void main()
         float Kr = d / gLightRange ;
         Kr *= Kr;
         Kr *= Kr;
-        inputs.attenuation = max( min( 1.0 - Kr, 1 ), 0 ) / ( 1.0 + gLinearAttnFactor * d + gQuadraticAttnFactor * d*d);
+        inputs.attenuation = max( min( 1.0 - Kr, 1.0 ), 0.0 ) / ( 1.0 + gLinearAttnFactor * d + gQuadraticAttnFactor * d*d);
         inputs.lightDir = L / d;
     }
     

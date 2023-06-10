@@ -33,7 +33,7 @@ void main()
 	T = normalize(T - dot(T, N) * N);
 
     Out.fragPos     = g_freqHighVert.localToWorldMatrix * in_Position;
-    Out.fragPosLight= g_freqLowVert.lightProjMatrix * Out.fragPos;
+    //Out.fragPosLight= g_freqHighVert.lightProjMatrix * Out.fragPos;
     Out.color       = in_Color;
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);

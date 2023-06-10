@@ -28,10 +28,6 @@ void CheckOpenGLError(const char* stmt, const char* fname, int line)
 
 namespace jsr {
 
-	GLenum GL_map_blendFunc(eBlendFunc x);
-	GLenum GL_map_blendEq(eBlendOp x);
-	GLenum GL_map_stencilOp(eStencilOp x);
-	GLenum GL_map_CmpOp(eCompOp x);
 
 	void R_DrawSurf(const drawSurf_t* surf);
 
@@ -304,8 +300,8 @@ namespace jsr {
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_PORTABILITY_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 
-			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
-			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
+			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_TRUE);
+			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 			//glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_TRUE);
 #endif
 		}
@@ -375,36 +371,35 @@ namespace jsr {
 
 	void RenderBackend::SetDepthState(const depthState_t& state)
 	{
-		if (glcontext.depthState != state)
+		if (state.enabled != glcontext.depthState.enabled)
 		{
-			if (state.enabled != glcontext.depthState.enabled)
+			glcontext.depthState.enabled = state.enabled;
+			if (state.enabled)
 			{
-				if (state.enabled)
-				{
-					GL_CHECK(glEnable(GL_DEPTH_TEST));
-				}
-				else
-				{
-					GL_CHECK(glDisable(GL_DEPTH_TEST));
-				}
+				GL_CHECK(glEnable(GL_DEPTH_TEST));
 			}
-			if (state.depthMask != glcontext.depthState.depthMask)
+			else
 			{
-				if (state.depthMask)
-				{
-					GL_CHECK(glDepthMask(GL_TRUE));
-				}
-				else
-				{
-					GL_CHECK(glDepthMask(GL_FALSE));
-				}
+				GL_CHECK(glDisable(GL_DEPTH_TEST));
 			}
-			if (state.func != glcontext.depthState.func)
+		}
+		if (state.depthMask != glcontext.depthState.depthMask)
+		{
+			glcontext.depthState.depthMask = state.depthMask;
+			if (state.depthMask)
 			{
-				GLenum fn = GL_map_CmpOp(state.func);
-				GL_CHECK(glDepthFunc(fn));
+				GL_CHECK(glDepthMask(GL_TRUE));
 			}
-			glcontext.depthState = state;
+			else
+			{
+				GL_CHECK(glDepthMask(GL_FALSE));
+			}
+		}
+		if (state.func != glcontext.depthState.func)
+		{
+			glcontext.depthState.func = state.func;
+			GLenum fn = GL_map_CmpOp(state.func);
+			GL_CHECK(glDepthFunc(fn));
 		}
 	}
 
@@ -482,6 +477,15 @@ namespace jsr {
 		}
 	}
 
+	void RenderBackend::SetViewport(int x, int y, int w, int h)
+	{
+		const glm::uvec4 v(x, y, w, h);
+		if (glcontext.viewport == v) return;
+
+		glcontext.viewport = v;
+		GL_CHECK(glViewport(x, y, w, h));
+	}
+
 	void RenderBackend::Clear(bool color, bool depth, bool stencil)
 	{
 		GLbitfield target{};
@@ -531,6 +535,7 @@ namespace jsr {
 		RenderDeferred_GBuffer();
 		RenderDeferred_Lighting();
 		RenderHDRtoLDR();
+		RenderAA();
 #if 0
 		Framebuffer::Unbind();
 
@@ -684,10 +689,12 @@ namespace jsr {
 		using namespace glm;
 
 		if (view == nullptr) return;
+		depthState_t ds = glcontext.depthState;
 
-		glViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
-		glDepthMask(GL_TRUE);
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
+		ds.depthMask = true;
+		SetDepthState(ds);
+		SetWriteMask(glm::bvec4{ false });
 
 		Clear(false, true, false);
 
@@ -712,25 +719,23 @@ namespace jsr {
 		}
 	}
 
-	void RenderBackend::RenderShadow()
+	void RenderBackend::RenderShadow(const viewLight_t* light)
 	{
 		using namespace glm;
 
 		globalFramebuffers.shadowFBO->Bind();
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LEQUAL);
-		glViewport(0, 0, renderGlobals.shadowResolution, renderGlobals.shadowResolution);
+		depthState_t ds = glcontext.depthState;
+		ds.depthMask = true;
+		ds.func = CMP_LEQ;
+		SetDepthState(ds);
+		auto ss = glcontext.stencilState;
+		ss.enabled = false;
+		SetStencilState(ss);
+		
+		SetViewport(0, 0, renderGlobals.shadowResolution, renderGlobals.shadowResolution);
 
 		Clear(false, true, false);
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		glEnable(GL_CULL_FACE);
-
-		vec3 lightDir = { 0,0,-1 };
-		vec3 lightPos = { 0,0,0 };
-
-		mat4 lightProj = perspective(view->renderView.fov, 1.0f, view->nearClipDistance, view->farClipDistance);
-		mat4 lightView = lookAt(lightPos, lightPos + lightDir, { 0.0f,1.0f,0.0f });
-		mat4 lightViewProj = lightProj * lightView;
+		SetWriteMask(glm::bvec4{ false });
 
 		const drawSurf_t* surf;
 
@@ -752,12 +757,11 @@ namespace jsr {
 				|| stage.images[IMU_EMMISIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
 				**/
 
+			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
 			R_DrawSurf(surf);
 		}
 
-		Framebuffer::Unbind();
-		glDepthFunc(GL_LEQUAL);
-
+		//Framebuffer::Unbind();
 	}
 
 	void RenderBackend::RenderDeferred_GBuffer()
@@ -775,7 +779,7 @@ namespace jsr {
 
 		SetBlendingState(blendState);
 
-		GL_CHECK(glViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h));
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
 
 		Clear(true, true, false);
 
@@ -799,7 +803,7 @@ namespace jsr {
 				if (k == 0 && stage.coverage != COVERAGE_SOLID) continue;
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
 
-				if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
+				//if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
 				
 				// setup textures
 				for (int j = 0; j < IMU_COUNT; ++j)
@@ -824,13 +828,13 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		GL_CHECK(glViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h));
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
 
 		globalFramebuffers.hdrFBO->Bind();
 		
 		globalFramebuffers.GBufferFBO->BindForReading();
 		globalFramebuffers.GBufferFBO->BlitDepthBuffer(0, 0, view->viewport.w, view->viewport.h, 0, 0, view->viewport.w, view->viewport.h);
-		
+		globalFramebuffers.hdrFBO->BindForReading();
 
 		SetWriteMask(bvec4{ true });
 		Clear(true, false, false);
@@ -871,9 +875,20 @@ namespace jsr {
 
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
+
+			renderSystem.programManager->BindUniformBlock(UBB_LIGHT_DATA, light->lightData);
+#if 1
+			if (light->type == LIGHT_SPOT)
+			{
+				RenderShadow(light);
+				globalFramebuffers.hdrFBO->Bind();
+				SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
+				renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
+			}
+#endif
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
-#if 1
+
 			SetCullMode(CULL_NONE);
 			// We need the stencil test to be enabled but we want it
 			// to succeed always. Only the depth test matters.
@@ -881,6 +896,7 @@ namespace jsr {
 			stencilSt.mask = 0;
 			stencilSt.ref = 0;
 			stencilSt.stencilFunc = CMP_ALWAYS;
+			stencilSt.enabled = true;
 			SetStencilState(stencilSt);
 			Clear(false, false, true);
 			//glStencilFunc(GL_ALWAYS, 0, 0);
@@ -905,7 +921,6 @@ namespace jsr {
 			SetDepthState({ true, false, CMP_ALWAYS });
 			SetCullMode(CULL_FRONT);
 			SetWriteMask(glm::bvec4{ true });
-#endif
 			if (light->type == LIGHT_POINT)
 			{
 				R_DrawSurf(&unitSphereSurface);
@@ -926,23 +941,49 @@ namespace jsr {
 
 		int w, h;
 		GetScreenSize(w, h);
-		glViewport(0, 0, w, h);
-		
-		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_ALWAYS);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		SetViewport(0, 0, w, h);
+		auto ds = glcontext.depthState;
+		ds.depthMask = false;
+		ds.func = CMP_ALWAYS;
+		SetDepthState(ds);
+		SetWriteMask(bvec4(true));
 		SetCullMode(CULL_NONE);
 
 		blendingState_t blendState = glcontext.blendState;
 		blendState.enabled = false;
 		SetBlendingState(blendState);
 
-		Framebuffer::Unbind();
+		globalFramebuffers.defaultFBO->Bind();
+
 		SetCurrentTextureUnit(IMU_HDR);
 		globalImages.HDRaccum->Bind();
 		SetCurrentTextureUnit(IMU_DIFFUSE);
 		globalImages.GBufferAlbedo->Bind();
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
+		R_DrawSurf(&unitRectSurface);
+	}
+
+	void RenderBackend::RenderAA()
+	{
+		using namespace glm;
+
+		int w, h;
+		GetScreenSize(w, h);
+		SetViewport(0, 0, w, h);
+		auto ds = glcontext.depthState;
+		ds.depthMask = false;
+		ds.func = CMP_ALWAYS;
+		SetDepthState(ds);
+		SetWriteMask(bvec4(true));
+		SetCullMode(CULL_NONE);
+		blendingState_t blendState = glcontext.blendState;
+		blendState.enabled = false;
+		SetBlendingState(blendState);
+		Framebuffer::Unbind();
+
+		SetCurrentTextureUnit(0);
+		globalImages.defaultImage->Bind();
+		renderSystem.programManager->UseProgram(PRG_FXAA3);
 		R_DrawSurf(&unitRectSurface);
 	}
 
@@ -1078,128 +1119,4 @@ namespace jsr {
 			message);
 	}
 
-		GLenum GL_map_topology(eTopology x)
-		{
-			switch (x)
-			{
-			case TP_POINTS:	return GL_POINTS;
-			case TP_LINES: return GL_LINES;
-			case TP_LINE_STRIPS: return GL_LINE_STRIP;
-			case TP_TRIANGLES: return GL_TRIANGLES;
-			case TP_TRIANGLE_FANS: return GL_TRIANGLE_FAN;
-			case TP_TRIANGLE_STRIPS: return GL_TRIANGLE_STRIP;
-			default: 
-				assert(false);
-			}
-		}
-
-		GLenum GL_map_texfilter(eImageFilter x)
-		{
-			switch (x)
-			{
-			case IFL_NEAREST:			return GL_NEAREST;
-			case IFL_LINEAR:			return GL_LINEAR;
-			case IFL_NEAREST_NEAREST:	return GL_NEAREST_MIPMAP_NEAREST;
-			case IFL_NEAREST_LINEAR:	return GL_NEAREST_MIPMAP_LINEAR;
-			case IFL_LINEAR_NEAREST:	return GL_LINEAR_MIPMAP_NEAREST;
-			case IFL_LINEAR_LINEAR:		return GL_LINEAR_MIPMAP_LINEAR;
-			default:
-				assert(false);
-			}
-		}
-
-		GLenum GL_map_texrepeat(eImageRepeat x)
-		{
-			switch (x)
-			{
-			case IMR_REPEAT:			return GL_REPEAT;
-			case IMR_CLAMP_TO_BORDER:	return GL_CLAMP_TO_BORDER;
-			case IMR_CLAMP_TO_EDGE:		return GL_CLAMP_TO_EDGE;
-			default:
-				assert(false);
-			}
-		}
-		GLenum GL_map_textarget(eImageShape x)
-		{
-			switch (x)
-			{
-			case IMS_2D:			return GL_TEXTURE_2D;
-			case IMS_2D_ARRAY:		return GL_TEXTURE_2D_ARRAY;
-			case IMS_CUBEMAP:		return GL_TEXTURE_CUBE_MAP;
-			case IMS_CUBEMAP_ARRAY:	return GL_TEXTURE_CUBE_MAP_ARRAY;
-			default:
-				assert(false);
-			}
-		}
-		static GLenum GL_map_blendFunc(eBlendFunc x)
-		{
-			switch (x)
-			{
-			case BFUNC_ZERO: return GL_ZERO;
-			case BFUNC_ONE: return GL_ONE;
-			case BFUNC_SRC_ALPHA: return GL_SRC_ALPHA;
-			case BFUNC_ONE_MINUS_DST_COLOR: return GL_ONE_MINUS_DST_COLOR;
-			case BFUNC_ONE_MINUS_SRC_ALPHA: return GL_ONE_MINUS_SRC_ALPHA;
-			case BFUNC_SRC_COLOR: return GL_SRC_COLOR;
-			case BFUNC_DST_ALPHA: return GL_DST_ALPHA;
-			case BFUNC_DST_COLOR: return GL_DST_COLOR;
-			case BFUNC_ONE_MINUS_DST_ALPHA: return GL_ONE_MINUS_DST_ALPHA;
-			case BFUNC_ONE_MINUS_SRC_COLOR: return GL_ONE_MINUS_SRC_COLOR;
-			default:
-				assert(false);
-			}
-		}
-		static GLenum GL_map_blendEq(eBlendOp x)
-		{
-			switch (x)
-			{
-			case BOP_MAX:	return GL_MAX;
-			case BOP_MIN:	return GL_MIN;
-			case BOP_RSUB:	return GL_FUNC_REVERSE_SUBTRACT;
-			case BOP_SUB:	return GL_FUNC_SUBTRACT;
-			case BOP_ADD:	return GL_FUNC_ADD;
-			default:
-				assert(false);
-			}			
-		}
-		static GLenum GL_map_stencilOp(eStencilOp x)
-		{
-			switch (x)
-			{
-			case SO_DEC:		return GL_DECR;
-			case SO_DEC_WRAP:	return GL_DECR_WRAP;
-			case SO_INC:		return GL_INCR;
-			case SO_INC_WRAP:	return GL_INCR_WRAP;
-			case SO_KEEP:		return GL_KEEP;
-			case SO_REPLACE:	return GL_REPLACE;
-			case SO_ZERO:		return GL_ZERO;
-			case SO_INVERT:		return GL_INVERT;
-			default:
-				assert(false);
-			}
-		}
-		static GLenum GL_map_CmpOp(eCompOp x)
-		{
-			switch (x)
-			{
-			case CMP_ALWAYS: return GL_ALWAYS;
-				break;
-			case CMP_NEVER: return GL_NEVER;
-				break;
-			case CMP_GEQ: return GL_GEQUAL;
-				break;
-			case CMP_EQ: return GL_EQUAL;
-				break;
-			case CMP_NOTEQ: return GL_NOTEQUAL;
-				break;
-			case CMP_GT: return GL_GREATER;
-				break;
-			case CMP_LEQ: return GL_LEQUAL;
-				break;
-			case CMP_LT: return GL_LESS;
-				break;
-			default:
-				assert(false);
-			}
-		}
 }

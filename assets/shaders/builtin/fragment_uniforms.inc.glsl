@@ -1,5 +1,3 @@
-@include "defs.inc"
-
 #define FLG_X_COVERAGE_SHIFT 0
 #define FLG_X_COVERAGE_MASK 3
 #define FLG_COVERAGE_SOLID 0
@@ -27,6 +25,8 @@
 
 #define gNearClipDistance g_freqLowFrag.nearFarClip.x
 #define gFarClipDistance g_freqLowFrag.nearFarClip.y
+#define gScreenSize g_freqLowFrag.screenSize.xy
+#define gInvScreenSize g_freqLowFrag.screenSize.zw
 
 layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 {

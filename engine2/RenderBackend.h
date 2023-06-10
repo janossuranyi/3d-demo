@@ -124,7 +124,8 @@ namespace jsr {
 		bufferBinding_t vtxBindings[MAX_BINDING];
 		bufferBinding_t uboBindings[MAX_BINDING];
 		rasterizerState_t rasterizer;
-		stencilState_t stencilState;
+		stencilState_t	stencilState;
+		glm::uvec4		viewport;
 	};
 
 	extern glcontext_t glcontext;
@@ -145,6 +146,7 @@ namespace jsr {
 		void		SetDepthState(const depthState_t& state);
 		void		SetStencilState(const stencilState_t& state);
 		void		SetFillMode(eFillMode state);
+		void		SetViewport(int x, int y, int w, int h);
 		glm::vec4	GetClearColor() const;
 		void		Clear(bool color, bool depth, bool stencil);
 		int			GetUniformBufferAligment() const;
@@ -166,10 +168,11 @@ namespace jsr {
 		float		polyOfsScale, polyOfsBias;
 		void		RenderDebugPass();
 		void		RenderDepthPass();
-		void		RenderShadow();
+		void		RenderShadow(const viewLight_t* light);
 		void		RenderDeferred_GBuffer();
 		void		RenderDeferred_Lighting();
 		void		RenderHDRtoLDR();
+		void		RenderAA();
 	public:
 		Framebuffer* currentFramebuffer{};
 		drawSurf_t unitRectSurface{};

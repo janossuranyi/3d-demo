@@ -107,6 +107,7 @@ namespace jsr {
 		PRG_DEFERRED_LIGHT,
 		PRG_PP_HDR,
 		PRG_COLOR,
+		PRG_FXAA3,
 		PRG_COUNT
 	};
 
@@ -192,6 +193,7 @@ namespace jsr {
 		eLightType		type;
 		vertCacheHandle_t highFreqVert;
 		vertCacheHandle_t highFreqFrag;
+		vertCacheHandle_t lightData;
 		bool			remove;
 	};
 

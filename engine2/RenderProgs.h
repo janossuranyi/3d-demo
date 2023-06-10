@@ -30,14 +30,19 @@ namespace jsr {
 		UBB_FREQ_LOW_VERT,
 		UBB_FREQ_HIGH_VERT,
 		UBB_FREQ_LOW_FRAG,
-		UBB_FREQ_HIGH_FRAG
+		UBB_FREQ_HIGH_FRAG,
+		UBB_LIGHT_DATA
+	};
+
+	struct uboLightData_t
+	{
+		glm::mat4 lightProjMatrix;
 	};
 
 	struct uboFreqLowVert_t
 	{
 		glm::mat4 viewMatrix;
 		glm::mat4 projectMatrix;
-		glm::mat4 lightProjMatrix;
 	};
 	struct uboFreqHighVert_t 
 	{
@@ -56,7 +61,6 @@ namespace jsr {
 		glm::vec4 params;
 		glm::vec4 viewOrigin;
 		glm::vec4 ambientColor;
-
 	};
 
 	struct uboFreqHighFrag_t 

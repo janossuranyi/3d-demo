@@ -717,6 +717,7 @@ namespace jsr {
 
 		alignas(16) uboFreqHighVert_t fastvert {};
 		alignas(16) uboFreqHighFrag_t fastfrag {};
+		alignas(16) uboLightData_t ubolight {};
 
 		if (node->GetEntity().IsLight())
 		{
@@ -727,11 +728,12 @@ namespace jsr {
 			auto const lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
 			if (view->frustum.Intersects2(lightBounds))
 			{
+				auto lightDir = (node->GetDir() * vec4(0.0f, 0.0f, -1.0f, 0.0f));
 				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
 				e->type = light->GetType();
 				e->next = view->viewLights;
 				e->origin = viewMatrix * origin;
-				e->axis = viewMatrix * (node->GetDir() * vec4(0.0f, 0.0f, -1.0f, 0.0f));
+				e->axis = viewMatrix * lightDir;
 				e->range = light->opts.range;
 				e->shader = light->GetShader();
 				e->color = light->opts.color.color;
@@ -750,9 +752,16 @@ namespace jsr {
 					fastfrag.spotLightParams.y = cos(light->opts.innerConeAngle);
 					fastfrag.spotLightParams.z = 5.0f;
 					fastfrag.spotDirection = { e->axis,0.0f };
+					// shadow matrix
+					auto const lightPos = vec3(e->origin);
+					mat4 const lightProj = perspective(light->opts.outerConeAngle, 1.0f, view->nearClipDistance, view->farClipDistance);
+					mat4 const lightView = lookAt(lightPos, lightPos + vec3(e->axis), {0.0f,1.0f,0.0f});
+					fastfrag.lightProjMatrix = lightProj * lightView;
+					ubolight.lightProjMatrix = fastfrag.lightProjMatrix;
 				}
 				e->highFreqFrag = vc.AllocTransientUniform(&fastfrag, sizeof(fastfrag));
 				e->highFreqVert = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
+				e->lightData = vc.AllocTransientUniform(&ubolight, sizeof(ubolight));
 			}
 			return;
 		}

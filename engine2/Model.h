@@ -68,7 +68,7 @@ namespace jsr {
 		inline modelSurface_t* GetSurface(int idx)
 		{
 			assert(idx < surfs.size());
-			return &surfs[idx];
+			return surfs[idx];
 		}
 
 	private:
@@ -76,7 +76,7 @@ namespace jsr {
 		Bounds bounds;
 		bool isStatic;
 		std::string name;
-		std::vector<modelSurface_t> surfs;
+		std::vector<modelSurface_t*> surfs;
 	};
 
 	template<class T>

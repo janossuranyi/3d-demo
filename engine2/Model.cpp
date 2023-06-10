@@ -35,9 +35,9 @@ namespace jsr {
 	int RenderModel::AllocSurface(int numVerts, int numIndexes)
 	{
 		assert(numVerts > 0);
-		surfs.emplace_back();
+		surfs.emplace_back(new modelSurface_t());
 		int newIdx = surfs.size() - 1;
-		modelSurface_t& surf = surfs[newIdx];
+		modelSurface_t& surf = *surfs[newIdx];
 
 		surf.surf.numVerts = numVerts;
 		surf.surf.numIndexes = numIndexes;
@@ -53,6 +53,7 @@ namespace jsr {
 
 	void RenderModel::FreeGeometry()
 	{
+		for (auto* s : surfs) delete s;
 		surfs.clear();
 		bounds = Bounds{};
 	}
@@ -110,17 +111,17 @@ namespace jsr {
 	{
 		if (isStatic)
 		{
-			for (auto& surf : surfs)
+			for (auto* surf : surfs)
 			{
-				if (surf.surf.vertexCache == 0) {
-					surf.surf.vertexCache = renderSystem.vertexCache->AllocStaticVertex(surf.surf.verts, sizeof(drawVert_t) * surf.surf.numVerts);
+				if (surf->surf.vertexCache == 0) {
+					surf->surf.vertexCache = renderSystem.vertexCache->AllocStaticVertex(surf->surf.verts, sizeof(drawVert_t) * surf->surf.numVerts);
 				}
-				if (surf.surf.indexCache == 0) {
-					surf.surf.indexCache = renderSystem.vertexCache->AllocStaticIndex(surf.surf.indexes, (15UL + sizeof(elementIndex_t) * surf.surf.numIndexes) & ~15UL);
+				if (surf->surf.indexCache == 0) {
+					surf->surf.indexCache = renderSystem.vertexCache->AllocStaticIndex(surf->surf.indexes, (15UL + sizeof(elementIndex_t) * surf->surf.numIndexes) & ~15UL);
 				}
-				surf.surf.gpuResident = true;
-				MemFree16(surf.surf.verts); surf.surf.verts = nullptr;
-				MemFree16(surf.surf.indexes); surf.surf.indexes = nullptr;
+				surf->surf.gpuResident = true;
+				MemFree16(surf->surf.verts); surf->surf.verts = nullptr;
+				MemFree16(surf->surf.indexes); surf->surf.indexes = nullptr;
 
 				/*
 				MemFree(surf->surf.indexes);
@@ -134,8 +135,8 @@ namespace jsr {
 		{
 			for (auto& surf : surfs)
 			{
-				surf.surf.vertexCache = renderSystem.vertexCache->AllocTransientVertex(surf.surf.verts, sizeof(drawVert_t) * surf.surf.numVerts);
-				surf.surf.indexCache = renderSystem.vertexCache->AllocTransientIndex(surf.surf.indexes, (15UL + sizeof(elementIndex_t) * surf.surf.numIndexes) & ~15UL) ;
+				surf->surf.vertexCache = renderSystem.vertexCache->AllocTransientVertex(surf->surf.verts, sizeof(drawVert_t) * surf->surf.numVerts);
+				surf->surf.indexCache = renderSystem.vertexCache->AllocTransientIndex(surf->surf.indexes, (15UL + sizeof(elementIndex_t) * surf->surf.numIndexes) & ~15UL) ;
 			}
 		}
 	}
@@ -150,7 +151,7 @@ namespace jsr {
 	void RenderModel::CreateFromTris(surface_t* tris)
 	{
 		isStatic = true;
-		modelSurface_t& surf = surfs.emplace_back();
+		modelSurface_t surf = *surfs.emplace_back(new modelSurface_t());
 		surf.id = jsr::GetTimeMillisecond() + GetUniqId();
 		surf.shader = renderSystem.defaultMaterial;
 		surf.surf = *tris;

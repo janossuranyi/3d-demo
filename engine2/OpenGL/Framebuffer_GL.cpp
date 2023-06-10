@@ -168,7 +168,6 @@ namespace jsr {
 		if (glcontext.currentFramebuffer != apiObject )
 		{
 			GL_CHECK( glBindFramebuffer(GL_FRAMEBUFFER, apiObject) );
-			//GL_CHECK( glBindFramebuffer(GL_DRAW_FRAMEBUFFER, apiObject) );
 			glcontext.currentFramebuffer = apiObject;
 		}
 	}
@@ -213,19 +212,16 @@ namespace jsr {
 	{
 		if (glcontext.currentFramebuffer != 0)
 		{
-			GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-			GL_CHECK(glBindRenderbuffer(GL_RENDERBUFFER, 0));
-			
+			GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));			
 			glcontext.currentFramebuffer = 0;
 		}
-
+#if 1
 		if (glcontext.currentReadFramebuffer != 0)
 		{
 			GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
-
 			glcontext.currentReadFramebuffer = 0;
 		}
-
+#endif	
 	}
 
 }

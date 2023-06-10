@@ -2,3 +2,4 @@
 #define UBB_FREQ_HIGH_VERT	1
 #define UBB_FREQ_LOW_FRAG	2
 #define UBB_FREQ_HIGH_FRAG	3
+#define UBB_LIGHT_DATA      4

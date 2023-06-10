@@ -62,6 +62,15 @@ namespace jsr {
 		}
 		globalFramebuffers.GBufferFBO = fb;
 
+		fb = new Framebuffer("defaultFBO", w, h);
+		fb->Bind();
+		fb->AttachImage2D(globalImages.defaultImage, 0);
+		if (!fb->Check())
+		{
+			Error("[Framebuffer]: defaultFBO init failed!");
+		}
+		globalFramebuffers.defaultFBO = fb;
+
 		Framebuffer::Unbind();
 	}
 	bool Framebuffer::IsDefaultFramebufferActive()

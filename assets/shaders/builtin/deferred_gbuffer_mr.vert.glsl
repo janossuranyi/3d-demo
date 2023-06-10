@@ -1,4 +1,5 @@
 @include "version.inc.glsl"
+@include "defs.inc"
 @include "vertex_uniforms.inc.glsl"
 
 layout(location = 0) in vec4 in_Position;
