@@ -15,6 +15,7 @@ namespace jsr {
 		changed(true),
 		entity(ENT_MODEL),
 		dir(1.0f,0.0f, 0.0f, 0.0f),
+		viewCount(0),
 		name("_unnamed_")
 	{}
 

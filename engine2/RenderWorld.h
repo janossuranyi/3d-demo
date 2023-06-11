@@ -46,7 +46,9 @@ namespace jsr {
 		void CreateLightsGLTF();
 		RenderModel* CreateModelGLTF(int mesh);
 
-		void RenderNode(Node3D* node, viewDef_t* view);
+		void RenderNode(Node3D* node, viewDef_t* view, bool shadowOnly = false);
+		void RenderLightNode(Node3D* node, viewDef_t* view);
+		void AddShadowOnlyEntities(viewLight_t* light, viewDef_t* view);
 
 		struct gltf_state_t {
 			tinygltf::Model map;

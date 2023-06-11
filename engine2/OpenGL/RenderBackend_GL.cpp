@@ -802,6 +802,7 @@ namespace jsr {
 
 				if (k == 0 && stage.coverage != COVERAGE_SOLID) continue;
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
+				if (surf->space->shadowOnly) continue;
 
 				//if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
 				
@@ -887,7 +888,6 @@ namespace jsr {
 			}
 #endif
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
-			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, light->highFreqFrag);
 
 			SetCullMode(CULL_NONE);
 			// We need the stencil test to be enabled but we want it

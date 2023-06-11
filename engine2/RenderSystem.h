@@ -19,6 +19,7 @@ namespace jsr {
 		float defaultLinearAttn;
 		glm::vec3 ambientColor;
 		float ambientScale;
+		float spotFov;
 
 		renderGlobals_t() :
 			shadowResolution(1024),
@@ -27,6 +28,7 @@ namespace jsr {
 			defaultLinearAttn(0.0f),
 			ambientColor(1.0f),
 			ambientScale(.01f),
+			spotFov(glm::radians(90.f)),
 			shadowBias(0.0001f) {}
 	};
 
@@ -76,10 +78,9 @@ namespace jsr {
 		surface_t* unitCubeTris;
 		surface_t* unitSphereTris;
 		surface_t* unitConeTris;
-
+		unsigned int viewCount;
 	private:
 		bool initialized;
-		int	 frameNum;
 	};
 
 	extern RenderSystem renderSystem;

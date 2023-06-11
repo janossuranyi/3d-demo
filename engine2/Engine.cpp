@@ -142,6 +142,7 @@ namespace jsr {
 			ImGui::NewFrame();
 			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
 			ImGui::LabelText("Frame time", "%.2f", frameTime);
+			ImGui::DragFloat("Spot FOV", &renderGlobals.spotFov, 0.01f, 0.01f, 3.1415f);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
 			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.0001f, 0.0001f, 0.005f, "%.5f");
@@ -349,9 +350,6 @@ namespace jsr {
 		fragUbo.viewOrigin = vec4(0.f, 0.f, 0.f, 1.f);
 		fragUbo.invProjMatrix = view->unprojectionToCameraMatrix;
 		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
-		fragUbo.shadowparams.x = 1.0f / renderGlobals.shadowResolution;
-		fragUbo.shadowparams.y = renderGlobals.shadowScale;
-		fragUbo.shadowparams.z = renderGlobals.shadowBias;
 
 		view->freqLowVert = renderSystem.vertexCache->AllocTransientUniform(&vertUbo, sizeof(vertUbo));
 		view->freqLowFrag = renderSystem.vertexCache->AllocTransientUniform(&fragUbo, sizeof(fragUbo));		

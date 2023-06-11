@@ -164,7 +164,7 @@ namespace jsr {
 		glm::mat4		mvp;
 		drawSurf_t*		surf;
 		vertCacheHandle_t highFreqVert;
-		bool			visible;
+		bool			shadowOnly;
 	};
 
 	struct surface_t;
@@ -181,20 +181,27 @@ namespace jsr {
 		float				sort;
 	};
 
+	class Node3D;
+	struct shadowEntity_t
+	{
+		shadowEntity_t* next;
+		Node3D* renderNode;
+	};
 
 	struct viewLight_t
 	{
-		viewLight_t*	next;
-		glm::vec3		origin;	// view space position
-		glm::vec3		axis;
-		glm::vec4		color;
-		float			range;
-		eShaderProg		shader;
-		eLightType		type;
-		vertCacheHandle_t highFreqVert;
-		vertCacheHandle_t highFreqFrag;
-		vertCacheHandle_t lightData;
-		bool			remove;
+		viewLight_t*		next;
+		glm::vec3			origin;	// view space position
+		glm::vec3			axis;
+		glm::vec4			color;
+		float				range;
+		float				coneAngle;
+		eShaderProg			shader;
+		eLightType			type;
+		vertCacheHandle_t	highFreqVert;
+		vertCacheHandle_t	lightData;
+		Frustum				frustum;
+		bool				remove;
 	};
 
 	struct viewDef_t

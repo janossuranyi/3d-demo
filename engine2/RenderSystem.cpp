@@ -35,7 +35,7 @@ namespace jsr {
 	{
 		view			= nullptr;
 		initialized		= false;
-		frameNum		= 0;
+		viewCount		= 0;
 		backend			= new RenderBackend();
 		vertexCache		= new VertexCache();
 		programManager	= new ProgramManager();
@@ -132,7 +132,7 @@ namespace jsr {
 	void RenderSystem::RenderFrame(const emptyCommand_t* cmds)
 	{
 		backend->RenderCommandBuffer(cmds);
-		++frameNum;
+		++viewCount;
 	}
 
 	emptyCommand_t const* RenderSystem::SwapCommandBuffer_BeginNewFrame(bool smpMode)

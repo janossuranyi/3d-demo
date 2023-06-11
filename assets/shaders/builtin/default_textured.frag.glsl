@@ -2,6 +2,7 @@
 @include "common.inc.glsl"
 @include "defs.inc"
 @include "fragment_uniforms.inc.glsl"
+@include "light_uniforms.inc.glsl"
 // Line 1+51+17 = 78
 
 #define LIKE_A_DOOM
@@ -145,8 +146,8 @@ void main()
     inputs.sampleAmbient = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
     inputs.samplePBR = texture( tAORM, In.texCoord ) * vec4(1.0, gRoughnessFactor, gMetallicFactor, 1.0);
     inputs.sampleEmissive = texture(tEmissive, In.texCoord) * g_freqHighFrag.matEmissiveFactor;
-    inputs.lightPos = vec3(g_freqHighFrag.lightOrigin);
-    inputs.lightColor = g_freqHighFrag.lightColor.rgb * g_freqHighFrag.lightColor.w;
+    inputs.lightPos = vec3(g_lightData.lightOrigin);
+    inputs.lightColor = g_lightData.lightColor.rgb * g_lightData.lightColor.w;
     inputs.ambient = g_freqLowFrag.ambientColor.rgb * g_freqLowFrag.ambientColor.w * inputs.sampleAmbient.xyz;
 
     /*********************** Lighting  ****************************/
@@ -164,7 +165,7 @@ void main()
         {
             // spotlight
             float spotAttenuation = 0.02;
-            float spotDdotL = saturate(dot (-inputs.lightDir, g_freqHighFrag.spotDirection.xyz));
+            float spotDdotL = saturate(dot (-inputs.lightDir, g_lightData.spotDirection.xyz));
             if (spotDdotL >= gSpotCosCutoff)
             {
                 float spotValue = smoothstep(gSpotCosCutoff, gSpotCosInnerCutoff, spotDdotL);

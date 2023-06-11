@@ -2,6 +2,7 @@
 @include "common.inc.glsl"
 @include "defs.inc"
 @include "fragment_uniforms.inc.glsl"
+@include "light_uniforms.inc.glsl"
 
 out vec3 hdrColor;
 
@@ -63,6 +64,10 @@ float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
     float bias = gShadowBias * (1.0 - NdotL);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    if (abs(projCoords.x) >= 1.0 || abs(projCoords.y) >= 1.0 || abs(projCoords.z) >= 1.0)
+    {
+        return 0.0;
+    }
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     float xOffset = gOneOverShadowRes;
@@ -94,8 +99,8 @@ void main()
         inputs.normal           = texture( tNormal, texCoord ).xyz * 2.0 - 1.0;
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
-        inputs.lightPos         = g_freqHighFrag.lightOrigin.xyz;
-        inputs.lightColor       = g_freqHighFrag.lightColor.rgb * g_freqHighFrag.lightColor.w;
+        inputs.lightPos         = g_lightData.lightOrigin.xyz;
+        inputs.lightColor       = g_lightData.lightColor.rgb * g_lightData.lightColor.w;
         //inputs.normal           = normalize(inputs.normal);
 
         vec3 viewRay = vec3(In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance);
@@ -120,7 +125,7 @@ void main()
         {
             // spotlight
             float spotAttenuation = 0.02;
-            float spotDdotL = saturate(dot (-inputs.lightDir, g_freqHighFrag.spotDirection.xyz));
+            float spotDdotL = saturate(dot (-inputs.lightDir, g_lightData.spotDirection.xyz));
             if (spotDdotL >= gSpotCosCutoff)
             {
                 float spotValue = smoothstep(gSpotCosCutoff, gSpotCosInnerCutoff, spotDdotL);
@@ -138,7 +143,7 @@ void main()
         float shadow = 1.0;
         if (gShadowScale > 0.0)
         {
-            vec4 fragPosLight = g_freqHighFrag.lightProjMatrix * inputs.fragPosVS;
+            vec4 fragPosLight = g_lightData.lightProjMatrix * inputs.fragPosVS;
             shadow = 1.0 - (gShadowScale * ShadowCalculation(fragPosLight, NdotL));
         }
 

@@ -58,7 +58,7 @@ namespace jsr {
 		return true;
 	}
 
-	static bool R_CompileShader(GLuint shader)
+	static bool R_CompileShader(GLuint shader, const std::string& name)
 	{
 		if (!glIsShader(shader)) return false;
 
@@ -74,7 +74,7 @@ namespace jsr {
 			if (infologLen > 0) {
 				std::vector<char> logBuf(infologLen);
 				GL_CHECK(glGetShaderInfoLog(shader, infologLen, nullptr, logBuf.data()));
-				Error("Shader compile error: %s", logBuf.data());
+				Error("Shader '%s' compile error: %s", name.c_str(), logBuf.data());
 			}
 
 			return false;
@@ -109,8 +109,13 @@ namespace jsr {
 		auto source = resourceManager->GetShaderSource("shaders/builtin/" + r_name);
 		const char* pStr = source.c_str();
 		GL_CHECK(glShaderSource(modul, 1, &pStr, nullptr));
+		if (R_CompileShader(modul, "ST:" + std::to_string(stage) + "; " + std::string(name)))
+		{
+			return modul;
+		}
+		GL_CHECK(glDeleteShader(modul));
 
-		return modul;
+		return 0;
 	}
 
 	bool ProgramManager::LowLevelInit()
@@ -166,14 +171,7 @@ namespace jsr {
 			if (k == 0) allOk = false;
 		}
 
-		if (allOk)
-		{
-			for (auto k : shaders)
-			{
-				allOk &= R_CompileShader(k);
-			}
-		}
-		else
+		if (!allOk)
 		{
 			R_DeleteShaders(shaders.data(), shaders.size());
 			return false;

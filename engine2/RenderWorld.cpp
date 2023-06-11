@@ -153,6 +153,46 @@ namespace jsr {
 		bool operator()(const drawSurf_t* a, const drawSurf_t* b) const { return (uint32)a->sort < (uint32)b->sort; }
 	} drawSurfLess;
 
+	bool R_NodeLightFrustumTest(const viewLight_t* v_light, Node3D* node, const viewDef_t* view)
+	{
+		using namespace glm;
+
+		// shadow matrix
+		auto const modelMtx = node->GetLocalToWorldMatrix();
+		auto const lightPos = vec3(v_light->origin); // VS!!!
+		auto const lightView = lookAt(lightPos, lightPos + vec3(v_light->axis), { 0.0f,1.0f,0.0f });
+		auto const modelView = lightView * view->renderView.viewMatrix * modelMtx;
+		auto const bounds = node->GetEntity().GetModel()->GetBounds().Transform(modelView);
+
+		return v_light->frustum.Intersects2(bounds);
+	}
+
+	void RenderWorld::AddShadowOnlyEntities(viewLight_t* light, viewDef_t* view)
+	{
+		for (int i = 0; i < rootnodes.size(); ++i)
+		{
+			Node3D* node = nodes[i];
+			if (node->GetEntity().IsLight() || node->viewCount == renderSystem.viewCount)
+			{
+				continue;
+			}
+			int numChildren = node->GetNumChildren();
+			Node3D** children = node->GetChildren();
+			for (int k = 0; k < numChildren; ++k)
+			{
+				if (R_NodeLightFrustumTest(light, children[k], view))
+				{
+					RenderNode(node, view, true);
+				}
+			}
+			if (R_NodeLightFrustumTest(light, node,view))
+			{
+				RenderNode(node, view, true);
+			}
+		}
+
+	}
+
 	void RenderWorld::RenderView(viewDef_t* view)
 	{
 		using namespace glm;
@@ -160,6 +200,11 @@ namespace jsr {
 		for (int i = 0; i < rootnodes.size(); ++i)
 		{
 			Node3D* node = nodes[i];
+			if (node->GetEntity().IsLight())
+			{
+				continue;
+			}
+
 			int numChildren = node->GetNumChildren();
 			Node3D** children = node->GetChildren();
 			for (int k = 0; k < numChildren; ++k)
@@ -169,6 +214,24 @@ namespace jsr {
 			RenderNode(node, view);
 		}
 		//Info("visibe surface count: %d", view->numDrawSurfs);
+
+		for (int i = 0; i < rootnodes.size(); ++i)
+		{
+			Node3D* node = nodes[i];
+			if (!node->GetEntity().IsLight())
+			{
+				continue;
+			}
+			// process light
+			RenderLightNode(node, view);
+		}
+
+		for (auto* light = view->viewLights; light != nullptr; light = light->next)
+		{
+			if (light->type != LIGHT_SPOT) continue;
+
+			AddShadowOnlyEntities(light, view);
+		}
 
 		if (view->numDrawSurfs)
 		{
@@ -708,76 +771,30 @@ namespace jsr {
 		return RM;
 	}
 
-	void RenderWorld::RenderNode(Node3D* node, viewDef_t* view)
+	void RenderWorld::RenderNode(Node3D* node, viewDef_t* view, bool shadowOnly)
 	{
 		using namespace glm;
+
+		if (node->GetEntity().GetType() != ENT_MODEL) return;
 
 		const mat4& viewMatrix = view->renderView.viewMatrix;
 		VertexCache& vc = *renderSystem.vertexCache;
 
 		alignas(16) uboFreqHighVert_t fastvert {};
 		alignas(16) uboFreqHighFrag_t fastfrag {};
-		alignas(16) uboLightData_t ubolight {};
-
-		if (node->GetEntity().IsLight())
-		{
-			auto const* light = node->GetEntity().GetLight();
-			auto const worldMatrix = node->GetLocalToWorldMatrix();
-			auto const origin = worldMatrix[3];
-			auto const modelViewMatrix = viewMatrix * worldMatrix;
-			auto const lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
-			if (view->frustum.Intersects2(lightBounds))
-			{
-				auto lightDir = (node->GetDir() * vec4(0.0f, 0.0f, -1.0f, 0.0f));
-				viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
-				e->type = light->GetType();
-				e->next = view->viewLights;
-				e->origin = viewMatrix * origin;
-				e->axis = viewMatrix * lightDir;
-				e->range = light->opts.range;
-				e->shader = light->GetShader();
-				e->color = light->opts.color.color;
-				e->remove = false;
-				view->viewLights = e;
-
-				fastvert.WVPMatrix = view->projectionMatrix * modelViewMatrix;
-				fastvert.localToWorldMatrix = worldMatrix;
-				fastfrag.lightColor = e->color;
-				fastfrag.lightAttenuation = vec4(e->range, light->opts.linearAttn, light->opts.expAttn, 0.0f);
-				fastfrag.lightOrigin = { e->origin,1.0f };
-				if (light->GetType() == LIGHT_SPOT)
-				{
-					fastfrag.spotLightParams.w = 1.0f;
-					fastfrag.spotLightParams.x = cos(light->opts.outerConeAngle);
-					fastfrag.spotLightParams.y = cos(light->opts.innerConeAngle);
-					fastfrag.spotLightParams.z = 5.0f;
-					fastfrag.spotDirection = { e->axis,0.0f };
-					// shadow matrix
-					auto const lightPos = vec3(e->origin);
-					mat4 const lightProj = perspective(light->opts.outerConeAngle, 1.0f, view->nearClipDistance, view->farClipDistance);
-					mat4 const lightView = lookAt(lightPos, lightPos + vec3(e->axis), {0.0f,1.0f,0.0f});
-					fastfrag.lightProjMatrix = lightProj * lightView;
-					ubolight.lightProjMatrix = fastfrag.lightProjMatrix;
-				}
-				e->highFreqFrag = vc.AllocTransientUniform(&fastfrag, sizeof(fastfrag));
-				e->highFreqVert = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
-				e->lightData = vc.AllocTransientUniform(&ubolight, sizeof(ubolight));
-			}
-			return;
-		}
-
-		if (node->GetEntity().GetType() != ENT_MODEL) return;
 
 		mat4 worldMatrix = node->GetLocalToWorldMatrix();
 		// W-V-P -> P-V-W
 		auto modelViewMatrix = viewMatrix * worldMatrix;
 
 		Bounds entityBounds = node->GetEntity().GetModel()->GetBounds().Transform(modelViewMatrix);
-		if (view->frustum.Intersects2(entityBounds))
-		{
+		if (shadowOnly || view->frustum.Intersects2(entityBounds))
+		{			
+			node->viewCount = renderSystem.viewCount;
 			viewEntity_t* ent = (viewEntity_t*)R_FrameAlloc(sizeof(*ent));
 			auto* model = node->GetEntity().GetModel();
 			// entity chain
+			ent->shadowOnly = shadowOnly;
 			ent->next = view->viewEntites;
 			ent->modelMatrix = worldMatrix;
 			ent->modelViewMatrix = modelViewMatrix;
@@ -792,8 +809,8 @@ namespace jsr {
 			for (int entSurf = 0; entSurf < model->GetNumSurface(); ++entSurf)
 			{
 				const auto* surf = model->GetSurface(entSurf);
-				const Bounds surfBounds = surf->surf.bounds.Transform(modelViewMatrix);
-				if (view->frustum.Intersects2(surfBounds))
+				//const Bounds surfBounds = surf->surf.bounds.Transform(modelViewMatrix);
+				//if (view->frustum.Intersects2(surfBounds))
 				{
 					drawSurf_t* drawSurf = (drawSurf_t*)R_FrameAlloc(sizeof(*drawSurf));
 					drawSurf->frontEndGeo = &surf->surf;
@@ -829,4 +846,73 @@ namespace jsr {
 			}
 		}
 	}
+	void RenderWorld::RenderLightNode(Node3D* node, viewDef_t* view)
+	{
+		using namespace glm;
+
+
+		if (!node->GetEntity().IsLight())
+		{
+			return;
+		}
+		alignas(16) uboFreqHighVert_t fastvert {};
+		alignas(16) uboLightData_t ubolight {};
+
+		const mat4& viewMatrix = view->renderView.viewMatrix;
+		VertexCache& vc = *renderSystem.vertexCache;
+
+		auto const* light = node->GetEntity().GetLight();
+		auto const worldMatrix = node->GetLocalToWorldMatrix();
+		auto const origin = worldMatrix[3];
+		auto const modelViewMatrix = viewMatrix * worldMatrix;
+		auto const lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
+		if (view->frustum.Intersects2(lightBounds))
+		{
+			auto lightDir = (node->GetDir() * vec4(0.0f, 0.0f, -1.0f, 0.0f));
+			viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));
+			e->type = light->GetType();
+			e->next = view->viewLights;
+			e->origin = viewMatrix * origin;
+			e->axis = viewMatrix * lightDir;
+			e->range = light->opts.range;
+			e->shader = light->GetShader();
+			e->color = light->opts.color.color;
+			e->coneAngle = light->opts.outerConeAngle;
+			e->remove = false;
+			view->viewLights = e;
+
+			fastvert.WVPMatrix = view->projectionMatrix * modelViewMatrix;
+			fastvert.localToWorldMatrix = worldMatrix;
+			ubolight.lightColor = e->color;
+			ubolight.lightAttenuation = vec4(e->range, light->opts.linearAttn, light->opts.expAttn, 0.0f);
+			ubolight.lightOrigin = { e->origin,1.0f };
+			if (light->GetType() == LIGHT_SPOT)
+			{
+				ubolight.spotLightParams.w = 1.0f;
+				ubolight.spotLightParams.x = cos(light->opts.outerConeAngle);
+				ubolight.spotLightParams.y = cos(light->opts.innerConeAngle);
+				ubolight.spotLightParams.z = 5.0f;
+				ubolight.spotDirection = { e->axis,0.0f };
+				// shadow matrix
+				auto const lightPos = vec3(e->origin);
+				mat4 const lightProj = perspective(light->opts.outerConeAngle * 2.0f, 1.0f, view->nearClipDistance, view->farClipDistance);
+				mat4 const lightView = lookAt(lightPos, lightPos + vec3(e->axis), { 0.0f,1.0f,0.0f });
+
+				e->frustum = Frustum(lightProj);
+				ubolight.lightProjMatrix = lightProj * lightView;
+				ubolight.shadowparams.x = 1.0f / renderGlobals.shadowResolution;
+				ubolight.shadowparams.y = renderGlobals.shadowScale;
+				ubolight.shadowparams.z = renderGlobals.shadowBias;
+			}
+			else
+			{
+				ubolight.shadowparams.y = 0.0f;
+			}
+
+			e->highFreqVert = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
+			e->lightData = vc.AllocTransientUniform(&ubolight, sizeof(ubolight));
+		}
+	}
+
+
 }

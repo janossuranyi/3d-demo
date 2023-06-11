@@ -37,6 +37,16 @@ namespace jsr {
 	struct uboLightData_t
 	{
 		glm::mat4 lightProjMatrix;
+		glm::vec4 shadowparams;
+		glm::vec4 lightOrigin;
+		glm::vec4 lightColor;
+		glm::vec4 lightAttenuation;
+		// spotLightParams
+		// x = spotCosCutoff
+		// y = spotCosInnerCutoff
+		// z = spotExponent
+		glm::vec4 spotLightParams;
+		glm::vec4 spotDirection;
 	};
 
 	struct uboFreqLowVert_t
@@ -55,7 +65,6 @@ namespace jsr {
 	{
 		glm::mat4 invProjMatrix;
 		glm::vec4 debugparams;
-		glm::vec4 shadowparams;
 		glm::vec4 screenSize;
 		glm::vec4 nearFarClip;
 		glm::vec4 params;
@@ -65,20 +74,10 @@ namespace jsr {
 
 	struct uboFreqHighFrag_t 
 	{
-		glm::mat4 lightProjMatrix;
 		glm::vec4 matDiffuseFactor;
 		glm::vec4 matMRFactor;
 		glm::vec4 matEmissiveFactor;
 		glm::vec4 alphaCutoff;
-		glm::vec4 lightOrigin;
-		glm::vec4 lightColor;
-		glm::vec4 lightAttenuation;
-		// spotLightParams
-		// x = spotCosCutoff
-		// y = spotCosInnerCutoff
-		// z = spotExponent
-		glm::vec4 spotLightParams;
-		glm::vec4 spotDirection;
 		glm::vec4 params;
 	};
 

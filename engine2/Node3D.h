@@ -33,6 +33,7 @@ namespace jsr {
 		void				SetName(const std::string& name);
 		Node3D**			GetChildren();
 		void				AddChild(Node3D* child);
+		unsigned int		viewCount;
 	private:
 		void				Changed();
 		std::string name;
