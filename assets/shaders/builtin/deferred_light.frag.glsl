@@ -123,7 +123,7 @@ void main()
         if (gSpotLight > 0.0)
         {
             // spotlight
-            float spotAttenuation = 0.02;
+            float spotAttenuation = 0.0;
             float spotDdotL = saturate(dot (-inputs.lightDir, g_lightData.spotDirection.xyz));
             if (spotDdotL >= gSpotCosCutoff)
             {
@@ -144,6 +144,7 @@ void main()
         {
             vec4 fragPosLight = g_lightData.lightProjMatrix * inputs.fragPosVS;
             shadow = 1.0 - (gShadowScale * ShadowCalculation(fragPosLight, NdotL));
+            // inputs.lightColor *= texture(lightMap, 1.0-coords).rgb;
         }
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.y);

@@ -16,6 +16,7 @@ layout(location = 0) out vec4 outAlbedo;
 layout(location = 1) out vec4 outNormal;
 layout(location = 2) out vec4 outSpec;
 layout(location = 3) out vec4 outFragPos;
+layout(location = 4) out vec4 outEmissive;
 
 layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
 layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
@@ -27,6 +28,7 @@ struct input_t {
     vec3 normal;
     vec4 sampleAmbient;
     vec4 samplePBR;
+    vec3 sampleEm;
     vec4 spec;
 };
 
@@ -48,9 +50,10 @@ void main()
         vec3 localTangent       = normalize( In.tangent.xyz );
         vec3 localNormal        = normalize( In.normal );
         vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
-        vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);
+        vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);        
         inputs.tbn      = mat3(localTangent,derivedBitangent,localNormal);
         inputs.normal   = inputs.tbn * normalTS;
+        inputs.sampleEm = SRGBlinear( texture( tEmissive, In.texCoord).rgb ) * gEmissiveFactor * gEmissiveStrength;
     }
 
     inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
@@ -71,4 +74,5 @@ void main()
     outSpec      = inputs.samplePBR;
     //outNormal    = inputs.normal;
     outNormal    = vec4((1.0 + inputs.normal) * 0.5, 1.0);
+    outEmissive  = vec4(inputs.sampleEm,1);
 }

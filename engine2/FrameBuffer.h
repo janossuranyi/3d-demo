@@ -48,6 +48,7 @@ namespace jsr {
 	{
 		Framebuffer*	shadowFBO;
 		Framebuffer*	hdrFBO;
+		Framebuffer*	bloomFBO[2];
 		Framebuffer*	GBufferFBO;
 		Framebuffer*	defaultFBO;
 	};

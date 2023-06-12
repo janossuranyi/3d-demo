@@ -13,10 +13,12 @@ namespace jsr {
 	{
 		Image* HDRaccum;
 		Image* HDRdepth;
+		Image* HDRbloom[2];
 		Image* GBufferFragPos;
 		Image* GBufferAlbedo;
 		Image* GBufferNormal;
 		Image* GBufferSpec;
+		Image* GBufferEmissive;
 		Image* GBufferDepth;
 		Image* depthCopy;
 		Image* Shadow;

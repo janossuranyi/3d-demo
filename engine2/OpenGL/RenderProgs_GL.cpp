@@ -19,7 +19,8 @@ namespace jsr {
 		{"pp_hdr2ldr",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
 		{"color",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
 		{"fxaa3",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"emissive_pass",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
+		{"emissive_pass",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
+		{"gauss_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
 	};
 
 	static void R_DeleteShaders(GLuint const* list, int numShader)
@@ -149,6 +150,24 @@ namespace jsr {
 		{
 			currentProgram = apiObject;
 			GL_CHECK( glUseProgram( (GLuint)apiObject ) );
+		}
+	}
+
+	void ProgramManager::SetUniform(eShaderProg program, const char* name, int x)
+	{
+		GLint loc = GL_CHECK(glGetUniformLocation(builtins[program].prg, name));
+		if (loc > -1)
+		{
+			glUniform1i(loc, x);
+		}
+	}
+
+	void ProgramManager::SetUniform(eShaderProg program, const char* name, const glm::vec2& x)
+	{
+		GLint loc = GL_CHECK(glGetUniformLocation(builtins[program].prg, name));
+		if (loc > -1)
+		{
+			glUniform2fv(loc, 1, &x[0]);
 		}
 	}
 

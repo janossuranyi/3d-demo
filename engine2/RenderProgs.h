@@ -115,6 +115,8 @@ namespace jsr {
 		bool LowLevelInit();
 		bool IsInitialized() const { return initialized; }
 		void UseProgram(eShaderProg program);
+		void SetUniform(eShaderProg program, const char* name, int x);
+		void SetUniform(eShaderProg program, const char* name, const glm::vec2& x);
 		void BindUniformBlock(eUboBufferBinding binding, const UniformBuffer& buffer);
 		void BindUniformBlock(eUboBufferBinding binding, vertCacheHandle_t handle);
 

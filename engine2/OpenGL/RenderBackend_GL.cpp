@@ -827,6 +827,33 @@ namespace jsr {
 		}
 	}
 
+	/*
+	metro LL method
+	1.
+	==============
+	Detph: test: enabled, write: disabled, func: LESEQUAL
+	Stencil: enabled, wmask: FF, rmask: FF, Ref: 01, func: always, fail: keep, zfail: replace, pass: dec
+	Blend: disabled
+	Colormask: false
+	Cull: FRONT
+
+	2.
+	==============
+	Detph: test: enabled, write: disabled, func: LESEQUAL
+	Stencil: enabled, wmask: FF, rmask: FF, Ref: 00, func: always, fail: keep, zfail: replace, pass: keep
+	Blend: disabled
+	Colormask: false
+	Cull: BACK
+
+	3.
+	==============
+	Detph: test: enabled, write: disabled, func: ALWAYS
+	Stencil: enabled, wmask: 00, rmask: FF, Ref: 01, func: equal, fail: keep, zfail: keep, pass: keep
+	Blend: enabled
+	Colormask: true
+	Cull: FRONT
+
+	*/
 	void RenderBackend::RenderDeferred_Lighting()
 	{
 		using namespace glm;
@@ -840,7 +867,8 @@ namespace jsr {
 		globalFramebuffers.hdrFBO->BindForReading();
 
 		SetWriteMask(bvec4{ true });
-		Clear(true, false, false);
+
+		Clear(true, false, true);
 
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 		SetCurrentTextureUnit(IMU_DIFFUSE);
@@ -854,10 +882,8 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_SHADOW);
 		globalImages.Shadow->Bind();
 
-		SetDepthState({ true, false, CMP_ALWAYS });
-
 		blendingState_t blendState{};
-		blendState.enabled = true;
+		blendState.enabled = false;
 		blendState.opts.alphaOp = BOP_ADD;
 		blendState.opts.colorOp = BOP_ADD;
 		blendState.opts.alphaDst = BFUNC_ONE;
@@ -865,16 +891,13 @@ namespace jsr {
 		blendState.opts.alphaSrc = BFUNC_ONE;
 		blendState.opts.colSrc = BFUNC_ONE;
 		SetBlendingState(blendState);
-
+		
 		stencilState_t stencilSt{};
 		stencilSt.enabled = true;
-		stencilSt.separate = true;
-		stencilSt.fail = SO_KEEP;
-		stencilSt.zfail = SO_DEC_WRAP;
-		stencilSt.pass = SO_KEEP;
-		stencilSt.back_fail = SO_KEEP;
-		stencilSt.back_zfail = SO_INC_WRAP;
-		stencilSt.back_pass = SO_KEEP;
+		stencilSt.separate = false;
+
+		const bvec4 bfalse{ false };
+		const bvec4 btrue{ true };
 
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
@@ -891,21 +914,18 @@ namespace jsr {
 #endif
 			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
 
-			SetCullMode(CULL_NONE);
-			// We need the stencil test to be enabled but we want it
-			// to succeed always. Only the depth test matters.
-			
-			stencilSt.mask = 0;
-			stencilSt.ref = 0;
+			SetCullMode(CULL_FRONT);
+			stencilSt.mask = 0xff;
+			stencilSt.ref = 0x01;
 			stencilSt.stencilFunc = CMP_ALWAYS;
+			stencilSt.fail = SO_KEEP;
+			stencilSt.zfail = SO_REPLACE;
+			stencilSt.pass = SO_DEC;
 			stencilSt.enabled = true;
 			SetStencilState(stencilSt);
-			Clear(false, false, true);
-			//glStencilFunc(GL_ALWAYS, 0, 0);
-
-			SetWriteMask(glm::bvec4{ false });
+			SetWriteMask(bfalse);
 			SetDepthState({ true, false, CMP_LEQ });
-			
+
 			if (light->type == LIGHT_POINT)
 			{
 				R_DrawSurf(&unitSphereSurface);
@@ -915,13 +935,41 @@ namespace jsr {
 				R_DrawSurf(&unitConeSurface);
 			}
 
-			stencilSt.mask = 255;
-			stencilSt.stencilFunc = CMP_NOTEQ;
+			SetCullMode(CULL_BACK);
+			stencilSt.mask = 0xff;
+			stencilSt.ref = 0x00;
+			stencilSt.stencilFunc = CMP_ALWAYS;
+			stencilSt.fail = SO_KEEP;
+			stencilSt.zfail = SO_REPLACE;
+			stencilSt.pass = SO_KEEP;
+			stencilSt.enabled = true;
 			SetStencilState(stencilSt);
-			//glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
-			SetDepthState({ true, false, CMP_ALWAYS });
+			SetWriteMask(bfalse);
+			SetDepthState({ true, false, CMP_LEQ });
+
+			if (light->type == LIGHT_POINT)
+			{
+				R_DrawSurf(&unitSphereSurface);
+			}
+			else if (light->type == LIGHT_SPOT)
+			{
+				R_DrawSurf(&unitConeSurface);
+			}
+
 			SetCullMode(CULL_FRONT);
-			SetWriteMask(glm::bvec4{ true });
+			stencilSt.mask = 0x00;
+			stencilSt.ref = 0x01;
+			stencilSt.stencilFunc = CMP_EQ;
+			stencilSt.fail = SO_KEEP;
+			stencilSt.zfail = SO_KEEP;
+			stencilSt.pass = SO_KEEP;
+			stencilSt.enabled = true;
+			SetStencilState(stencilSt);
+			SetWriteMask(btrue);
+			SetDepthState({ true, false, CMP_ALWAYS });
+			blendState.enabled = true;
+			SetBlendingState(blendState);
+
 			if (light->type == LIGHT_POINT)
 			{
 				R_DrawSurf(&unitSphereSurface);
@@ -940,45 +988,75 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w/2, view->viewport.h/2);
 
-		globalFramebuffers.hdrFBO->Bind();
+		globalFramebuffers.bloomFBO[0]->Bind();
 
 		SetWriteMask(bvec4{ true });
+		Clear(true, false, false);
 
-		renderSystem.programManager->UseProgram(PRG_EMISSIVE);
-		SetCurrentTextureUnit(IMU_EMMISIVE);
+		renderSystem.programManager->UseProgram(PRG_TEXTURED);
+		SetCurrentTextureUnit(0);
+		globalImages.GBufferEmissive->Bind();
+		SetCullMode(CULL_NONE);
 
 		stencilState_t stencilSt{};
 		stencilSt.enabled = false;
 		SetStencilState(stencilSt);
-		blendingState_t blendState{};
+
+		blendingState_t blendState = glcontext.blendState;
 		blendState.enabled = false;
 		SetBlendingState(blendState);
+
 		depthState_t ds{};
 		ds.enabled = true;
-		ds.func = CMP_LEQ;
+		ds.func = CMP_ALWAYS;
+		ds.depthMask = false;
 		SetDepthState(ds);
-		const eStageType ACTIVE_STAGE = STAGE_DEBUG;
-		const drawSurf_t* surf;
-		for (int i = 0; i < view->numDrawSurfs; ++i)
-		{
-			surf = view->drawSurfs[i];
-			const Material* shader = surf->shader;
-			if (!shader || shader->IsEmpty()) continue;
-			if (shader->GetStage(ACTIVE_STAGE).enabled == false) continue;
-			const stage_t& stage = shader->GetStage(ACTIVE_STAGE);
-
-			if (stage.coverage != COVERAGE_SOLID) continue;
-			if (glm::all(glm::equal(stage.emissiveScale, vec4(0.0f)))) continue;
-			SetCullMode(stage.cullMode);
-
-			stage.images[IMU_EMMISIVE]->Bind();
-			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
-			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, surf->highFreqFrag[ACTIVE_STAGE]);
-			R_DrawSurf(surf);
-		}
 		
+		R_DrawSurf(&unitRectSurface);
+
+
+#if 1
+		renderSystem.programManager->UseProgram(PRG_GAUSS_FILTER);
+
+		glm::vec2 vDirection{ 1.0f,0.0f };
+
+		SetCurrentTextureUnit(0);
+		for (int i = 0; i < 2; ++i)
+		{
+			vDirection.x = 1.0f;
+			vDirection.y = 0.0f;
+			globalFramebuffers.bloomFBO[1]->Bind();
+			globalImages.HDRbloom[0]->Bind();
+			renderSystem.programManager->SetUniform(PRG_GAUSS_FILTER, "g_vDirection", vDirection);
+			R_DrawSurf(&unitRectSurface);
+			vDirection.x = 0.0f;
+			vDirection.y = 1.0f;
+			globalFramebuffers.bloomFBO[0]->Bind();
+			globalImages.HDRbloom[1]->Bind();
+			renderSystem.programManager->SetUniform(PRG_GAUSS_FILTER, "g_vDirection", vDirection);
+			R_DrawSurf(&unitRectSurface);
+		}
+
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
+		renderSystem.programManager->UseProgram(PRG_TEXTURED);
+		globalFramebuffers.hdrFBO->Bind();
+		globalImages.HDRbloom[0]->Bind();
+		blendState.enabled = true;
+		blendState.opts.alphaDst = BFUNC_ONE;
+		blendState.opts.colDst = BFUNC_ONE;
+		blendState.opts.alphaSrc = BFUNC_ONE;
+		blendState.opts.colSrc = BFUNC_ONE;
+		blendState.opts.alphaOp = BOP_ADD;
+		blendState.opts.colorOp = BOP_ADD;
+		SetBlendingState(blendState);
+		ds.enabled = true;
+		ds.func = CMP_ALWAYS;
+		ds.depthMask = false;
+		SetDepthState(ds);
+		R_DrawSurf(&unitRectSurface);
+#endif
 	}
 
 	void RenderBackend::RenderHDRtoLDR()

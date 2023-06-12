@@ -516,7 +516,7 @@ namespace jsr {
 				else if ( light->GetType() == LIGHT_SPOT )
 				{
 					auto const zScale = light->opts.range;
-					auto const xyScale = 2.0f * zScale * tan(light->opts.outerConeAngle);
+					auto const xyScale = zScale * tan(light->opts.outerConeAngle) * 2.0f;
 					node->SetScale( vec3( xyScale, xyScale, zScale ) );
 
 					auto angular = eulerAngles(node->GetDir());

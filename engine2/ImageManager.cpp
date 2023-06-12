@@ -28,6 +28,7 @@ namespace jsr {
 		globalImages.GBufferNormal = AllocImage("_gbuffer_normal");
 		globalImages.GBufferDepth = AllocImage("_gbuffer_depth");
 		globalImages.GBufferSpec = AllocImage("_gbuffer_specular");
+		globalImages.GBufferEmissive = AllocImage("_gbuffer_emissive");
 		globalImages.Shadow = AllocImage("_shadow");
 		globalImages.defaultImage = AllocImage("_defaultImage");
 		globalImages.HDRaccum = AllocImage("_hdrimage");
@@ -36,6 +37,10 @@ namespace jsr {
 		globalImages.grayImage = AllocImage("_gray");
 		globalImages.blackImage = AllocImage("_black");
 		globalImages.flatNormal = AllocImage("_flatnormal");
+		for (int i = 0; i < 2; ++i)
+		{
+			globalImages.HDRbloom[i] = AllocImage("_hdrbloom_" + std::to_string(i));
+		}
 
 		int screen_width, screen_height;
 		renderSystem.backend->GetScreenSize(screen_width, screen_height);
@@ -69,6 +74,11 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image GBufferNormal allocation failed !");
 		}
+		opts.usage = IMU_EMMISIVE;
+		if (!globalImages.GBufferEmissive->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+		{
+			Error("[ImageManager]: Image GBufferNormal allocation failed !");
+		}
 
 		opts.format = IMF_RGBA;
 		opts.usage = IMU_AORM;
@@ -84,7 +94,18 @@ namespace jsr {
 			Error("[ImageManager]: Image HDRaccum allocation failed !");
 		}
 
+		opts.sizeX = screen_width / 2;
+		opts.sizeY = screen_height / 2;
+		for (int i = 0; i < 2; ++i)
+		{
+			if (!globalImages.HDRbloom[i]->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+			{
+				Error("[ImageManager]: Image HDRbloom allocation failed !");
+			}
+		}
 
+		opts.sizeX = screen_width;
+		opts.sizeY = screen_height;
 		opts.format = IMF_RGBA;
 		opts.usage = IMU_DEFAULT;
 		if (!globalImages.defaultImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
