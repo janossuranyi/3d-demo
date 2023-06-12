@@ -4,6 +4,8 @@
 #define FLG_COVERAGE_MASKED 1
 #define FLG_COVERAGE_BLEND 2
 
+#define gEmissiveFactor g_freqHighFrag.matEmissiveFactor.xyz
+#define gEmissiveStrength g_freqHighFrag.matEmissiveFactor.w
 #define gRoughnessFactor g_freqHighFrag.matMRFactor.x
 #define gMetallicFactor g_freqHighFrag.matMRFactor.y
 #define gAlphaCutoff g_freqHighFrag.alphaCutoff.x

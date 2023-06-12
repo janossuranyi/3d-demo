@@ -171,6 +171,7 @@ namespace jsr {
 		void		RenderShadow(const viewLight_t* light);
 		void		RenderDeferred_GBuffer();
 		void		RenderDeferred_Lighting();
+		void		RenderEmissive();
 		void		RenderHDRtoLDR();
 		void		RenderAA();
 	public:

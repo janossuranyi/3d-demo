@@ -534,6 +534,8 @@ namespace jsr {
 
 		RenderDeferred_GBuffer();
 		RenderDeferred_Lighting();
+		RenderEmissive();
+
 		RenderHDRtoLDR();
 		RenderAA();
 #if 0
@@ -914,7 +916,6 @@ namespace jsr {
 			}
 
 			stencilSt.mask = 255;
-			stencilSt.ref = 0;
 			stencilSt.stencilFunc = CMP_NOTEQ;
 			SetStencilState(stencilSt);
 			//glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
@@ -933,6 +934,51 @@ namespace jsr {
 		stencilSt.enabled = false;
 		SetStencilState(stencilSt);
 		//glDisable(GL_STENCIL_TEST);
+	}
+
+	void RenderBackend::RenderEmissive()
+	{
+		using namespace glm;
+
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
+
+		globalFramebuffers.hdrFBO->Bind();
+
+		SetWriteMask(bvec4{ true });
+
+		renderSystem.programManager->UseProgram(PRG_EMISSIVE);
+		SetCurrentTextureUnit(IMU_EMMISIVE);
+
+		stencilState_t stencilSt{};
+		stencilSt.enabled = false;
+		SetStencilState(stencilSt);
+		blendingState_t blendState{};
+		blendState.enabled = false;
+		SetBlendingState(blendState);
+		depthState_t ds{};
+		ds.enabled = true;
+		ds.func = CMP_LEQ;
+		SetDepthState(ds);
+		const eStageType ACTIVE_STAGE = STAGE_DEBUG;
+		const drawSurf_t* surf;
+		for (int i = 0; i < view->numDrawSurfs; ++i)
+		{
+			surf = view->drawSurfs[i];
+			const Material* shader = surf->shader;
+			if (!shader || shader->IsEmpty()) continue;
+			if (shader->GetStage(ACTIVE_STAGE).enabled == false) continue;
+			const stage_t& stage = shader->GetStage(ACTIVE_STAGE);
+
+			if (stage.coverage != COVERAGE_SOLID) continue;
+			if (glm::all(glm::equal(stage.emissiveScale, vec4(0.0f)))) continue;
+			SetCullMode(stage.cullMode);
+
+			stage.images[IMU_EMMISIVE]->Bind();
+			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
+			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, surf->highFreqFrag[ACTIVE_STAGE]);
+			R_DrawSurf(surf);
+		}
+		
 	}
 
 	void RenderBackend::RenderHDRtoLDR()

@@ -4,6 +4,7 @@
         "version" : "2.0"
     },
     "extensionsUsed" : [
+        "KHR_materials_emissive_strength",
         "KHR_lights_punctual"
     ],
     "extensionsRequired" : [
@@ -12,30 +13,6 @@
     "extensions" : {
         "KHR_lights_punctual" : {
             "lights" : [
-                {
-                    "color" : [
-                        0.4910198748111725,
-                        0.5149168968200684,
-                        1
-                    ],
-                    "intensity" : 543514.1306588226,
-                    "spot" : {
-                        "innerConeAngle" : 0.30020609719870217,
-                        "outerConeAngle" : 0.384845107793808
-                    },
-                    "type" : "spot",
-                    "name" : "Spot.010"
-                },
-                {
-                    "color" : [
-                        0.4910198748111725,
-                        0.5149168968200684,
-                        1
-                    ],
-                    "intensity" : 543.5141306588226,
-                    "type" : "point",
-                    "name" : "Point"
-                },
                 {
                     "color" : [
                         1,
@@ -135,6 +112,30 @@
                     "intensity" : 923.9740221199984,
                     "type" : "point",
                     "name" : "Spot.009"
+                },
+                {
+                    "color" : [
+                        0.4910198748111725,
+                        0.5149168968200684,
+                        1
+                    ],
+                    "intensity" : 543.5141306588226,
+                    "type" : "point",
+                    "name" : "Point"
+                },
+                {
+                    "color" : [
+                        1,
+                        1,
+                        1
+                    ],
+                    "intensity" : 54351.41306588226,
+                    "spot" : {
+                        "innerConeAngle" : 0.6483025624590582,
+                        "outerConeAngle" : 0.7627089023590088
+                    },
+                    "type" : "spot",
+                    "name" : "Spot.012"
                 }
             ]
         }
@@ -191,9 +192,9 @@
             "name" : "LampScaffold.001",
             "rotation" : [
                 0,
-                0.7048137784004211,
+                -0.9981853365898132,
                 0,
-                0.7093924283981323
+                0.06021638214588165
             ],
             "scale" : [
                 0.02000001259148121,
@@ -202,46 +203,8 @@
             ],
             "translation" : [
                 0.1980266571044922,
-                3.3477303981781006,
-                -4.224768161773682
-            ]
-        },
-        {
-            "extensions" : {
-                "KHR_lights_punctual" : {
-                    "light" : 0
-                }
-            },
-            "name" : "Spot.010",
-            "rotation" : [
-                0.44811245799064636,
-                0.5234455466270447,
-                0.67970871925354,
-                0.2513883709907532
-            ],
-            "translation" : [
-                5.75297737121582,
-                8.768876075744629,
-                -0.1153603196144104
-            ]
-        },
-        {
-            "extensions" : {
-                "KHR_lights_punctual" : {
-                    "light" : 1
-                }
-            },
-            "name" : "Point",
-            "rotation" : [
-                -0.7071068286895752,
-                0,
-                0,
-                0.7071068286895752
-            ],
-            "translation" : [
-                0.09414524585008621,
-                4.396511077880859,
-                -3.5394654273986816
+                -0.01038922369480133,
+                -0.36588549613952637
             ]
         },
         {
@@ -597,7 +560,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 2
+                    "light" : 0
                 }
             },
             "name" : "Spot",
@@ -616,7 +579,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 3
+                    "light" : 1
                 }
             },
             "name" : "Spot.001",
@@ -635,7 +598,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 4
+                    "light" : 2
                 }
             },
             "name" : "Spot.002",
@@ -654,7 +617,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 5
+                    "light" : 3
                 }
             },
             "name" : "Spot.003",
@@ -673,7 +636,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 6
+                    "light" : 4
                 }
             },
             "name" : "Spot.004",
@@ -692,7 +655,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 7
+                    "light" : 5
                 }
             },
             "name" : "Spot.005",
@@ -711,7 +674,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 8
+                    "light" : 6
                 }
             },
             "name" : "Spot.006",
@@ -730,7 +693,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 9
+                    "light" : 7
                 }
             },
             "name" : "Spot.007",
@@ -749,7 +712,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 10
+                    "light" : 8
                 }
             },
             "name" : "Spot.008",
@@ -768,7 +731,7 @@
         {
             "extensions" : {
                 "KHR_lights_punctual" : {
-                    "light" : 11
+                    "light" : 9
                 }
             },
             "name" : "Spot.009",
@@ -782,6 +745,44 @@
                 8.967700004577637,
                 2.5379559993743896,
                 3.1770825386047363
+            ]
+        },
+        {
+            "extensions" : {
+                "KHR_lights_punctual" : {
+                    "light" : 10
+                }
+            },
+            "name" : "Point",
+            "rotation" : [
+                -0.7071068286895752,
+                0,
+                0,
+                0.7071068286895752
+            ],
+            "translation" : [
+                0.09414524585008621,
+                4.396511077880859,
+                -3.5394654273986816
+            ]
+        },
+        {
+            "extensions" : {
+                "KHR_lights_punctual" : {
+                    "light" : 11
+                }
+            },
+            "name" : "Spot.010",
+            "rotation" : [
+                -0.5095112919807434,
+                -0.41682037711143494,
+                0.49030420184135437,
+                0.5711924433708191
+            ],
+            "translation" : [
+                0.33162301778793335,
+                1.227935552597046,
+                -0.3839031457901001
             ]
         }
     ],
@@ -821,6 +822,11 @@
                 1,
                 1
             ],
+            "extensions" : {
+                "KHR_materials_emissive_strength" : {
+                    "emissiveStrength" : 100
+                }
+            },
             "name" : "SpotGlass",
             "pbrMetallicRoughness" : {
                 "baseColorFactor" : [

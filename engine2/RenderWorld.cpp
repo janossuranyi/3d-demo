@@ -401,6 +401,12 @@ namespace jsr {
 				shadow.type = STAGE_SHADOW;
 			}
 
+			auto it = gmat.extensions.find("KHR_materials_emissive_strength");
+			if (it != gmat.extensions.end())
+			{
+				auto emissiveStrength = it->second.Get("emissiveStrength").GetNumberAsDouble();
+				stage.emissiveScale.w = (float)emissiveStrength;
+			}
 			if (gmat.pbrMetallicRoughness.baseColorTexture.index > -1) {
 				stage.images[IMU_DIFFUSE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.pbrMetallicRoughness.baseColorTexture.index]);
 			}

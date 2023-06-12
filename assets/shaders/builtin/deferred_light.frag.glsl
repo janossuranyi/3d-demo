@@ -28,7 +28,6 @@ layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
 layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
 layout(binding = IMU_AORM)      uniform sampler2D tAORM;
 layout(binding = IMU_FRAGPOS)   uniform sampler2D tFragPos;
-//layout(binding = IMU_EMMISIVE)  uniform sampler2D tEmissive;
 layout(binding = IMU_SHADOW)    uniform sampler2DShadow tShadow;
 
 float ApproxPow ( float fBase, float fPower ) {

@@ -108,6 +108,7 @@ namespace jsr {
 		PRG_PP_HDR,
 		PRG_COLOR,
 		PRG_FXAA3,
+		PRG_EMISSIVE,
 		PRG_COUNT
 	};
 
