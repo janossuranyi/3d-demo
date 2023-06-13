@@ -94,8 +94,8 @@ namespace jsr {
 			Error("[ImageManager]: Image HDRaccum allocation failed !");
 		}
 
-		opts.sizeX = screen_width / 2;
-		opts.sizeY = screen_height / 2;
+		opts.sizeX = screen_width / renderGlobals.bloomDivisor;
+		opts.sizeY = screen_height / renderGlobals.bloomDivisor;
 		for (int i = 0; i < 2; ++i)
 		{
 			if (!globalImages.HDRbloom[i]->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))

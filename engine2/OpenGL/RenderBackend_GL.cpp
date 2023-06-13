@@ -988,7 +988,7 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w/2, view->viewport.h/2);
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w / renderGlobals.bloomDivisor, view->viewport.h / renderGlobals.bloomDivisor);
 
 		globalFramebuffers.bloomFBO[0]->Bind();
 
@@ -1023,7 +1023,7 @@ namespace jsr {
 		glm::vec2 vDirection{ 1.0f,0.0f };
 
 		SetCurrentTextureUnit(0);
-		for (int i = 0; i < 2; ++i)
+		for (int i = 0; i < 3; ++i)
 		{
 			vDirection.x = 1.0f;
 			vDirection.y = 0.0f;

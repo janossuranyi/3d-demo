@@ -39,7 +39,7 @@ namespace jsr {
 
 		for (int i = 0; i < 2; ++i)
 		{
-			fb = new Framebuffer("hdrBloom_"+std::to_string(i), w/2, h/2);
+			fb = new Framebuffer("hdrBloom_" + std::to_string(i), w / renderGlobals.bloomDivisor, h / renderGlobals.bloomDivisor);
 			fb->Bind();
 			fb->AttachImage2D(globalImages.HDRbloom[i], 0);
 			if (!fb->Check())
