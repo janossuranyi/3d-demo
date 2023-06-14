@@ -15,5 +15,5 @@ out vec4 fragColor;
 void main()
 {
     vec3 color = SRGBlinear( texture(tEmissive, In.texCoord).xyz );
-    fragColor = vec4(color * gEmissiveFactor, 1.0);
+    fragColor = vec4(color * gEmissiveFactor * gEmissiveStrength, 1.0);
 }

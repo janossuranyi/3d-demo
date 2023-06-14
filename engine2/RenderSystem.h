@@ -20,6 +20,7 @@ namespace jsr {
 		glm::vec3 ambientColor;
 		float ambientScale;
 		float spotFov;
+		float bloomScale;
 		int bloomDivisor;
 
 		renderGlobals_t() :
@@ -30,6 +31,7 @@ namespace jsr {
 			ambientColor(1.0f),
 			ambientScale(.01f),
 			spotFov(glm::radians(90.f)),
+			bloomScale(0.35f),
 			bloomDivisor(4),
 			shadowBias(0.0001f) {}
 	};

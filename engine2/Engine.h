@@ -37,6 +37,8 @@ namespace jsr {
 		RenderWorld* world;
 		bool	threaded;
 		int		lastNumDrawSurf;
+
+		float bloomParams2_y{ 0.0f };
 	};
 
 	extern engineConfig_t engineConfig;

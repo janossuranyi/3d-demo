@@ -76,6 +76,8 @@ namespace jsr {
 		glm::vec4 params;
 		glm::vec4 viewOrigin;
 		glm::vec4 ambientColor;
+		glm::vec4 bloomParams;
+		glm::vec4 bloomParams2;
 	};
 
 	struct uboFreqHighFrag_t 

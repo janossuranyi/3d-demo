@@ -121,7 +121,7 @@ namespace jsr {
 		float angles[3]{};
 		uint frameTimeCounter = 100;
 		float frameTime{};
-
+		
 		while (!quit)
 		{
 			glm::quat rotX = glm::angleAxis(glm::radians(angles[0]), normalize(vec3{1.0f,0.0f,0.0f}));
@@ -142,7 +142,8 @@ namespace jsr {
 			ImGui::NewFrame();
 			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
 			ImGui::LabelText("Frame time", "%.2f", frameTime);
-			ImGui::DragFloat("Spot FOV", &renderGlobals.spotFov, 0.01f, 0.01f, 3.1415f);
+			ImGui::DragFloat("Bloom scale", &renderGlobals.bloomScale, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Bloom bias", &bloomParams2_y, 0.01f, 0.0f, 1.0f);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
 			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.0001f, 0.0001f, 0.005f, "%.5f");
@@ -329,7 +330,7 @@ namespace jsr {
 		view->nearClipDistance = 0.1f;
 
 		view->renderView.viewID = 1;
-		view->renderView.fov = radians(player.Zoom * 1.5f);
+		view->renderView.fov = radians(player.Zoom);
 		view->renderView.vieworg = player.Position;
 		view->renderView.viewMatrix = viewMatrix;
 		view->projectionMatrix = projMatrix;
@@ -350,6 +351,12 @@ namespace jsr {
 		fragUbo.viewOrigin = vec4(0.f, 0.f, 0.f, 1.f);
 		fragUbo.invProjMatrix = view->unprojectionToCameraMatrix;
 		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
+		fragUbo.bloomParams.x = 2.0f;
+		fragUbo.bloomParams.y = renderGlobals.bloomScale;
+		fragUbo.bloomParams.z = 1.0f / (float(x) / renderGlobals.bloomDivisor);
+		fragUbo.bloomParams.w = 1.0f / (float(y) / renderGlobals.bloomDivisor);
+		fragUbo.bloomParams2.x = 0.4f;
+		fragUbo.bloomParams2.y = bloomParams2_y;
 
 		view->freqLowVert = renderSystem.vertexCache->AllocTransientUniform(&vertUbo, sizeof(vertUbo));
 		view->freqLowFrag = renderSystem.vertexCache->AllocTransientUniform(&fragUbo, sizeof(fragUbo));		

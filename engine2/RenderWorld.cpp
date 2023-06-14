@@ -390,7 +390,7 @@ namespace jsr {
 			stage.diffuseScale = glm::make_vec4((double*) gmat.pbrMetallicRoughness.baseColorFactor.data() );
 			stage.roughnessScale = static_cast<float>(gmat.pbrMetallicRoughness.roughnessFactor);
 			stage.metallicScale = static_cast<float>(gmat.pbrMetallicRoughness.metallicFactor);
-			stage.emissiveScale = glm::vec4(glm::make_vec3((double*) gmat.emissiveFactor.data()), 0.0f);
+			stage.emissiveScale = glm::vec4(glm::make_vec3((double*) gmat.emissiveFactor.data()), 1.0f);
 
 			if (gmat.name.find("noshadow") == std::string::npos)
 			{

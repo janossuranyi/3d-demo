@@ -18,6 +18,8 @@
 #define gFarClipDistance g_freqLowFrag.nearFarClip.y
 #define gScreenSize g_freqLowFrag.screenSize.xy
 #define gInvScreenSize g_freqLowFrag.screenSize.zw
+#define gBloomParams g_freqLowFrag.bloomParams
+#define gBloomParams2 g_freqLowFrag.bloomParams2
 
 layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 {
@@ -28,7 +30,8 @@ layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 	vec4 params;
 	vec4 viewOrigin;
 	vec4 ambientColor;
-
+	vec4 bloomParams;
+	vec4 bloomParams2;
 } g_freqLowFrag;
 
 layout(binding = UBB_FREQ_HIGH_FRAG, std140) uniform uboFreqHighFrag

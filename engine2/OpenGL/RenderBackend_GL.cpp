@@ -544,21 +544,21 @@ namespace jsr {
 		RenderBloom();
 		RenderHDRtoLDR();
 		RenderAA();
-#if 0
 		Framebuffer::Unbind();
 
-		GL_CHECK(glViewport(0, 0, x, y));
-		Clear(true, false, false);
+		SetViewport(0, 0, x, y);
+//		Clear(true, false, false);
 
 		GLsizei HalfWidth = (GLsizei)(x / 2);
 		GLsizei HalfHeight = (GLsizei)(y / 2);
-		Framebuffer* gbuffer = globalFramebuffers.GBufferFBO;
-		Framebuffer* hdrbuffer = globalFramebuffers.hdrFBO;
+		Framebuffer* gbuffer = globalFramebuffers.bloomFBO[1];
+		//Framebuffer* hdrbuffer = globalFramebuffers.hdrFBO;
 
 		gbuffer->BindForReading();
 		gbuffer->SetReadBuffer(0);
-		gbuffer->BlitColorBuffer(0, 0, x, y,
+		gbuffer->BlitColorBuffer(0, 0, x/4, y/4,
 			0, 0, HalfWidth, HalfHeight);
+#if 0
 
 		gbuffer->SetReadBuffer(1);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
@@ -812,7 +812,7 @@ namespace jsr {
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
 				if (surf->space->shadowOnly) continue;
 
-				if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
+				if (glm::any(glm::greaterThan(vec3(stage.emissiveScale), vec3(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
 				
 				// setup textures
 				for (int j = 0; j < IMU_COUNT; ++j)
