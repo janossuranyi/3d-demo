@@ -30,7 +30,7 @@ namespace jsr {
 			ambientColor(1.0f),
 			ambientScale(.01f),
 			spotFov(glm::radians(90.f)),
-			bloomDivisor(2),
+			bloomDivisor(4),
 			shadowBias(0.0001f) {}
 	};
 

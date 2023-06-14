@@ -172,6 +172,7 @@ namespace jsr {
 		void		RenderDeferred_GBuffer();
 		void		RenderDeferred_Lighting();
 		void		RenderEmissive();
+		void		RenderBloom();
 		void		RenderHDRtoLDR();
 		void		RenderAA();
 	public:

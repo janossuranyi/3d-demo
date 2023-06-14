@@ -21,14 +21,12 @@ layout(location = 4) out vec4 outEmissive;
 layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
 layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
 layout(binding = IMU_AORM)      uniform sampler2D tAORM;
-layout(binding = IMU_EMMISIVE)  uniform sampler2D tEmissive;
 
 struct input_t {
     mat3 tbn;
     vec3 normal;
     vec4 sampleAmbient;
     vec4 samplePBR;
-    vec3 sampleEm;
     vec4 spec;
 };
 
@@ -53,7 +51,6 @@ void main()
         vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);        
         inputs.tbn      = mat3(localTangent,derivedBitangent,localNormal);
         inputs.normal   = inputs.tbn * normalTS;
-        inputs.sampleEm = SRGBlinear( texture( tEmissive, In.texCoord).rgb ) * gEmissiveFactor * gEmissiveStrength;
     }
 
     inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
@@ -74,5 +71,4 @@ void main()
     outSpec      = inputs.samplePBR;
     //outNormal    = inputs.normal;
     outNormal    = vec4((1.0 + inputs.normal) * 0.5, 1.0);
-    outEmissive  = vec4(inputs.sampleEm,1);
 }

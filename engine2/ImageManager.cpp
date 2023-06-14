@@ -28,7 +28,6 @@ namespace jsr {
 		globalImages.GBufferNormal = AllocImage("_gbuffer_normal");
 		globalImages.GBufferDepth = AllocImage("_gbuffer_depth");
 		globalImages.GBufferSpec = AllocImage("_gbuffer_specular");
-		globalImages.GBufferEmissive = AllocImage("_gbuffer_emissive");
 		globalImages.Shadow = AllocImage("_shadow");
 		globalImages.defaultImage = AllocImage("_defaultImage");
 		globalImages.HDRaccum = AllocImage("_hdrimage");
@@ -37,6 +36,10 @@ namespace jsr {
 		globalImages.grayImage = AllocImage("_gray");
 		globalImages.blackImage = AllocImage("_black");
 		globalImages.flatNormal = AllocImage("_flatnormal");
+		for (int i = 0; i < 2; ++i)
+		{
+			globalImages.HDRblur[i] = AllocImage("_hdrblur_" + std::to_string(i));
+		}
 		for (int i = 0; i < 2; ++i)
 		{
 			globalImages.HDRbloom[i] = AllocImage("_hdrbloom_" + std::to_string(i));
@@ -74,11 +77,6 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image GBufferNormal allocation failed !");
 		}
-		opts.usage = IMU_EMMISIVE;
-		if (!globalImages.GBufferEmissive->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
-		{
-			Error("[ImageManager]: Image GBufferNormal allocation failed !");
-		}
 
 		opts.format = IMF_RGBA;
 		opts.usage = IMU_AORM;
@@ -87,7 +85,7 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferSpec allocation failed !");
 		}
 
-		opts.format = IMF_RGBA16F;
+		opts.format = IMF_R11G11B10F;
 		opts.usage = IMU_HDR;
 		if (!globalImages.HDRaccum->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
@@ -98,6 +96,19 @@ namespace jsr {
 		opts.sizeY = screen_height / renderGlobals.bloomDivisor;
 		for (int i = 0; i < 2; ++i)
 		{
+			if (!globalImages.HDRblur[i]->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+			{
+				Error("[ImageManager]: Image HDRblur allocation failed !");
+			}
+		}
+
+		opts.sizeX = screen_width ;
+		opts.sizeY = screen_height ;
+		for(int i = 0; opts.sizeX > (screen_width / renderGlobals.bloomDivisor); ++i)
+		{
+			opts.sizeX /= 2;
+			opts.sizeY /= 2;
+
 			if (!globalImages.HDRbloom[i]->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 			{
 				Error("[ImageManager]: Image HDRbloom allocation failed !");

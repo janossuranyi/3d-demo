@@ -39,7 +39,21 @@ namespace jsr {
 
 		for (int i = 0; i < 2; ++i)
 		{
-			fb = new Framebuffer("hdrBloom_" + std::to_string(i), w / renderGlobals.bloomDivisor, h / renderGlobals.bloomDivisor);
+			fb = new Framebuffer("hdrBlure_" + std::to_string(i), w / renderGlobals.bloomDivisor, h / renderGlobals.bloomDivisor);
+			fb->Bind();
+			fb->AttachImage2D(globalImages.HDRblur[i], 0);
+			if (!fb->Check())
+			{
+				Error("[Framebuffer]: hdrBlure init failed!");
+			}
+			globalFramebuffers.blurFBO[i] = fb;
+		}
+
+		int w2 = w / 2;
+		int h2 = h / 2;
+		for (int i = 0; i < 2; ++i)
+		{
+			fb = new Framebuffer("hdrBloom_" + std::to_string(i), w2, h2);
 			fb->Bind();
 			fb->AttachImage2D(globalImages.HDRbloom[i], 0);
 			if (!fb->Check())
@@ -68,7 +82,6 @@ namespace jsr {
 		fb->AttachImage2D( globalImages.GBufferNormal, 1);
 		fb->AttachImage2D( globalImages.GBufferSpec, 2 );
 		fb->AttachImage2D( globalImages.GBufferFragPos, 3);
-		fb->AttachImage2D(globalImages.GBufferEmissive, 4);
 		if ( ! fb->Check() )
 		{
 			Error("[Framebuffer]: GBufferFBO init failed!");

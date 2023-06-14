@@ -20,7 +20,8 @@ namespace jsr {
 		{"color",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
 		{"fxaa3",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
 		{"emissive_pass",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"gauss_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
+		{"gauss_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
+		{"bloom_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
 	};
 
 	static void R_DeleteShaders(GLuint const* list, int numShader)
@@ -155,7 +156,8 @@ namespace jsr {
 
 	void ProgramManager::SetUniform(eShaderProg program, const char* name, int x)
 	{
-		GLint loc = GL_CHECK(glGetUniformLocation(builtins[program].prg, name));
+		GLint loc;
+		GL_CHECK(loc = glGetUniformLocation(builtins[program].prg, name));
 		if (loc > -1)
 		{
 			glUniform1i(loc, x);
@@ -164,11 +166,37 @@ namespace jsr {
 
 	void ProgramManager::SetUniform(eShaderProg program, const char* name, const glm::vec2& x)
 	{
-		GLint loc = GL_CHECK(glGetUniformLocation(builtins[program].prg, name));
+		GLint loc;
+		GL_CHECK(loc = glGetUniformLocation(builtins[program].prg, name));
 		if (loc > -1)
 		{
 			glUniform2fv(loc, 1, &x[0]);
 		}
+	}
+
+	void ProgramManager::SetUniform(eShaderProg program, const char* name, int num, const glm::vec4* v)
+	{
+		GLint loc;
+		GL_CHECK(loc = glGetUniformLocation(builtins[program].prg, name));
+		if (loc > -1)
+		{
+			glUniform4fv(loc, num, &v[0].x);
+		}
+	}
+
+	void ProgramManager::SetCommonUniform(int idx, const glm::vec4& v)
+	{
+		assert(idx < 32);
+		g_commonData.v[idx] = v;
+	}
+
+	void ProgramManager::UpdateCommonUniform()
+	{
+		UniformBuffer buf;
+		if (renderSystem.vertexCache->GetUniformBuffer(g_commonData_h, buf))
+		{
+			buf.Update(&g_commonData, 0, sizeof(g_commonData));
+		}		
 	}
 
 	void ProgramManager::BindUniformBlock(eUboBufferBinding binding, const UniformBuffer& buffer)

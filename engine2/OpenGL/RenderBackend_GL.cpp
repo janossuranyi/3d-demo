@@ -531,11 +531,17 @@ namespace jsr {
 
 		renderSystem.programManager->BindUniformBlock(UBB_FREQ_LOW_VERT, view->freqLowVert);
 		renderSystem.programManager->BindUniformBlock(UBB_FREQ_LOW_FRAG, view->freqLowFrag);
+#if 0
+		float bw = (float)x / renderGlobals.bloomDivisor;
+		float bh = (float)y / renderGlobals.bloomDivisor;
 
+		renderSystem.programManager->SetCommonUniform(0, vec4{ bw, bh, 1.0f / bw, 1.0f / bh });
+		renderSystem.programManager->UpdateCommonUniform();
+#endif
 		RenderDeferred_GBuffer();
 		RenderDeferred_Lighting();
 		RenderEmissive();
-
+		RenderBloom();
 		RenderHDRtoLDR();
 		RenderAA();
 #if 0
@@ -806,7 +812,7 @@ namespace jsr {
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
 				if (surf->space->shadowOnly) continue;
 
-				//if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
+				if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
 				
 				// setup textures
 				for (int j = 0; j < IMU_COUNT; ++j)
@@ -988,36 +994,58 @@ namespace jsr {
 	{
 		using namespace glm;
 
-		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w / renderGlobals.bloomDivisor, view->viewport.h / renderGlobals.bloomDivisor);
+		globalFramebuffers.hdrFBO->Bind();
+		renderSystem.programManager->UseProgram(PRG_EMISSIVE);
 
-		globalFramebuffers.bloomFBO[0]->Bind();
-
+		depthState_t ds{};
+		ds.enabled = true;
+		ds.depthMask = false;
+		ds.func = CMP_LEQ;
+		SetDepthState(ds);
 		SetWriteMask(bvec4{ true });
-		Clear(true, false, false);
-
-		renderSystem.programManager->UseProgram(PRG_TEXTURED);
-		SetCurrentTextureUnit(0);
-		globalImages.GBufferEmissive->Bind();
-		SetCullMode(CULL_NONE);
-
-		stencilState_t stencilSt{};
-		stencilSt.enabled = false;
-		SetStencilState(stencilSt);
 
 		blendingState_t blendState = glcontext.blendState;
 		blendState.enabled = false;
 		SetBlendingState(blendState);
 
-		depthState_t ds{};
-		ds.enabled = true;
-		ds.func = CMP_ALWAYS;
-		ds.depthMask = false;
-		SetDepthState(ds);
-		
-		R_DrawSurf(&unitRectSurface);
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
+
+		const drawSurf_t* surf;
+		const eStageType ACTIVE_STAGE = STAGE_DEBUG;
+
+		for (int k = 0; k < 2; ++k)
+		{
+			for (int i = 0; i < view->numDrawSurfs; ++i)
+			{
+				surf = view->drawSurfs[i];
+				const Material* shader = surf->shader;
+				if (!shader || shader->IsEmpty()) continue;
+				if (shader->GetStage(ACTIVE_STAGE).enabled == false) continue;
+				const stage_t& stage = shader->GetStage(ACTIVE_STAGE);
+
+				if (k == 0 && stage.coverage != COVERAGE_SOLID) continue;
+				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
+				if (surf->space->shadowOnly) continue;
+
+				if (glm::all(glm::equal(vec3(stage.emissiveScale), vec3(0.0f))) && stage.images[IMU_EMMISIVE] == globalImages.whiteImage) continue;
+
+				// setup textures
+				renderSystem.backend->SetCurrentTextureUnit(IMU_EMMISIVE);
+				stage.images[IMU_EMMISIVE]->Bind();
+				SetCullMode(stage.cullMode);
+
+				renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
+				renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, surf->highFreqFrag[ACTIVE_STAGE]);
+
+				R_DrawSurf(surf);
+			}
+		}
 
 
-#if 1
+#if 0
+		using namespace glm;
+
+		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
 		renderSystem.programManager->UseProgram(PRG_GAUSS_FILTER);
 
 		glm::vec2 vDirection{ 1.0f,0.0f };
@@ -1028,13 +1056,13 @@ namespace jsr {
 			vDirection.x = 1.0f;
 			vDirection.y = 0.0f;
 			globalFramebuffers.bloomFBO[1]->Bind();
-			globalImages.HDRbloom[0]->Bind();
+			globalImages.HDRblur[0]->Bind();
 			renderSystem.programManager->SetUniform(PRG_GAUSS_FILTER, "g_vDirection", vDirection);
 			R_DrawSurf(&unitRectSurface);
 			vDirection.x = 0.0f;
 			vDirection.y = 1.0f;
 			globalFramebuffers.bloomFBO[0]->Bind();
-			globalImages.HDRbloom[1]->Bind();
+			globalImages.HDRblur[1]->Bind();
 			renderSystem.programManager->SetUniform(PRG_GAUSS_FILTER, "g_vDirection", vDirection);
 			R_DrawSurf(&unitRectSurface);
 		}
@@ -1042,7 +1070,7 @@ namespace jsr {
 		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
 		renderSystem.programManager->UseProgram(PRG_TEXTURED);
 		globalFramebuffers.hdrFBO->Bind();
-		globalImages.HDRbloom[0]->Bind();
+		globalImages.HDRblur[0]->Bind();
 		blendState.enabled = true;
 		blendState.opts.alphaDst = BFUNC_ONE;
 		blendState.opts.colDst = BFUNC_ONE;
@@ -1057,6 +1085,98 @@ namespace jsr {
 		SetDepthState(ds);
 		R_DrawSurf(&unitRectSurface);
 #endif
+	}
+
+	void RenderBackend::RenderBloom()
+	{
+		using namespace glm;
+
+		auto scr = renderSystem.GetScreenSize();
+		stencilState_t ss = glcontext.stencilState;
+		depthState_t ds = glcontext.depthState;
+		ds.enabled = true;
+		ds.depthMask = false;
+		ds.func = CMP_ALWAYS;
+		SetDepthState(ds);
+		ss.enabled = false;
+		SetStencilState(ss);
+
+		SetCullMode(CULL_NONE);
+		vec4 _fa_freqHigh[2];
+
+		blendingState_t bs = glcontext.blendState;
+		bs.enabled = false;
+		renderSystem.programManager->UseProgram(PRG_BLOOM_FILTER);
+		SetCurrentTextureUnit(0);
+
+		float w = scr.x / 2.0f;
+		float h = scr.y / 2.0f;
+		SetViewport(0, 0, (int)w,(int)h);
+		
+		_fa_freqHigh[0].x = 0;
+		_fa_freqHigh[0].y = 0;
+		_fa_freqHigh[0].z = 1.0f / w;
+		_fa_freqHigh[0].w = 1.0f / h;
+
+		_fa_freqHigh[1].x = scr.x;
+		_fa_freqHigh[1].y = scr.y;
+		_fa_freqHigh[1].z = 1.0f / scr.x;
+		_fa_freqHigh[1].w = 1.0f / scr.y;
+
+
+		globalFramebuffers.bloomFBO[0]->Bind();
+		globalImages.HDRaccum->Bind();
+		renderSystem.programManager->SetUniform(PRG_BLOOM_FILTER, "_fa_freqHigh", 2, &_fa_freqHigh[0]);
+		R_DrawSurf(&unitRectSurface);
+
+		_fa_freqHigh[1].x = 0;
+		_fa_freqHigh[1].y = 0;
+		_fa_freqHigh[1].z = 1.0f / w;
+		_fa_freqHigh[1].w = 1.0f / h;
+
+		w /= 2.0f;
+		h /= 2.0f;
+		SetViewport(0, 0, (int)w, (int)h);
+
+		_fa_freqHigh[0].x = 0;
+		_fa_freqHigh[0].y = 0;
+		_fa_freqHigh[0].z = 1.0f / w;
+		_fa_freqHigh[0].w = 1.0f / h;
+
+		renderSystem.programManager->SetUniform(PRG_BLOOM_FILTER, "_fa_freqHigh", 2, &_fa_freqHigh[0]);
+
+		globalFramebuffers.bloomFBO[1]->Bind();
+		globalImages.HDRbloom[0]->Bind();
+		R_DrawSurf(&unitRectSurface);
+
+		renderSystem.programManager->UseProgram(PRG_GAUSS_FILTER);
+
+		glm::vec2 vDirection{ 1.0f,0.0f };
+
+		for (int i = 0; i < 2; ++i)
+		{
+			vDirection.x = 1.0f;
+			vDirection.y = 0.0f;
+			globalFramebuffers.blurFBO[0]->Bind();
+			if (i == 0)
+			{
+				globalImages.HDRbloom[0]->Bind();
+			}
+			else
+			{
+				globalImages.HDRblur[1]->Bind();
+			}
+
+			renderSystem.programManager->SetUniform(PRG_GAUSS_FILTER, "g_vDirection", vDirection);
+			R_DrawSurf(&unitRectSurface);
+
+			vDirection.x = 0.0f;
+			vDirection.y = 1.0f;
+			globalFramebuffers.blurFBO[1]->Bind();
+			globalImages.HDRblur[0]->Bind();
+			renderSystem.programManager->SetUniform(PRG_GAUSS_FILTER, "g_vDirection", vDirection);
+			R_DrawSurf(&unitRectSurface);
+		}
 	}
 
 	void RenderBackend::RenderHDRtoLDR()
@@ -1083,7 +1203,11 @@ namespace jsr {
 		globalImages.HDRaccum->Bind();
 		SetCurrentTextureUnit(IMU_DIFFUSE);
 		globalImages.GBufferAlbedo->Bind();
+		SetCurrentTextureUnit(IMU_EMMISIVE);
+		globalImages.HDRblur[1]->Bind();
+
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
+
 		R_DrawSurf(&unitRectSurface);
 	}
 

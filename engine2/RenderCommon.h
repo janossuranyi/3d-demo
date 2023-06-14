@@ -110,6 +110,7 @@ namespace jsr {
 		PRG_FXAA3,
 		PRG_EMISSIVE,
 		PRG_GAUSS_FILTER,
+		PRG_BLOOM_FILTER,
 		PRG_COUNT
 	};
 
