@@ -32,12 +32,20 @@ namespace jsr {
 		UBB_FREQ_LOW_FRAG,
 		UBB_FREQ_HIGH_FRAG,
 		UBB_LIGHT_DATA,
-		UBB_COMMON_DATA
+		UBB_COMMON_DATA,
+		UBB_BACKEND_DATA
 	};
 
 	struct uboCommonData_t
 	{
-		glm::vec4 v[32];
+		glm::vec4 renderTargeRes;
+		glm::vec4 shadowRes;
+		glm::vec4 bloomRes;
+	};
+
+	struct uboBackendData_t
+	{
+		glm::vec4 params[16];
 	};
 
 	struct uboLightData_t
@@ -128,16 +136,19 @@ namespace jsr {
 		void SetUniform(eShaderProg program, const char* name, int num, const glm::vec4* v);
 		void SetCommonUniform(int idx, const glm::vec4& v);
 		void UpdateCommonUniform();
+		void UpdateBackendUniform();
 		void BindCommonUniform();
 		void BindUniformBlock(eUboBufferBinding binding, const UniformBuffer& buffer);
 		void BindUniformBlock(eUboBufferBinding binding, vertCacheHandle_t handle);
 
+		uboCommonData_t			g_commonData;
+		uboBackendData_t		g_backendData;
 	private:
 		unsigned int			currentProgram;
 		bool					initialized;
 		static renderProgram_t	builtins[PRG_COUNT];
-		uboCommonData_t			g_commonData;
 		vertCacheHandle_t		g_commonData_h;
+		vertCacheHandle_t		g_backendData_h;
 		bool CreateBuiltinProgram(renderProgram_t& p);
 	};
 

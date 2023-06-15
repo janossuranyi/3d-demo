@@ -2,6 +2,7 @@
 #include <tiny_gltf.h>
 #include "./System.h"
 #include "./Heap.h"
+#include "./Engine.h"
 #include "./RenderBackend.h"
 #include "./RenderSystem.h"
 #include "./FrameBuffer.h"
@@ -115,6 +116,26 @@ namespace jsr {
 		s.SetImage(IMU_NORMAL, globalImages.flatNormal);
 		s.SetImage(IMU_EMMISIVE, globalImages.whiteImage);
 		s.shader = PRG_TEXTURED;
+
+		int bloomdivisor = 1 << renderGlobals.bloomDownsampleLevel;
+		programManager->g_commonData.renderTargeRes = glm::vec4{
+			engineConfig.r_resX,
+			engineConfig.r_resY,
+			1.0f / engineConfig.r_resX,
+			1.0f / engineConfig.r_resY 
+		};
+		programManager->g_commonData.bloomRes = glm::vec4{ 
+			engineConfig.r_resX / bloomdivisor,
+			engineConfig.r_resY / bloomdivisor,
+			1.0f / (engineConfig.r_resX / bloomdivisor),
+			1.0f / (engineConfig.r_resY / bloomdivisor) 
+		};
+		programManager->g_commonData.shadowRes.x = renderGlobals.shadowResolution;
+		programManager->g_commonData.shadowRes.y = renderGlobals.shadowResolution;
+		programManager->g_commonData.shadowRes.z = 1.0f / renderGlobals.shadowResolution;
+		programManager->g_commonData.shadowRes.w = 1.0f / renderGlobals.shadowResolution;
+
+		programManager->UpdateCommonUniform();
 
 		initialized = true;
 

@@ -1,7 +1,6 @@
 @include "version.inc.glsl"
 @include "defs.inc"
 @include "fragment_uniforms.inc.glsl"
-@include "common_uniforms.inc.glsl"
 @include "common.inc.glsl"
 
 layout(binding = IMU_HDR)       uniform sampler2D tHDRAccum;

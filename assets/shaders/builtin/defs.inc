@@ -4,6 +4,7 @@
 #define UBB_FREQ_HIGH_FRAG	3
 #define UBB_LIGHT_DATA      4
 #define UBB_COMMON_DATA     5
+#define UBB_BACKEND_DATA    6
 
 #define	IMU_DIFFUSE 0
 #define	IMU_NORMAL 1

@@ -1128,12 +1128,12 @@ namespace jsr {
 
 		renderSystem.programManager->UseProgram(PRG_GAUSS_FILTER);
 
-		glm::vec2 vDirection{ 1.0f,0.0f };
+		auto* pm = renderSystem.programManager;
 
 		for (int i = 0; i < 2; ++i)
 		{
-			vDirection.x = 1.0f;
-			vDirection.y = 0.0f;
+			pm->g_backendData.params[0].x = 1.0f;
+			pm->g_backendData.params[0].y = 0.0f;
 			globalFramebuffers.blurFBO[0]->Bind();
 			if (i == 0)
 			{
@@ -1144,14 +1144,17 @@ namespace jsr {
 				globalImages.HDRblur[1]->Bind();
 			}
 
-			renderSystem.programManager->SetUniform(PRG_GAUSS_FILTER, "g_vDirection", vDirection);
+			pm->UpdateBackendUniform();
+
 			R_DrawSurf(&unitRectSurface);
 
-			vDirection.x = 0.0f;
-			vDirection.y = 1.0f;
 			globalFramebuffers.blurFBO[1]->Bind();
 			globalImages.HDRblur[0]->Bind();
-			renderSystem.programManager->SetUniform(PRG_GAUSS_FILTER, "g_vDirection", vDirection);
+
+			pm->g_backendData.params[0].x = 0.0f;
+			pm->g_backendData.params[0].y = 1.0f;
+			pm->UpdateBackendUniform();
+
 			R_DrawSurf(&unitRectSurface);
 		}
 	}

@@ -1,5 +1,6 @@
 #include "./RenderBackend.h"
 #include "./RenderProgs.h"
+#include "./RenderSystem.h"
 #include "./Logger.h"
 #include "./GLState.h"
 #include <memory>
@@ -59,7 +60,8 @@ namespace jsr {
 
 		SetBlendingState(blendState);
 		SetDepthState({ true, true, CMP_LEQ });
-
+		
+		
 		initialized = true;
 		return true;
 	}
