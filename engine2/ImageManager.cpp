@@ -92,9 +92,10 @@ namespace jsr {
 			Error("[ImageManager]: Image HDRaccum allocation failed !");
 		}
 
-		opts.sizeX = screen_width / renderGlobals.bloomDivisor;
-		opts.sizeY = screen_height / renderGlobals.bloomDivisor;
-		for (int i = 0; i < 2; ++i)
+		const int bloomDiv = 1 << renderGlobals.bloomDownsampleLevel;
+		opts.sizeX = screen_width / bloomDiv;
+		opts.sizeY = screen_height / bloomDiv;
+		for (int i = 0; i < renderGlobals.bloomDownsampleLevel; ++i)
 		{
 			if (!globalImages.HDRblur[i]->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 			{
@@ -104,7 +105,7 @@ namespace jsr {
 
 		opts.sizeX = screen_width ;
 		opts.sizeY = screen_height ;
-		for(int i = 0; opts.sizeX > (screen_width / renderGlobals.bloomDivisor); ++i)
+		for (int i = 0; i < renderGlobals.bloomDownsampleLevel; ++i)
 		{
 			opts.sizeX /= 2;
 			opts.sizeY /= 2;

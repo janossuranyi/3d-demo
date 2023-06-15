@@ -35,9 +35,9 @@ float GeometrySmith(float roughness, float NdotV, float NdotL)
     return ggx1 * ggx2;
 }
 
-vec3 specBRDF_doom ( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness, out vec3 Fout ) {
+vec4 specBRDF_doom ( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness) {
 	const vec3 H = normalize( V + L );
-	float m = ( 1 - smoothness * 0.8 );
+	float m = ( 0.2 + roughness * 0.8 );
 	m *= m;
 	m *= m;
 	float m2 = m * m;
@@ -47,25 +47,25 @@ vec3 specBRDF_doom ( vec3 N, vec3 V, vec3 L, vec3 f0, float smoothness, out vec3
 	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
 	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-    Fout = fresnelSchlick( f0, dot( L, H ) );
-	return Fout * spec;
+    vec4 res = vec4( fresnelSchlick( f0, dot( L, H ) ), spec );
+
+	return res;
 }
 
-vec3 specBRDF(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness, out vec3 Fout)
-{
-    vec3 H = normalize(V + L);
-    float NdotL = max( dot( N, L ), 0.0 );
-    float NdotV = max( dot( N, V ), 0.0 );
-    float NdotH = max( dot( N, H ), 0.0 );
-    float HdotV = max( dot( H, V ), 0.0 );
-
-    float   NDF = DistributionGGX(roughness, NdotH);
-    float   G = GeometrySmith(roughness, NdotV, NdotL);
-    vec3    F = fresnelSchlick(F0, HdotV);
-    vec3    numerator = NDF * G * F;
-    float   denominator = 4.0 * NdotV * NdotL  + 1e-8;
-    vec3    specular = numerator / denominator;
-
-    Fout = F;
-    return specular;    
+/*******************************************************************************/
+/* Cook-Torrance specular BRDF. Based on https://learnopengl.com/PBR/Lighting   */
+/*******************************************************************************/
+vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
+	const vec3 H = normalize( V + L );
+	float m = roughness*roughness;
+	m *= m;
+	float NdotH = saturate( dot( N, H ) );
+	float spec = (NdotH * NdotH) * (m - 1) + 1;
+	spec = m / ( spec * spec + 1e-8 );
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+	float Gv = saturate( dot( N, V ) ) * (1.0 - k) + k;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
+	spec /= ( 4.0 * Gv * Gl + 1e-8 );
+	return vec4(fresnelSchlick( f0, dot( H, V ) ), spec);
 }

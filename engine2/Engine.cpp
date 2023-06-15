@@ -143,7 +143,7 @@ namespace jsr {
 			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
 			ImGui::LabelText("Frame time", "%.2f", frameTime);
 			ImGui::DragFloat("Bloom scale", &renderGlobals.bloomScale, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat("Bloom bias", &bloomParams2_y, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Bloom bias", &bloomParams2_y, 0.01f, 0.0f, 20.0f);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
 			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.0001f, 0.0001f, 0.005f, "%.5f");
@@ -343,6 +343,7 @@ namespace jsr {
 		view->scissor = view->viewport;
 		view->renderWorld = world;
 
+		int bloomDiv = 1 << renderGlobals.bloomDownsampleLevel;
 		vertUbo.viewMatrix = view->renderView.viewMatrix;
 		vertUbo.projectMatrix = view->projectionMatrix;
 		fragUbo.nearFarClip = { view->nearClipDistance,view->farClipDistance,0.f,0.f };
@@ -353,8 +354,8 @@ namespace jsr {
 		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
 		fragUbo.bloomParams.x = 2.0f;
 		fragUbo.bloomParams.y = renderGlobals.bloomScale;
-		fragUbo.bloomParams.z = 1.0f / (float(x) / renderGlobals.bloomDivisor);
-		fragUbo.bloomParams.w = 1.0f / (float(y) / renderGlobals.bloomDivisor);
+		fragUbo.bloomParams.z = 1.0f / (float(x) / bloomDiv);
+		fragUbo.bloomParams.w = 1.0f / (float(y) / bloomDiv);
 		fragUbo.bloomParams2.x = 0.4f;
 		fragUbo.bloomParams2.y = bloomParams2_y;
 

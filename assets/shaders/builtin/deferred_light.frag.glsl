@@ -43,17 +43,19 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 /*******************************************************************************/
 vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 	const vec3 H = normalize( V + L );
-	float m = roughness*roughness;
+	float m = ( 0.2 + roughness * 0.8 );
 	m *= m;
+	m *= m;
+	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
-	float spec = (NdotH * NdotH) * (m - 1) + 1;
-	spec = m / ( spec * spec + 1e-8 );
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-	float Gv = saturate( dot( N, V ) ) * (1.0 - k) + k;
-	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
+	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
+	spec = m2 / ( spec * spec + 1e-8 );
+	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-	return vec4(fresnelSchlick( f0, dot( H, V ) ), spec);
+    vec4 res = vec4( fresnelSchlick( f0, dot( L, H ) ), spec );
+
+	return res;
 }
 
 // Performs shadow calculation with PCF
@@ -77,7 +79,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
     // check whether current frag pos is in shadow
     // return step(closestDepth, (projCoords.z - bias));
 
-    const float z = projCoords.z - bias;
+    const float z = projCoords.z + bias;
      for (int y = -1 ; y <= 1 ; y++) {
         for (int x = -1 ; x <= 1 ; x++) {
             vec2 Offsets = vec2(x * xOffset, y * yOffset);

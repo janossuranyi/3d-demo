@@ -532,8 +532,8 @@ namespace jsr {
 		renderSystem.programManager->BindUniformBlock(UBB_FREQ_LOW_VERT, view->freqLowVert);
 		renderSystem.programManager->BindUniformBlock(UBB_FREQ_LOW_FRAG, view->freqLowFrag);
 #if 0
-		float bw = (float)x / renderGlobals.bloomDivisor;
-		float bh = (float)y / renderGlobals.bloomDivisor;
+		float bw = (float)x / renderGlobals.bloomDownsampleLevel;
+		float bh = (float)y / renderGlobals.bloomDownsampleLevel;
 
 		renderSystem.programManager->SetCommonUniform(0, vec4{ bw, bh, 1.0f / bw, 1.0f / bh });
 		renderSystem.programManager->UpdateCommonUniform();
@@ -551,12 +551,12 @@ namespace jsr {
 
 		GLsizei HalfWidth = (GLsizei)(x / 2);
 		GLsizei HalfHeight = (GLsizei)(y / 2);
-		Framebuffer* gbuffer = globalFramebuffers.bloomFBO[1];
+		Framebuffer* target = globalFramebuffers.blurFBO[1];
 		//Framebuffer* hdrbuffer = globalFramebuffers.hdrFBO;
 
-		gbuffer->BindForReading();
-		gbuffer->SetReadBuffer(0);
-		gbuffer->BlitColorBuffer(0, 0, x/4, y/4,
+		target->BindForReading();
+		target->SetReadBuffer(0);
+		target->BlitColorBuffer(0, 0, x/4, y/4,
 			0, 0, HalfWidth, HalfHeight);
 #if 0
 
@@ -1113,37 +1113,14 @@ namespace jsr {
 		float h = scr.y / 2.0f;
 		SetViewport(0, 0, (int)w,(int)h);
 		
-		_fa_freqHigh[0].x = 0;
-		_fa_freqHigh[0].y = 0;
-		_fa_freqHigh[0].z = 1.0f / w;
-		_fa_freqHigh[0].w = 1.0f / h;
-
-		_fa_freqHigh[1].x = scr.x;
-		_fa_freqHigh[1].y = scr.y;
-		_fa_freqHigh[1].z = 1.0f / scr.x;
-		_fa_freqHigh[1].w = 1.0f / scr.y;
-
 
 		globalFramebuffers.bloomFBO[0]->Bind();
 		globalImages.HDRaccum->Bind();
-		renderSystem.programManager->SetUniform(PRG_BLOOM_FILTER, "_fa_freqHigh", 2, &_fa_freqHigh[0]);
 		R_DrawSurf(&unitRectSurface);
 
-		_fa_freqHigh[1].x = 0;
-		_fa_freqHigh[1].y = 0;
-		_fa_freqHigh[1].z = 1.0f / w;
-		_fa_freqHigh[1].w = 1.0f / h;
-
-		w /= 2.0f;
-		h /= 2.0f;
+		w = w / 2.0f;
+		h = h / 2.0f;
 		SetViewport(0, 0, (int)w, (int)h);
-
-		_fa_freqHigh[0].x = 0;
-		_fa_freqHigh[0].y = 0;
-		_fa_freqHigh[0].z = 1.0f / w;
-		_fa_freqHigh[0].w = 1.0f / h;
-
-		renderSystem.programManager->SetUniform(PRG_BLOOM_FILTER, "_fa_freqHigh", 2, &_fa_freqHigh[0]);
 
 		globalFramebuffers.bloomFBO[1]->Bind();
 		globalImages.HDRbloom[0]->Bind();

@@ -36,10 +36,11 @@ namespace jsr {
 			Error("[Framebuffer]: shadowFBO init failed!");
 		}
 		globalFramebuffers.shadowFBO = fb;
+		int bloomDiv = 1 << renderGlobals.bloomDownsampleLevel;
 
 		for (int i = 0; i < 2; ++i)
 		{
-			fb = new Framebuffer("hdrBlure_" + std::to_string(i), w / renderGlobals.bloomDivisor, h / renderGlobals.bloomDivisor);
+			fb = new Framebuffer("hdrBlure_" + std::to_string(i), w / bloomDiv, h / bloomDiv);
 			fb->Bind();
 			fb->AttachImage2D(globalImages.HDRblur[i], 0);
 			if (!fb->Check())
@@ -49,10 +50,13 @@ namespace jsr {
 			globalFramebuffers.blurFBO[i] = fb;
 		}
 
-		int w2 = w / 2;
-		int h2 = h / 2;
-		for (int i = 0; i < 2; ++i)
+		int w2 = w;
+		int h2 = h;
+		globalFramebuffers.bloomFBO.resize(renderGlobals.bloomDownsampleLevel);
+		for (int i = 0; i < renderGlobals.bloomDownsampleLevel; ++i)
 		{
+			w2 /= 2;
+			h2 /= 2;
 			fb = new Framebuffer("hdrBloom_" + std::to_string(i), w2, h2);
 			fb->Bind();
 			fb->AttachImage2D(globalImages.HDRbloom[i], 0);

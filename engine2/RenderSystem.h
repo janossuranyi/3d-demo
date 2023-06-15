@@ -21,7 +21,7 @@ namespace jsr {
 		float ambientScale;
 		float spotFov;
 		float bloomScale;
-		int bloomDivisor;
+		int bloomDownsampleLevel;
 
 		renderGlobals_t() :
 			shadowResolution(1024),
@@ -32,7 +32,7 @@ namespace jsr {
 			ambientScale(.01f),
 			spotFov(glm::radians(90.f)),
 			bloomScale(0.35f),
-			bloomDivisor(4),
+			bloomDownsampleLevel(2),
 			shadowBias(0.0001f) {}
 	};
 

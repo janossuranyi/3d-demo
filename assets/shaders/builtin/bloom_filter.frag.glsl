@@ -20,7 +20,7 @@ void main()
 {
     vec2 texcoord = texCoord; //screenPosToTexcoord( gl_FragCoord.xy, _fa_freqHigh[0 ] );
     {
-        vec2 sampleTexcoord = texcoord * sampleScale;
+        vec2 sampleTexcoord = texcoord;
         vec3 c = tex2Dlod( samp_tex0, vec4( sampleTexcoord.xy, 0, 0 ) ).xyz;
         vec3 c0 = tex2Dlod( samp_tex0, vec4( sampleTexcoord.xy + gBloomParams.zw * vec2( 0.86, 0.50 ), 0, 0 ) ).xyz;
         vec3 c1 = tex2Dlod( samp_tex0, vec4( sampleTexcoord.xy + gBloomParams.zw * vec2( -0.50, 0.86 ), 0, 0 ) ).xyz;
