@@ -115,7 +115,7 @@ namespace jsr {
 		//cube->SetScale({ .5f,.5f,.5f });
 
 		ImGuiIO& io = ImGui::GetIO();
-		world->exposure = 1.0f;
+		world->exposure = 1.3f;
 		bool spotOn = false;
 
 		float angles[3]{};
@@ -146,10 +146,12 @@ namespace jsr {
 			ImGui::DragFloat("Bloom bias", &bloomParams2_y, 0.01f, 0.0f, 20.0f);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
-			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.0001f, 0.0001f, 0.005f, "%.5f");
+			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.00001f, 0.00001f, 0.005f, "%.5f");
 
 			ImGui::ColorEdit3("Ambient light", &renderGlobals.ambientColor.r);
 			ImGui::DragFloat("Ambient scale", &renderGlobals.ambientScale, 0.001f, 0.001f, 1.0f);
+			ImGui::Checkbox("Bloom", &engineConfig.r_bloom);
+			ImGui::Checkbox("FXAA", &engineConfig.r_fxaa);
 
 			renderSystem.RenderFrame(cmds);
 
@@ -353,7 +355,7 @@ namespace jsr {
 		fragUbo.invProjMatrix = view->unprojectionToCameraMatrix;
 		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
 		fragUbo.bloomParams.x = 2.0f;
-		fragUbo.bloomParams.y = renderGlobals.bloomScale;
+		fragUbo.bloomParams.y = engineConfig.r_bloom ? renderGlobals.bloomScale : 0.0f;
 		fragUbo.bloomParams.z = 1.0f / (float(x) / bloomDiv);
 		fragUbo.bloomParams.w = 1.0f / (float(y) / bloomDiv);
 		fragUbo.bloomParams2.x = 0.4f;

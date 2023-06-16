@@ -85,7 +85,7 @@ namespace jsr {
 		const int numbytes = (updateSize + 15) & ~15;
 		if (buffer != nullptr)
 		{
-			memcpy((char*)buffer + offset, data, numbytes);
+			memcpy((char*)buffer + GetOffset() + offset, data, numbytes);
 		}
 		else
 		{
@@ -154,6 +154,7 @@ namespace jsr {
 		offset = other.GetOffset() + refOffset;
 		usage = other.usage;
 		apiObject = other.apiObject;
+		buffer = other.buffer;
 		isview = true;
 	}
 

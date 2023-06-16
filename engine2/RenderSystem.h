@@ -19,19 +19,17 @@ namespace jsr {
 		float defaultLinearAttn;
 		glm::vec3 ambientColor;
 		float ambientScale;
-		float spotFov;
 		float bloomScale;
 		int bloomDownsampleLevel;
 
 		renderGlobals_t() :
 			shadowResolution(1024),
-			shadowScale(0.8f),
+			shadowScale(0.6f),
 			defaultExpAttn(1.0f),
 			defaultLinearAttn(0.0f),
 			ambientColor(1.0f),
-			ambientScale(.01f),
-			spotFov(glm::radians(90.f)),
-			bloomScale(0.35f),
+			ambientScale(.03f),
+			bloomScale(0.6f),
 			bloomDownsampleLevel(2),
 			shadowBias(0.0001f) {}
 	};

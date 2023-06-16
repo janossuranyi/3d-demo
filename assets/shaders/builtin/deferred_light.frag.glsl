@@ -60,7 +60,7 @@ vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 
 // Performs shadow calculation with PCF
 // Returns 1.0 if fragment is in shadow 0.0 otherwise
-float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
+float ShadowCalc(vec4 fragPosLightSpace, float NdotL)
 {
     float bias = gShadowBias * (1.0 - NdotL);
     // perform perspective divide
@@ -75,11 +75,11 @@ float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
     float yOffset = gOneOverShadowRes;
     float factor = 0.0;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    // float closestDepth = texture(tShadow, projCoords.xy).r; 
     // check whether current frag pos is in shadow
-    // return step(closestDepth, (projCoords.z - bias));
+    // return 1.0 - texture(tShadow, vec3(projCoords.xy, (projCoords.z - bias)));
 
-    const float z = projCoords.z + bias;
+
+    const float z = projCoords.z - bias;
      for (int y = -1 ; y <= 1 ; y++) {
         for (int x = -1 ; x <= 1 ; x++) {
             vec2 Offsets = vec2(x * xOffset, y * yOffset);
@@ -145,7 +145,7 @@ void main()
         if (gShadowScale > 0.0)
         {
             vec4 fragPosLight = g_lightData.lightProjMatrix * inputs.fragPosVS;
-            shadow = 1.0 - (gShadowScale * ShadowCalculation(fragPosLight, NdotL));
+            shadow = 1.0 - (gShadowScale * ShadowCalc(fragPosLight, NdotL));
             // inputs.lightColor *= texture(lightMap, 1.0-coords).rgb;
         }
 
@@ -157,5 +157,6 @@ void main()
     }
     /*****************************************************************/
 
-    hdrColor = mix(vec3(1.0), finalColor, 0.998);
+    //hdrColor = mix(finalColor, vec3(0.0,0.0,1.0), inputs.attenuation);
+    hdrColor = finalColor;
 }
