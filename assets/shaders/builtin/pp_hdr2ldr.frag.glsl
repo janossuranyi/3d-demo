@@ -17,6 +17,7 @@ void main()
     vec3 bloom = texture(tBloom, texCoord).xyz;
     vec3 ambient = texture(tDiffuse, texCoord).xyz * g_freqLowFrag.ambientColor.xyz * g_freqLowFrag.ambientColor.w;
     color += bloom * g_freqLowFrag.bloomParams.y + ambient;
-    color = vec3(1.0) - exp(-color * gExposure);
-    fragColor = GammaIEC(color);
+    color *= gExposure;
+
+    fragColor = GammaIEC( tonemap_Uncharted2( color ) );
 }

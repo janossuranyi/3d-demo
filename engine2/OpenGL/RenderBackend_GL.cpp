@@ -542,9 +542,14 @@ namespace jsr {
 		RenderDeferred_Lighting();
 		RenderEmissive();
 		RenderBloom();
+#ifdef NOFXAA
+		Framebuffer::Unbind();
+		RenderHDRtoLDR();
+#else
+		globalFramebuffers.defaultFBO->Bind();
 		RenderHDRtoLDR();
 		RenderAA();
-		Framebuffer::Unbind();
+#endif
 
 		SetViewport(0, 0, x, y);
 //		Clear(true, false, false);
@@ -554,11 +559,11 @@ namespace jsr {
 		Framebuffer* target = globalFramebuffers.blurFBO[1];
 		//Framebuffer* hdrbuffer = globalFramebuffers.hdrFBO;
 
+#if 0
 		target->BindForReading();
 		target->SetReadBuffer(0);
 		target->BlitColorBuffer(0, 0, x/4, y/4,
 			0, 0, HalfWidth, HalfHeight);
-#if 0
 
 		gbuffer->SetReadBuffer(1);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
@@ -1102,7 +1107,6 @@ namespace jsr {
 		SetStencilState(ss);
 
 		SetCullMode(CULL_NONE);
-		vec4 _fa_freqHigh[2];
 
 		blendingState_t bs = glcontext.blendState;
 		bs.enabled = false;
@@ -1126,9 +1130,9 @@ namespace jsr {
 		globalImages.HDRbloom[0]->Bind();
 		R_DrawSurf(&unitRectSurface);
 
-		renderSystem.programManager->UseProgram(PRG_GAUSS_FILTER);
-
 		auto* pm = renderSystem.programManager;
+		pm->UseProgram(PRG_GAUSS_FILTER);
+
 
 		for (int i = 0; i < 2; ++i)
 		{
@@ -1176,8 +1180,6 @@ namespace jsr {
 		blendingState_t blendState = glcontext.blendState;
 		blendState.enabled = false;
 		SetBlendingState(blendState);
-
-		globalFramebuffers.defaultFBO->Bind();
 
 		SetCurrentTextureUnit(IMU_HDR);
 		globalImages.HDRaccum->Bind();

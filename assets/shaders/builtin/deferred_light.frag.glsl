@@ -157,5 +157,5 @@ void main()
     }
     /*****************************************************************/
 
-    hdrColor = ( finalColor );
+    hdrColor = mix(vec3(1.0), finalColor, 0.998);
 }
