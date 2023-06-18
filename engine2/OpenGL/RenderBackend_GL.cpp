@@ -542,14 +542,18 @@ namespace jsr {
 		RenderDeferred_Lighting();
 		RenderEmissive();
 		RenderBloom();
-#ifdef NOFXAA
-		Framebuffer::Unbind();
-		RenderHDRtoLDR();
-#else
-		globalFramebuffers.defaultFBO->Bind();
-		RenderHDRtoLDR();
-		RenderAA();
-#endif
+
+		if (!engineConfig.r_fxaa)
+		{
+			Framebuffer::Unbind();
+			RenderHDRtoLDR();
+		}
+		else
+		{
+			globalFramebuffers.defaultFBO->Bind();
+			RenderHDRtoLDR();
+			RenderAA();
+		}
 
 		SetViewport(0, 0, x, y);
 //		Clear(true, false, false);
@@ -1095,6 +1099,8 @@ namespace jsr {
 	void RenderBackend::RenderBloom()
 	{
 		using namespace glm;
+
+		if (!engineConfig.r_bloom) return;
 
 		auto scr = renderSystem.GetScreenSize();
 		stencilState_t ss = glcontext.stencilState;

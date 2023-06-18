@@ -19,5 +19,5 @@ void main()
     color += bloom * g_freqLowFrag.bloomParams.y + ambient;
     color *= gExposure;
 
-    fragColor = GammaIEC( tonemap_Uncharted2( color ) );
+    fragColor = GammaIEC( tonemap_filmic( color ) );
 }

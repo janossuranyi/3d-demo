@@ -15,6 +15,8 @@ namespace jsr {
 		bool	r_fbsrgb;
 		bool	r_debug;
 		bool	r_useStateCaching;
+		bool	r_bloom;
+		bool	r_fxaa;
 		engineConfig_t();
 		void LoadFromFile();
 	};

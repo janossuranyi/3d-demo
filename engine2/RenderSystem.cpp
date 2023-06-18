@@ -51,6 +51,8 @@ namespace jsr {
 		unitRectTris		= {};
 		unitSphereSurface_	= {};
 		unitSphereTris		= {};
+		unitConeSurface_	= {};
+		unitConeTris		= {};
 	}
 
 	RenderSystem::~RenderSystem()
