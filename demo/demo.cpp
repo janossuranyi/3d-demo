@@ -27,7 +27,7 @@ int main(int argc, char** argv)
 
     engineConfig.r_resX = 1800;
     engineConfig.r_resY = 960;
-    engineConfig.r_fullscreen = 0;
+    engineConfig.r_fullscreen = 2;
     engineConfig.r_vsync = 1;
 
     engineConfig.r_fbsrgb = false;

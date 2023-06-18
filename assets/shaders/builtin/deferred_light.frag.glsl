@@ -4,7 +4,7 @@
 @include "fragment_uniforms.inc.glsl"
 @include "light_uniforms.inc.glsl"
 
-out vec3 hdrColor;
+out vec3 fragColor0;
 
 in INTERFACE
 {
@@ -27,7 +27,7 @@ struct lightinginput_t {
 layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
 layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
 layout(binding = IMU_AORM)      uniform sampler2D tAORM;
-layout(binding = IMU_FRAGPOS)   uniform sampler2D tFragPos;
+layout(binding = IMU_FRAGPOS)   uniform sampler2D tFragPosZ;
 layout(binding = IMU_SHADOW)    uniform sampler2DShadow tShadow;
 
 float ApproxPow ( float fBase, float fPower ) {
@@ -105,11 +105,11 @@ void main()
         //inputs.normal           = normalize(inputs.normal);
 
         vec3 viewRay = vec3(In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance);
-        float nDepth = -texture( tFragPos, texCoord ).x;
+        float nDepth = -1.0 * texture( tFragPosZ, texCoord ).x;
         inputs.fragPosVS = vec4(viewRay * nDepth, 1.0);
     }
     /*********************** Lighting  ****************************/
-    inputs.viewDir = normalize(g_freqLowFrag.viewOrigin.xyz - inputs.fragPosVS.xyz);
+    inputs.viewDir = normalize(/*g_freqLowFrag.viewOrigin.xyz*/ - inputs.fragPosVS.xyz);
     {
         vec3 L = inputs.lightPos - inputs.fragPosVS.xyz;
         float d = length(L);
@@ -157,5 +157,5 @@ void main()
     }
     /*****************************************************************/
 
-    hdrColor = mix(vec3(1.0), finalColor, 0.998);
+    fragColor0 = finalColor; //mix(vec3(1.0), finalColor, 0.998);
 }
