@@ -11,6 +11,7 @@ layout(binding = UBB_FREQ_LOW_VERT, std140) uniform uboFreqLowVert
 layout(binding = UBB_FREQ_HIGH_VERT, std140) uniform uboFreqHighVert
 {
 	mat4 localToWorldMatrix;
+	mat4 modelViewMatrix;
 	mat4 WVPMatrix;
 	mat4 normalMatrix;
 } g_freqHighVert;

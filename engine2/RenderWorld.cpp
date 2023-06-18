@@ -808,6 +808,7 @@ namespace jsr {
 			view->viewEntites = ent;
 
 			fastvert.localToWorldMatrix = worldMatrix;
+			fastvert.modelViewMatrix = modelViewMatrix;
 			fastvert.WVPMatrix = ent->mvp;
 			fastvert.normalMatrix = transpose(inverse(mat3(worldMatrix)));
 			ent->highFreqVert = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));

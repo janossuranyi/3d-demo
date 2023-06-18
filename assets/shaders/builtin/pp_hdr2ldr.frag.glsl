@@ -7,7 +7,7 @@ layout(binding = IMU_HDR)       uniform sampler2D tHDRAccum;
 layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
 layout(binding = IMU_EMMISIVE)  uniform sampler2D tBloom;
 
-out vec3 fragColor;
+out vec3 fragColor0;
 in vec2 texcoord;
 
 void main()
@@ -19,5 +19,5 @@ void main()
     color += bloom * g_freqLowFrag.bloomParams.y + ambient;
     color *= gExposure;
 
-    fragColor = GammaIEC( tonemap_filmic( color ) );
+    fragColor0 = GammaIEC( tonemap_uchimura( color ) );
 }

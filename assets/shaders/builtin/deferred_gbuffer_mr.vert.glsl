@@ -28,7 +28,7 @@ void main()
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 
-    Out.positionVS  = vec3(gViewMatrix * g_freqHighVert.localToWorldMatrix * in_Position);
+    Out.positionVS  = vec3(g_freqHighVert.modelViewMatrix * in_Position);
     Out.color       = in_Color;
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);

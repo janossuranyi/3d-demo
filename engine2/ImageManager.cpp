@@ -58,6 +58,7 @@ namespace jsr {
 		opts.numLayer = 1;
 		opts.maxAnisotropy = 1.0f;
 		opts.autocompress = false;
+		opts.srgb = false;
 
 		if (!globalImages.GBufferAlbedo->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{

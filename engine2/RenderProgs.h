@@ -71,6 +71,7 @@ namespace jsr {
 	struct uboFreqHighVert_t 
 	{
 		glm::mat4 localToWorldMatrix;
+		glm::mat4 modelViewMatrix;
 		glm::mat4 WVPMatrix;
 		glm::mat4 normalMatrix;
 	};

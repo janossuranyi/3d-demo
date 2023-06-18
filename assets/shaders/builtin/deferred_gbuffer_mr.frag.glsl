@@ -48,7 +48,7 @@ void main()
         vec3 localTangent       = normalize( In.tangent.xyz );
         vec3 localNormal        = normalize( In.normal );
         vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
-        vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);        
+        vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);
         inputs.tbn      = mat3(localTangent,derivedBitangent,localNormal);
         inputs.normal   = inputs.tbn * normalTS;
     }
@@ -69,6 +69,6 @@ void main()
     outFragPos.x = -In.positionVS.z / gFarClipDistance;
     outAlbedo    = inputs.sampleAmbient;
     outSpec      = inputs.samplePBR;
-    //outNormal    = inputs.normal;
-    outNormal    = vec4((1.0 + inputs.normal) * 0.5, 1.0);
+    outNormal    = vec4(inputs.normal,1.0);
+    //outNormal    = vec4((1.0 + inputs.normal) * 0.5, 1.0);
 }

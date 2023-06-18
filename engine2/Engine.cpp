@@ -143,7 +143,7 @@ namespace jsr {
 			ImGui::LabelText("Visible surfaces", "%d", lastNumDrawSurf);
 			ImGui::LabelText("Frame time", "%.2f", frameTime);
 			ImGui::DragFloat("Bloom scale", &renderGlobals.bloomScale, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat("Bloom bias", &bloomParams2_y, 0.01f, 0.0f, 20.0f);
+			ImGui::DragFloat("Bloom treshold", &bloomParams2_y, 0.01f, 0.0f, 20.0f);
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
 			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.00001f, 0.00001f, 0.005f, "%.5f");

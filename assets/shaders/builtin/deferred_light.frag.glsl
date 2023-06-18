@@ -97,7 +97,7 @@ void main()
     
     {
         vec2 texCoord           = gl_FragCoord.xy * g_freqLowFrag.screenSize.zw;
-        inputs.normal           = texture( tNormal, texCoord ).xyz * 2.0 - 1.0;
+        inputs.normal           = texture( tNormal, texCoord ).xyz; // * 2.0 - 1.0;
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
         inputs.lightPos         = g_lightData.lightOrigin.xyz;
