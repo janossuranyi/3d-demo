@@ -15,6 +15,6 @@ out INTERFACE
 void main()
 {
     gl_Position = in_Position;
-    Out.texCoord = in_TexCoord;
+    Out.texCoord = in_TexCoord * 2.0;
     Out.positionVS = g_freqLowVert.invProjectMatrix * gl_Position;
 }

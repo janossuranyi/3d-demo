@@ -557,7 +557,7 @@ namespace jsr {
 			RenderAA();
 		}
 
-		SetViewport(0, 0, x, y);
+		SetViewport(0, 0, x/2, y/2);
 //		Clear(true, false, false);
 
 		GLsizei HalfWidth = (GLsizei)(x / 2);
@@ -567,7 +567,7 @@ namespace jsr {
 
 		target->BindForReading();
 		target->SetReadBuffer(0);
-		target->BlitColorBuffer(0, 0, x, y,
+		target->BlitColorBuffer(0, 0, HalfWidth, HalfHeight,
 			0, 0, HalfWidth, HalfHeight);
 
 #if 0

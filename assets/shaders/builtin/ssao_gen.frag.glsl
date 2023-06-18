@@ -15,15 +15,17 @@ layout(binding = IMU_DEFAULT)   uniform sampler2D tNoise;
 
 out vec4 fragColor0;
 
-const vec2 noiseScale = vec2(g_commonData.renderTargetRes.x/4.0, g_commonData.renderTargetRes.y/4.0); // screen
+const vec2 noiseScale = vec2(g_commonData.renderTargetRes.x/8.0, g_commonData.renderTargetRes.y/8.0); // screen/2/4
 
 void main()
 {
+    vec2 UV = In.texCoord;
+
     vec3 viewRay = In.positionVS.xyz;
-    float nDepth = -1.0 * texture( tFragPosZ, In.texCoord ).x;
+    float nDepth = -1.0 * texture( tFragPosZ, UV ).x;
     vec4 fragPosVS = vec4(viewRay * nDepth, 1.0);
-    vec3 normal = texture( tNormal, In.texCoord ).xyz;
-    vec3 randomVec = texture( tNoise, In.texCoord * noiseScale).xyz;
+    vec3 normal = texture( tNormal, UV ).xyz;
+    vec3 randomVec = texture( tNoise, UV * noiseScale).xyz;
 
     vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);

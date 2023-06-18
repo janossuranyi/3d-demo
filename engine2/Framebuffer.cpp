@@ -79,7 +79,7 @@ namespace jsr {
 		globalFramebuffers.hdrFBO = fb;
 
 
-		fb = new Framebuffer("ssaoFBO", w, h);
+		fb = new Framebuffer("ssaoFBO", w/2, h/2);
 		fb->Bind();
 		fb->AttachImage2D(globalImages.ssaoMap, 0);
 		if (!fb->Check())

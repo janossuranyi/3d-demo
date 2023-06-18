@@ -123,6 +123,15 @@ namespace jsr {
 			}
 		}
 
+		opts.sizeX = screen_width / 2;
+		opts.sizeY = screen_height / 2;
+		opts.format = IMF_R16F;
+		opts.usage = IMU_AORM;
+		if (!globalImages.ssaoMap->AllocImage(opts, IFL_NEAREST, IMR_CLAMP_TO_EDGE))
+		{
+			Error("[ImageManager]: ssaoMap allocation failed !");
+		}
+
 		opts.sizeX = screen_width;
 		opts.sizeY = screen_height;
 		opts.format = IMF_RGBA;
@@ -132,13 +141,9 @@ namespace jsr {
 			Error("[ImageManager]: defaultImage allocation failed !");
 		}
 
-		opts.format = IMF_R16F;
-		opts.usage = IMU_AORM;
-		if (!globalImages.ssaoMap->AllocImage(opts, IFL_NEAREST, IMR_CLAMP_TO_EDGE))
-		{
-			Error("[ImageManager]: ssaoMap allocation failed !");
-		}
 
+		opts.sizeX = screen_width;
+		opts.sizeY = screen_height;
 		opts.format = IMF_D24S8;
 		opts.usage = IMU_DEPTH;
 		if (!globalImages.GBufferDepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
