@@ -78,6 +78,17 @@ namespace jsr {
 		}
 		globalFramebuffers.hdrFBO = fb;
 
+
+		fb = new Framebuffer("ssaoFBO", w, h);
+		fb->Bind();
+		fb->AttachImage2D(globalImages.ssaoMap, 0);
+		if (!fb->Check())
+		{
+			Error("[Framebuffer]: ssaoFBO init failed!");
+		}
+		globalFramebuffers.ssaoFBO = fb;
+
+
 		fb = new Framebuffer( "gbufferFBO", w, h );
 		fb->Bind();
 		fb->AttachImageDepth( globalImages.GBufferDepth );

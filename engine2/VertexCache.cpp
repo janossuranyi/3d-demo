@@ -228,6 +228,8 @@ namespace jsr {
 			return false;
 		}
 		dest.MakeView(transientBufferSet[renderBufferSet].vertexBuffer, offset, size);
+
+		return true;
 	}
 
 	bool VertexCache::GetIndexBuffer(vertCacheHandle_t handle, IndexBuffer& dest)
@@ -248,6 +250,8 @@ namespace jsr {
 			return false;
 		}
 		dest.MakeView(transientBufferSet[renderBufferSet].indexBuffer, offset, size);
+
+		return true;
 	}
 
 	bool VertexCache::GetUniformBuffer(vertCacheHandle_t handle, UniformBuffer& dest)
@@ -268,6 +272,8 @@ namespace jsr {
 			return false;
 		}
 		dest.MakeView(transientBufferSet[renderBufferSet].uniformBuffer, offset, size);
+
+		return true;
 	}
 
 	bool VertexCache::IsStatic(vertCacheHandle_t handle) const

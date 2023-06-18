@@ -24,6 +24,7 @@
 layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 {
 	mat4 invProjMatrix;
+	mat4 projectMatrix;
 	vec4 debugparams;
 	vec4 screenSize;
 	vec4 nearFarClip;

@@ -14,7 +14,7 @@ namespace jsr {
 		Image* HDRaccum;
 		Image* HDRdepth;
 		Image* HDRblur[2];
-		Image* HDRbloom[2];
+		std::vector<Image*> HDRbloom;
 		Image* GBufferFragPos;
 		Image* GBufferAlbedo;
 		Image* GBufferNormal;
@@ -27,6 +27,8 @@ namespace jsr {
 		Image* grayImage;
 		Image* blackImage;
 		Image* flatNormal;
+		Image* ssaoNoise;
+		Image* ssaoMap;
 	};
 
 	extern globalImages_t globalImages;

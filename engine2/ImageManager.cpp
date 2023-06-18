@@ -3,6 +3,7 @@
 #include "./ImageManager.h"
 #include "./Image.h"
 #include "./RenderSystem.h"
+#include <random>
 
 namespace jsr {
 
@@ -36,10 +37,15 @@ namespace jsr {
 		globalImages.grayImage = AllocImage("_gray");
 		globalImages.blackImage = AllocImage("_black");
 		globalImages.flatNormal = AllocImage("_flatnormal");
+		globalImages.ssaoNoise = AllocImage("_ssaoNoise");
+		globalImages.ssaoMap = AllocImage("_ssaoMap");
+
 		for (int i = 0; i < 2; ++i)
 		{
 			globalImages.HDRblur[i] = AllocImage("_hdrblur_" + std::to_string(i));
 		}
+
+		globalImages.HDRbloom.resize(renderGlobals.bloomDownsampleLevel);
 		for (int i = 0; i < 2; ++i)
 		{
 			globalImages.HDRbloom[i] = AllocImage("_hdrbloom_" + std::to_string(i));
@@ -96,7 +102,7 @@ namespace jsr {
 		const int bloomDiv = 1 << renderGlobals.bloomDownsampleLevel;
 		opts.sizeX = screen_width / bloomDiv;
 		opts.sizeY = screen_height / bloomDiv;
-		for (int i = 0; i < renderGlobals.bloomDownsampleLevel; ++i)
+		for (int i = 0; i < 2; ++i)
 		{
 			if (!globalImages.HDRblur[i]->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 			{
@@ -124,6 +130,13 @@ namespace jsr {
 		if (!globalImages.defaultImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: defaultImage allocation failed !");
+		}
+
+		opts.format = IMF_R16F;
+		opts.usage = IMU_AORM;
+		if (!globalImages.ssaoMap->AllocImage(opts, IFL_NEAREST, IMR_CLAMP_TO_EDGE))
+		{
+			Error("[ImageManager]: ssaoMap allocation failed !");
 		}
 
 		opts.format = IMF_D24S8;
@@ -199,6 +212,32 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image Shadow allocation failed !");
 		}
+
+		// SSAO Noise
+		opts.format = IMF_RGBA16F;
+		opts.usage = IMU_DEFAULT;
+		opts.sizeX = 4;
+		opts.sizeY = 4;
+		opts.autocompress = false;
+		opts.compressed = false;
+		if (!globalImages.ssaoNoise->AllocImage(opts, IFL_NEAREST, IMR_REPEAT))
+		{
+			Error("[ImageManager]: Image SSAO noise allocation failed !");
+		}
+
+		std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // random floats between [0.0, 1.0]
+		std::default_random_engine generator;
+		std::vector<glm::vec4> ssaoNoise;
+		for (unsigned int i = 0; i < 16; i++)
+		{
+			glm::vec4 noise(
+				randomFloats(generator) * 2.0 - 1.0,
+				randomFloats(generator) * 2.0 - 1.0,
+				0.0f,
+				0.0f);
+			ssaoNoise.push_back(noise);
+		}
+		globalImages.ssaoNoise->UpdateImageData(4, 4, 0, 0, 0, 0, ssaoNoise.data());
 
 		initialized = true;
 		Image::Unbind();

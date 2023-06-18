@@ -348,11 +348,13 @@ namespace jsr {
 		int bloomDiv = 1 << renderGlobals.bloomDownsampleLevel;
 		vertUbo.viewMatrix = view->renderView.viewMatrix;
 		vertUbo.projectMatrix = view->projectionMatrix;
+		vertUbo.invProjectMatrix = view->unprojectionToCameraMatrix;
 		fragUbo.nearFarClip = { view->nearClipDistance,view->farClipDistance,0.f,0.f };
 		fragUbo.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
 		fragUbo.params.x = view->exposure;
 		fragUbo.viewOrigin = vec4(0.f, 0.f, 0.f, 1.f);
 		fragUbo.invProjMatrix = view->unprojectionToCameraMatrix;
+		fragUbo.projectMatrix = projMatrix;
 		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
 		fragUbo.bloomParams.x = 2.0f;
 		fragUbo.bloomParams.y = engineConfig.r_bloom ? renderGlobals.bloomScale : 0.0f;

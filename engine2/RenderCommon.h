@@ -111,6 +111,7 @@ namespace jsr {
 		PRG_EMISSIVE,
 		PRG_GAUSS_FILTER,
 		PRG_BLOOM_FILTER,
+		PRG_SSAO_GEN,
 		PRG_COUNT
 	};
 

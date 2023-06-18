@@ -889,6 +889,7 @@ namespace jsr {
 			view->viewLights = e;
 
 			fastvert.WVPMatrix = view->projectionMatrix * modelViewMatrix;
+			fastvert.modelViewMatrix = modelViewMatrix;
 			fastvert.localToWorldMatrix = worldMatrix;
 			ubolight.lightColor = e->color;
 			ubolight.lightAttenuation = vec4(e->range, light->opts.linearAttn, light->opts.expAttn, 0.0f);

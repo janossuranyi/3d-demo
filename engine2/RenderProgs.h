@@ -41,6 +41,7 @@ namespace jsr {
 		glm::vec4 renderTargeRes;
 		glm::vec4 shadowRes;
 		glm::vec4 bloomRes;
+		glm::vec4 ssaoKernel[64];
 	};
 
 	struct uboBackendData_t
@@ -67,6 +68,7 @@ namespace jsr {
 	{
 		glm::mat4 viewMatrix;
 		glm::mat4 projectMatrix;
+		glm::mat4 invProjectMatrix;
 	};
 	struct uboFreqHighVert_t 
 	{
@@ -79,6 +81,7 @@ namespace jsr {
 	struct uboFreqLowFrag_t
 	{
 		glm::mat4 invProjMatrix;
+		glm::mat4 projectMatrix;
 		glm::vec4 debugparams;
 		glm::vec4 screenSize;
 		glm::vec4 nearFarClip;

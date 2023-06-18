@@ -36,7 +36,7 @@ namespace jsr {
 		{GL_ALPHA,				GL_ZERO,					GL_ALPHA,			GL_UNSIGNED_BYTE,					true,	1}, // IMF_A8
 		{GL_R8,					GL_ZERO,					GL_RED,				GL_UNSIGNED_BYTE,					true,	1}, // IMF_R8
 		{GL_R16,				GL_ZERO,					GL_RED,				GL_UNSIGNED_SHORT,					true,	1}, // IMF_R16
-		{GL_R16F,				GL_ZERO,					GL_RED,				GL_HALF_FLOAT,						false,	1}, // IMF_R16F
+		{GL_R16F,				GL_ZERO,					GL_RED,				GL_FLOAT,							false,	1}, // IMF_R16F
 		{GL_R32UI,				GL_ZERO,					GL_RED,				GL_UNSIGNED_INT,					true,	1}, // IMF_R32
 		{GL_R32F,				GL_ZERO,					GL_RED,				GL_FLOAT,							false,	1}, // IMF_R32F
 		{GL_DEPTH_COMPONENT24,	GL_ZERO,					GL_DEPTH_COMPONENT,	GL_UNSIGNED_INT,					true,	1}, // IMF_D24
@@ -45,11 +45,11 @@ namespace jsr {
 		{GL_DEPTH_COMPONENT32F,	GL_ZERO,					GL_DEPTH_COMPONENT,	GL_FLOAT,							false,	1}, // IMF_D32F
 		{GL_RG8,				GL_ZERO,					GL_RG,				GL_UNSIGNED_BYTE,					true,	2}, // IMF_RG8
 		{GL_RG16,				GL_ZERO,					GL_RG,				GL_UNSIGNED_SHORT,					true,	2}, // IMF_RG16
-		{GL_RG16F,				GL_ZERO,					GL_RG,				GL_HALF_FLOAT,						false,	2}, // IMF_RG16
+		{GL_RG16F,				GL_ZERO,					GL_RG,				GL_FLOAT,							false,	2}, // IMF_RG16
 		{GL_RGB8,				GL_SRGB8,					GL_RGB,				GL_UNSIGNED_BYTE,					true,	3}, // IMF_RGB
 		{GL_RGBA8,				GL_SRGB8_ALPHA8,			GL_RGBA,			GL_UNSIGNED_BYTE,					true,	4}, // IMF_RGBA
-		{GL_RGB16F,				GL_ZERO,					GL_RGB,				GL_HALF_FLOAT,						false,	3}, // IMF_RGB16F
-		{GL_RGBA16F,			GL_ZERO,					GL_RGBA,			GL_HALF_FLOAT,						false,	4}, // IMF_RGBA16F
+		{GL_RGB16F,				GL_ZERO,					GL_RGB,				GL_FLOAT,							false,	3}, // IMF_RGB16F
+		{GL_RGBA16F,			GL_ZERO,					GL_RGBA,			GL_FLOAT,							false,	4}, // IMF_RGBA16F
 		{GL_RGB32F,				GL_ZERO,					GL_RGB,				GL_FLOAT,							false,	3}, // IMF_RGB32F
 		{GL_RGBA32F,			GL_ZERO,					GL_RGBA,			GL_FLOAT,							false,	4}, // IMF_RGBA32F
 		{GL_R11F_G11F_B10F,		GL_ZERO,					GL_RGB,				GL_UNSIGNED_INT_10F_11F_11F_REV,	false,	3}, // IMF_R11G11B10
@@ -539,6 +539,8 @@ namespace jsr {
 		renderSystem.programManager->UpdateCommonUniform();
 #endif
 		RenderDeferred_GBuffer();
+		RenderSSAO();
+
 		RenderDeferred_Lighting();
 		RenderEmissive();
 		RenderBloom();
@@ -560,15 +562,15 @@ namespace jsr {
 
 		GLsizei HalfWidth = (GLsizei)(x / 2);
 		GLsizei HalfHeight = (GLsizei)(y / 2);
-		Framebuffer* target = globalFramebuffers.blurFBO[1];
+		Framebuffer* target = globalFramebuffers.ssaoFBO;
 		//Framebuffer* hdrbuffer = globalFramebuffers.hdrFBO;
 
-#if 0
 		target->BindForReading();
 		target->SetReadBuffer(0);
-		target->BlitColorBuffer(0, 0, x/4, y/4,
+		target->BlitColorBuffer(0, 0, x, y,
 			0, 0, HalfWidth, HalfHeight);
 
+#if 0
 		gbuffer->SetReadBuffer(1);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
 			0, HalfHeight, HalfWidth, y);
@@ -1167,6 +1169,35 @@ namespace jsr {
 
 			R_DrawSurf(&unitRectSurface);
 		}
+	}
+
+	void RenderBackend::RenderSSAO()
+	{
+		using namespace glm;
+
+		int w, h;
+		GetScreenSize(w, h);
+		SetViewport(0, 0, w, h);
+		auto ds = glcontext.depthState;
+		ds.depthMask = false;
+		ds.func = CMP_ALWAYS;
+		SetDepthState(ds);
+		SetWriteMask(bvec4(true));
+		SetCullMode(CULL_NONE);
+		blendingState_t blendState = glcontext.blendState;
+		blendState.enabled = false;
+		SetBlendingState(blendState);
+
+		SetCurrentTextureUnit(IMU_FRAGPOS);
+		globalImages.GBufferFragPos->Bind();
+		SetCurrentTextureUnit(IMU_NORMAL);
+		globalImages.GBufferNormal->Bind();
+		SetCurrentTextureUnit(IMU_DEFAULT);
+		globalImages.ssaoNoise->Bind();
+
+		globalFramebuffers.ssaoFBO->Bind();
+		renderSystem.programManager->UseProgram(PRG_SSAO_GEN);
+		R_DrawSurf(&unitRectSurface);
 	}
 
 	void RenderBackend::RenderHDRtoLDR()
