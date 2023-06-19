@@ -143,6 +143,9 @@ vec3 tonemap_uchimura(vec3 x) {
 
   return uchimura(x, P, a, m, l, c, b);
 }
+
+vec2 screenPosToTexcoord(vec2 pos, vec4 scale) { return pos * scale.zw; }
+
 /*
 			float ShoStren = _fa_freqHigh[31 ].x, LinStren = _fa_freqHigh[31 ].y, LinAngle = 0.1, ToeStren = 0.2, ToeNum = _fa_freqHigh[31 ].z, ToeDenom = 0.3;
 			vec3 c = max( linearHDR.xyz, vec3( 0.0 ) );

@@ -52,6 +52,7 @@ namespace jsr {
 		Framebuffer*	GBufferFBO;
 		Framebuffer*	defaultFBO;
 		Framebuffer*	ssaoFBO;
+		Framebuffer*	ssaoblurFBO[2];
 		std::vector<Framebuffer*> bloomFBO;
 	};
 

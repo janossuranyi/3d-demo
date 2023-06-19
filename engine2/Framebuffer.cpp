@@ -88,6 +88,17 @@ namespace jsr {
 		}
 		globalFramebuffers.ssaoFBO = fb;
 
+		for (int i = 0; i < 2; ++i)
+		{
+			fb = new Framebuffer("ssaoblurFBO_"+std::to_string(i), w / 2, h / 2);
+			fb->Bind();
+			fb->AttachImage2D(globalImages.ssaoblur[i], 0);
+			if (!fb->Check())
+			{
+				Error("[Framebuffer]: ssaoblurFBO init failed!");
+			}
+			globalFramebuffers.ssaoblurFBO[i] = fb;
+		}
 
 		fb = new Framebuffer( "gbufferFBO", w, h );
 		fb->Bind();

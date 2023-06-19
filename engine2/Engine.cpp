@@ -30,6 +30,9 @@ namespace jsr {
 		r_msaa = 0;
 		r_vsync = 1;
 		r_useStateCaching = true;
+		r_ssao_radius = 0.5f;
+		r_ssao_bias = 0.025;
+		r_ssao = false;
 	}
 
 	void engineConfig_t::LoadFromFile()
@@ -144,6 +147,10 @@ namespace jsr {
 			ImGui::LabelText("Frame time", "%.2f", frameTime);
 			ImGui::DragFloat("Bloom scale", &renderGlobals.bloomScale, 0.01f, 0.0f, 1.0f);
 			ImGui::DragFloat("Bloom treshold", &bloomParams2_y, 0.01f, 0.0f, 20.0f);
+
+			ImGui::DragFloat("SSAO radius", &engineConfig.r_ssao_radius, 0.001f, 0.0f, 50.0f);
+			ImGui::DragFloat("SSAO bias", &engineConfig.r_ssao_bias, 0.001f, 0.0f, 50.0f);
+
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
 			ImGui::DragFloat("Shadow Bias", &renderGlobals.shadowBias, 0.00001f, 0.00001f, 0.005f, "%.5f");
@@ -152,6 +159,7 @@ namespace jsr {
 			ImGui::DragFloat("Ambient scale", &renderGlobals.ambientScale, 0.001f, 0.001f, 1.0f);
 			ImGui::Checkbox("Bloom", &engineConfig.r_bloom);
 			ImGui::Checkbox("FXAA", &engineConfig.r_fxaa);
+			ImGui::Checkbox("SSAO", &engineConfig.r_ssao);
 
 			renderSystem.RenderFrame(cmds);
 

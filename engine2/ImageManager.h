@@ -29,6 +29,7 @@ namespace jsr {
 		Image* flatNormal;
 		Image* ssaoNoise;
 		Image* ssaoMap;
+		Image* ssaoblur[2];
 	};
 
 	extern globalImages_t globalImages;

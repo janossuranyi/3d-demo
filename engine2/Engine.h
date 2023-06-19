@@ -17,6 +17,9 @@ namespace jsr {
 		bool	r_useStateCaching;
 		bool	r_bloom;
 		bool	r_fxaa;
+		bool	r_ssao;
+		float	r_ssao_radius;
+		float	r_ssao_bias;
 		engineConfig_t();
 		void LoadFromFile();
 	};

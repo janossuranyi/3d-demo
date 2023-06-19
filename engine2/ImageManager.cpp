@@ -39,6 +39,8 @@ namespace jsr {
 		globalImages.flatNormal = AllocImage("_flatnormal");
 		globalImages.ssaoNoise = AllocImage("_ssaoNoise");
 		globalImages.ssaoMap = AllocImage("_ssaoMap");
+		globalImages.ssaoblur[0] = AllocImage("_ssaoBlur0");
+		globalImages.ssaoblur[1] = AllocImage("_ssaoBlur1");
 
 		for (int i = 0; i < 2; ++i)
 		{
@@ -130,6 +132,18 @@ namespace jsr {
 		if (!globalImages.ssaoMap->AllocImage(opts, IFL_NEAREST, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: ssaoMap allocation failed !");
+		}
+
+		opts.sizeX = screen_width / 2;
+		opts.sizeY = screen_height / 2;
+		opts.format = IMF_R16F;
+		opts.usage = IMU_AORM;
+		for (int i = 0; i < 2; ++i)
+		{
+			if (!globalImages.ssaoblur[i]->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+			{
+				Error("[ImageManager]: ssaoMap allocation failed !");
+			}
 		}
 
 		opts.sizeX = screen_width;

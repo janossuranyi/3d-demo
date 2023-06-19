@@ -539,8 +539,10 @@ namespace jsr {
 		renderSystem.programManager->UpdateCommonUniform();
 #endif
 		RenderDeferred_GBuffer();
-		RenderSSAO();
-
+		if (engineConfig.r_ssao)
+		{
+			RenderSSAO();
+		}
 		RenderDeferred_Lighting();
 		RenderEmissive();
 		RenderBloom();
@@ -557,20 +559,22 @@ namespace jsr {
 			RenderAA();
 		}
 
-		SetViewport(0, 0, x/2, y/2);
-//		Clear(true, false, false);
-
 		GLsizei HalfWidth = (GLsizei)(x / 2);
 		GLsizei HalfHeight = (GLsizei)(y / 2);
-		Framebuffer* target = globalFramebuffers.ssaoFBO;
-		//Framebuffer* hdrbuffer = globalFramebuffers.hdrFBO;
+		if (engineConfig.r_ssao)
+		{
 
-		target->BindForReading();
-		target->SetReadBuffer(0);
-		target->BlitColorBuffer(0, 0, HalfWidth, HalfHeight,
-			0, 0, HalfWidth, HalfHeight);
+			Framebuffer* target = globalFramebuffers.ssaoblurFBO[1];
 
+			target->BindForReading();
+			target->SetReadBuffer(0);
+			target->BlitColorBuffer(
+				0, 0, HalfWidth, HalfHeight,
+				0, 0, HalfWidth / 2, HalfHeight / 2
+			);
+		}
 #if 0
+
 		gbuffer->SetReadBuffer(1);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
 			0, HalfHeight, HalfWidth, y);
@@ -1177,7 +1181,10 @@ namespace jsr {
 
 		int w, h;
 		GetScreenSize(w, h);
-		SetViewport(0, 0, w, h);
+		const int hw = w / 2;
+		const int hh = h / 2;
+		SetViewport(0, 0, hw, hh);
+
 		auto ds = glcontext.depthState;
 		ds.depthMask = false;
 		ds.func = CMP_ALWAYS;
@@ -1195,9 +1202,31 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_DEFAULT);
 		globalImages.ssaoNoise->Bind();
 
+		auto* pm = renderSystem.programManager;
 		globalFramebuffers.ssaoFBO->Bind();
-		renderSystem.programManager->UseProgram(PRG_SSAO_GEN);
+		pm->UseProgram(PRG_SSAO_GEN);
+		pm->g_backendData.params[0] = { float(hw),float(hh),1.0f / hw,1.0f / hh };
+		pm->g_backendData.params[1].x = engineConfig.r_ssao_radius;
+		pm->g_backendData.params[1].y = engineConfig.r_ssao_bias;
+		pm->UpdateBackendUniform();
 		R_DrawSurf(&unitRectSurface);
+
+		pm->UseProgram(PRG_GAUSS_FILTER);
+		pm->g_backendData.params[0].x = 0.0f;
+		pm->g_backendData.params[0].y = 1.0f;
+		pm->UpdateBackendUniform();
+		SetCurrentTextureUnit(0);
+		globalFramebuffers.ssaoblurFBO[0]->Bind();
+		globalImages.ssaoMap->Bind();
+		R_DrawSurf(&unitRectSurface);
+
+		globalFramebuffers.ssaoblurFBO[1]->Bind();
+		globalImages.ssaoblur[0]->Bind();
+		pm->g_backendData.params[0].x = 1.0f;
+		pm->g_backendData.params[0].y = 0.0f;
+		pm->UpdateBackendUniform();
+		R_DrawSurf(&unitRectSurface);
+
 	}
 
 	void RenderBackend::RenderHDRtoLDR()
@@ -1224,6 +1253,15 @@ namespace jsr {
 		globalImages.GBufferAlbedo->Bind();
 		SetCurrentTextureUnit(IMU_EMMISIVE);
 		globalImages.HDRblur[1]->Bind();
+		SetCurrentTextureUnit(IMU_AORM);
+		if (engineConfig.r_ssao)
+		{
+			globalImages.ssaoblur[1]->Bind();
+		}
+		else
+		{
+			globalImages.whiteImage->Bind();
+		}
 
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
 

@@ -124,7 +124,7 @@ namespace jsr {
 		s.shader = PRG_TEXTURED;
 
 		int bloomdivisor = 1 << renderGlobals.bloomDownsampleLevel;
-		programManager->g_commonData.renderTargeRes = glm::vec4{
+		programManager->g_commonData.renderTargetRes = glm::vec4{
 			engineConfig.r_resX,
 			engineConfig.r_resY,
 			1.0f / engineConfig.r_resX,
@@ -141,9 +141,10 @@ namespace jsr {
 		programManager->g_commonData.shadowRes.z = 1.0f / renderGlobals.shadowResolution;
 		programManager->g_commonData.shadowRes.w = 1.0f / renderGlobals.shadowResolution;
 
+		const int kernelSize = sizeof(programManager->g_commonData.ssaoKernel) / sizeof(programManager->g_commonData.ssaoKernel[0]);
 		std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // random floats between [0.0, 1.0]
 		std::default_random_engine generator;
-		for (unsigned int i = 0; i < 64; ++i)
+		for (unsigned int i = 0; i < kernelSize; ++i)
 		{
 			glm::vec4 sample(
 				randomFloats(generator) * 2.0 - 1.0,
@@ -152,7 +153,7 @@ namespace jsr {
 				0.0f
 			);
 			sample = glm::normalize(sample);
-			float scale = (float)i / 64.0;
+			float scale = (float)i / float(kernelSize);
 			scale = lerp(0.1f, 1.0f, scale * scale);
 			sample *= scale;
 			//sample *= randomFloats(generator);

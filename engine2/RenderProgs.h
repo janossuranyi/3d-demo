@@ -38,10 +38,10 @@ namespace jsr {
 
 	struct uboCommonData_t
 	{
-		glm::vec4 renderTargeRes;
+		glm::vec4 renderTargetRes;
 		glm::vec4 shadowRes;
 		glm::vec4 bloomRes;
-		glm::vec4 ssaoKernel[64];
+		glm::vec4 ssaoKernel[16];
 	};
 
 	struct uboBackendData_t
