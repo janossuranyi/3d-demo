@@ -69,6 +69,6 @@ void main()
     outFragPos.x = -In.positionVS.z / gFarClipDistance;
     outAlbedo    = inputs.sampleAmbient;
     outSpec      = inputs.samplePBR;
-    outNormal    = vec4(inputs.normal,1.0);
+    outNormal    = vec4(inputs.normal,0.0);
     //outNormal    = vec4((1.0 + inputs.normal) * 0.5, 1.0);
 }

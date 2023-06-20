@@ -11,6 +11,7 @@ out INTERFACE
 
 void main()
 {
+    Out.positionVS = g_freqLowVert.invProjectMatrix * in_Position;
+    
     gl_Position = in_Position;
-    Out.positionVS = ( g_freqLowVert.invProjectMatrix * in_Position );
 }

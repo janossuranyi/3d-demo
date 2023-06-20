@@ -98,5 +98,10 @@ namespace jsr {
 		return result;
 	}
 
+	void Frustum::GetCorners(std::vector<glm::vec3>& v)
+	{
+		for (int i = 0; i < 8; ++i) v.push_back(corners[i]);
+	}
+
 
 }

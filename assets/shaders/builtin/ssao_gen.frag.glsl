@@ -17,15 +17,24 @@ in INTERFACE
     vec4 positionVS;
 } In;
 
+float texDepth(sampler2D samp, vec2 uv)
+{
+    return -texture( samp, uv ).x * gFarClipDistance;
+}
+
+vec4 reconstructPositionVS(vec3 viewRay, sampler2D depthTex, vec2 uv)
+{
+    float linearZ = texDepth( depthTex, uv );
+    return vec4( -viewRay * linearZ, 1.0 );
+}
+
 void main()
 {
     vec2 UV = screenPosToTexcoord( gl_FragCoord.xy, g_backendData.params[0] );
 
-    vec3 viewRay = In.positionVS.xyz;
-    float nDepth = -texture( tFragPosZ, UV ).x * gFarClipDistance;
-    vec4 fragPosVS = vec4(viewRay * nDepth, 1.0);
-    vec3 normal = texture( tNormal, UV ).xyz;
-    vec3 randomVec = texture( tNoise, UV * noiseScale).xyz;
+    vec4 fragPosVS  = reconstructPositionVS( In.positionVS.xyz, tFragPosZ, UV );
+    vec3 normal     = texture( tNormal, UV ).xyz;
+    vec3 randomVec  = texture( tNoise, UV * noiseScale).xyz;
 
     vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);
@@ -44,7 +53,7 @@ void main()
         offset = g_freqLowFrag.projectMatrix * offset;
         offset.xyz /= offset.w;
         offset.xyz = offset.xyz * 0.5 + 0.5;
-        float sampleDepth = -texture(tFragPosZ, offset.xy).x * gFarClipDistance;
+        float sampleDepth = texDepth(tFragPosZ, offset.xy);
 
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPosVS.z - sampleDepth));
         occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;

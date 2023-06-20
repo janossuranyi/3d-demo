@@ -30,8 +30,8 @@ namespace jsr {
 		r_msaa = 0;
 		r_vsync = 1;
 		r_useStateCaching = true;
-		r_ssao_radius = 0.5f;
-		r_ssao_bias = 0.025;
+		r_ssao_radius = 0.25f;
+		r_ssao_bias = 0.001;
 		r_ssao = false;
 	}
 
@@ -148,8 +148,8 @@ namespace jsr {
 			ImGui::DragFloat("Bloom scale", &renderGlobals.bloomScale, 0.01f, 0.0f, 1.0f);
 			ImGui::DragFloat("Bloom treshold", &bloomParams2_y, 0.01f, 0.0f, 20.0f);
 
-			ImGui::DragFloat("SSAO radius", &engineConfig.r_ssao_radius, 0.001f, 0.0f, 50.0f);
-			ImGui::DragFloat("SSAO bias", &engineConfig.r_ssao_bias, 0.001f, 0.0f, 50.0f);
+			ImGui::DragFloat("SSAO radius", &engineConfig.r_ssao_radius, 0.01f, 0.0f, 10.0f);
+			ImGui::DragFloat("SSAO bias", &engineConfig.r_ssao_bias, 0.001f, 0.0f, 10.0f);
 
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);
@@ -329,10 +329,9 @@ namespace jsr {
 
 		//const float R = world->GetBounds().GetRadius() * 4.0f;
 		constexpr float R = 500.0f;
-		mat4 projMatrix = glm::perspective(glm::radians(player.Zoom), float(x) / float(y), 0.1f, R);
+		mat4 projMatrix = perspective(radians(player.Zoom), float(x) / float(y), 0.1f, R);
 		mat4 viewMatrix = player.GetViewMatrix();
 		mat4 vpMatrix = projMatrix * viewMatrix;
-
 		viewDef_t* view = (viewDef_t*)R_FrameAlloc(sizeof(*view));
 
 		view->exposure = world->exposure;
@@ -361,7 +360,7 @@ namespace jsr {
 		fragUbo.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
 		fragUbo.params.x = view->exposure;
 		fragUbo.viewOrigin = vec4(0.f, 0.f, 0.f, 1.f);
-		fragUbo.invProjMatrix = view->unprojectionToCameraMatrix;
+		fragUbo.invProjMatrix = (view->unprojectionToCameraMatrix);
 		fragUbo.projectMatrix = projMatrix;
 		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
 		fragUbo.bloomParams.x = 2.0f;

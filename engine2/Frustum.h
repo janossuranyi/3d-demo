@@ -22,6 +22,7 @@ namespace jsr {
 		Frustum(const glm::mat4& vp);
 		bool Intersects(const Bounds& box) const;
 		bool Intersects2(const Bounds& box) const;
+		void GetCorners(std::vector<glm::vec3>& v);
 	private:
 		glm::vec4	planes[6];
 		glm::vec3	corners[8];

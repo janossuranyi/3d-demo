@@ -6,6 +6,8 @@
 
 #include "./RenderCommon.h"
 
+#define SSAO_KERNEL_SAMPLES 16
+
 namespace jsr {
 
 	const unsigned int INVALID_PROGRAM = 0xFFFF;
@@ -41,7 +43,7 @@ namespace jsr {
 		glm::vec4 renderTargetRes;
 		glm::vec4 shadowRes;
 		glm::vec4 bloomRes;
-		glm::vec4 ssaoKernel[16];
+		glm::vec4 ssaoKernel[ SSAO_KERNEL_SAMPLES ];
 	};
 
 	struct uboBackendData_t

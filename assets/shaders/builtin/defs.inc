@@ -15,3 +15,5 @@
 #define IMU_HDR 6
 #define IMU_SHADOW 7
 #define IMU_DEFAULT 8
+
+#define SSAO_KERNEL_SAMPLES 16
