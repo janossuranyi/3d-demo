@@ -12,7 +12,7 @@ namespace jsr {
 	struct globalImages_t
 	{
 		Image* HDRaccum;
-		Image* HDRdepth;
+//		Image* HDRdepth;
 		Image* HDRblur[2];
 		std::vector<Image*> HDRbloom;
 		Image* GBufferFragPos;

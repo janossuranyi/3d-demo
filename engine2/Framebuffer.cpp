@@ -70,8 +70,8 @@ namespace jsr {
 		fb = new Framebuffer( "hdrFBO", w, h );
 		fb->Bind();
 		fb->AttachImage2D( globalImages.HDRaccum, 0 );
-		fb->AttachImageDepth( globalImages.HDRdepth );
-		fb->AttachImageStencil(globalImages.HDRdepth);
+		fb->AttachImageDepth( globalImages.GBufferDepth );
+		fb->AttachImageStencil(globalImages.GBufferDepth );
 		if ( ! fb->Check() )
 		{
 			Error("[Framebuffer]: hdrFBO init failed!");

@@ -19,14 +19,16 @@ in INTERFACE
 
 float texDepth(sampler2D samp, vec2 uv)
 {
-    return -texture( samp, uv ).x * gFarClipDistance;
+    return -textureLod( samp, uv, 0 ).x * gFarClipDistance;
 }
 
 vec4 reconstructPositionVS(vec3 viewRay, sampler2D depthTex, vec2 uv)
 {
-    float linearZ = texDepth( depthTex, uv );
-    return vec4( -viewRay * linearZ, 1.0 );
+    float linearZ = textureLod( depthTex, uv, 0 ).x * gFarClipDistance;
+    return vec4( viewRay * linearZ, 1.0 );
 }
+
+float saturate(float x) { return clamp(x, 0.0, 1.0); }
 
 void main()
 {
@@ -56,12 +58,11 @@ void main()
         float sampleDepth = texDepth(tFragPosZ, offset.xy);
 
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPosVS.z - sampleDepth));
-        occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
-
         //float rangeCheck= abs(fragPosVS.z - sampleDepth) < radius ? 1.0 : 0.0;
-        //occlusion += (sampleDepth <= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
+        //occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
+        occlusion += mix( 0.0, 1.0, sampleDepth >= samplePos.z + bias );
     }
-    occlusion = clamp( 1.0 - (occlusion / float(kernelSize)), 0.0, 1.0 );
+    occlusion = saturate( 1.0 - ( occlusion / float(kernelSize) ) );
 
     fragColor0.x = occlusion;
 }

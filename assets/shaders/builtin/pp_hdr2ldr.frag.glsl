@@ -21,5 +21,5 @@ void main()
     color += bloom * g_freqLowFrag.bloomParams.y + ambient * occlusion;
     color *= gExposure;
 
-    fragColor0 = GammaIEC( tonemap_Reinhard( color ) );
+    fragColor0 = ( tonemap_unreal( color ) );
 }

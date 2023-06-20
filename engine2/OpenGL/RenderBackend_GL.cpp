@@ -883,9 +883,11 @@ namespace jsr {
 
 		globalFramebuffers.hdrFBO->Bind();
 		
+		/*
 		globalFramebuffers.GBufferFBO->BindForReading();
 		globalFramebuffers.GBufferFBO->BlitDepthBuffer(0, 0, view->viewport.w, view->viewport.h, 0, 0, view->viewport.w, view->viewport.h);
 		globalFramebuffers.hdrFBO->BindForReading();
+		*/
 
 		SetWriteMask(bvec4{ true });
 

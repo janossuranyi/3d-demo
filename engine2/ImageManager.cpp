@@ -32,7 +32,7 @@ namespace jsr {
 		globalImages.Shadow = AllocImage("_shadow");
 		globalImages.defaultImage = AllocImage("_defaultImage");
 		globalImages.HDRaccum = AllocImage("_hdrimage");
-		globalImages.HDRdepth = AllocImage("_hdrDepth");
+//		globalImages.HDRdepth = AllocImage("_hdrDepth");
 		globalImages.whiteImage = AllocImage("_white");
 		globalImages.grayImage = AllocImage("_gray");
 		globalImages.blackImage = AllocImage("_black");
@@ -127,7 +127,7 @@ namespace jsr {
 
 		opts.sizeX = screen_width / 2;
 		opts.sizeY = screen_height / 2;
-		opts.format = IMF_R16F;
+		opts.format = IMF_R8;
 		opts.usage = IMU_AORM;
 		if (!globalImages.ssaoMap->AllocImage(opts, IFL_NEAREST, IMR_CLAMP_TO_EDGE))
 		{
@@ -136,13 +136,13 @@ namespace jsr {
 
 		opts.sizeX = screen_width / 2;
 		opts.sizeY = screen_height / 2;
-		opts.format = IMF_R16F;
+		opts.format = IMF_R8;
 		opts.usage = IMU_AORM;
 		for (int i = 0; i < 2; ++i)
 		{
 			if (!globalImages.ssaoblur[i]->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 			{
-				Error("[ImageManager]: ssaoMap allocation failed !");
+				Error("[ImageManager]: ssaoBlur allocation failed !");
 			}
 		}
 
@@ -164,14 +164,14 @@ namespace jsr {
 		{
 			Error("[ImageManager]: Image defaultDepth allocation failed !");
 		}
-
+#if 0
 		opts.format = IMF_D24S8;
 		opts.usage = IMU_DEPTH;
 		if (!globalImages.HDRdepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image HDRdepth allocation failed !");
 		}
-
+#endif
 		std::vector<unsigned int> tmp(16 * 16);
 		opts.sizeX = 16;
 		opts.sizeY = 16;
