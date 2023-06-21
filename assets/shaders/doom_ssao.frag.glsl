@@ -174,18 +174,23 @@ void main() {
 					int numRaysOuter = 8;
 					float accNormalization = 1.0 / float( numRays - numRaysOuter );
 					float accOuterNormalization = 1.0 / float( numRaysOuter );
-					float angle_bias = _fa_freqHigh[2 ].z;
-					float position_bias = _fa_freqHigh[2 ].w;
+					float angle_bias = _fa_freqHigh[2 ].z; // 1.0
+					float position_bias = _fa_freqHigh[2 ].w; // 4.0
 					out_FragColor0 = vec4( 1 );
 					float ndcZ = tex2Dlod( samp_viewdepthmap, vec4( tc.xy, 0, 0 ) ).x;
-					float linearZ = GetLinearDepth( ndcZ, _fa_freqLow[0 ], 1.0, false );
-					float distAtten = saturate( ( _fa_freqHigh[1 ].y - linearZ ) / 256.0 );
-					vec4 n1 = vec4( NormalOctDecode( tex2Dlod( samp_tex0, vec4( tc.xy, 0, 0 ) ).xy, false ).xyz, SmoothnessDecode( tex2Dlod( samp_tex3, vec4( tc.xy, 0, 0 ) ).w ).y ); if ( distAtten * n1.w > 0.0 ) {
+					float linearZ = GetLinearDepth( ndcZ, _fa_freqLow[0 ] /*(0,0,-1,-3)*/, 1.0, false );
+					float distAtten = saturate( ( _fa_freqHigh[1 ].y /* 10000 */ - linearZ ) / 256.0 );
+					vec4 n1 = vec4( 
+						NormalOctDecode( tex2Dlod( samp_tex0, vec4( tc.xy, 0, 0 ) ).xy, false ).xyz,
+						SmoothnessDecode( tex2Dlod( samp_tex3, vec4( tc.xy, 0, 0 ) ).w ).y 
+					);
+
+					if ( distAtten * n1.w > 0.0 ) {
 						float firstPersonArmsZ = GetNdcDepth( 3.5, _fa_freqLow[0 ] );
-						float radii = ( ndcZ < firstPersonArmsZ ) ? _fa_freqHigh[2 ].w : _fa_freqHigh[2 ].y;
-						float radii_inner = ( ndcZ < firstPersonArmsZ ) ? _fa_freqHigh[2 ].z : _fa_freqHigh[2 ].x;
+						float radii = ( ndcZ < firstPersonArmsZ ) ? _fa_freqHigh[2 ].w /* 4.0 */ : _fa_freqHigh[2 ].y /* 64.0 */;
+						float radii_inner = ( ndcZ < firstPersonArmsZ ) ? _fa_freqHigh[2 ].z /* 1.0 */ : _fa_freqHigh[2 ].x /* 12.8 */;
 						float max_radius_ws = 1.0 / radii;
-						float normalBias = ( ndcZ < firstPersonArmsZ )? _fa_freqHigh[1 ].w * 0.5 : _fa_freqHigh[1 ].w;
+						float normalBias = ( ndcZ < firstPersonArmsZ )? _fa_freqHigh[1 ].w * 0.5 : _fa_freqHigh[1 ].w /* 0.0 */;
 						ndcZ = ( ndcZ < firstPersonArmsZ ) ? ndcZ * 10 : ndcZ;
 						vec3 normalM;
 						vec3 n2 = NormalOctDecode( tex2Dlod( samp_tex0, vec4( tc.xy + 0.5 * _fa_freqHigh[3 ].zw * vec2( 1.0, 0.0 ), 0, 0 ) ).xy, false );
@@ -206,12 +211,14 @@ void main() {
 						vec3 T = normalize( noiseVec - normalVS * dot( noiseVec, normalVS ) );
 						vec3 B = cross( normalVS, T );
 						mat3x3 TBN = mat3x3( T, B, normalVS );
-						float unoccl_ratio = 0; for (int t = 0; t < numRays; t++ ) {
+						float unoccl_ratio = 0; 
+						for (int t = 0; t < numRays; t++ ) {
 							radii = ( t >= numRaysOuter )? radii_inner : radii;
 							vec3 ray_dir = vec3( MatrixMul( TBN, sharedparmsuniformbuffer[ t ].xyz ) );
 							vec3 viewPosHemisphere = viewPosOrig.xyz + radii * ray_dir;
 							vec3 winPosTap;
-							winPosTap.xy = GetWindowPos( viewPosHemisphere, _fa_freqLow[8 ] ); if ( t < numRaysOuter ) {
+							winPosTap.xy = GetWindowPos( viewPosHemisphere, _fa_freqLow[8 ] );
+							if ( t < numRaysOuter ) {
 								winPosTap.z = 1 - tex2Dlod( samp_tex2, vec4( winPosTap.xy * _fa_freqLow[4 ].xy, 0, 0 ) ).x;
 							} else {
 								winPosTap.z = 1 - tex2Dlod( samp_tex1, vec4( winPosTap.xy * _fa_freqLow[4 ].xy, 0, 0 ) ).x;

@@ -6,7 +6,7 @@
 
 #include "./RenderCommon.h"
 
-#define SSAO_KERNEL_SAMPLES 16
+#define SSAO_KERNEL_SAMPLES 12
 
 namespace jsr {
 
@@ -48,7 +48,7 @@ namespace jsr {
 
 	struct uboBackendData_t
 	{
-		glm::vec4 params[16];
+		glm::vec4 params[8];
 	};
 
 	struct uboLightData_t

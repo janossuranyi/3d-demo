@@ -32,6 +32,7 @@ namespace jsr {
 		r_useStateCaching = true;
 		r_ssao_radius = 0.25f;
 		r_ssao_bias = 0.001;
+		r_ssao_str = 1.0f;
 		r_ssao = false;
 	}
 
@@ -150,6 +151,7 @@ namespace jsr {
 
 			ImGui::DragFloat("SSAO radius", &engineConfig.r_ssao_radius, 0.01f, 0.0f, 10.0f);
 			ImGui::DragFloat("SSAO bias", &engineConfig.r_ssao_bias, 0.001f, 0.0f, 10.0f);
+			ImGui::DragFloat("SSAO strength", &engineConfig.r_ssao_str, 0.01f, 0.01f, 10.0f);
 
 			ImGui::DragFloat("Exposure", &world->exposure, 0.05f, 0.1f, 20.0f);
 			ImGui::DragFloat("Shadow Scale", &renderGlobals.shadowScale, 0.01f, 0.1f, 1.0f);

@@ -146,6 +146,31 @@ vec3 tonemap_uchimura(vec3 x) {
 
 vec2 screenPosToTexcoord(vec2 pos, vec4 scale) { return pos * scale.zw; }
 
+
+vec2 OctWrap ( vec2 v ) {
+	return ( 1.0 - abs( v.yx ) ) * vec2( ( v.x >= 0.0 ? 1.0 : -1.0 ), ( v.y >= 0.0 ? 1.0 : -1.0 ) );
+}
+
+vec3 NormalOctDecode ( vec2 encN, bool expand_range ) {
+	if ( expand_range ) {
+		encN = encN * 2.0 - 1.0;
+	}
+	vec3 n;
+	n.z = 1.0 - abs( encN.x ) - abs( encN.y );
+	n.xy = n.z >= 0.0 ? encN.xy : OctWrap( encN.xy );
+	n = normalize( n );
+	return n;
+}
+
+vec2 NormalOctEncode ( vec3 n, bool compress_range ) {
+	n /= ( abs( n.x ) + abs( n.y ) + abs( n.z ) );
+	n.xy = n.z >= 0.0 ? n.xy : OctWrap( n.xy );
+	if ( compress_range ) {
+		n.xy = n.xy * 0.5 + 0.5;
+	}
+	return n.xy;
+}
+
 /*
 			float ShoStren = _fa_freqHigh[31 ].x, LinStren = _fa_freqHigh[31 ].y, LinAngle = 0.1, ToeStren = 0.2, ToeNum = _fa_freqHigh[31 ].z, ToeDenom = 0.3;
 			vec3 c = max( linearHDR.xyz, vec3( 0.0 ) );

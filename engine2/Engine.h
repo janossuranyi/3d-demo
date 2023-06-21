@@ -20,6 +20,7 @@ namespace jsr {
 		bool	r_ssao;
 		float	r_ssao_radius;
 		float	r_ssao_bias;
+		float	r_ssao_str;
 		engineConfig_t();
 		void LoadFromFile();
 	};

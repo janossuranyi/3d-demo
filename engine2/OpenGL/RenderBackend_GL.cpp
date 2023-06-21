@@ -570,7 +570,7 @@ namespace jsr {
 			target->SetReadBuffer(0);
 			target->BlitColorBuffer(
 				0, 0, HalfWidth, HalfHeight,
-				0, 0, HalfWidth / 2, HalfHeight / 2
+				0, 0, HalfWidth/2, HalfHeight/2
 			);
 		}
 #if 0
@@ -1210,9 +1210,25 @@ namespace jsr {
 		pm->g_backendData.params[0] = { float(hw),float(hh),1.0f / hw,1.0f / hh };
 		pm->g_backendData.params[1].x = engineConfig.r_ssao_radius;
 		pm->g_backendData.params[1].y = engineConfig.r_ssao_bias;
+		pm->g_backendData.params[1].z = engineConfig.r_ssao_str;
 		pm->UpdateBackendUniform();
 		R_DrawSurf(&unitRectSurface);
+#if 0
+		pm->UseProgram(PRG_KERNEL);
+		pm->g_backendData.params[0].x = 1.0f / float(hw);
+		pm->g_backendData.params[0].y = 1.0f / float(hh);
+		pm->g_backendData.params[0].z = 0.0f;
+		pm->UpdateBackendUniform();
+		SetCurrentTextureUnit(0);
 
+		globalFramebuffers.ssaoblurFBO[0]->Bind();
+		globalImages.ssaoMap->Bind();
+		R_DrawSurf(&unitRectSurface);
+		globalFramebuffers.ssaoblurFBO[1]->Bind();
+		globalImages.ssaoblur[0]->Bind();
+		R_DrawSurf(&unitRectSurface);
+
+#else
 		pm->UseProgram(PRG_GAUSS_FILTER);
 		pm->g_backendData.params[0].x = 0.0f;
 		pm->g_backendData.params[0].y = 1.0f;
@@ -1228,7 +1244,7 @@ namespace jsr {
 		pm->g_backendData.params[0].y = 0.0f;
 		pm->UpdateBackendUniform();
 		R_DrawSurf(&unitRectSurface);
-
+#endif
 	}
 
 	void RenderBackend::RenderHDRtoLDR()

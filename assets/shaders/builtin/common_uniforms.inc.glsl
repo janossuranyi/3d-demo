@@ -8,5 +8,5 @@ layout(binding = UBB_COMMON_DATA) uniform uboCommonData
 
 layout(binding = UBB_BACKEND_DATA) uniform uboBackendData
 {
-    vec4 params[16];
+    vec4 params[8];
 } g_backendData;

@@ -112,6 +112,7 @@ namespace jsr {
 		PRG_GAUSS_FILTER,
 		PRG_BLOOM_FILTER,
 		PRG_SSAO_GEN,
+		PRG_KERNEL,
 		PRG_COUNT
 	};
 
