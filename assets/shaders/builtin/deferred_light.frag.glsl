@@ -43,19 +43,17 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 /*******************************************************************************/
 vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 	const vec3 H = normalize( V + L );
-	float m = ( 0.2 + roughness * 0.8 );
+	float m = roughness*roughness;
 	m *= m;
-	m *= m;
-	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
-	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
-	spec = m2 / ( spec * spec + 1e-8 );
-	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
-	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
+	float spec = (NdotH * NdotH) * (m - 1) + 1;
+	spec = m / ( spec * spec + 1e-8 );
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+	float Gv = saturate( dot( N, V ) ) * (1.0 - k) + k;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-    vec4 res = vec4( fresnelSchlick( f0, dot( L, H ) ), spec );
-
-	return res;
+	return vec4(fresnelSchlick( f0, dot( H, V ) ), spec);
 }
 
 // Performs shadow calculation with PCF
@@ -150,10 +148,14 @@ void main()
         }
 
         vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.y);
+        vec3 light =
+            inputs.lightColor 
+            * inputs.attenuation 
+            * NdotL 
+            * shadow;
 
-        finalColor = (Kd * inputs.sampleAmbient.xyz + F * Ks) * inputs.lightColor * inputs.attenuation * NdotL * shadow;
-        //finalColor = max( inputs.fragPos.xyz, 0.01);
-        //finalColor = vec3(1.0) - exp(-finalColor * gExposure);
+        finalColor = light * (Kd * inputs.sampleAmbient.xyz + F * Ks);
+        //finalColor = vec3(Ks) * inputs.lightColor * inputs.attenuation * NdotL * shadow;;
     }
     /*****************************************************************/
 

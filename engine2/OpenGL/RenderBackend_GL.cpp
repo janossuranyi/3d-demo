@@ -559,6 +559,7 @@ namespace jsr {
 			RenderAA();
 		}
 
+#if 0
 		GLsizei HalfWidth = (GLsizei)(x / 2);
 		GLsizei HalfHeight = (GLsizei)(y / 2);
 		if (engineConfig.r_ssao)
@@ -573,7 +574,6 @@ namespace jsr {
 				0, 0, HalfWidth/2, HalfHeight/2
 			);
 		}
-#if 0
 
 		gbuffer->SetReadBuffer(1);
 		gbuffer->BlitColorBuffer(0, 0, x, y,
