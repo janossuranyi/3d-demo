@@ -49,11 +49,11 @@ void main()
         vec3 localNormal        = normalize( In.normal );
         vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
         vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);
-        inputs.tbn      = mat3(localTangent,derivedBitangent,localNormal);
-        inputs.normal   = inputs.tbn * normalTS;
+        inputs.tbn              = mat3(localTangent,derivedBitangent,localNormal);
+        inputs.normal           = inputs.tbn * normalTS;
+        inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * texture( tDiffuse, In.texCoord );
     }
 
-    inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
 
     {
         uint params_x = asuint(gFlagsX);
@@ -66,9 +66,11 @@ void main()
 
     inputs.samplePBR = texture( tAORM, In.texCoord ).yzxw * vec4(gRoughnessFactor, gMetallicFactor, 1.0, 1.0);
 
+    vec4 material = vec4( inputs.samplePBR.xy, saturate( ( 1-inputs.samplePBR.x ) / 127.75 ),0.0 );
+
     outFragPos.x = -In.positionVS.z / gFarClipDistance;
     outAlbedo    = inputs.sampleAmbient;
-    outSpec      = inputs.samplePBR;
+    outSpec      = material;
     outNormal    = vec4(inputs.normal,0.0);
     //outNormal    = vec4((1.0 + inputs.normal) * 0.5, 1.0);
 }

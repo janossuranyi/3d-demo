@@ -130,7 +130,7 @@ namespace jsr {
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE,	8);
 
 		if (engineConfig.r_fbsrgb) {
-			SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_TRUE);
+			SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_FALSE);
 		}
 		if (engineConfig.r_debug) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);

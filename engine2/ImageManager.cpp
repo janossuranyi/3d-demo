@@ -66,7 +66,7 @@ namespace jsr {
 		opts.numLayer = 1;
 		opts.maxAnisotropy = 1.0f;
 		opts.autocompress = false;
-		opts.srgb = false;
+		opts.srgb = true;
 
 		if (!globalImages.GBufferAlbedo->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
@@ -75,6 +75,7 @@ namespace jsr {
 
 		opts.format = IMF_R32F;
 		opts.usage = IMU_FRAGPOS;
+		opts.srgb = false;
 		if (!globalImages.GBufferFragPos->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image GBufferFragPos allocation failed !");

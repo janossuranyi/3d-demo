@@ -11,6 +11,11 @@ layout(binding = IMU_AORM)      uniform sampler2D tAO;
 out vec3 fragColor0;
 in vec2 texcoord;
 
+vec3 gamma(vec3 c)
+{
+    return pow(c, vec3(1.0/g_freqLowFrag.params.y));
+}
+
 void main()
 {
     vec2 texCoord = gl_FragCoord.xy * g_freqLowFrag.screenSize.zw;
@@ -21,5 +26,5 @@ void main()
     color += bloom * g_freqLowFrag.bloomParams.y + ambient * occlusion;
     color *= gExposure;
 
-    fragColor0 = GammaIEC( tonemap_Reinhard( color ) );
+    fragColor0 = ( tonemap_filmic( color ) );
 }

@@ -34,6 +34,7 @@ namespace jsr {
 		r_ssao_bias = 0.001;
 		r_ssao_str = 1.0f;
 		r_ssao = false;
+		r_gamma = 2.2f;
 	}
 
 	void engineConfig_t::LoadFromFile()
@@ -159,6 +160,7 @@ namespace jsr {
 
 			ImGui::ColorEdit3("Ambient light", &renderGlobals.ambientColor.r);
 			ImGui::DragFloat("Ambient scale", &renderGlobals.ambientScale, 0.001f, 0.001f, 1.0f);
+			ImGui::DragFloat("Gamma", &engineConfig.r_gamma, 0.01f, 1.0f, 3.0f);
 			ImGui::Checkbox("Bloom", &engineConfig.r_bloom);
 			ImGui::Checkbox("FXAA", &engineConfig.r_fxaa);
 			ImGui::Checkbox("SSAO", &engineConfig.r_ssao);
@@ -361,6 +363,7 @@ namespace jsr {
 		fragUbo.nearFarClip = { view->nearClipDistance,view->farClipDistance,0.f,0.f };
 		fragUbo.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
 		fragUbo.params.x = view->exposure;
+		fragUbo.params.y = engineConfig.r_gamma;
 		fragUbo.viewOrigin = vec4(0.f, 0.f, 0.f, 1.f);
 		fragUbo.invProjMatrix = (view->unprojectionToCameraMatrix);
 		fragUbo.projectMatrix = projMatrix;
