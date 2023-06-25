@@ -26,5 +26,5 @@ void main()
     color += bloom * g_freqLowFrag.bloomParams.y + ambient * occlusion;
     color *= gExposure;
 
-    fragColor0 = ( tonemap_filmic( color ) );
+    fragColor0 = tonemap_filmic( color );
 }

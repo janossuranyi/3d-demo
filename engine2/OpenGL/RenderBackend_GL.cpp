@@ -132,6 +132,11 @@ namespace jsr {
 		if (engineConfig.r_fbsrgb) {
 			SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_FALSE);
 		}
+		else
+		{
+			SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, SDL_TRUE);
+		}
+
 		if (engineConfig.r_debug) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 		}

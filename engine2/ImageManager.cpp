@@ -81,7 +81,7 @@ namespace jsr {
 			Error("[ImageManager]: Image GBufferFragPos allocation failed !");
 		}
 
-		opts.format = IMF_RGBA16F;
+		opts.format = IMF_RG16F;
 		opts.usage = IMU_NORMAL;
 		if (!globalImages.GBufferNormal->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
@@ -151,6 +151,7 @@ namespace jsr {
 		opts.sizeY = screen_height;
 		opts.format = IMF_RGBA;
 		opts.usage = IMU_DEFAULT;
+		opts.srgb = true;
 		if (!globalImages.defaultImage->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: defaultImage allocation failed !");
@@ -161,6 +162,7 @@ namespace jsr {
 		opts.sizeY = screen_height;
 		opts.format = IMF_D24S8;
 		opts.usage = IMU_DEPTH;
+		opts.srgb = false;
 		if (!globalImages.GBufferDepth->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
 		{
 			Error("[ImageManager]: Image defaultDepth allocation failed !");

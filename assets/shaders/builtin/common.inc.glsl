@@ -9,24 +9,25 @@ float saturate(float x) { return clamp(x, 0.0, 1.0); }
 vec2 saturate(vec2 x) { return clamp(x, 0.0, 1.0); }
 vec3 saturate(vec3 x) { return clamp(x, 0.0, 1.0); }
 vec4 saturate(vec4 x) { return clamp(x, 0.0, 1.0); }
+float sign(float x) { return x >= 0.0 ? 1.0 : -1.0; }
 
 float GammaIEC(float c) { return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1/2.4) -0.055; }
 vec3 GammaIEC(vec3 c)
 {
-    return vec3(
-        GammaIEC(c.r),
-        GammaIEC(c.g),
-        GammaIEC(c.b));
+  return vec3(
+      GammaIEC(c.r),
+      GammaIEC(c.g),
+      GammaIEC(c.b));
 }
 
 vec4 GammaIEC(vec4 c)
 {
-    return vec4(
-        GammaIEC(c.r),
-        GammaIEC(c.g),
-        GammaIEC(c.b),
-		GammaIEC(c.a)
-	);
+  return vec4(
+      GammaIEC(c.r),
+      GammaIEC(c.g),
+      GammaIEC(c.b),
+      GammaIEC(c.a)
+  );
 }
 
 float SRGBlinear ( float value ) {
@@ -44,13 +45,13 @@ vec3 SRGBlinear ( vec3 sRGB ) {
 	return outLinear;
 }
 
-vec4 SRGBlinear ( vec4 sRGBA ) { return vec4( SRGBlinear( sRGBA.rgb ), sRGBA.a );}
+vec4 SRGBlinear ( vec4 sRGBA ) { return vec4( SRGBlinear( sRGBA.rgb ), SRGBlinear( sRGBA.a ) );}
 
 // Filmic Tonemapping Operators http://filmicworlds.com/blog/filmic-tonemapping-operators/
 vec3 tonemap_filmic(vec3 x) {
   vec3 X = max(vec3(0.0), x - 0.004);
   vec3 result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);
-  return (result);
+  return SRGBlinear(result);
 }
 
 vec3 tonemap_Reinhard(vec3 c) { return c / ( c + vec3(1.0) ); }
@@ -83,7 +84,7 @@ vec3 tonemap_aces(vec3 x) {
 // Adapted to be close to Tonemap_ACES, with similar range
 // Gamma 2.2 correction is baked in, don't use with sRGB conversion!
 vec3 tonemap_unreal(vec3 x) {
-  return x / (x + 0.155) * 1.019;
+  return SRGBlinear( x / (x + 0.155) * 1.019 );
 }
 
 vec3 tonemap_reinhard2(vec3 x) {
@@ -148,7 +149,7 @@ vec2 screenPosToTexcoord(vec2 pos, vec4 scale) { return pos * scale.zw; }
 
 
 vec2 OctWrap ( vec2 v ) {
-	return ( 1.0 - abs( v.yx ) ) * vec2( ( v.x >= 0.0 ? 1.0 : -1.0 ), ( v.y >= 0.0 ? 1.0 : -1.0 ) );
+	return ( 1.0 - abs( v.yx ) ) * vec2( sign(v.x) , sign(v.y) );
 }
 
 vec3 NormalOctDecode ( vec2 encN, bool expand_range ) {

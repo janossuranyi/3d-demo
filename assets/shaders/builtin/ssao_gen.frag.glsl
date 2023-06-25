@@ -2,6 +2,7 @@
 @include "defs.inc"
 @include "fragment_uniforms.inc.glsl"
 @include "common_uniforms.inc.glsl"
+@include "common.inc.glsl"
 
 layout(binding = IMU_FRAGPOS)   uniform sampler2D tFragPosZ;
 layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
@@ -10,7 +11,6 @@ layout(binding = IMU_DEFAULT)   uniform sampler2D tNoise;
 out vec4 fragColor0;
 
 const vec2 noiseScale = vec2(g_backendData.params[0].x/4.0, g_backendData.params[0].y/4.0); // screen/2/4
-vec2 screenPosToTexcoord(vec2 pos, vec4 scale) { return pos * scale.zw; }
 
 in INTERFACE
 {
@@ -27,8 +27,6 @@ vec4 reconstructPositionVS(vec3 viewRay, vec2 uv)
     float linearZ = textureLod( tFragPosZ, uv, 0 ).x * gFarClipDistance;
     return vec4( viewRay * linearZ, 1.0 );
 }
-
-float saturate(float x) { return clamp(x, 0.0, 1.0); }
 
 mat3 buildBasis(vec3 n, vec3 r)
 {
@@ -50,7 +48,7 @@ void main()
     vec2 UV = screenPosToTexcoord( gl_FragCoord.xy, g_backendData.params[0] );
 
     vec4 fragPosVS  = reconstructPositionVS( In.positionVS.xyz, UV );
-    vec3 normal     = texture( tNormal, UV ).xyz;
+    vec3 normal     = NormalOctDecode( texture( tNormal, UV ).xy, false);
     vec3 randomVec  = texture( tNoise, UV * noiseScale).xyz;
 
     mat3 TBN = buildBasis( normal, randomVec );

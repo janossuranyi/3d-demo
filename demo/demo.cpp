@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     engineConfig.r_vsync = 1;
     engineConfig.r_bloom = true;
     engineConfig.r_fxaa = true;
-    engineConfig.r_fbsrgb = false;
+    engineConfig.r_fbsrgb = true;
 #if 0
     engineConfig.r_debug = true;
 #else
