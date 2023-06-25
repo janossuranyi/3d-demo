@@ -909,6 +909,8 @@ namespace jsr {
 		globalImages.GBufferSpec->Bind();
 		SetCurrentTextureUnit(IMU_SHADOW);
 		globalImages.Shadow->Bind();
+		SetCurrentTextureUnit(IMU_DEFAULT);
+		globalImages.ssaoblur[1]->Bind();
 
 		blendingState_t blendState{};
 		blendState.enabled = false;
@@ -921,11 +923,22 @@ namespace jsr {
 		SetBlendingState(blendState);
 		
 		stencilState_t stencilSt{};
-		stencilSt.enabled = true;
+		stencilSt.enabled = false;
 		stencilSt.separate = false;
+		SetStencilState(stencilSt);
 
 		const bvec4 bfalse{ false };
 		const bvec4 btrue{ true };
+
+		// render sun & AO
+		renderSystem.programManager->UseProgram(PRG_DEFERRED_DIR_LIGHT);
+		renderSystem.programManager->g_backendData.params[0].x = engineConfig.r_ssao ? 1.0f : 0.0f;
+		renderSystem.programManager->UpdateBackendUniform();
+		SetDepthState({ true, false, CMP_ALWAYS });
+		R_DrawSurf(&unitRectSurface);
+
+		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
+
 
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{

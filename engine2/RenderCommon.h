@@ -105,6 +105,7 @@ namespace jsr {
 		PRG_EQUIRECT_TEXTURE,
 		PRG_DEFERRED_GBUFFER_MR,
 		PRG_DEFERRED_LIGHT,
+		PRG_DEFERRED_DIR_LIGHT,
 		PRG_PP_HDR,
 		PRG_COLOR,
 		PRG_FXAA3,
@@ -225,6 +226,7 @@ namespace jsr {
 		int				numDrawSurfs;
 		viewEntity_t*	viewEntites;
 		viewLight_t*	viewLights;
+		viewLight_t*	viewSunLight;
 		Frustum			frustum;
 		float			exposure;
 		float			farClipDistance;

@@ -330,6 +330,7 @@ namespace jsr {
 
 		alignas(16) uboFreqLowVert_t vertUbo{};
 		alignas(16) uboFreqLowFrag_t fragUbo{};
+		alignas(16) uboLightData_t sunLight {};
 
 		//const float R = world->GetBounds().GetRadius() * 4.0f;
 		constexpr float R = 500.0f;
@@ -338,6 +339,7 @@ namespace jsr {
 		mat4 vpMatrix = projMatrix * viewMatrix;
 		viewDef_t* view = (viewDef_t*)R_FrameAlloc(sizeof(*view));
 
+		view->viewSunLight = (viewLight_t*)R_FrameAlloc(sizeof(*view->viewSunLight));
 		view->exposure = world->exposure;
 		view->farClipDistance = R;
 		view->nearClipDistance = 0.1f;
@@ -355,6 +357,14 @@ namespace jsr {
 		view->viewport = { 0,0,x,y };
 		view->scissor = view->viewport;
 		view->renderWorld = world;
+
+		view->viewSunLight->origin = viewMatrix * normalize(vec4(0.0f, 1.0f, 2.0f, 0.0f));
+		view->viewSunLight->shader = PRG_DEFERRED_DIR_LIGHT;
+		view->viewSunLight->color = 0.5f * vec4(1.0f, 0.5f, 0.1f, 2.0f);
+		//mat4 sunOrtho = glm::ortho()
+		sunLight.lightColor = view->viewSunLight->color;
+		sunLight.lightOrigin = vec4(view->viewSunLight->origin,0.0f);
+		sunLight.lightProjMatrix = mat4(1.0f);
 
 		int bloomDiv = 1 << renderGlobals.bloomDownsampleLevel;
 		vertUbo.viewMatrix = view->renderView.viewMatrix;

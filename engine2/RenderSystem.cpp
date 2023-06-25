@@ -530,7 +530,7 @@ R_MakeZeroOneCubeTris
 		std::string warn, err;
 		TinyGLTF loader;
 		Model model;
-		const std::string filename = ResourceManager::instance.GetResource("models/zeroOneCone.glb");
+		const std::string filename = ResourceManager::instance.GetResource("models/zeroOneCone2.glb");
 		if (loader.LoadBinaryFromFile(&model, &err,&warn,filename))
 		{
 			surface_t* tri = new (MemAlloc16(sizeof(*tri))) surface_t();
@@ -562,14 +562,16 @@ R_MakeZeroOneCubeTris
 			AccessorArray<vec4>		tanarray(model, tanAccess);
 			AccessorArray<vec2>		texarray(model, texAccess);
 			AccessorArray<unsigned short> idxarray(model, idxAccess);
-
+			const vec4 ONE(1.0f);
 			for (auto i = 0; i < tri->numVerts; ++i)
 			{
-				tri->verts[i].SetPos(*posarray[i]);
+				vec3 xyz = *posarray[i];
+				//std::swap(xyz.y, xyz.z);
+				tri->verts[i].SetPos(xyz);
 				tri->verts[i].SetNormal(*norarray[i]);
 				tri->verts[i].SetTangent(*tanarray[i]);
 				tri->verts[i].SetUV(*texarray[i]);
-				tri->verts[i].SetColor(1.0f, 0.0f, 0.0f, 1.0f);
+				tri->verts[i].SetColor(ONE);
 			}
 
 			memcpy(tri->indexes, idxarray[0], tri->numIndexes * 2);

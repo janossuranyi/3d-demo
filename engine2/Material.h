@@ -13,6 +13,9 @@
 #define FLG_COVERAGE_MASKED 1
 #define FLG_COVERAGE_BLEND 2
 
+#define FLG_X_SSAO_SHIFT 2
+#define FLG_X_SSAO_MASK 1
+
 namespace jsr {
 
 	struct stage_t
