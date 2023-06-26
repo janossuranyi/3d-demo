@@ -11,21 +11,35 @@
 namespace jsr {
 
 	renderProgram_t ProgramManager::builtins[] = {
-		{"default_textured",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"depth_only",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"texture_equirect",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"deferred_gbuffer_mr",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"deferred_light",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"deferred_dir_light",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"pp_hdr2ldr",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"color",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"fxaa3",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"emissive_pass",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"gauss_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"bloom_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"ssao_gen",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM },
-		{"kernel",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM }
+		{"default_textured",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"depth_only",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"texture_equirect",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"deferred_gbuffer_mr",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"deferred_light",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {{"LIGHT_SPOT_POINT","1"}} },
+		{"deferred_dir_light",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {{"LIGHT_DIRECTIONAL","1"}} },
+		{"pp_hdr2ldr",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"color",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"fxaa3",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"emissive_pass",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"gauss_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"bloom_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"ssao_gen",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"kernel",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} }
 	};
+
+	static std::string GL_map_shader_to_str(GLenum stage)
+	{
+		switch (stage)
+		{
+		case GL_VERTEX_SHADER: return "VERTEX";
+		case GL_FRAGMENT_SHADER: return "FRAGMENT";
+		case GL_GEOMETRY_SHADER: return "GEOMETRY";
+		case GL_TESS_CONTROL_SHADER: return "TESS_CONTROL";
+		case GL_TESS_EVALUATION_SHADER: return "TESS_EVAL";
+		default:
+			assert(false);
+		}
+	}
 
 	static void R_DeleteShaders(GLuint const* list, int numShader)
 	{
@@ -89,7 +103,7 @@ namespace jsr {
 		return true;
 	}
 
-	static GLuint R_CreateShader(GLenum stage, const char* name)
+	static GLuint R_CreateShader(GLenum stage, const char* name, const std::unordered_map<std::string,std::string> defines)
 	{
 		std::string r_name{ name };
 
@@ -112,10 +126,10 @@ namespace jsr {
 		GLuint modul = glCreateShader(stage);
 		if (!modul) return 0;
 
-		auto source = resourceManager->GetShaderSource("shaders/builtin/" + r_name);
+		auto source = resourceManager->GetShaderSourceWithVersionAndDefs("shaders/builtin/" + r_name, defines);
 		const char* pStr = source.c_str();
 		GL_CHECK(glShaderSource(modul, 1, &pStr, nullptr));
-		if (R_CompileShader(modul, "ST:" + std::to_string(stage) + "; " + std::string(name)))
+		if (R_CompileShader(modul, "ST:" + GL_map_shader_to_str(stage) + "; " + std::string(name)))
 		{
 			return modul;
 		}
@@ -220,10 +234,10 @@ namespace jsr {
 	{
 
 		std::vector<GLuint> shaders;
-		if (p.stages & SHADER_STAGE_VERTEX)		shaders.push_back(R_CreateShader(GL_VERTEX_SHADER, p.name));
-		if (p.stages & SHADER_STAGE_FRAGMENT)	shaders.push_back(R_CreateShader(GL_FRAGMENT_SHADER, p.name));
-		if (p.stages & SHADER_STAGE_GEOMETRY)	shaders.push_back(R_CreateShader(GL_GEOMETRY_SHADER, p.name));
-		if (p.stages & SHADER_STAGE_COMPUTE)	shaders.push_back(R_CreateShader(GL_COMPUTE_SHADER, p.name));
+		if (p.stages & SHADER_STAGE_VERTEX)		shaders.push_back(R_CreateShader(GL_VERTEX_SHADER, p.name, p.defs));
+		if (p.stages & SHADER_STAGE_FRAGMENT)	shaders.push_back(R_CreateShader(GL_FRAGMENT_SHADER, p.name, p.defs));
+		if (p.stages & SHADER_STAGE_GEOMETRY)	shaders.push_back(R_CreateShader(GL_GEOMETRY_SHADER, p.name, p.defs));
+		if (p.stages & SHADER_STAGE_COMPUTE)	shaders.push_back(R_CreateShader(GL_COMPUTE_SHADER, p.name, p.defs));
 
 		bool allOk = true;
 		for (auto k : shaders)
@@ -260,7 +274,7 @@ namespace jsr {
 			currentProgram = 0;
 		}
 
-		for(auto k : builtins) 
+		for(auto& k : builtins) 
 		{
 			GL_CHECK(glDeleteProgram(k.prg));
 		}

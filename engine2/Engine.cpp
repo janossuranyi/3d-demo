@@ -360,11 +360,12 @@ namespace jsr {
 
 		view->viewSunLight->origin = viewMatrix * normalize(vec4(0.0f, 1.0f, 2.0f, 0.0f));
 		view->viewSunLight->shader = PRG_DEFERRED_DIR_LIGHT;
-		view->viewSunLight->color = 0.5f * vec4(1.0f, 0.5f, 0.1f, 2.0f);
+		view->viewSunLight->color = vec4(1.0f, 0.5f, 0.1f, 0.0f);
 		//mat4 sunOrtho = glm::ortho()
 		sunLight.lightColor = view->viewSunLight->color;
 		sunLight.lightOrigin = vec4(view->viewSunLight->origin,0.0f);
 		sunLight.lightProjMatrix = mat4(1.0f);
+		view->viewSunLight->lightData = renderSystem.vertexCache->AllocTransientUniform(&sunLight, sizeof(sunLight));
 
 		int bloomDiv = 1 << renderGlobals.bloomDownsampleLevel;
 		vertUbo.viewMatrix = view->renderView.viewMatrix;

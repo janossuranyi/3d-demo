@@ -1,4 +1,3 @@
-@include "version.inc.glsl"
 @include "common.inc.glsl"
 @include "defs.inc"
 @include "fragment_uniforms.inc.glsl"
@@ -10,7 +9,6 @@ out vec3 fragColor0;
 in INTERFACE
 {
     vec4 positionVS;
-    flat mat4 modelViewMtx;
 } In;
 
 struct lightinginput_t {
@@ -107,8 +105,8 @@ void main()
         inputs.normal           = NormalOctDecode( texture( tNormal, texCoord ).xy, false );
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
-        inputs.lightDir         = mat3(In.modelViewMtx) * normalize(vec3(0.0,1.0,2.0)); //g_lightData.lightOrigin.xyz;
-        inputs.lightColor       = 0.5*vec3(1.0,0.5,0.1); //g_lightData.lightColor.rgb * g_lightData.lightColor.w;
+        inputs.lightDir         = g_lightData.lightOrigin.xyz;
+        inputs.lightColor       = g_lightData.lightColor.rgb * g_lightData.lightColor.w;
         //inputs.normal           = normalize(inputs.normal);
 
         inputs.fragPosVS = reconstructPositionVS( In.positionVS.xyz, texCoord );
@@ -123,6 +121,7 @@ void main()
         vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.x);
         vec3 F = spec.rgb;
         float Ks = spec.w;
+        vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.y);
         float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
 
         float shadow = 1.0;
@@ -133,8 +132,11 @@ void main()
             // inputs.lightColor *= texture(lightMap, 1.0-coords).rgb;
         }
 
-        vec3 ambient = inputs.sampleAmbient.xyz * g_freqLowFrag.ambientColor.xyz * g_freqLowFrag.ambientColor.w;
-        vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.y);
+        vec3 ambient =
+            inputs.sampleAmbient.xyz
+            * g_freqLowFrag.ambientColor.xyz
+            * g_freqLowFrag.ambientColor.w;
+
         vec3 light =
             inputs.lightColor 
             * NdotL 

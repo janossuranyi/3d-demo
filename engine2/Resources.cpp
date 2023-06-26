@@ -30,6 +30,11 @@ namespace jsr {
     }
 
 
+    ResourceManager::ResourceManager()
+    {
+        default_version_file_name = "shaders/builtin/version.inc.glsl";
+    }
+
     bool ResourceManager::AddResourcePath(const std::string& path)
     {
         const auto src = fs::absolute(fs::path(path));
@@ -72,6 +77,11 @@ namespace jsr {
         if (resource_map.count(name) == 0) return "";
 
         return resource_map.at(name);
+    }
+
+    void ResourceManager::SetDefaultVersionFile(const std::string& s)
+    {
+        default_version_file_name = s;
     }
 
     std::vector<unsigned char> ResourceManager::GetBinaryResource(const std::string& name)
@@ -122,6 +132,26 @@ namespace jsr {
         }
 
         return output;
-
     }
+
+    std::string ResourceManager::GetShaderSourceWithVersion(const std::string& name, int max_depth)
+    {
+        auto output = GetShaderSource(name, max_depth);
+        auto version = GetTextResource(default_version_file_name);
+
+        return version + "\n" + output;
+    }
+
+    std::string ResourceManager::GetShaderSourceWithVersionAndDefs(const std::string& name, const std::unordered_map<std::string, std::string>& defs, int max_depth)
+    {
+        auto output = GetShaderSource(name, max_depth);
+        auto version = GetTextResource(default_version_file_name);
+        std::string defs_str("");
+        for (const auto& item : defs)
+        {
+            defs_str = defs_str.append("#define ").append(item.first).append(" ").append(item.second).append("\n");
+        }
+        return version.append("\n").append(defs_str).append(output);
+    }
+
 }

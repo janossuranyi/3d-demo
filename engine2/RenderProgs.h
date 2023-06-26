@@ -2,6 +2,7 @@
 
 #include <string>
 #include <array>
+#include <unordered_map>
 #include <glm/glm.hpp>
 
 #include "./RenderCommon.h"
@@ -125,6 +126,7 @@ namespace jsr {
 		unsigned int stages;
 		eVertexLayout vertexLayout;
 		unsigned int prg;
+		std::unordered_map<std::string, std::string> defs;
 	};
 
 	class ProgramManager

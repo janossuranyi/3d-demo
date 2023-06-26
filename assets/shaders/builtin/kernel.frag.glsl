@@ -1,4 +1,3 @@
-@include "version.inc.glsl"
 @include "defs.inc"
 @include "common_uniforms.inc.glsl"
 

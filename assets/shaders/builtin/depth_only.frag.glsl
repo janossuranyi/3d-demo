@@ -1,4 +1,3 @@
-@include "version.inc.glsl"
 
 out vec4 fragColor;
 

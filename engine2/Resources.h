@@ -30,17 +30,20 @@ namespace jsr {
 	class ResourceManager 
 	{
 	public:
-		ResourceManager() = default;
+		ResourceManager();
 		bool AddResourcePath(const std::string& path);
 		std::string GetTextResource(const std::string& name);
 		std::string GetShaderSource(const std::string& name, int max_depth = 2);
+		std::string GetShaderSourceWithVersion(const std::string& name, int max_depth = 2);
+		std::string GetShaderSourceWithVersionAndDefs(const std::string& name, const std::unordered_map<std::string,std::string>& defs, int max_depth = 2);
 		std::vector<unsigned char> GetBinaryResource(const std::string& name);
 		std::string GetResource(const std::string& name);
-
+		void SetDefaultVersionFile(const std::string& s);
 		static ResourceManager instance;
 	private:
 		std::unordered_map<std::string, std::string> resource_map;
 		std::set<std::string> sources;
+		std::string default_version_file_name;
 
 	};
 

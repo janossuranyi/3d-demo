@@ -894,11 +894,12 @@ namespace jsr {
 		globalFramebuffers.hdrFBO->BindForReading();
 		*/
 
-		SetWriteMask(bvec4{ true });
+		const bvec4 bfalse{ false };
+		const bvec4 btrue{ true };
 
+		SetWriteMask(btrue);
 		Clear(true, false, true);
 
-		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 		SetCurrentTextureUnit(IMU_DIFFUSE);
 		globalImages.GBufferAlbedo->Bind();
 		SetCurrentTextureUnit(IMU_FRAGPOS);
@@ -925,24 +926,24 @@ namespace jsr {
 		stencilState_t stencilSt{};
 		stencilSt.enabled = false;
 		stencilSt.separate = false;
-		SetStencilState(stencilSt);
 
-		const bvec4 bfalse{ false };
-		const bvec4 btrue{ true };
 
 		// render sun & AO
+		
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_DIR_LIGHT);
 		renderSystem.programManager->g_backendData.params[0].x = engineConfig.r_ssao ? 1.0f : 0.0f;
 		renderSystem.programManager->UpdateBackendUniform();
+		SetCullMode(CULL_NONE);
+		SetStencilState(stencilSt);
 		SetDepthState({ true, false, CMP_ALWAYS });
+		renderSystem.programManager->BindUniformBlock(UBB_LIGHT_DATA, view->viewSunLight->lightData);
 		R_DrawSurf(&unitRectSurface);
-
+		
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 
 
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
-
 			renderSystem.programManager->BindUniformBlock(UBB_LIGHT_DATA, light->lightData);
 #if 1
 			if (light->type == LIGHT_SPOT)

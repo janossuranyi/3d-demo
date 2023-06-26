@@ -1,4 +1,3 @@
-@include "version.inc.glsl"
 @include "defs.inc"
 @include "common.inc.glsl"
 @include "fragment_uniforms.inc.glsl"

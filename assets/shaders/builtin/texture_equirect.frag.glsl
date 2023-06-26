@@ -1,5 +1,3 @@
-@include "version.inc.glsl"
-
 out vec4 FragColor;
 in vec3 localPos;
 
