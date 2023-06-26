@@ -161,11 +161,10 @@ void main()
             * inputs.attenuation 
             * NdotL 
             * shadow;
-            
+
         finalColor = light * (Kd * inputs.sampleAmbient.xyz + F * Ks);
         //finalColor = vec3(Ks) * inputs.lightColor * inputs.attenuation * NdotL * shadow;;
     }
     /*****************************************************************/
-
     fragColor0 = finalColor; //mix(vec3(1.0), finalColor, 0.998);
 }
