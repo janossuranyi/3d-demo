@@ -44,6 +44,7 @@ namespace jsr {
 		RenderWorld* world;
 		bool	threaded;
 		int		lastNumDrawSurf;
+		int		lastNumDrawShadowSurf;
 
 		float bloomParams2_y{ 0.0f };
 	};

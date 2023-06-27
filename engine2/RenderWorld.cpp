@@ -847,8 +847,14 @@ namespace jsr {
 							drawSurf->highFreqFrag[stage] = vc.AllocTransientUniform(&fastfrag, sizeof(fastfrag));
 						}
 					}
-
 					view->numDrawSurfs++;
+					if (!shadowOnly) {
+						view->numDrawSurfsNotLight++;
+					}
+					else
+					{
+						view->numDrawSurfsShadow++;
+					}
 				}
 			}
 		}

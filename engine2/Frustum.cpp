@@ -17,7 +17,8 @@ namespace jsr {
 		planes[1] = tvp[3] - tvp[0];
 		planes[2] = tvp[3] - tvp[1];
 		planes[3] = tvp[3] + tvp[1];
-		planes[4] = tvp[2];
+		//planes[4] = tvp[2];
+		planes[4] = tvp[3] + tvp[2];
 		planes[5] = tvp[3] - tvp[2];
 
 		for (int i = 0; i < 6; ++i)
@@ -27,14 +28,14 @@ namespace jsr {
 
 		// Reproject the 8 corners of the frustum from NDC to world space.
 		static const std::array<vec4, 8> ndcCorner = {
-			glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),
-			glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),
-			glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
-			glm::vec4(-1.0f,  1.0f, 1.0f, 1.0f),
-			glm::vec4(1.0f, -1.0f, 0.0f, 1.0f),
-			glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),
-			glm::vec4(1.0f,  1.0f, 0.0f, 1.0f),
-			glm::vec4(1.0f,  1.0f, 1.0f, 1.0f) };
+			glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),
+			glm::vec4(-1.0f, -1.0f,  1.0f, 1.0f),
+			glm::vec4(-1.0f,  1.0f, -1.0f, 1.0f),
+			glm::vec4(-1.0f,  1.0f,  1.0f, 1.0f),
+			glm::vec4( 1.0f, -1.0f, -1.0f, 1.0f),
+			glm::vec4( 1.0f, -1.0f,  1.0f, 1.0f),
+			glm::vec4( 1.0f,  1.0f, -1.0f, 1.0f),
+			glm::vec4( 1.0f,  1.0f,  1.0f, 1.0f) };
 
 		for (int i = 0; i < 8; ++i) {
 			const vec4 corn = ivp * ndcCorner[i];

@@ -224,6 +224,8 @@ namespace jsr {
 		RenderWorld*	renderWorld;
 		const drawSurf_t**	drawSurfs;
 		int				numDrawSurfs;
+		int				numDrawSurfsNotLight;
+		int				numDrawSurfsShadow;
 		viewEntity_t*	viewEntites;
 		viewLight_t*	viewLights;
 		viewLight_t*	viewSunLight;

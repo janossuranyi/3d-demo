@@ -15,8 +15,16 @@ namespace jsr {
 		{"depth_only",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
 		{"texture_equirect",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
 		{"deferred_gbuffer_mr",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
-		{"deferred_light",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {{"LIGHT_SPOT_POINT","1"}} },
-		{"deferred_dir_light",		SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {{"LIGHT_DIRECTIONAL","1"}} },
+		{"deferred_light",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, 
+			{
+				{"LIGHT_SPOT_POINT","1"}
+			} 
+		},
+		{"deferred_light",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM,
+			{
+				{"LIGHT_DIR","1"}
+			}
+		},
 		{"pp_hdr2ldr",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
 		{"color",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
 		{"fxaa3",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
@@ -103,7 +111,7 @@ namespace jsr {
 		return true;
 	}
 
-	static GLuint R_CreateShader(GLenum stage, const char* name, const std::unordered_map<std::string,std::string> defines)
+	static GLuint R_CreateShader(GLenum stage, const char* name, const std::unordered_map<std::string,std::string>& defines)
 	{
 		std::string r_name{ name };
 
@@ -128,6 +136,7 @@ namespace jsr {
 
 		auto source = resourceManager->GetShaderSourceWithVersionAndDefs("shaders/builtin/" + r_name, defines);
 		const char* pStr = source.c_str();
+
 		GL_CHECK(glShaderSource(modul, 1, &pStr, nullptr));
 		if (R_CompileShader(modul, "ST:" + GL_map_shader_to_str(stage) + "; " + std::string(name)))
 		{

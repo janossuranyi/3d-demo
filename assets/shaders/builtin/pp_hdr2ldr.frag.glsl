@@ -22,5 +22,5 @@ void main()
     color += bloom * g_freqLowFrag.bloomParams.y;
     color *= gExposure;
 
-    fragColor0 = tonemap_filmic( color );
+    fragColor0 = tonemap_Reinhard( color );
 }

@@ -105,19 +105,23 @@ void main()
         inputs.normal           = NormalOctDecode( texture( tNormal, texCoord ).xy, false );
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
+        inputs.lightColor       = g_lightData.lightColor.rgb * g_lightData.lightColor.w;
+#ifdef LIGHT_DIR        
         inputs.occlusion        = texture(tAO, texCoord).x;
         inputs.occlusion        = g_backendData.params[0].x == 1.0 ? inputs.occlusion : 1.0;
-        inputs.lightPos         = g_lightData.lightOrigin.xyz;
-        inputs.lightColor       = g_lightData.lightColor.rgb * g_lightData.lightColor.w;
-
-        vec3 viewRay = vec3(In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance);
+        inputs.lightDir         = g_lightData.lightOrigin.xyz;
+        inputs.fragPosVS        = reconstructPositionVS( In.positionVS.xyz, texCoord );
+#else
+        vec3 viewRay = vec3( In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance );
         float nDepth = -1.0 * texture( tFragPosZ, texCoord ).x;
-        inputs.fragPosVS        = vec4(viewRay * nDepth, 1.0);
-        //inputs.fragPosVS        = reconstructPositionVS( In.positionVS.xyz, texCoord );
+        inputs.fragPosVS        = vec4( viewRay * nDepth, 1.0 );
+        inputs.lightPos         = g_lightData.lightOrigin.xyz;
+#endif
+
     }
     /*********************** Lighting  ****************************/
     inputs.viewDir = normalize(/*g_freqLowFrag.viewOrigin.xyz*/ - inputs.fragPosVS.xyz);
-    
+#ifdef LIGHT_SPOT_POINT
     {
         vec3 L = inputs.lightPos - inputs.fragPosVS.xyz;
         float d = length(L);
@@ -127,7 +131,9 @@ void main()
         inputs.attenuation = max( min( 1.0 - Kr, 1.0 ), 0.0 ) / ( 1.0 + gLinearAttnFactor * d + gQuadraticAttnFactor * d*d);
         inputs.lightDir = L / d;
     }
+#endif
     {
+#ifdef LIGHT_SPOT_POINT
         if (gSpotLight > 0.0)
         {
             // spotlight
@@ -140,7 +146,7 @@ void main()
             }
             inputs.attenuation *= spotAttenuation;
         }
-
+#endif
         vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.y );
         vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.x);
         vec3 F = spec.rgb;
@@ -156,6 +162,8 @@ void main()
             shadow = 1.0 - (gShadowScale * ShadowCalc(fragPosLight, NdotL));
             // inputs.lightColor *= texture(lightMap, 1.0-coords).rgb;
         }
+
+#ifdef LIGHT_SPOT_POINT
         vec3 light =
             inputs.lightColor 
             * inputs.attenuation 
@@ -163,8 +171,21 @@ void main()
             * shadow;
 
         finalColor = light * (Kd * inputs.sampleAmbient.xyz + F * Ks);
+#else
+        vec3 ambient =
+            inputs.sampleAmbient.xyz
+            * g_freqLowFrag.ambientColor.xyz
+            * g_freqLowFrag.ambientColor.w;
+
+        vec3 light =
+            inputs.lightColor 
+            * NdotL 
+            * shadow;
+
+        finalColor = ambient * inputs.occlusion + (light * (Kd * inputs.sampleAmbient.xyz + F * Ks));
+#endif
         //finalColor = vec3(Ks) * inputs.lightColor * inputs.attenuation * NdotL * shadow;;
     }
     /*****************************************************************/
-    fragColor0 = finalColor; //mix(vec3(1.0), finalColor, 0.998);
+    fragColor0 = finalColor;
 }

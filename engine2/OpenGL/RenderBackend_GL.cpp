@@ -701,16 +701,18 @@ namespace jsr {
 		renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
 
 		IndexBuffer idx;
-		renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx);
-		const GLenum mode = surf->frontEndGeo ? GL_map_topology(surf->frontEndGeo->topology) : GL_TRIANGLES;
-		GL_CHECK(glDrawElements(
-			mode,
-			surf->numIndex,
-			GL_UNSIGNED_SHORT,
-			(void*)idx.GetOffset()));
-		
-		perfCounters.drawElements++;
-		perfCounters.drawIndexes += surf->numIndex;
+		if (renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx))
+		{
+			const GLenum mode = surf->frontEndGeo ? GL_map_topology(surf->frontEndGeo->topology) : GL_TRIANGLES;
+			GL_CHECK(glDrawElements(
+				mode,
+				surf->numIndex,
+				GL_UNSIGNED_SHORT,
+				(void*)idx.GetOffset()));
+
+			perfCounters.drawElements++;
+			perfCounters.drawIndexes += surf->numIndex;
+		}
 	}
 	void RenderBackend::RenderDepthPass()
 	{
