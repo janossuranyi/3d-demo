@@ -106,7 +106,7 @@ void main()
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
         inputs.lightColor       = g_lightData.lightColor.rgb * g_lightData.lightColor.w;
-#ifdef LIGHT_DIR        
+#ifdef LIGHT_DIR
         inputs.occlusion        = texture(tAO, texCoord).x;
         inputs.occlusion        = g_backendData.params[0].x == 1.0 ? inputs.occlusion : 1.0;
         inputs.lightDir         = g_lightData.lightOrigin.xyz;
@@ -121,6 +121,7 @@ void main()
     }
     /*********************** Lighting  ****************************/
     inputs.viewDir = normalize(/*g_freqLowFrag.viewOrigin.xyz*/ - inputs.fragPosVS.xyz);
+    
 #ifdef LIGHT_SPOT_POINT
     {
         vec3 L = inputs.lightPos - inputs.fragPosVS.xyz;
