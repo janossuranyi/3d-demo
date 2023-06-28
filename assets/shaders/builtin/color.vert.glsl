@@ -11,6 +11,6 @@ out INTERFACE
 
 void main()
 {
-    gl_Position = g_freqHighVert.WVPMatrix * in_Position;
+    gl_Position = VS_DrawParams.WVPMatrix * in_Position;
     Out.color = in_Color;
 }

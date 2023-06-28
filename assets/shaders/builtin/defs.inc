@@ -1,10 +1,10 @@
-#define UBB_FREQ_LOW_VERT	0
-#define UBB_FREQ_HIGH_VERT	1
-#define UBB_FREQ_LOW_FRAG	2
-#define UBB_FREQ_HIGH_FRAG	3
+#define UBB_VS_VIEW_PARAMS	0
+#define UBB_VS_DRAW_PARAMS	1
+#define UBB_FS_VIEW_PARAMS	2
+#define UBB_FS_DRAW_PARAMS	3
 #define UBB_LIGHT_DATA      4
 #define UBB_COMMON_DATA     5
-#define UBB_BACKEND_DATA    6
+#define UBB_SHARED_DATA     6
 
 #define	IMU_DIFFUSE 0
 #define	IMU_NORMAL 1

@@ -7,5 +7,5 @@ layout(location = 0) in vec4 in_Position;
 void main()
 {
     vec4 positionVS = gViewMatrix * gModelMatrix * in_Position;
-    gl_Position =  g_lightData.lightProjMatrix * positionVS;
+    gl_Position =  g_lightData.projectMatrix * positionVS;
 }

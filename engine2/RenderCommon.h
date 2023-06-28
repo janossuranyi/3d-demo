@@ -169,7 +169,7 @@ namespace jsr {
 		glm::mat4		modelViewMatrix;	// local coords to eye coords
 		glm::mat4		mvp;
 		drawSurf_t*		surf;
-		vertCacheHandle_t highFreqVert;
+		vertCacheHandle_t VS_DrawParams;
 		bool			shadowOnly;
 	};
 
@@ -180,7 +180,7 @@ namespace jsr {
 		int					numIndex;
 		vertCacheHandle_t	indexCache;
 		vertCacheHandle_t	vertexCache;
-		vertCacheHandle_t	highFreqFrag[STAGE_COUNT];
+		vertCacheHandle_t	FS_DrawParams[STAGE_COUNT];
 		const viewEntity_t* space;
 		const Material*		shader;
 		const drawSurf_t*	next;
@@ -204,7 +204,7 @@ namespace jsr {
 		float				coneAngle;
 		eShaderProg			shader;
 		eLightType			type;
-		vertCacheHandle_t	highFreqVert;
+		vertCacheHandle_t	VS_DrawParams;
 		vertCacheHandle_t	lightData;
 		Frustum				frustum;
 		bool				remove;
@@ -233,8 +233,8 @@ namespace jsr {
 		float			exposure;
 		float			farClipDistance;
 		float			nearClipDistance;
-		vertCacheHandle_t freqLowVert;
-		vertCacheHandle_t freqLowFrag;
+		vertCacheHandle_t VS_ViewParams;
+		vertCacheHandle_t FS_ViewParams;
 	};
 
 }

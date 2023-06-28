@@ -6,7 +6,7 @@ layout(binding = UBB_COMMON_DATA) uniform uboCommonData
     vec4 ssaoKernel[ SSAO_KERNEL_SAMPLES ];
 } g_commonData;
 
-layout(binding = UBB_BACKEND_DATA) uniform uboBackendData
+layout(binding = UBB_SHARED_DATA) uniform uboSharedData
 {
     vec4 params[8];
-} g_backendData;
+} g_sharedData;

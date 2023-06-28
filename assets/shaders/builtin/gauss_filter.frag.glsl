@@ -9,7 +9,7 @@ const int M = 8;
 
 in vec2 texCoord;
 
-#define vDirection g_backendData.params[0]
+#define vDirection g_sharedData.params[0]
 
 void main()
 { 

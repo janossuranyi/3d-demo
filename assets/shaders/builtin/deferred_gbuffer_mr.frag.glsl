@@ -50,7 +50,7 @@ void main()
         vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);
         inputs.tbn              = mat3(localTangent,derivedBitangent,localNormal);
         inputs.normal           = inputs.tbn * normalTS;
-        inputs.sampleAmbient    = g_freqHighFrag.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
+        inputs.sampleAmbient    = FS_DrawParams.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
     }
 
 

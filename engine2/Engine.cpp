@@ -330,8 +330,8 @@ namespace jsr {
 		renderSystem.backend->GetScreenSize(x, y);
 		float fx = float(x), fy = float(y);
 
-		alignas(16) uboFreqLowVert_t vertUbo{};
-		alignas(16) uboFreqLowFrag_t fragUbo{};
+		alignas(16) uboVSViewParams_t vertUbo{};
+		alignas(16) uboFSViewParams_t fragUbo{};
 		alignas(16) uboLightData_t sunLight {};
 
 		//const float R = world->GetBounds().GetRadius() * 4.0f;
@@ -367,9 +367,9 @@ namespace jsr {
 		view->viewSunLight->color = vec4(1.0f, 0.0f, 1.0f, 0.1f);
 		view->viewSunLight->type = LIGHT_DIRECTED;
 		//mat4 sunOrtho = glm::ortho()
-		sunLight.lightColor = view->viewSunLight->color;
-		sunLight.lightOrigin = vec4(view->viewSunLight->origin,0.0f);
-		sunLight.lightProjMatrix = mat4(1.0f);
+		sunLight.color = view->viewSunLight->color;
+		sunLight.origin = vec4(view->viewSunLight->origin,0.0f);
+		sunLight.projectMatrix = mat4(1.0f);
 		sunLight.shadowparams = vec4(0.f);
 		view->viewSunLight->lightData = renderSystem.vertexCache->AllocTransientUniform(&sunLight, sizeof(sunLight));
 
@@ -392,8 +392,8 @@ namespace jsr {
 		fragUbo.bloomParams2.x = 0.4f;
 		fragUbo.bloomParams2.y = bloomParams2_y;
 
-		view->freqLowVert = renderSystem.vertexCache->AllocTransientUniform(&vertUbo, sizeof(vertUbo));
-		view->freqLowFrag = renderSystem.vertexCache->AllocTransientUniform(&fragUbo, sizeof(fragUbo));		
+		view->VS_ViewParams = renderSystem.vertexCache->AllocTransientUniform(&vertUbo, sizeof(vertUbo));
+		view->FS_ViewParams = renderSystem.vertexCache->AllocTransientUniform(&fragUbo, sizeof(fragUbo));		
 
 		world->RenderView(view);
 		lastNumDrawSurf = view->numDrawSurfsNotLight;

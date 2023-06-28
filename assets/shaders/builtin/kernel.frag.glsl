@@ -6,9 +6,9 @@ in vec2 texCoord;
 out vec4 fragColor0;
 
 uniform sampler2D tInput;
-#define g_XOffset g_backendData.params[0].x
-#define g_YOffset g_backendData.params[0].y
-#define g_iKernel g_backendData.params[0].z
+#define g_XOffset g_sharedData.params[0].x
+#define g_YOffset g_sharedData.params[0].y
+#define g_iKernel g_sharedData.params[0].z
 
 #define KERNEL_BLUR 0
 #define KERNEL_BOTTOM_SOBEL 1

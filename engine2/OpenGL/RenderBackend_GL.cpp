@@ -534,8 +534,8 @@ namespace jsr {
 		mat4 lightViewProj = lightProj * lightView;
 		**/
 
-		renderSystem.programManager->BindUniformBlock(UBB_FREQ_LOW_VERT, view->freqLowVert);
-		renderSystem.programManager->BindUniformBlock(UBB_FREQ_LOW_FRAG, view->freqLowFrag);
+		renderSystem.programManager->BindUniformBlock(UBB_VS_VIEW_PARAMS, view->VS_ViewParams);
+		renderSystem.programManager->BindUniformBlock(UBB_FS_VIEW_PARAMS, view->FS_ViewParams);
 #if 0
 		float bw = (float)x / renderGlobals.bloomDownsampleLevel;
 		float bh = (float)y / renderGlobals.bloomDownsampleLevel;
@@ -743,7 +743,7 @@ namespace jsr {
 
 			SetCullMode(stage.cullMode);
 
-			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
+			renderSystem.programManager->BindUniformBlock(UBB_VS_DRAW_PARAMS, surf->space->VS_DrawParams);
 
 			R_DrawSurf(surf);
 		}
@@ -787,7 +787,7 @@ namespace jsr {
 				|| stage.images[IMU_EMMISIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
 				**/
 
-			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
+			renderSystem.programManager->BindUniformBlock(UBB_VS_DRAW_PARAMS, surf->space->VS_DrawParams);
 			R_DrawSurf(surf);
 		}
 
@@ -847,8 +847,8 @@ namespace jsr {
 				}
 				SetCullMode(stage.cullMode);
 
-				renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
-				renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, surf->highFreqFrag[ACTIVE_STAGE]);
+				renderSystem.programManager->BindUniformBlock(UBB_VS_DRAW_PARAMS, surf->space->VS_DrawParams);
+				renderSystem.programManager->BindUniformBlock(UBB_FS_DRAW_PARAMS, surf->FS_DrawParams[ACTIVE_STAGE]);
 
 				R_DrawSurf(surf);
 			}
@@ -933,7 +933,7 @@ namespace jsr {
 		// render sun & AO
 		
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_DIR_LIGHT);
-		renderSystem.programManager->g_backendData.params[0].x = engineConfig.r_ssao ? 1.0f : 0.0f;
+		renderSystem.programManager->g_sharedData.params[0].x = engineConfig.r_ssao ? 1.0f : 0.0f;
 		renderSystem.programManager->UpdateBackendUniform();
 		SetCullMode(CULL_NONE);
 		SetStencilState(stencilSt);
@@ -956,7 +956,7 @@ namespace jsr {
 				renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 			}
 #endif
-			renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, light->highFreqVert);
+			renderSystem.programManager->BindUniformBlock(UBB_VS_DRAW_PARAMS, light->VS_DrawParams);
 
 			SetCullMode(CULL_FRONT);
 			stencilSt.mask = 0xff;
@@ -1072,8 +1072,8 @@ namespace jsr {
 				stage.images[IMU_EMMISIVE]->Bind();
 				SetCullMode(stage.cullMode);
 
-				renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_VERT, surf->space->highFreqVert);
-				renderSystem.programManager->BindUniformBlock(UBB_FREQ_HIGH_FRAG, surf->highFreqFrag[ACTIVE_STAGE]);
+				renderSystem.programManager->BindUniformBlock(UBB_VS_DRAW_PARAMS, surf->space->VS_DrawParams);
+				renderSystem.programManager->BindUniformBlock(UBB_FS_DRAW_PARAMS, surf->FS_DrawParams[ACTIVE_STAGE]);
 
 				R_DrawSurf(surf);
 			}
@@ -1171,8 +1171,8 @@ namespace jsr {
 
 		for (int i = 0; i < 2; ++i)
 		{
-			pm->g_backendData.params[0].x = 1.0f;
-			pm->g_backendData.params[0].y = 0.0f;
+			pm->g_sharedData.params[0].x = 1.0f;
+			pm->g_sharedData.params[0].y = 0.0f;
 			globalFramebuffers.blurFBO[0]->Bind();
 			if (i == 0)
 			{
@@ -1190,8 +1190,8 @@ namespace jsr {
 			globalFramebuffers.blurFBO[1]->Bind();
 			globalImages.HDRblur[0]->Bind();
 
-			pm->g_backendData.params[0].x = 0.0f;
-			pm->g_backendData.params[0].y = 1.0f;
+			pm->g_sharedData.params[0].x = 0.0f;
+			pm->g_sharedData.params[0].y = 1.0f;
 			pm->UpdateBackendUniform();
 
 			R_DrawSurf(&unitRectSurface);
@@ -1228,10 +1228,10 @@ namespace jsr {
 		auto* pm = renderSystem.programManager;
 		globalFramebuffers.ssaoFBO->Bind();
 		pm->UseProgram(PRG_SSAO_GEN);
-		pm->g_backendData.params[0] = { float(hw),float(hh),1.0f / hw,1.0f / hh };
-		pm->g_backendData.params[1].x = engineConfig.r_ssao_radius;
-		pm->g_backendData.params[1].y = engineConfig.r_ssao_bias;
-		pm->g_backendData.params[1].z = engineConfig.r_ssao_str;
+		pm->g_sharedData.params[0] = { float(hw),float(hh),1.0f / hw,1.0f / hh };
+		pm->g_sharedData.params[1].x = engineConfig.r_ssao_radius;
+		pm->g_sharedData.params[1].y = engineConfig.r_ssao_bias;
+		pm->g_sharedData.params[1].z = engineConfig.r_ssao_str;
 		pm->UpdateBackendUniform();
 		R_DrawSurf(&unitRectSurface);
 #if 0
@@ -1251,8 +1251,8 @@ namespace jsr {
 
 #else
 		pm->UseProgram(PRG_GAUSS_FILTER);
-		pm->g_backendData.params[0].x = 0.0f;
-		pm->g_backendData.params[0].y = 1.0f;
+		pm->g_sharedData.params[0].x = 0.0f;
+		pm->g_sharedData.params[0].y = 1.0f;
 		pm->UpdateBackendUniform();
 		SetCurrentTextureUnit(0);
 		globalFramebuffers.ssaoblurFBO[0]->Bind();
@@ -1261,8 +1261,8 @@ namespace jsr {
 
 		globalFramebuffers.ssaoblurFBO[1]->Bind();
 		globalImages.ssaoblur[0]->Bind();
-		pm->g_backendData.params[0].x = 1.0f;
-		pm->g_backendData.params[0].y = 0.0f;
+		pm->g_sharedData.params[0].x = 1.0f;
+		pm->g_sharedData.params[0].y = 0.0f;
 		pm->UpdateBackendUniform();
 		R_DrawSurf(&unitRectSurface);
 #endif

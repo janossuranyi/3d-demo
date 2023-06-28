@@ -30,7 +30,9 @@ layout(binding = IMU_NORMAL)    uniform sampler2D tNormal;
 layout(binding = IMU_AORM)      uniform sampler2D tAORM;
 layout(binding = IMU_FRAGPOS)   uniform sampler2D tFragPosZ;
 layout(binding = IMU_SHADOW)    uniform sampler2DShadow tShadow;
+#   ifdef LIGHT_DIR
 layout(binding = IMU_DEFAULT)   uniform sampler2D tAO;
+#   endif
 
 float ApproxPow ( float fBase, float fPower ) {
 	return asfloat( uint( fPower * float( asuint( fBase ) ) - ( fPower - 1 ) * 127 * ( 1 << 23 ) ) );
@@ -101,26 +103,26 @@ void main()
     vec3 finalColor = vec3(0.0);
     lightinginput_t inputs;    
     {
-        vec2 texCoord           = gl_FragCoord.xy * g_freqLowFrag.screenSize.zw;
+        vec2 texCoord           = gl_FragCoord.xy * FS_ViewParams.screenSize.zw;
         inputs.normal           = NormalOctDecode( texture( tNormal, texCoord ).xy, false );
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
-        inputs.lightColor       = g_lightData.lightColor.rgb * g_lightData.lightColor.w;
+        inputs.lightColor       = g_lightData.color.rgb * g_lightData.color.w;
 #ifdef LIGHT_DIR
         inputs.occlusion        = texture(tAO, texCoord).x;
-        inputs.occlusion        = g_backendData.params[0].x == 1.0 ? inputs.occlusion : 1.0;
-        inputs.lightDir         = g_lightData.lightOrigin.xyz;
+        inputs.occlusion        = g_sharedData.params[0].x == 1.0 ? inputs.occlusion : 1.0;
+        inputs.lightDir         = g_lightData.origin.xyz;
         inputs.fragPosVS        = reconstructPositionVS( In.positionVS.xyz, texCoord );
 #else
         vec3 viewRay = vec3( In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance );
         float nDepth = -1.0 * texture( tFragPosZ, texCoord ).x;
         inputs.fragPosVS        = vec4( viewRay * nDepth, 1.0 );
-        inputs.lightPos         = g_lightData.lightOrigin.xyz;
+        inputs.lightPos         = g_lightData.origin.xyz;
 #endif
 
     }
     /*********************** Lighting  ****************************/
-    inputs.viewDir = normalize(/*g_freqLowFrag.viewOrigin.xyz*/ - inputs.fragPosVS.xyz);
+    inputs.viewDir = normalize(/*FS_ViewParams.viewOrigin.xyz*/ - inputs.fragPosVS.xyz);
     
 #ifdef LIGHT_SPOT_POINT
     {
@@ -139,7 +141,7 @@ void main()
         {
             // spotlight
             float spotAttenuation = 0.0;
-            float spotDdotL = saturate(dot (-inputs.lightDir, g_lightData.spotDirection.xyz));
+            float spotDdotL = saturate(dot (-inputs.lightDir, g_lightData.direction.xyz));
             if (spotDdotL >= gSpotCosCutoff)
             {
                 float spotValue = smoothstep(gSpotCosCutoff, gSpotCosInnerCutoff, spotDdotL);
@@ -159,7 +161,7 @@ void main()
 
         if (gShadowScale > 0.0)
         {
-            vec4 fragPosLight = g_lightData.lightProjMatrix * inputs.fragPosVS;
+            vec4 fragPosLight = g_lightData.projectMatrix * inputs.fragPosVS;
             shadow = 1.0 - (gShadowScale * ShadowCalc(fragPosLight, NdotL));
             // inputs.lightColor *= texture(lightMap, 1.0-coords).rgb;
         }
@@ -175,8 +177,8 @@ void main()
 #else
         vec3 ambient =
             inputs.sampleAmbient.xyz
-            * g_freqLowFrag.ambientColor.xyz
-            * g_freqLowFrag.ambientColor.w;
+            * FS_ViewParams.ambientColor.xyz
+            * FS_ViewParams.ambientColor.w;
 
         vec3 light =
             inputs.lightColor 

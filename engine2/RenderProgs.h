@@ -30,13 +30,13 @@ namespace jsr {
 
 	enum eUboBufferBinding
 	{
-		UBB_FREQ_LOW_VERT,
-		UBB_FREQ_HIGH_VERT,
-		UBB_FREQ_LOW_FRAG,
-		UBB_FREQ_HIGH_FRAG,
+		UBB_VS_VIEW_PARAMS,
+		UBB_VS_DRAW_PARAMS,
+		UBB_FS_VIEW_PARAMS,
+		UBB_FS_DRAW_PARAMS,
 		UBB_LIGHT_DATA,
 		UBB_COMMON_DATA,
-		UBB_BACKEND_DATA
+		UBB_SHARED_DATA
 	};
 
 	struct uboCommonData_t
@@ -47,33 +47,33 @@ namespace jsr {
 		glm::vec4 ssaoKernel[ SSAO_KERNEL_SAMPLES ];
 	};
 
-	struct uboBackendData_t
+	struct uboSharedData_t
 	{
 		glm::vec4 params[8];
 	};
 
 	struct uboLightData_t
 	{
-		glm::mat4 lightProjMatrix;
+		glm::mat4 projectMatrix;
 		glm::vec4 shadowparams;
-		glm::vec4 lightOrigin;
-		glm::vec4 lightColor;
-		glm::vec4 lightAttenuation;
+		glm::vec4 origin;
+		glm::vec4 direction;
+		glm::vec4 color;
+		glm::vec4 attenuation;
 		// spotLightParams
 		// x = spotCosCutoff
 		// y = spotCosInnerCutoff
 		// z = spotExponent
-		glm::vec4 spotLightParams;
-		glm::vec4 spotDirection;
+		glm::vec4 params;
 	};
 
-	struct uboFreqLowVert_t
+	struct uboVSViewParams_t
 	{
 		glm::mat4 viewMatrix;
 		glm::mat4 projectMatrix;
 		glm::mat4 invProjectMatrix;
 	};
-	struct uboFreqHighVert_t 
+	struct uboVSDrawParams_t 
 	{
 		glm::mat4 localToWorldMatrix;
 		glm::mat4 modelViewMatrix;
@@ -81,7 +81,7 @@ namespace jsr {
 		glm::mat4 normalMatrix;
 	};
 
-	struct uboFreqLowFrag_t
+	struct uboFSViewParams_t
 	{
 		glm::mat4 invProjMatrix;
 		glm::mat4 projectMatrix;
@@ -95,7 +95,7 @@ namespace jsr {
 		glm::vec4 bloomParams2;
 	};
 
-	struct uboFreqHighFrag_t 
+	struct uboFSDrawParams_t 
 	{
 		glm::vec4 matDiffuseFactor;
 		glm::vec4 matMRFactor;
@@ -150,7 +150,7 @@ namespace jsr {
 		void BindUniformBlock(eUboBufferBinding binding, vertCacheHandle_t handle);
 
 		uboCommonData_t			g_commonData;
-		uboBackendData_t		g_backendData;
+		uboSharedData_t			g_sharedData;
 	private:
 		unsigned int			currentProgram;
 		bool					initialized;

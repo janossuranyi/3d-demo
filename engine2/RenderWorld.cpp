@@ -786,8 +786,8 @@ namespace jsr {
 		const mat4& viewMatrix = view->renderView.viewMatrix;
 		VertexCache& vc = *renderSystem.vertexCache;
 
-		alignas(16) uboFreqHighVert_t fastvert {};
-		alignas(16) uboFreqHighFrag_t fastfrag {};
+		alignas(16) uboVSDrawParams_t fastvert {};
+		alignas(16) uboFSDrawParams_t fastfrag {};
 
 		mat4 worldMatrix = node->GetLocalToWorldMatrix();
 		// W-V-P -> P-V-W
@@ -811,7 +811,7 @@ namespace jsr {
 			fastvert.modelViewMatrix = modelViewMatrix;
 			fastvert.WVPMatrix = ent->mvp;
 			fastvert.normalMatrix = transpose(inverse(mat3(worldMatrix)));
-			ent->highFreqVert = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
+			ent->VS_DrawParams = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
 
 			for (int entSurf = 0; entSurf < model->GetNumSurface(); ++entSurf)
 			{
@@ -844,7 +844,7 @@ namespace jsr {
 							fastfrag.matMRFactor.x = stageref.roughnessScale;
 							fastfrag.matMRFactor.y = stageref.metallicScale;
 							fastfrag.params.x = uintBitsToFloat(flg_x);
-							drawSurf->highFreqFrag[stage] = vc.AllocTransientUniform(&fastfrag, sizeof(fastfrag));
+							drawSurf->FS_DrawParams[stage] = vc.AllocTransientUniform(&fastfrag, sizeof(fastfrag));
 						}
 					}
 					view->numDrawSurfs++;
@@ -868,7 +868,7 @@ namespace jsr {
 		{
 			return;
 		}
-		alignas(16) uboFreqHighVert_t fastvert {};
+		alignas(16) uboVSDrawParams_t fastvert {};
 		alignas(16) uboLightData_t ubolight {};
 
 		const mat4& viewMatrix = view->renderView.viewMatrix;
@@ -897,23 +897,23 @@ namespace jsr {
 			fastvert.WVPMatrix = view->projectionMatrix * modelViewMatrix;
 			fastvert.modelViewMatrix = modelViewMatrix;
 			fastvert.localToWorldMatrix = worldMatrix;
-			ubolight.lightColor = e->color;
-			ubolight.lightAttenuation = vec4(e->range, light->opts.linearAttn, light->opts.expAttn, 0.0f);
-			ubolight.lightOrigin = { e->origin,1.0f };
+			ubolight.color = e->color;
+			ubolight.attenuation = vec4(e->range, light->opts.linearAttn, light->opts.expAttn, 0.0f);
+			ubolight.origin = { e->origin,1.0f };
 			if (light->GetType() == LIGHT_SPOT)
 			{
-				ubolight.spotLightParams.w = 1.0f;
-				ubolight.spotLightParams.x = cos(light->opts.outerConeAngle);
-				ubolight.spotLightParams.y = cos(light->opts.innerConeAngle);
-				ubolight.spotLightParams.z = 5.0f;
-				ubolight.spotDirection = { e->axis,0.0f };
+				ubolight.params.w = 1.0f;
+				ubolight.params.x = cos(light->opts.outerConeAngle);
+				ubolight.params.y = cos(light->opts.innerConeAngle);
+				ubolight.params.z = 5.0f;
+				ubolight.direction = { e->axis,0.0f };
 				// shadow matrix
 				auto const lightPos = vec3(e->origin);
 				mat4 const lightProj = perspective(light->opts.outerConeAngle * 2.0f, 1.0f, view->nearClipDistance, view->farClipDistance);
 				mat4 const lightView = lookAt(lightPos, lightPos + vec3(e->axis), { 0.0f,1.0f,0.0f });
 
 				e->frustum = Frustum(lightProj);
-				ubolight.lightProjMatrix = lightProj * lightView;
+				ubolight.projectMatrix = lightProj * lightView;
 				ubolight.shadowparams.x = 1.0f / renderGlobals.shadowResolution;
 				ubolight.shadowparams.y = renderGlobals.shadowScale;
 				ubolight.shadowparams.z = renderGlobals.shadowBias;
@@ -923,7 +923,7 @@ namespace jsr {
 				ubolight.shadowparams.y = 0.0f;
 			}
 
-			e->highFreqVert = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
+			e->VS_DrawParams = vc.AllocTransientUniform(&fastvert, sizeof(fastvert));
 			e->lightData = vc.AllocTransientUniform(&ubolight, sizeof(ubolight));
 		}
 	}

@@ -9,7 +9,7 @@ layout(binding = IMU_DEFAULT)   uniform sampler2D tNoise;
 
 out vec4 fragColor0;
 
-const vec2 noiseScale = vec2(g_backendData.params[0].x/4.0, g_backendData.params[0].y/4.0); // screen/2/4
+const vec2 noiseScale = vec2(g_sharedData.params[0].x/4.0, g_sharedData.params[0].y/4.0); // screen/2/4
 
 in INTERFACE
 {
@@ -36,7 +36,7 @@ mat3 buildBasis(vec3 n, vec3 r)
 
 vec2 GetSampleTexCoord(vec3 samplePos)
 {
-    vec4 offset = g_freqLowFrag.projectMatrix * vec4( samplePos, 1.0 );
+    vec4 offset = FS_ViewParams.projectMatrix * vec4( samplePos, 1.0 );
     offset.xyz /= offset.w;
     offset.xyz = offset.xyz * 0.5 + 0.5;
     return offset.xy;
@@ -44,7 +44,7 @@ vec2 GetSampleTexCoord(vec3 samplePos)
 
 void main()
 {
-    vec2 UV = screenPosToTexcoord( gl_FragCoord.xy, g_backendData.params[0] );
+    vec2 UV = screenPosToTexcoord( gl_FragCoord.xy, g_sharedData.params[0] );
 
     vec4 fragPosVS  = reconstructPositionVS( In.positionVS.xyz, UV );
     vec3 normal     = NormalOctDecode( texture( tNormal, UV ).xy, false);
@@ -53,9 +53,9 @@ void main()
     mat3 TBN = buildBasis( normal, randomVec );
 
     float occlusion = 0.0;
-    float radius = g_backendData.params[1].x;
-    float bias = g_backendData.params[1].y;
-    float strength = g_backendData.params[1].z;
+    float radius = g_sharedData.params[1].x;
+    float bias = g_sharedData.params[1].y;
+    float strength = g_sharedData.params[1].z;
     const int kernelSize = g_commonData.ssaoKernel.length();
 
     for(int i = 0; i < kernelSize; ++i)

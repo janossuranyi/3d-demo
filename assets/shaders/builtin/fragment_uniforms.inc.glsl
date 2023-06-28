@@ -6,24 +6,24 @@
 #define FLG_COVERAGE_MASKED 1
 #define FLG_COVERAGE_BLEND 2
 
-#define gEmissiveFactor g_freqHighFrag.matEmissiveFactor.xyz
-#define gEmissiveStrength g_freqHighFrag.matEmissiveFactor.w
-#define gRoughnessFactor g_freqHighFrag.matMRFactor.x
-#define gMetallicFactor g_freqHighFrag.matMRFactor.y
-#define gAlphaCutoff g_freqHighFrag.alphaCutoff.x
+#define gEmissiveFactor FS_DrawParams.matEmissiveFactor.xyz
+#define gEmissiveStrength FS_DrawParams.matEmissiveFactor.w
+#define gRoughnessFactor FS_DrawParams.matMRFactor.x
+#define gMetallicFactor FS_DrawParams.matMRFactor.y
+#define gAlphaCutoff FS_DrawParams.alphaCutoff.x
 
 
-#define gExposure g_freqLowFrag.params.x
-#define gFlagsX g_freqHighFrag.params.x
+#define gExposure FS_ViewParams.params.x
+#define gFlagsX FS_DrawParams.params.x
 
-#define gNearClipDistance g_freqLowFrag.nearFarClip.x
-#define gFarClipDistance g_freqLowFrag.nearFarClip.y
-#define gScreenSize g_freqLowFrag.screenSize.xy
-#define gInvScreenSize g_freqLowFrag.screenSize.zw
-#define gBloomParams g_freqLowFrag.bloomParams
-#define gBloomParams2 g_freqLowFrag.bloomParams2
+#define gNearClipDistance FS_ViewParams.nearFarClip.x
+#define gFarClipDistance FS_ViewParams.nearFarClip.y
+#define gScreenSize FS_ViewParams.screenSize.xy
+#define gInvScreenSize FS_ViewParams.screenSize.zw
+#define gBloomParams FS_ViewParams.bloomParams
+#define gBloomParams2 FS_ViewParams.bloomParams2
 
-layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
+layout(binding = UBB_FS_VIEW_PARAMS, std140) uniform uboFSViewParams
 {
 	mat4 invProjMatrix;
 	mat4 projectMatrix;
@@ -35,13 +35,13 @@ layout(binding = UBB_FREQ_LOW_FRAG, std140) uniform uboFreqLowFrag
 	vec4 ambientColor;
 	vec4 bloomParams;
 	vec4 bloomParams2;
-} g_freqLowFrag;
+} FS_ViewParams;
 
-layout(binding = UBB_FREQ_HIGH_FRAG, std140) uniform uboFreqHighFrag
+layout(binding = UBB_FS_DRAW_PARAMS, std140) uniform uboFSDrawParams
 {
 	vec4 matDiffuseFactor;
 	vec4 matMRFactor;
 	vec4 matEmissiveFactor;
 	vec4 alphaCutoff;
 	vec4 params;
-} g_freqHighFrag;
+} FS_DrawParams;

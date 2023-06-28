@@ -17,7 +17,11 @@ namespace jsr {
 	enum eBufferMapType
 	{
 		BM_READ,
-		BM_WRITE
+		BM_WRITE,
+		BM_READ_WRITE,
+		BM_READ_COHERENT,
+		BM_WRITE_COHERENT,
+		BM_READ_WRITE_COHERENT,
 	};
 
 	enum eBufferUsage

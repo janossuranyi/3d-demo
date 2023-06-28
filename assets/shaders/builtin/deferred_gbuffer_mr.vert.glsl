@@ -27,11 +27,11 @@ void main()
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 
-    Out.positionVS  = vec3(g_freqHighVert.modelViewMatrix * in_Position);
+    Out.positionVS  = vec3(VS_DrawParams.modelViewMatrix * in_Position);
     Out.color       = in_Color;
     Out.normal      = N;
     Out.tangent     = vec4(T, localTangent.w);
     Out.texCoord    = in_TexCoord;
 
-    gl_Position = g_freqHighVert.WVPMatrix * in_Position;
+    gl_Position = VS_DrawParams.WVPMatrix * in_Position;
 }

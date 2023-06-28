@@ -12,5 +12,5 @@ out INTERFACE
 void main()
 {
     Out.texCoord = in_TexCoord;
-    gl_Position = g_freqHighVert.WVPMatrix * in_Position;
+    gl_Position = VS_DrawParams.WVPMatrix * in_Position;
 }
