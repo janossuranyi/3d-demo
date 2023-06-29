@@ -8,6 +8,7 @@
 #include "./Bounds.h"
 #include "./RenderCommon.h"
 #include "./Light.h"
+#include "./TaskExecutor.h"
 
 namespace jsr {
 
@@ -66,7 +67,7 @@ namespace jsr {
 		std::unordered_set<Material*> materials;
 		std::unordered_set<Image*> images;
 		std::unordered_set<RenderModel*> models;
-
+		TaskList frustumCullTaskList;
 		MaterialManager* materialManager;
 		ModelManager*	modelManager;
 		ImageManager*	imageManager;

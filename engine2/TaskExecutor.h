@@ -55,7 +55,7 @@ namespace jsr {
 	class TaskList
 	{
 	public:
-		TaskList(int id, int prio);
+		TaskList(int id, eTaskListPriority prio);
 		~TaskList();
 		void	AddTask(taskfun_t fn, void* data);
 		void	Submit(TaskListExecutor* executor = nullptr);
@@ -119,5 +119,7 @@ namespace jsr {
 		std::atomic_int nextThread;
 		std::vector<TaskListExecutor*> threadPool;
 	};
+
+	extern TaskManager taskManager;
 }
 

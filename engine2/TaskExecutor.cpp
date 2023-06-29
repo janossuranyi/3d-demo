@@ -6,7 +6,9 @@
 
 namespace jsr {
 
-	TaskList::TaskList(int id_, int prio) :
+	TaskManager taskManager;
+
+	TaskList::TaskList(int id_, eTaskListPriority prio) :
 		id(id_),
 		currentTask(0),
 		listLock(0),
@@ -67,6 +69,7 @@ namespace jsr {
 
 	void TaskList::Wait()
 	{
+
 		if (!taskList.empty())
 		{
 			while (taskCount.load(std::memory_order_relaxed) > 0)
@@ -84,7 +87,9 @@ namespace jsr {
 
 			taskList.clear();
 			taskCount = 0;
-		}		
+			currentTask = 0;
+		}
+
 		done = true;
 	}
 
@@ -141,6 +146,7 @@ namespace jsr {
 			*/
 			if (state.nextIndex >= taskList.size())
 			{
+				currentTask.store(0, std::memory_order_relaxed);
 				return result | TASK_DONE;
 			}
 			
@@ -191,7 +197,7 @@ namespace jsr {
 
 		taskList[ writeIndex & (MAX_TASK_NUM - 1) ].taskList = p0;
 		taskList[ writeIndex & (MAX_TASK_NUM - 1) ].version = p0->GetVersion();
-		writeIndex++;
+		++writeIndex;
 	}
 
 	int TaskListExecutor::Run()
@@ -306,6 +312,7 @@ namespace jsr {
 	{
 		return initialized;
 	}
+
 	void TaskManager::Submit(TaskList* taskList, bool threaded)
 	{
 		if (!IsInitalized() || !threaded)

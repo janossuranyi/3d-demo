@@ -57,6 +57,21 @@ namespace jsr {
 		return name;
 	}
 
+	const Bounds& Light::GetBounds() const
+	{
+		return bounds;
+	}
+
+	void Light::SetBounds(const Bounds& b)
+	{
+		bounds = b;
+	}
+
+	void Light::CalcBounds()
+	{
+		SetBounds(Bounds(-glm::vec3(opts.range / 2.0f), glm::vec3(opts.range / 2.0f)));
+	}
+
 	void lightOpts_t::CalculateRange()
 	{
 #if 0

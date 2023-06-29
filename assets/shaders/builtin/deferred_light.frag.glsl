@@ -4,6 +4,8 @@
 @include "light_uniforms.inc.glsl"
 @include "common_uniforms.inc.glsl"
 
+layout(depth_unchanged) out float gl_FragDepth;
+
 out vec3 fragColor0;
 
 in INTERFACE
@@ -42,22 +44,24 @@ vec3 fresnelSchlick ( vec3 f0, float costheta ) {
 	return f0 + ( 1.0 - f0 ) * ApproxPow( saturate( 1.0 - costheta ), 5.0 );
 }
 
-/*******************************************************************************/
-/* Cook-Torrance specular BRDF. Based on https://learnopengl.com/PBR/Lighting   */
-/*******************************************************************************/
+/********************************/
+/* Cook-Torrance specular BRDF. */
+/********************************/
 vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 	const vec3 H = normalize( V + L );
-	float m = roughness*roughness;
+	float m = ( 0.2 + roughness * 0.8 );
 	m *= m;
+	m *= m;
+	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
-	float spec = (NdotH * NdotH) * (m - 1) + 1;
-	spec = m / ( spec * spec + 1e-8 );
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-	float Gv = saturate( dot( N, V ) ) * (1.0 - k) + k;
-	float Gl = saturate( dot( N, L ) ) * (1.0 - k) + k;
+	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
+	spec = m2 / ( spec * spec + 1e-8 );
+	float Gv = saturate( dot( N, V ) ) * (1.0 - m) + m;
+	float Gl = saturate( dot( N, L ) ) * (1.0 - m) + m;
 	spec /= ( 4.0 * Gv * Gl + 1e-8 );
-	return vec4(fresnelSchlick( f0, dot( H, V ) ), spec);
+    vec4 res = vec4( fresnelSchlick( f0, dot( L, H ) ), spec );
+
+	return res;
 }
 
 // Performs shadow calculation with PCF
@@ -73,8 +77,8 @@ float ShadowCalc(vec4 fragPosLightSpace, float NdotL)
     }
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
-    float xOffset = gOneOverShadowRes;
-    float yOffset = gOneOverShadowRes;
+    const float xOffset = gOneOverShadowRes;
+    const float yOffset = gOneOverShadowRes;
     float factor = 0.0;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     // check whether current frag pos is in shadow
@@ -108,23 +112,23 @@ void main()
         inputs.sampleAmbient    = texture( tDiffuse, texCoord );
         inputs.samplePBR        = texture( tAORM, texCoord );
         inputs.lightColor       = g_lightData.color.rgb * g_lightData.color.w;
-#ifdef LIGHT_DIR
+#       ifdef LIGHT_DIR
         inputs.occlusion        = texture(tAO, texCoord).x;
         inputs.occlusion        = g_sharedData.params[0].x == 1.0 ? inputs.occlusion : 1.0;
         inputs.lightDir         = g_lightData.origin.xyz;
         inputs.fragPosVS        = reconstructPositionVS( In.positionVS.xyz, texCoord );
-#else
-        vec3 viewRay = vec3( In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance );
-        float nDepth = -1.0 * texture( tFragPosZ, texCoord ).x;
+#       else
+        vec3 viewRay            = vec3( In.positionVS.xy * (gFarClipDistance / In.positionVS.z), gFarClipDistance );
+        float nDepth            = -texture( tFragPosZ, texCoord ).x;
         inputs.fragPosVS        = vec4( viewRay * nDepth, 1.0 );
         inputs.lightPos         = g_lightData.origin.xyz;
-#endif
+#       endif
 
     }
     /*********************** Lighting  ****************************/
     inputs.viewDir = normalize(/*FS_ViewParams.viewOrigin.xyz*/ - inputs.fragPosVS.xyz);
     
-#ifdef LIGHT_SPOT_POINT
+#   ifdef LIGHT_SPOT_POINT
     {
         vec3 L = inputs.lightPos - inputs.fragPosVS.xyz;
         float d = length(L);
@@ -134,9 +138,9 @@ void main()
         inputs.attenuation = max( min( 1.0 - Kr, 1.0 ), 0.0 ) / ( 1.0 + gLinearAttnFactor * d + gQuadraticAttnFactor * d*d);
         inputs.lightDir = L / d;
     }
-#endif
+#   endif
     {
-#ifdef LIGHT_SPOT_POINT
+#   ifdef LIGHT_SPOT_POINT
         if (gSpotLight > 0.0)
         {
             // spotlight
@@ -149,7 +153,7 @@ void main()
             }
             inputs.attenuation *= spotAttenuation;
         }
-#endif
+#   endif
         vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.y );
         vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.x);
         vec3 F = spec.rgb;
@@ -166,7 +170,7 @@ void main()
             // inputs.lightColor *= texture(lightMap, 1.0-coords).rgb;
         }
 
-#ifdef LIGHT_SPOT_POINT
+#   ifdef LIGHT_SPOT_POINT
         vec3 light =
             inputs.lightColor 
             * inputs.attenuation 
@@ -174,7 +178,7 @@ void main()
             * shadow;
 
         finalColor = light * (Kd * inputs.sampleAmbient.xyz + F * Ks);
-#else
+#   else
         vec3 ambient =
             inputs.sampleAmbient.xyz
             * FS_ViewParams.ambientColor.xyz
@@ -186,7 +190,7 @@ void main()
             * shadow;
 
         finalColor = ambient * inputs.occlusion + (light * (Kd * inputs.sampleAmbient.xyz + F * Ks));
-#endif
+#   endif
         //finalColor = vec3(Ks) * inputs.lightColor * inputs.attenuation * NdotL * shadow;;
     }
     /*****************************************************************/

@@ -12,6 +12,7 @@
 #include "./Math.h"
 #include "./System.h"
 #include "./Node3D.h"
+#include "./TaskExecutor.h"
 
 namespace jsr {
 
@@ -46,6 +47,8 @@ namespace jsr {
 
 	Engine::Engine() : threaded(false), world()
 	{
+		lastNumDrawShadowSurf = 0;
+		lastNumDrawSurf = 0;
 	}
 
 	Engine::~Engine()
@@ -64,8 +67,10 @@ namespace jsr {
 			return false;
 		}
 
+		taskManager.Init();
+		
 		player.Position = glm::vec3(0.f, 0.f, 5.f);
-		player.Front = glm::vec3(0.f, 0.f, -1.f);
+		player.Front = glm::vec3(0.f, -1.f, 0.f);
 
 		if (aThreaded)
 		{
@@ -105,7 +110,7 @@ namespace jsr {
 		time = (float)SDL_GetTicks();
 		player.MovementSpeed = 0.002f;
 		player.MouseSensitivity = 0.1;
-		player.Zoom = 75.0f;
+		player.Zoom = 45.0f;
 		player.ProcessMouseMovement(0.f, 0.f);
 
 		renderSystem.backend->SetClearColor(0.2f, 0.2f, 0.6f, 1.0f);
@@ -320,6 +325,7 @@ namespace jsr {
 		world = nullptr;
 
 		renderSystem.Shutdown();
+		taskManager.Shutdown();
 	}
 
 	void Engine::GameLogic()
@@ -364,7 +370,7 @@ namespace jsr {
 
 		view->viewSunLight->origin = viewMatrix * normalize(vec4(0.0f, 1.0f, 2.0f, 0.0f));
 		view->viewSunLight->shader = PRG_DEFERRED_DIR_LIGHT;
-		view->viewSunLight->color = vec4(1.0f, 0.0f, 1.0f, 0.1f);
+		view->viewSunLight->color = vec4(1.0f, 0.3f, 0.0f, 0.01f);
 		view->viewSunLight->type = LIGHT_DIRECTED;
 		//mat4 sunOrtho = glm::ortho()
 		sunLight.color = view->viewSunLight->color;

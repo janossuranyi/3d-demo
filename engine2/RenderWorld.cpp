@@ -11,6 +11,7 @@
 #include "./Node3D.h"
 #include "./Logger.h"
 #include "./Light.h"
+#include "./TaskExecutor.h"
 
 #define ACCESSOR_PTR(model, accessor) \
 (unsigned char*)(model->buffers[model->bufferViews[accessor.bufferView].buffer].data.data() + \
@@ -24,7 +25,17 @@ namespace jsr {
 
 	const float BLENDER_LIGHT_POWER_FACTOR = 1.0f/100.0f;
 
-	RenderWorld::RenderWorld() : gltf_state()
+	static struct frustumCullJob_t
+	{
+		frustumCullJob_t* next;
+		viewDef_t* view;
+		viewLight_t* light;
+		Node3D* node;
+		bool visible;
+	};
+
+
+	RenderWorld::RenderWorld() : gltf_state(), frustumCullTaskList(100, PRIO_HIGH)
 	{
 		vertexCache = renderSystem.vertexCache;
 		imageManager = renderSystem.imageManager;
@@ -152,6 +163,15 @@ namespace jsr {
 	{
 		bool operator()(const drawSurf_t* a, const drawSurf_t* b) const { return (uint32)a->sort < (uint32)b->sort; }
 	} drawSurfLess;
+	static frustumCullJob_t* RW_AllocFrustumCullJob(viewDef_t* view, Node3D* node)
+	{
+		frustumCullJob_t* j = (frustumCullJob_t*)R_FrameAlloc(sizeof(*j));
+		j->view = view;
+		j->node = node;
+		j->visible = false;
+
+		return j;
+	}
 
 	bool R_NodeLightFrustumTest(const viewLight_t* v_light, Node3D* node, const viewDef_t* view)
 	{
@@ -167,63 +187,111 @@ namespace jsr {
 		return v_light->frustum.Intersects2(bounds);
 	}
 
+	static void frustumCullFn(frustumCullJob_t* j)
+	{
+		if (!j->light)
+		{
+			const auto& viewMatrix = j->view->renderView.viewMatrix;
+			const auto worldMatrix = j->node->GetLocalToWorldMatrix();
+			const auto modelViewMatrix = viewMatrix * worldMatrix;
+
+			if (j->node && j->node->GetEntity().IsModel())
+			{
+				j->visible = j->view->frustum.Intersects2(j->node->GetEntity().GetModel()->GetBounds().Transform(modelViewMatrix));
+			}
+			else if (j->node && j->node->GetEntity().IsLight())
+			{
+				j->visible = j->view->frustum.Intersects2(j->node->GetEntity().GetLight()->GetBounds().Transform(modelViewMatrix));
+			}
+		}
+		else
+		{
+			j->visible = R_NodeLightFrustumTest(j->light, j->node, j->view);
+		}
+	}
+
 	void RenderWorld::AddShadowOnlyEntities(viewLight_t* light, viewDef_t* view)
 	{
+		frustumCullJob_t* fcjs{};
+
 		for (int i = 0; i < rootnodes.size(); ++i)
 		{
 			Node3D* node = nodes[i];
-			if (node->GetEntity().IsLight() || node->viewCount == renderSystem.viewCount)
-			{
-				continue;
-			}
 			int numChildren = node->GetNumChildren();
 			Node3D** children = node->GetChildren();
+
 			for (int k = 0; k < numChildren; ++k)
 			{
-				if (R_NodeLightFrustumTest(light, children[k], view))
+				Node3D* n = children[k];
+				if (!n->GetEntity().IsModel() || n->viewCount == renderSystem.viewCount)
 				{
-					RenderNode(node, view, true);
+					continue;
 				}
+
+				frustumCullJob_t* j = RW_AllocFrustumCullJob(view, n);
+				j->next = fcjs;
+				j->light = light;
+				fcjs = j;
+				frustumCullTaskList.AddTask((taskfun_t)frustumCullFn, j);
 			}
-			if (R_NodeLightFrustumTest(light, node,view))
+
+			if (node->GetEntity().IsModel() && node->viewCount < renderSystem.viewCount)
 			{
-				RenderNode(node, view, true);
+				frustumCullJob_t* j = RW_AllocFrustumCullJob(view, node);
+				j->next = fcjs;
+				j->light = light;
+				fcjs = j;
+
+				frustumCullTaskList.AddTask((taskfun_t)frustumCullFn, j);
 			}
 		}
 
+		taskManager.Submit(&frustumCullTaskList, true);
+		frustumCullTaskList.Wait();
+
+		for (const auto* fcj = fcjs; fcj != nullptr; fcj = fcj->next)
+		{
+			if (!fcj->visible) continue;
+			RenderNode(fcj->node, view, true);
+		}
 	}
 
 	void RenderWorld::RenderView(viewDef_t* view)
 	{
 		using namespace glm;
 
+		frustumCullJob_t* fcjs{};
+
 		for (int i = 0; i < rootnodes.size(); ++i)
 		{
 			Node3D* node = nodes[i];
-			if (node->GetEntity().IsLight())
-			{
-				continue;
-			}
-
 			int numChildren = node->GetNumChildren();
 			Node3D** children = node->GetChildren();
+
 			for (int k = 0; k < numChildren; ++k)
 			{
-				RenderNode(children[k], view);
+				frustumCullJob_t* j = RW_AllocFrustumCullJob(view, children[k]);
+				j->next = fcjs;
+				fcjs = j;
+				frustumCullTaskList.AddTask((taskfun_t)frustumCullFn, j);
 			}
-			RenderNode(node, view);
-		}
-		//Info("visibe surface count: %d", view->numDrawSurfs);
 
-		for (int i = 0; i < rootnodes.size(); ++i)
+			frustumCullJob_t* j = RW_AllocFrustumCullJob(view, node);
+			j->next = fcjs;
+			fcjs = j;
+
+			frustumCullTaskList.AddTask((taskfun_t)frustumCullFn, j);
+		}
+
+		taskManager.Submit(&frustumCullTaskList, true);
+		frustumCullTaskList.Wait();
+
+		for (const auto* fcj = fcjs; fcj != nullptr; fcj = fcj->next)
 		{
-			Node3D* node = nodes[i];
-			if (!node->GetEntity().IsLight())
-			{
-				continue;
-			}
-			// process light
-			RenderLightNode(node, view);
+			if (! fcj->visible ) continue;
+			if ( fcj->node->viewCount >= renderSystem.viewCount ) continue;
+			if ( fcj->node->GetEntity().IsLight() ) RenderLightNode( fcj->node, view );
+			else RenderNode( fcj->node, view );
 		}
 
 		for (auto* light = view->viewLights; light != nullptr; light = light->next)
@@ -599,6 +667,8 @@ namespace jsr {
 				light->opts.CalculateRange();
 			}
 
+			light->CalcBounds();
+
 			if (ltype == LIGHT_SPOT) 
 			{
 				light->opts.outerConeAngle = e.spot.outerConeAngle;
@@ -795,7 +865,7 @@ namespace jsr {
 
 		Bounds entityBounds = node->GetEntity().GetModel()->GetBounds().Transform(modelViewMatrix);
 		if (shadowOnly || view->frustum.Intersects2(entityBounds))
-		{			
+		{
 			node->viewCount = renderSystem.viewCount;
 			viewEntity_t* ent = (viewEntity_t*)R_FrameAlloc(sizeof(*ent));
 			auto* model = node->GetEntity().GetModel();
@@ -878,8 +948,8 @@ namespace jsr {
 		auto const worldMatrix = node->GetLocalToWorldMatrix();
 		auto const origin = worldMatrix[3];
 		auto const modelViewMatrix = viewMatrix * worldMatrix;
-		auto const lightBounds = Bounds(-vec3(light->opts.range / 2.0f), vec3(light->opts.range / 2.0f)).Transform(modelViewMatrix);
-		if (view->frustum.Intersects2(lightBounds))
+		//auto const& lightBounds = light->GetBounds();
+		//if (view->frustum.Intersects2(lightBounds))
 		{
 			auto lightDir = (node->GetDir() * vec4(0.0f, 0.0f, -1.0f, 0.0f));
 			viewLight_t* e = (viewLight_t*)R_FrameAlloc(sizeof(*e));

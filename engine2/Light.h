@@ -69,7 +69,9 @@ namespace jsr {
 		void SetName(const std::string& name);
 		const std::string& GetName() const;
 		inline int GetId() const { return id; }
-
+		const Bounds& GetBounds() const;
+		void SetBounds(const Bounds& b);
+		void CalcBounds();
 		lightOpts_t opts;
 
 	private:
@@ -79,5 +81,6 @@ namespace jsr {
 		eLightType type;
 		Node3D* node;
 		eShaderProg shader;
+		Bounds bounds;
 	};
 }
