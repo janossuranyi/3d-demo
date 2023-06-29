@@ -10,11 +10,11 @@ out INTERFACE
 
 void main()
 {
-#ifdef LIGHT_DIR
+#   ifdef LIGHT_DIR
     gl_Position = in_Position;
     Out.positionVS = VS_ViewParams.invProjectMatrix * in_Position;
-#else    
+#   else    
     gl_Position = VS_DrawParams.WVPMatrix * in_Position;
     Out.positionVS = VS_DrawParams.modelViewMatrix * in_Position;
-#endif
+#   endif
 }
