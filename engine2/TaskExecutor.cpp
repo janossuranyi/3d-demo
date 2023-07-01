@@ -33,13 +33,13 @@ namespace jsr {
 		assert(done);
 		assert(listLock == 0);
 
-		done = false;
-		currentTask = 0;
-
 		if (taskList.empty())
 		{
 			return;
 		}
+
+		done = false;
+		currentTask = 0;
 
 		if (!executor)
 		{
@@ -55,6 +55,17 @@ namespace jsr {
 
 	void TaskList::Submit(TaskListExecutor** pool, int numPool)
 	{
+		assert(done);
+		assert(listLock == 0);
+
+		if (taskList.empty())
+		{
+			return;
+		}
+
+		done = false;
+		currentTask = 0;
+
 		for (int i = 0; i < numPool; ++i)
 		{
 			pool[i]->AddTaskList(this);
@@ -147,6 +158,8 @@ namespace jsr {
 			if (state.nextIndex >= taskList.size())
 			{
 				currentTask.store(0, std::memory_order_relaxed);
+				done = true;
+
 				return result | TASK_DONE;
 			}
 			
@@ -323,17 +336,12 @@ namespace jsr {
 		}
 		else if (taskList->GetPriority() == PRIO_HIGH)
 		{
-			for (auto* t : threadPool)
-			{
-				t->AddTaskList(taskList);
-				t->SignalWork();
-			}
+			taskList->Submit(threadPool.data(), threadPool.size());
 		}
 		else
 		{
 			unsigned int next = (unsigned int)nextThread.fetch_add(1, std::memory_order_relaxed);
-			threadPool[next % threadPool.size()]->AddTaskList(taskList);
-			threadPool[next % threadPool.size()]->SignalWork();
+			taskList->Submit(threadPool[next % threadPool.size()]);
 		}
 	}
 }

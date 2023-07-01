@@ -24,14 +24,14 @@ namespace jsr {
 
 		renderGlobals_t() :
 			shadowResolution(1024),
-			shadowScale(0.6f),
+			shadowScale(0.8f),
 			defaultExpAttn(1.0f),
 			defaultLinearAttn(0.0f),
 			ambientColor(1.0f),
 			ambientScale(.03f),
 			bloomScale(0.6f),
 			bloomDownsampleLevel(2),
-			shadowBias(0.0001f) {}
+			shadowBias(0.00001f) {}
 	};
 
 	struct frameData_t {
