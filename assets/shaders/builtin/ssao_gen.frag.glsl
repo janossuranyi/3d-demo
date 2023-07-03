@@ -9,8 +9,6 @@ layout(binding = IMU_DEFAULT)   uniform sampler2D tNoise;
 
 out vec4 fragColor0;
 
-const vec2 noiseScale = vec2(g_sharedData.params[0].x/4.0, g_sharedData.params[0].y/4.0); // screen/2/4
-
 in INTERFACE
 {
     vec4 positionVS;
@@ -46,6 +44,8 @@ void main()
 {
     vec2 UV = screenPosToTexcoord( gl_FragCoord.xy, g_sharedData.params[0] );
 
+    const vec2 noiseScale = vec2(g_sharedData.params[0].x/g_sharedData.params[1].w, g_sharedData.params[0].y/g_sharedData.params[1].w); // screen/2/4
+    
     vec4 fragPosVS  = reconstructPositionVS( In.positionVS.xyz, UV );
     vec3 normal     = NormalOctDecode( texture( tNormal, UV ).xy, false);
     vec3 randomVec  = texture( tNoise, UV * noiseScale).xyz;

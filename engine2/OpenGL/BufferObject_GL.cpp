@@ -6,6 +6,8 @@
 #include "engine2/BufferObject.h"
 #include "engine2/Logger.h"
 
+#define JSR_GL_IMMUTABLE_STORAGE 1
+
 namespace jsr {
 
 	static const GLenum c_bufferUsageLut[] = { GL_STATIC_DRAW,GL_DYNAMIC_DRAW };
@@ -18,7 +20,7 @@ namespace jsr {
 		GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 	}
 
-	bool BufferObject::AllocBufferObject(const void* data, int size, eBufferUsage usage)
+	bool BufferObject::AllocBufferObject(const void* data, int size, eBufferUsage usage, int mapType)
 	{
 		this->size = size;
 		this->usage = usage;
@@ -34,9 +36,17 @@ namespace jsr {
 			Error("%s::AllocBufferObject: failed !!", c_bufferTargetNames[target]);
 			return false;
 		}
+#if JSR_GL_IMMUTABLE_STORAGE
+		GLbitfield flags = GL_DYNAMIC_STORAGE_BIT;
+		if (mapType & BM_READ)			flags |= GL_MAP_READ_BIT;
+		if (mapType & BM_WRITE)			flags |= GL_MAP_WRITE_BIT;
+		if (mapType & BM_PERSISTENT)	flags |= GL_MAP_PERSISTENT_BIT;
+		if (mapType & BM_COHERENT)		flags |= GL_MAP_COHERENT_BIT;
 
-		//GL_CHECK(glBindBuffer(c_bufferTargetLut[target], apiObject));
-		GL_CHECK(glNamedBufferData(apiObject, numBytes, nullptr, c_bufferUsageLut[usage]));
+		glNamedBufferStorage(apiObject, numBytes, data, flags);
+#else
+		GL_CHECK(glNamedBufferData(apiObject, numBytes, data, c_bufferUsageLut[usage]));
+#endif
 		GLenum err = glGetError();
 		if (err == GL_OUT_OF_MEMORY)
 		{
@@ -44,7 +54,7 @@ namespace jsr {
 			allocationFailed = true;
 		}
 
-		Update(data, 0, numBytes);
+		//Update(data, 0, numBytes);
 
 		return allocationFailed;
 	}
@@ -94,14 +104,22 @@ namespace jsr {
 		}
 	}
 
-	void* BufferObject::MapBuffer(eBufferMapType mapType)
+	void* BufferObject::MapBuffer(int mapType)
 	{
 		assert(apiObject != 0xffff);
 		assert(!IsMapped());
 
 		buffer = NULL;
-		//GL_CHECK(glBindBuffer(c_bufferTargetLut[target], apiObject));
-		if (mapType == BM_READ)
+#if JSR_GL_IMMUTABLE_STORAGE
+		GLbitfield flags{};
+		if (mapType & BM_READ)			flags |= GL_MAP_READ_BIT;
+		if (mapType & BM_WRITE)			flags |= GL_MAP_WRITE_BIT;
+		if (mapType & BM_PERSISTENT)	flags |= GL_MAP_PERSISTENT_BIT;
+		if (mapType & BM_COHERENT)		flags |= GL_MAP_COHERENT_BIT;
+
+		GL_CHECK(buffer = glMapNamedBufferRange(apiObject, 0, GetAllocedSize(), flags));
+#else
+		if (mapType & BM_READ)
 		{
 			GL_CHECK(buffer = glMapNamedBufferRange(apiObject, 0, GetAllocedSize(), GL_MAP_READ_BIT | GL_MAP_UNSYNCHRONIZED_BIT));
 			if (buffer != NULL)
@@ -121,7 +139,7 @@ namespace jsr {
 		{
 			assert(false);
 		}
-
+#endif
 		if (buffer == NULL)
 		{
 			Error("%s::MapBuffer: failed", c_bufferTargetNames[target]);

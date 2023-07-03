@@ -21,7 +21,7 @@ namespace jsr {
 		float ambientScale;
 		float bloomScale;
 		int bloomDownsampleLevel;
-
+		float ssaoResolutionScale;
 		renderGlobals_t() :
 			shadowResolution(1024),
 			shadowScale(0.8f),
@@ -31,6 +31,7 @@ namespace jsr {
 			ambientScale(.03f),
 			bloomScale(0.6f),
 			bloomDownsampleLevel(2),
+			ssaoResolutionScale(0.5f),
 			shadowBias(0.00001f) {}
 	};
 

@@ -126,8 +126,11 @@ namespace jsr {
 			}
 		}
 
-		opts.sizeX = screen_width / 2;
-		opts.sizeY = screen_height / 2;
+		int ssao_w = int(screen_width * renderGlobals.ssaoResolutionScale);
+		int ssao_h = int(screen_height * renderGlobals.ssaoResolutionScale);
+
+		opts.sizeX = ssao_w;
+		opts.sizeY = ssao_h;
 		opts.format = IMF_R8;
 		opts.usage = IMU_AORM;
 		if (!globalImages.ssaoMap->AllocImage(opts, IFL_NEAREST, IMR_CLAMP_TO_EDGE))
@@ -135,8 +138,8 @@ namespace jsr {
 			Error("[ImageManager]: ssaoMap allocation failed !");
 		}
 
-		opts.sizeX = screen_width / 2;
-		opts.sizeY = screen_height / 2;
+		opts.sizeX = ssao_w;
+		opts.sizeY = ssao_h;
 		opts.format = IMF_R8;
 		opts.usage = IMU_AORM;
 		for (int i = 0; i < 2; ++i)

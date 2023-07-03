@@ -225,7 +225,7 @@ namespace jsr {
 		}		
 	}
 
-	void ProgramManager::UpdateBackendUniform()
+	void ProgramManager::UpdateSharedUniform()
 	{
 		UniformBuffer buf;
 		if (renderSystem.vertexCache->GetUniformBuffer(g_backendData_h, buf))

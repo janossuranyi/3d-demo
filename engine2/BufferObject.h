@@ -16,12 +16,10 @@ namespace jsr {
 
 	enum eBufferMapType
 	{
-		BM_READ,
-		BM_WRITE,
-		BM_READ_WRITE,
-		BM_READ_COHERENT,
-		BM_WRITE_COHERENT,
-		BM_READ_WRITE_COHERENT,
+		BM_READ = 1,
+		BM_WRITE = 2,
+		BM_COHERENT = 4,
+		BM_PERSISTENT = 8
 	};
 
 	enum eBufferUsage
@@ -63,10 +61,10 @@ namespace jsr {
 			return (size + 15) & ~15;
 		}
 	public:
-		bool AllocBufferObject(const void* data, int size, eBufferUsage usage);
+		bool AllocBufferObject(const void* data, int size, eBufferUsage usage, int mapType = BM_READ|BM_WRITE);
 		void FreeBufferObject();
 		void Update(const void* data, int offset, int size);
-		void* MapBuffer(eBufferMapType mapType);
+		void* MapBuffer(int mapType);
 		void UnmapBuffer();
 		void MakeView(const BufferObject& other, int refOffset = 0, int refSize = 0);
 		void Bind();

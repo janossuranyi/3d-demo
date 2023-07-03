@@ -40,12 +40,12 @@ namespace jsr {
 
 		for (int i = 0; i < 2; ++i)
 		{
-			fb = new Framebuffer("hdrBlure_" + std::to_string(i), w / bloomDiv, h / bloomDiv);
+			fb = new Framebuffer("hdrBlur_" + std::to_string(i), w / bloomDiv, h / bloomDiv);
 			fb->Bind();
 			fb->AttachImage2D(globalImages.HDRblur[i], 0);
 			if (!fb->Check())
 			{
-				Error("[Framebuffer]: hdrBlure init failed!");
+				Error("[Framebuffer]: hdrBlur init failed!");
 			}
 			globalFramebuffers.blurFBO[i] = fb;
 		}
@@ -79,7 +79,10 @@ namespace jsr {
 		globalFramebuffers.hdrFBO = fb;
 
 
-		fb = new Framebuffer("ssaoFBO", w/2, h/2);
+		int ssao_w = int(w * renderGlobals.ssaoResolutionScale);
+		int ssao_h = int(h * renderGlobals.ssaoResolutionScale);
+
+		fb = new Framebuffer("ssaoFBO", ssao_w, ssao_h);
 		fb->Bind();
 		fb->AttachImage2D(globalImages.ssaoMap, 0);
 		if (!fb->Check())
@@ -90,7 +93,7 @@ namespace jsr {
 
 		for (int i = 0; i < 2; ++i)
 		{
-			fb = new Framebuffer("ssaoblurFBO_"+std::to_string(i), w / 2, h / 2);
+			fb = new Framebuffer("ssaoblurFBO_"+std::to_string(i), ssao_w, ssao_h);
 			fb->Bind();
 			fb->AttachImage2D(globalImages.ssaoblur[i], 0);
 			if (!fb->Check())

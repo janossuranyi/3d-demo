@@ -934,7 +934,7 @@ namespace jsr {
 		
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_DIR_LIGHT);
 		renderSystem.programManager->g_sharedData.params[0].x = engineConfig.r_ssao ? 1.0f : 0.0f;
-		renderSystem.programManager->UpdateBackendUniform();
+		renderSystem.programManager->UpdateSharedUniform();
 		SetCullMode(CULL_NONE);
 		SetStencilState(stencilSt);
 		SetDepthState({ true, false, CMP_ALWAYS });
@@ -1183,7 +1183,7 @@ namespace jsr {
 				globalImages.HDRblur[1]->Bind();
 			}
 
-			pm->UpdateBackendUniform();
+			pm->UpdateSharedUniform();
 
 			R_DrawSurf(&unitRectSurface);
 
@@ -1192,7 +1192,7 @@ namespace jsr {
 
 			pm->g_sharedData.params[0].x = 0.0f;
 			pm->g_sharedData.params[0].y = 1.0f;
-			pm->UpdateBackendUniform();
+			pm->UpdateSharedUniform();
 
 			R_DrawSurf(&unitRectSurface);
 		}
@@ -1204,8 +1204,9 @@ namespace jsr {
 
 		int w, h;
 		GetScreenSize(w, h);
-		const int hw = w / 2;
-		const int hh = h / 2;
+		const int hw = int(w * renderGlobals.ssaoResolutionScale);
+		const int hh = int(h * renderGlobals.ssaoResolutionScale);
+
 		SetViewport(0, 0, hw, hh);
 
 		auto ds = glcontext.depthState;
@@ -1232,14 +1233,15 @@ namespace jsr {
 		pm->g_sharedData.params[1].x = engineConfig.r_ssao_radius;
 		pm->g_sharedData.params[1].y = engineConfig.r_ssao_bias;
 		pm->g_sharedData.params[1].z = engineConfig.r_ssao_str;
-		pm->UpdateBackendUniform();
+		pm->g_sharedData.params[1].w = 2.0f / renderGlobals.ssaoResolutionScale;
+		pm->UpdateSharedUniform();
 		R_DrawSurf(&unitRectSurface);
 #if 0
 		pm->UseProgram(PRG_KERNEL);
 		pm->g_backendData.params[0].x = 1.0f / float(hw);
 		pm->g_backendData.params[0].y = 1.0f / float(hh);
 		pm->g_backendData.params[0].z = 0.0f;
-		pm->UpdateBackendUniform();
+		pm->UpdateSharedUniform();
 		SetCurrentTextureUnit(0);
 
 		globalFramebuffers.ssaoblurFBO[0]->Bind();
@@ -1253,7 +1255,7 @@ namespace jsr {
 		pm->UseProgram(PRG_GAUSS_FILTER);
 		pm->g_sharedData.params[0].x = 0.0f;
 		pm->g_sharedData.params[0].y = 1.0f;
-		pm->UpdateBackendUniform();
+		pm->UpdateSharedUniform();
 		SetCurrentTextureUnit(0);
 		globalFramebuffers.ssaoblurFBO[0]->Bind();
 		globalImages.ssaoMap->Bind();
@@ -1263,7 +1265,7 @@ namespace jsr {
 		globalImages.ssaoblur[0]->Bind();
 		pm->g_sharedData.params[0].x = 1.0f;
 		pm->g_sharedData.params[0].y = 0.0f;
-		pm->UpdateBackendUniform();
+		pm->UpdateSharedUniform();
 		R_DrawSurf(&unitRectSurface);
 #endif
 	}

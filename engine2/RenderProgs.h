@@ -144,7 +144,7 @@ namespace jsr {
 		void SetUniform(eShaderProg program, const char* name, int num, const glm::vec4* v);
 		void SetCommonUniform(int idx, const glm::vec4& v);
 		void UpdateCommonUniform();
-		void UpdateBackendUniform();
+		void UpdateSharedUniform();
 		void BindCommonUniform();
 		void BindUniformBlock(eUboBufferBinding binding, const UniformBuffer& buffer);
 		void BindUniformBlock(eUboBufferBinding binding, vertCacheHandle_t handle);
