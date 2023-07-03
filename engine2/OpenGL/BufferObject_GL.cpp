@@ -43,7 +43,7 @@ namespace jsr {
 		if (mapType & BM_PERSISTENT)	flags |= GL_MAP_PERSISTENT_BIT;
 		if (mapType & BM_COHERENT)		flags |= GL_MAP_COHERENT_BIT;
 
-		glNamedBufferStorage(apiObject, numBytes, data, flags);
+		GL_CHECK(glNamedBufferStorage(apiObject, numBytes, data, flags));
 #else
 		GL_CHECK(glNamedBufferData(apiObject, numBytes, data, c_bufferUsageLut[usage]));
 #endif
@@ -116,8 +116,8 @@ namespace jsr {
 		if (mapType & BM_WRITE)			flags |= GL_MAP_WRITE_BIT;
 		if (mapType & BM_PERSISTENT)	flags |= GL_MAP_PERSISTENT_BIT;
 		if (mapType & BM_COHERENT)		flags |= GL_MAP_COHERENT_BIT;
-
-		GL_CHECK(buffer = glMapNamedBufferRange(apiObject, 0, GetAllocedSize(), flags));
+		if (mapType & BM_COHERENT)		coherent = true;
+		GL_CHECK(buffer = glMapNamedBufferRange(apiObject, 0, GetAllocedSize(), flags| GL_MAP_UNSYNCHRONIZED_BIT));
 #else
 		if (mapType & BM_READ)
 		{

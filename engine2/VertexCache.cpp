@@ -50,11 +50,18 @@ namespace jsr {
 	{
 		gbs.vertexBuffer.AllocBufferObject(nullptr, vertexSize, usage);
 		gbs.indexBuffer.AllocBufferObject(nullptr, indexSize, usage);
-		gbs.uniformBuffer.AllocBufferObject(nullptr, uboSize, usage);
+		if (usage == BU_STATIC)
+		{
+			gbs.uniformBuffer.AllocBufferObject(nullptr, uboSize, usage, BM_WRITE | BM_PERSISTENT | BM_COHERENT);
+		}
+		else
+		{
+			gbs.uniformBuffer.AllocBufferObject(nullptr, uboSize, usage);
+		}
 		ClearGeoBufferSet(gbs);
 	}
 
-	static void MapBufferSet(geoBufferSet_t& gbs)
+	void VertexCache::MapBufferSet(geoBufferSet_t& gbs)
 	{
 		if (gbs.pVerts == nullptr)
 		{
@@ -64,12 +71,16 @@ namespace jsr {
 		{
 			gbs.pIndexes = (byte*)gbs.indexBuffer.MapBuffer(BM_WRITE);
 		}
-		if (gbs.pUniforms == nullptr)
+		if (/* &gbs == &staticBufferSet && */ gbs.pUniforms == nullptr)
 		{
 			gbs.pUniforms = (byte*)gbs.uniformBuffer.MapBuffer(BM_WRITE);
 		}
+		//else if (gbs.pUniforms == nullptr)
+		//{
+		//	gbs.pUniforms = (byte*)gbs.uniformBuffer.MapBuffer(BM_WRITE);
+		//}
 	}
-	static void UnmapBufferSet(geoBufferSet_t& gbs)
+	void VertexCache::UnmapBufferSet(geoBufferSet_t& gbs)
 	{
 		if (gbs.pVerts != nullptr)
 		{
@@ -81,7 +92,7 @@ namespace jsr {
 			gbs.pIndexes = nullptr;
 			gbs.indexBuffer.UnmapBuffer();
 		}
-		if (gbs.pUniforms != nullptr)
+		if (/* &gbs != &staticBufferSet && */gbs.pUniforms != nullptr)
 		{
 			gbs.pUniforms = nullptr;
 			gbs.uniformBuffer.UnmapBuffer();

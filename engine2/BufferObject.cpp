@@ -13,6 +13,7 @@ namespace jsr {
 		buffer = nullptr;
 		target = BT_NONE;
 		apiObject = 0xffff;
+		coherent = false;
 	}
 
 	VertexBuffer::VertexBuffer() : BufferObject()

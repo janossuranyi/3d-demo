@@ -60,6 +60,10 @@ namespace jsr {
 		{
 			return (size + 15) & ~15;
 		}
+		bool IsCoherent() const
+		{
+			return coherent;
+		}
 	public:
 		bool AllocBufferObject(const void* data, int size, eBufferUsage usage, int mapType = BM_READ|BM_WRITE);
 		void FreeBufferObject();
@@ -81,6 +85,7 @@ namespace jsr {
 		int				size;
 		int				offset;
 		bool			isview;
+		bool			coherent;
 		// OpenGL
 		GLuint			apiObject;
 		void*			buffer;

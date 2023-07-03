@@ -29,9 +29,9 @@ namespace jsr {
 		int					vertexMaxSize;
 		int					indexMaxSize;
 		int					uniformMaxSize;
-		byte* pVerts;
-		byte* pIndexes;
-		byte* pUniforms;
+		byte*				pVerts;
+		byte*				pIndexes;
+		byte*				pUniforms;
 	};
 
 	class VertexCache {
@@ -87,6 +87,8 @@ namespace jsr {
 		bool initialized{};
 		geoBufferSet_t staticBufferSet{};
 		geoBufferSet_t transientBufferSet[JSE_VERTEX_CACHE_FRAMES]{};
+		void MapBufferSet(geoBufferSet_t& gbs);
+		void UnmapBufferSet(geoBufferSet_t& gbs);
 		vertCacheHandle_t RealAlloc(geoBufferSet_t& gbs, const void* data, int size, eCacheType type);
 	};
 }
