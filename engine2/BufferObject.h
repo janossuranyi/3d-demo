@@ -33,6 +33,7 @@ namespace jsr {
 	class BufferObject
 	{
 		friend class VertexCache;
+		friend class RenderBackend;
 	public:
 		BufferObject::BufferObject();
 
@@ -111,6 +112,7 @@ namespace jsr {
 		friend class ProgramManager;
 	public:
 		UniformBuffer();
+		void BindRange(int binding, int offset, int size);
 	};
 
 }

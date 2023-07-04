@@ -52,7 +52,7 @@ namespace jsr {
 		gbs.indexBuffer.AllocBufferObject(nullptr, indexSize, usage);
 		if (usage == BU_STATIC)
 		{
-			gbs.uniformBuffer.AllocBufferObject(nullptr, uboSize, usage, BM_WRITE | BM_PERSISTENT | BM_COHERENT);
+			gbs.uniformBuffer.AllocBufferObject(nullptr, uboSize, usage);
 		}
 		else
 		{

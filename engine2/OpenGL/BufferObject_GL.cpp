@@ -201,5 +201,10 @@ namespace jsr {
 			glcontext.currentIndexBuffer = apiObject;
 		}
 	}
+
+	void UniformBuffer::BindRange(int binding, int offset, int size)
+	{
+		GL_CHECK(glBindBufferRange(GL_UNIFORM_BUFFER, binding, apiObject, offset, size));
+	}
 }
 

@@ -142,21 +142,17 @@ namespace jsr {
 		void SetUniform(eShaderProg program, const char* name, int x);
 		void SetUniform(eShaderProg program, const char* name, const glm::vec2& x);
 		void SetUniform(eShaderProg program, const char* name, int num, const glm::vec4* v);
-		void SetCommonUniform(int idx, const glm::vec4& v);
 		void UpdateCommonUniform();
-		void UpdateSharedUniform();
 		void BindCommonUniform();
 		void BindUniformBlock(eUboBufferBinding binding, const UniformBuffer& buffer);
 		void BindUniformBlock(eUboBufferBinding binding, vertCacheHandle_t handle);
 
 		uboCommonData_t			g_commonData;
-		uboSharedData_t			g_sharedData;
 	private:
 		unsigned int			currentProgram;
 		bool					initialized;
 		static renderProgram_t	builtins[PRG_COUNT];
 		vertCacheHandle_t		g_commonData_h;
-		vertCacheHandle_t		g_backendData_h;
 		bool CreateBuiltinProgram(renderProgram_t& p);
 	};
 

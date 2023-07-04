@@ -126,6 +126,9 @@ namespace jsr {
 		rasterizerState_t rasterizer;
 		stencilState_t	stencilState;
 		glm::uvec4		viewport;
+		UniformBuffer	sharedUbo;
+		int				sharedUboSize;
+		int				sharedUboAlloced;
 	};
 
 	extern glcontext_t glcontext;
@@ -176,6 +179,7 @@ namespace jsr {
 		void		RenderSSAO();
 		void		RenderHDRtoLDR();
 		void		RenderAA();
+		void		AllocSharedUbo(const glm::vec4* data);
 	public:
 		Framebuffer* currentFramebuffer{};
 		drawSurf_t unitRectSurface{};

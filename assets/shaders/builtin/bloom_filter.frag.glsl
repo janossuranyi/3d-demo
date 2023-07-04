@@ -13,7 +13,7 @@ vec4 tex2Dlod( sampler2D image, vec4 texcoord ) { return textureLod( image, texc
 float saturate(float x) { return clamp(x, 0.0, 1.0); }
 vec2 screenPosToTexcoord ( vec2 pos, vec4 bias_scale ) { return ( pos * bias_scale.zw + bias_scale.xy ); }
 
-out vec4 out_FragColor0;
+layout(location = 0) out vec4 out_FragColor0;
 
 void main() 
 {    

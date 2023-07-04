@@ -210,12 +210,6 @@ namespace jsr {
 		}
 	}
 
-	void ProgramManager::SetCommonUniform(int idx, const glm::vec4& v)
-	{
-		assert(idx < 16);
-		g_sharedData.params[idx] = v;
-	}
-
 	void ProgramManager::UpdateCommonUniform()
 	{
 		UniformBuffer buf;
@@ -223,15 +217,6 @@ namespace jsr {
 		{
 			buf.Update(&g_commonData, 0, sizeof(g_commonData));
 		}		
-	}
-
-	void ProgramManager::UpdateSharedUniform()
-	{
-		UniformBuffer buf;
-		if (renderSystem.vertexCache->GetUniformBuffer(g_backendData_h, buf))
-		{
-			buf.Update(&g_sharedData, 0, sizeof(g_sharedData));
-		}
 	}
 
 	void ProgramManager::BindUniformBlock(eUboBufferBinding binding, const UniformBuffer& buffer)

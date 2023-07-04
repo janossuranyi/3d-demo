@@ -16,6 +16,8 @@
 #include "engine2/Logger.h"
 #include "engine2/ImageManager.h"
 
+#define JSR_R_SHARED_NUMPARAMS 8
+
 void CheckOpenGLError(const char* stmt, const char* fname, int line)
 {
 	GLenum err = glGetError();
@@ -311,6 +313,11 @@ namespace jsr {
 #endif
 		}
 
+		glcontext.sharedUboAlloced = 0;
+		glcontext.sharedUboSize = 0x1000;
+		glcontext.sharedUbo.AllocBufferObject(nullptr, glcontext.sharedUboSize, BU_DYNAMIC, BM_WRITE | BM_PERSISTENT | BM_COHERENT);
+		glcontext.sharedUbo.MapBuffer(BM_WRITE | BM_PERSISTENT | BM_COHERENT);
+
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		R_InitVertexLayoutDefs();
@@ -540,7 +547,7 @@ namespace jsr {
 		float bw = (float)x / renderGlobals.bloomDownsampleLevel;
 		float bh = (float)y / renderGlobals.bloomDownsampleLevel;
 
-		renderSystem.programManager->SetCommonUniform(0, vec4{ bw, bh, 1.0f / bw, 1.0f / bh });
+		renderSystem.programManager->SetSharedUniform(0, vec4{ bw, bh, 1.0f / bw, 1.0f / bh });
 		renderSystem.programManager->UpdateCommonUniform();
 #endif
 		RenderDeferred_GBuffer();
@@ -808,6 +815,10 @@ namespace jsr {
 		blendState.enabled = false;
 
 		SetBlendingState(blendState);
+		stencilState_t ss = glcontext.stencilState;
+		ss.enabled = false;
+		ss.mask = 0;
+		SetStencilState(ss);
 
 		SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
 
@@ -902,18 +913,12 @@ namespace jsr {
 		SetWriteMask(btrue);
 		Clear(true, false, true);
 
-		SetCurrentTextureUnit(IMU_DIFFUSE);
-		globalImages.GBufferAlbedo->Bind();
-		SetCurrentTextureUnit(IMU_FRAGPOS);
-		globalImages.GBufferFragPos->Bind();
-		SetCurrentTextureUnit(IMU_NORMAL);
-		globalImages.GBufferNormal->Bind();
-		SetCurrentTextureUnit(IMU_AORM);
-		globalImages.GBufferSpec->Bind();
-		SetCurrentTextureUnit(IMU_SHADOW);
-		globalImages.Shadow->Bind();
-		SetCurrentTextureUnit(IMU_DEFAULT);
-		globalImages.ssaoblur[1]->Bind();
+		SetCurrentTextureUnit(IMU_DIFFUSE);	globalImages.GBufferAlbedo->Bind();
+		SetCurrentTextureUnit(IMU_FRAGPOS);	globalImages.GBufferFragPos->Bind();
+		SetCurrentTextureUnit(IMU_NORMAL);	globalImages.GBufferNormal->Bind();
+		SetCurrentTextureUnit(IMU_AORM);	globalImages.GBufferSpec->Bind();
+		SetCurrentTextureUnit(IMU_SHADOW);	globalImages.Shadow->Bind();
+		SetCurrentTextureUnit(IMU_DEFAULT);	globalImages.ssaoblur[1]->Bind();
 
 		blendingState_t blendState{};
 		blendState.enabled = false;
@@ -931,10 +936,13 @@ namespace jsr {
 
 
 		// render sun & AO
-		
-		renderSystem.programManager->UseProgram(PRG_DEFERRED_DIR_LIGHT);
-		renderSystem.programManager->g_sharedData.params[0].x = engineConfig.r_ssao ? 1.0f : 0.0f;
-		renderSystem.programManager->UpdateSharedUniform();
+		vec4 params[JSR_R_SHARED_NUMPARAMS]{};
+
+		auto* pm = renderSystem.programManager;
+		pm->UseProgram(PRG_DEFERRED_DIR_LIGHT);
+		params[0].x = engineConfig.r_ssao ? 1.0f : 0.0f;
+		AllocSharedUbo(params);
+
 		SetCullMode(CULL_NONE);
 		SetStencilState(stencilSt);
 		SetDepthState({ true, false, CMP_ALWAYS });
@@ -943,20 +951,19 @@ namespace jsr {
 		
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 
-
 		for (const auto* light = view->viewLights; light != nullptr; light = light->next)
 		{
-			renderSystem.programManager->BindUniformBlock(UBB_LIGHT_DATA, light->lightData);
+			pm->BindUniformBlock(UBB_LIGHT_DATA, light->lightData);
 #if 1
 			if (light->type == LIGHT_SPOT)
 			{
 				RenderShadow(light);
 				globalFramebuffers.hdrFBO->Bind();
 				SetViewport(view->viewport.x, view->viewport.y, view->viewport.w, view->viewport.h);
-				renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
+				pm->UseProgram(PRG_DEFERRED_LIGHT);
 			}
 #endif
-			renderSystem.programManager->BindUniformBlock(UBB_VS_DRAW_PARAMS, light->VS_DrawParams);
+			pm->BindUniformBlock(UBB_VS_DRAW_PARAMS, light->VS_DrawParams);
 
 			SetCullMode(CULL_FRONT);
 			stencilSt.mask = 0xff;
@@ -1168,11 +1175,12 @@ namespace jsr {
 		auto* pm = renderSystem.programManager;
 		pm->UseProgram(PRG_GAUSS_FILTER);
 
+		vec4 params[JSR_R_SHARED_NUMPARAMS]{};
 
 		for (int i = 0; i < 2; ++i)
 		{
-			pm->g_sharedData.params[0].x = 1.0f;
-			pm->g_sharedData.params[0].y = 0.0f;
+			params[0].x = 1.0f;
+			params[0].y = 0.0f;
 			globalFramebuffers.blurFBO[0]->Bind();
 			if (i == 0)
 			{
@@ -1183,16 +1191,17 @@ namespace jsr {
 				globalImages.HDRblur[1]->Bind();
 			}
 
-			pm->UpdateSharedUniform();
+			//pm->UpdateSharedUniform();
+			AllocSharedUbo(params);
 
 			R_DrawSurf(&unitRectSurface);
 
 			globalFramebuffers.blurFBO[1]->Bind();
 			globalImages.HDRblur[0]->Bind();
 
-			pm->g_sharedData.params[0].x = 0.0f;
-			pm->g_sharedData.params[0].y = 1.0f;
-			pm->UpdateSharedUniform();
+			params[0].x = 0.0f;
+			params[0].y = 1.0f;
+			AllocSharedUbo(params);
 
 			R_DrawSurf(&unitRectSurface);
 		}
@@ -1226,15 +1235,16 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_DEFAULT);
 		globalImages.ssaoNoise->Bind();
 
+		vec4 params[JSR_R_SHARED_NUMPARAMS]{};
 		auto* pm = renderSystem.programManager;
 		globalFramebuffers.ssaoFBO->Bind();
 		pm->UseProgram(PRG_SSAO_GEN);
-		pm->g_sharedData.params[0] = { float(hw),float(hh),1.0f / hw,1.0f / hh };
-		pm->g_sharedData.params[1].x = engineConfig.r_ssao_radius;
-		pm->g_sharedData.params[1].y = engineConfig.r_ssao_bias;
-		pm->g_sharedData.params[1].z = engineConfig.r_ssao_str;
-		pm->g_sharedData.params[1].w = 2.0f / renderGlobals.ssaoResolutionScale;
-		pm->UpdateSharedUniform();
+		params[0] = { float(hw),float(hh),1.0f / hw,1.0f / hh };
+		params[1].x = engineConfig.r_ssao_radius;
+		params[1].y = engineConfig.r_ssao_bias;
+		params[1].z = engineConfig.r_ssao_str;
+		params[1].w = 2.0f / renderGlobals.ssaoResolutionScale;
+		AllocSharedUbo(params);
 		R_DrawSurf(&unitRectSurface);
 #if 0
 		pm->UseProgram(PRG_KERNEL);
@@ -1253,9 +1263,9 @@ namespace jsr {
 
 #else
 		pm->UseProgram(PRG_GAUSS_FILTER);
-		pm->g_sharedData.params[0].x = 0.0f;
-		pm->g_sharedData.params[0].y = 1.0f;
-		pm->UpdateSharedUniform();
+		params[0].x = 0.0f;
+		params[0].y = 1.0f;
+		AllocSharedUbo(params);
 		SetCurrentTextureUnit(0);
 		globalFramebuffers.ssaoblurFBO[0]->Bind();
 		globalImages.ssaoMap->Bind();
@@ -1263,9 +1273,9 @@ namespace jsr {
 
 		globalFramebuffers.ssaoblurFBO[1]->Bind();
 		globalImages.ssaoblur[0]->Bind();
-		pm->g_sharedData.params[0].x = 1.0f;
-		pm->g_sharedData.params[0].y = 0.0f;
-		pm->UpdateSharedUniform();
+		params[0].x = 1.0f;
+		params[0].y = 0.0f;
+		AllocSharedUbo(params);
 		R_DrawSurf(&unitRectSurface);
 #endif
 	}
@@ -1331,6 +1341,21 @@ namespace jsr {
 		globalImages.defaultImage->Bind();
 		renderSystem.programManager->UseProgram(PRG_FXAA3);
 		R_DrawSurf(&unitRectSurface);
+	}
+
+	void RenderBackend::AllocSharedUbo(const glm::vec4* data)
+	{
+		const int size = JSR_R_SHARED_NUMPARAMS * sizeof(*data);
+		const int numBytes = (size + (GetUniformBufferAligment() - 1)) & ~(GetUniformBufferAligment() - 1);
+
+		if (glcontext.sharedUboAlloced + numBytes >= glcontext.sharedUboSize)
+		{
+			glcontext.sharedUboAlloced = 0;
+		}
+		int offset = glcontext.sharedUboAlloced;
+		glcontext.sharedUboAlloced += numBytes;
+		glcontext.sharedUbo.Update(data, offset, size);
+		glcontext.sharedUbo.BindRange(UBB_SHARED_DATA, offset, size);
 	}
 
 	void RenderBackend::RenderDebugPass()

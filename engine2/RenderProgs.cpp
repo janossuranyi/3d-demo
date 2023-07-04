@@ -41,10 +41,6 @@ namespace jsr {
 			g_commonData_h = renderSystem.vertexCache->AllocStaticUniform(&g_commonData, sizeof(g_commonData));
 			BindCommonUniform();
 
-			memset(&g_sharedData, 0, sizeof(g_sharedData));
-			g_backendData_h = renderSystem.vertexCache->AllocStaticUniform(&g_sharedData, sizeof(g_sharedData));
-			BindUniformBlock(UBB_SHARED_DATA, g_backendData_h);
-
 			return true;
 		}
 
