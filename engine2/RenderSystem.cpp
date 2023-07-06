@@ -304,6 +304,20 @@ namespace jsr {
 		}
 	}
 
+	static surface_t* R_MakeFullScreenTri()
+	{
+		const glm::vec3 coords[] = {
+			{-1.0f,-1.0f, 0.0f},
+			{-1.0f, 1.0f, 0.0f},
+			{-1.0f,-1.0f, 0.0f},
+		};
+		const glm::vec2 uv[] = {
+			{ 1.0f, 1.0f},
+			{ 0.0f, 1.0f},
+			{ 0.0f, 0.0f},
+		};
+
+	}
 	static surface_t* R_MakeFullScreenRect()
 	{
 		const glm::vec3 coords[] = {

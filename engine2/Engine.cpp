@@ -36,6 +36,8 @@ namespace jsr {
 		r_ssao_str = 1.0f;
 		r_ssao = false;
 		r_gamma = 2.2f;
+		r_pp = 2;
+		r_pp_offset = 1;
 	}
 
 	void engineConfig_t::LoadFromFile()
@@ -170,6 +172,9 @@ namespace jsr {
 			ImGui::Checkbox("Bloom", &engineConfig.r_bloom);
 			ImGui::Checkbox("FXAA", &engineConfig.r_fxaa);
 			ImGui::Checkbox("SSAO", &engineConfig.r_ssao);
+
+			ImGui::DragInt("CONV Type", &engineConfig.r_pp, 0.2f, 0, 8);
+			ImGui::DragInt("CONV Offset", &engineConfig.r_pp_offset, 0.2f, 1, 7);
 
 			renderSystem.RenderFrame(cmds);
 

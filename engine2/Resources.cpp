@@ -142,16 +142,26 @@ namespace jsr {
         return version + "\n" + output;
     }
 
-    std::string ResourceManager::GetShaderSourceWithVersionAndDefs(const std::string& name, const std::unordered_map<std::string, std::string>& defs, int max_depth)
+    std::string ResourceManager::GetShaderSourceWithVersionAndDefs(const std::string& name, const glsl_defs_t& defs, int max_depth)
     {
         auto output = GetShaderSource(name, max_depth);
         auto version = GetTextResource(default_version_file_name);
+
         std::string defs_str("");
         for (const auto& item : defs)
         {
-            defs_str = defs_str.append("#define ").append(item.first).append(" ").append(item.second).append("\n");
+            defs_str = defs_str
+                .append("#define ")
+                .append(item.first)
+                .append(" ")
+                .append(item.second)
+                .append("\n");
         }
-        return version.append("\n").append(defs_str).append(output);
+        
+        return version
+            .append("\n")
+            .append(defs_str)
+            .append(output);
     }
 
 }

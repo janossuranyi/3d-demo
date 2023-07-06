@@ -6,9 +6,8 @@ in vec2 texCoord;
 out vec4 fragColor0;
 
 uniform sampler2D tInput;
-#define g_XOffset g_sharedData.params[0].x
-#define g_YOffset g_sharedData.params[0].y
-#define g_iKernel g_sharedData.params[0].z
+#define g_Offset g_sharedData.params[0].x
+#define g_Kernel g_sharedData.params[0].y
 
 #define KERNEL_BLUR 0
 #define KERNEL_BOTTOM_SOBEL 1
@@ -68,30 +67,33 @@ const float kernels[9][9] = {
 	}
 };
 
+
 void main() {
 
-	vec2 offsets[9] = vec2[](
-		vec2(-g_XOffset, g_YOffset), // top-left
-		vec2(0.0f, g_YOffset), // top-center
-		vec2(g_XOffset, g_YOffset), // top-right
-		vec2(-g_XOffset, 0.0f),   // center-left
-		vec2(0.0f, 0.0f),   // center-center
-		vec2(g_XOffset, 0.0f),   // center-right
-		vec2(-g_XOffset, -g_YOffset), // bottom-left
-		vec2(0.0f, -g_YOffset), // bottom-center
-		vec2(g_XOffset, -g_YOffset)  // bottom-right
+	int offset = int(g_Offset);
+	
+	const ivec2 offsets[9] = ivec2[](
+		ivec2(-offset,	offset), // top-left
+		ivec2( 0,		offset), // top-center
+		ivec2( offset,	offset), // top-right
+		ivec2(-offset,	0), // center-left
+		ivec2( 0,		0), // center-center
+		ivec2( offset,	0), // center-right
+		ivec2(-offset,	-offset), // bottom-left
+		ivec2( 0,		-offset), // bottom-center
+		ivec2( offset,	-offset)  // bottom-right
 	);
 
 	vec3 sampleTex[ 9 ];
-	for (int i = 0; i < 9; i++)
-	{
-		sampleTex[ i ] = vec3( texture( tInput, texCoord + offsets[ i ] ) );
+	for (int i = 0; i < 9; i++) {
+		sampleTex[ i ] = textureLodOffset( tInput, texCoord, 0.0, offsets[ i ] ).xyz;
 	}
 
 	vec3 col = vec3( 0.0 );
-    uint k = uint(g_iKernel);
-	for (int i = 0; i < 9; i++)
-	{
+    uint k = uint(g_Kernel);
+	k = (k >= 0 && k <= KERNEL_TOP_SOBEL) ? k : KERNEL_IDENTITY;
+
+	for (int i = 0; i < 9; i++) {
 		col += sampleTex[ i ] * kernels[ k ][ i ];
 	}
 

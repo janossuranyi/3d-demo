@@ -8,6 +8,8 @@
 
 namespace jsr {
 
+	typedef std::unordered_map<std::string, std::string> glsl_defs_t;
+
 	class Filesystem
 	{
 	public:
@@ -35,7 +37,7 @@ namespace jsr {
 		std::string GetTextResource(const std::string& name);
 		std::string GetShaderSource(const std::string& name, int max_depth = 2);
 		std::string GetShaderSourceWithVersion(const std::string& name, int max_depth = 2);
-		std::string GetShaderSourceWithVersionAndDefs(const std::string& name, const std::unordered_map<std::string,std::string>& defs, int max_depth = 2);
+		std::string GetShaderSourceWithVersionAndDefs(const std::string& name, const glsl_defs_t& defs, int max_depth = 2);
 		std::vector<unsigned char> GetBinaryResource(const std::string& name);
 		std::string GetResource(const std::string& name);
 		void SetDefaultVersionFile(const std::string& s);

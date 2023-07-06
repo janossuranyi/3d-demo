@@ -22,6 +22,8 @@ namespace jsr {
 		float	r_ssao_bias;
 		float	r_ssao_str;
 		float	r_gamma;
+		int		r_pp;
+		int		r_pp_offset;
 		engineConfig_t();
 		void LoadFromFile();
 	};

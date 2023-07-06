@@ -80,6 +80,14 @@ namespace jsr {
 		const GLchar* message,
 		const GLvoid* userParam);
 
+	
+	static void R_DrawFullscreenTri()
+	{
+		GL_CHECK(glBindVertexBuffer(0, 0, 0, 0));
+		GL_CHECK(glDrawArrays(GL_TRIANGLE_STRIP, 0, 3));
+		glcontext.vtxBindings[0] = { 0,0,0 };
+	}
+
 	void R_InitVertexLayoutDefs()
 	{
 		std::memset(&_vertex_layouts[0], 0, sizeof(_vertex_layouts));
@@ -259,6 +267,12 @@ namespace jsr {
 		glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI,			&glconfig.availableVideoMemory);
 		glGetError();
 
+		int query;
+		glGetIntegerv(GL_MIN_PROGRAM_TEXEL_OFFSET, &query);
+		Info("GL_MIN_PROGRAM_TEXEL_OFFSET : %d", query);
+		glGetIntegerv(GL_MAX_PROGRAM_TEXEL_OFFSET, &query);
+		Info("GL_MAX_PROGRAM_TEXEL_OFFSET : %d", query);
+
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 		// Setup default GL states
@@ -314,7 +328,7 @@ namespace jsr {
 		}
 
 		glcontext.sharedUboAlloced = 0;
-		glcontext.sharedUboSize = 0x1000;
+		glcontext.sharedUboSize = 16 * 1024;
 		glcontext.sharedUbo.AllocBufferObject(nullptr, glcontext.sharedUboSize, BU_DYNAMIC, BM_WRITE | BM_PERSISTENT | BM_COHERENT);
 		glcontext.sharedUbo.MapBuffer(BM_WRITE | BM_PERSISTENT | BM_COHERENT);
 
@@ -558,18 +572,27 @@ namespace jsr {
 		RenderDeferred_Lighting();
 		RenderEmissive();
 		RenderBloom();
+		RenderHDRtoLDR();
 
-		if (!engineConfig.r_fxaa)
+		Framebuffer::Unbind();
+
+		if (engineConfig.r_fxaa)
 		{
-			Framebuffer::Unbind();
-			RenderHDRtoLDR();
+			RenderAA();
 		}
 		else
 		{
-			globalFramebuffers.defaultFBO->Bind();
-			RenderHDRtoLDR();
-			RenderAA();
+			uboSharedData_t parms{};
+			parms.params[0].x = static_cast<float>(engineConfig.r_pp_offset);
+			parms.params[0].y = static_cast<float>(engineConfig.r_pp);
+			AllocSharedUbo(parms.params);
+			SetCurrentTextureUnit(0);
+			globalImages.defaultImage->Bind();
+			renderSystem.programManager->UseProgram(PRG_KERNEL);
+			//R_DrawSurf(&unitRectSurface);
+			R_DrawFullscreenTri();
 		}
+
 
 #if 0
 		GLsizei HalfWidth = (GLsizei)(x / 2);
@@ -711,11 +734,18 @@ namespace jsr {
 		if (renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx))
 		{
 			const GLenum mode = surf->frontEndGeo ? GL_map_topology(surf->frontEndGeo->topology) : GL_TRIANGLES;
-			GL_CHECK(glDrawElements(
-				mode,
-				surf->numIndex,
-				GL_UNSIGNED_SHORT,
-				(void*)idx.GetOffset()));
+			if (mode == GL_TRIANGLES)
+			{
+				GL_CHECK(glDrawElements(
+					mode,
+					surf->numIndex,
+					GL_UNSIGNED_SHORT,
+					(void*)idx.GetOffset()));
+			}
+			else
+			{
+				GL_CHECK(glDrawArrays(mode, 0, surf->numIndex));
+			}
 
 			perfCounters.drawElements++;
 			perfCounters.drawIndexes += surf->numIndex;
@@ -1162,7 +1192,8 @@ namespace jsr {
 
 		globalFramebuffers.bloomFBO[0]->Bind();
 		globalImages.HDRaccum->Bind();
-		R_DrawSurf(&unitRectSurface);
+		//R_DrawSurf(&unitRectSurface);
+		R_DrawFullscreenTri();
 
 		w = w / 2.0f;
 		h = h / 2.0f;
@@ -1170,7 +1201,8 @@ namespace jsr {
 
 		globalFramebuffers.bloomFBO[1]->Bind();
 		globalImages.HDRbloom[0]->Bind();
-		R_DrawSurf(&unitRectSurface);
+		//R_DrawSurf(&unitRectSurface);
+		R_DrawFullscreenTri();
 
 		auto* pm = renderSystem.programManager;
 		pm->UseProgram(PRG_GAUSS_FILTER);
@@ -1315,8 +1347,10 @@ namespace jsr {
 		}
 
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
+		globalFramebuffers.defaultFBO->Bind();
 
-		R_DrawSurf(&unitRectSurface);
+		//R_DrawSurf(&unitRectSurface);
+		R_DrawFullscreenTri();
 	}
 
 	void RenderBackend::RenderAA()
@@ -1341,12 +1375,13 @@ namespace jsr {
 		globalImages.defaultImage->Bind();
 		renderSystem.programManager->UseProgram(PRG_FXAA3);
 		R_DrawSurf(&unitRectSurface);
+		//R_DrawFullscreenTri();
 	}
 
 	void RenderBackend::AllocSharedUbo(const glm::vec4* data)
 	{
 		const int size = JSR_R_SHARED_NUMPARAMS * sizeof(*data);
-		const int numBytes = (size + (GetUniformBufferAligment() - 1)) & ~(GetUniformBufferAligment() - 1);
+		const int numBytes = (size + (glconfig.uniformBufferOffsetAligment - 1)) & ~(glconfig.uniformBufferOffsetAligment - 1);
 
 		if (glcontext.sharedUboAlloced + numBytes >= glcontext.sharedUboSize)
 		{
