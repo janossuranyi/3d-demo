@@ -81,12 +81,12 @@ namespace jsr {
 		const GLvoid* userParam);
 
 	
-	static void R_DrawFullscreenTri()
-	{
-		GL_CHECK(glBindVertexBuffer(0, 0, 0, 0));
-		GL_CHECK(glDrawArrays(GL_TRIANGLE_STRIP, 0, 3));
-		glcontext.vtxBindings[0] = { 0,0,0 };
-	}
+	//static void R_DrawFullscreenTri()
+	//{
+	//	GL_CHECK(glBindVertexBuffer(0, 0, 0, 0));
+	//	GL_CHECK(glDrawArrays(GL_TRIANGLE_STRIP, 0, 3));
+	//	glcontext.vtxBindings[0] = { 0,0,0 };
+	//}
 
 	void R_InitVertexLayoutDefs()
 	{
@@ -589,8 +589,7 @@ namespace jsr {
 			SetCurrentTextureUnit(0);
 			globalImages.defaultImage->Bind();
 			renderSystem.programManager->UseProgram(PRG_KERNEL);
-			//R_DrawSurf(&unitRectSurface);
-			R_DrawFullscreenTri();
+			R_DrawSurf(&unitRectSurface);
 		}
 
 
@@ -731,25 +730,24 @@ namespace jsr {
 		renderSystem.vertexCache->BindIndexBuffer(surf->indexCache);
 
 		IndexBuffer idx;
-		if (renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx))
-		{
-			const GLenum mode = surf->frontEndGeo ? GL_map_topology(surf->frontEndGeo->topology) : GL_TRIANGLES;
-			if (mode == GL_TRIANGLES)
-			{
-				GL_CHECK(glDrawElements(
-					mode,
-					surf->numIndex,
-					GL_UNSIGNED_SHORT,
-					(void*)idx.GetOffset()));
-			}
-			else
-			{
-				GL_CHECK(glDrawArrays(mode, 0, surf->numIndex));
-			}
+		const GLenum mode = surf->frontEndGeo ? GL_map_topology(surf->frontEndGeo->topology) : GL_TRIANGLES;
 
-			perfCounters.drawElements++;
-			perfCounters.drawIndexes += surf->numIndex;
+		if (mode == GL_TRIANGLES && renderSystem.vertexCache->GetIndexBuffer(surf->indexCache, idx))
+		{
+			GL_CHECK(glDrawElements(
+				mode,
+				surf->numIndex,
+				GL_UNSIGNED_SHORT,
+				(void*)idx.GetOffset()));
 		}
+		else
+		{
+			GL_CHECK(glDrawArrays(mode, 0, surf->frontEndGeo->numVerts));
+		}
+
+		perfCounters.drawElements++;
+		perfCounters.drawIndexes += surf->numIndex;
+
 	}
 	void RenderBackend::RenderDepthPass()
 	{
@@ -1192,8 +1190,7 @@ namespace jsr {
 
 		globalFramebuffers.bloomFBO[0]->Bind();
 		globalImages.HDRaccum->Bind();
-		//R_DrawSurf(&unitRectSurface);
-		R_DrawFullscreenTri();
+		R_DrawSurf(&unitRectSurface);
 
 		w = w / 2.0f;
 		h = h / 2.0f;
@@ -1201,8 +1198,7 @@ namespace jsr {
 
 		globalFramebuffers.bloomFBO[1]->Bind();
 		globalImages.HDRbloom[0]->Bind();
-		//R_DrawSurf(&unitRectSurface);
-		R_DrawFullscreenTri();
+		R_DrawSurf(&unitRectSurface);
 
 		auto* pm = renderSystem.programManager;
 		pm->UseProgram(PRG_GAUSS_FILTER);
@@ -1349,8 +1345,7 @@ namespace jsr {
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
 		globalFramebuffers.defaultFBO->Bind();
 
-		//R_DrawSurf(&unitRectSurface);
-		R_DrawFullscreenTri();
+		R_DrawSurf(&unitRectSurface);
 	}
 
 	void RenderBackend::RenderAA()

@@ -19,6 +19,7 @@
 
 namespace jsr {
 
+	surface_t* R_MakeFullScreenTri();
 	surface_t* R_MakeFullScreenRect();
 	surface_t* R_MakeZeroOneCube();
 	surface_t* R_MakeZeroOneSphere();
@@ -306,18 +307,37 @@ namespace jsr {
 
 	static surface_t* R_MakeFullScreenTri()
 	{
+		using namespace glm;
+
 		const glm::vec3 coords[] = {
 			{-1.0f,-1.0f, 0.0f},
-			{-1.0f, 1.0f, 0.0f},
-			{-1.0f,-1.0f, 0.0f},
+			{ 3.0f,-1.0f, 0.0f},
+			{-1.0f, 3.0f, 0.0f},
 		};
-		const glm::vec2 uv[] = {
-			{ 1.0f, 1.0f},
-			{ 0.0f, 1.0f},
-			{ 0.0f, 0.0f},
-		};
+		const float white[] = { 1.0f,1.0f,1.0f,1.0f };
 
+		surface_t* tris = new (MemAlloc(sizeof(*tris))) surface_t();
+
+		tris->numVerts = 3;
+		tris->numIndexes = 0;
+		int vertsBytes = ALIGN(sizeof(drawVert_t) * 3);
+		tris->verts = (drawVert_t*)MemAlloc(vertsBytes);
+		tris->topology = TP_TRIANGLE_FANS;
+
+		for (int i = 0; i < 3; ++i)
+		{
+			tris->verts[i].SetPos(coords[i]);
+			tris->verts[i].SetUV(vec2(coords[i]) * 0.5f + vec2(0.5));
+			tris->verts[i].SetColor(white);
+			tris->verts[i].SetNormal({ 0.0f,0.0f,1.0f });
+			tris->verts[i].SetTangent({ 1.0f,0.0f,0.0f,1.0f });
+		}
+
+		tris->bounds.Extend({ -1.0f, -1.0f, 0.0f });
+		tris->bounds.Extend({ 1.0f, 1.0f, 0.0f });
+		return tris;
 	}
+
 	static surface_t* R_MakeFullScreenRect()
 	{
 		const glm::vec3 coords[] = {
