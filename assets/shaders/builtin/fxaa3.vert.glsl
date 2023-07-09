@@ -10,9 +10,12 @@ out INTERFACE
 
 void main()
 {
+#ifdef NO_VERTEX_FETCH
+    vec4 posCS = vec4(vertices[gl_VertexID],0,1);
+    Out.uv = 0.5 * posCS.xy + vec2(0.5);
+    gl_Position = posCS;
+#else
     gl_Position= in_Position;
     Out.uv = in_TexCoord;
-//    vec4 posCS = vec4(vertices[gl_VertexID],0,1);
-//    Out.uv = 0.5 * posCS.xy + vec2(0.5);
-//    gl_Position = posCS;
+#endif
 }
