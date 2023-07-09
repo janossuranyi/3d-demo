@@ -103,7 +103,7 @@ namespace jsr {
 		Framebuffer::Init();
 		R_InitCommandBuffers();
 
-		unitRectTris = R_MakeFullScreenRect();
+		unitRectTris = R_MakeFullScreenTri();
 		unitCubeTris = R_MakeZeroOneCube();
 		unitSphereTris = R_MakeZeroOneSphere();
 		unitConeTris = R_MakeZeroOneCone();
@@ -319,10 +319,15 @@ namespace jsr {
 		surface_t* tris = new (MemAlloc(sizeof(*tris))) surface_t();
 
 		tris->numVerts = 3;
-		tris->numIndexes = 0;
+		tris->numIndexes = 3;
 		int vertsBytes = ALIGN(sizeof(drawVert_t) * 3);
 		tris->verts = (drawVert_t*)MemAlloc(vertsBytes);
-		tris->topology = TP_TRIANGLE_FANS;
+		tris->topology = TP_TRIANGLES;
+
+		const int indexSize = tris->numIndexes * sizeof(tris->indexes[0]);
+		const int allocatedIndexBytes = ALIGN(indexSize);
+		tris->indexes = (elementIndex_t*)MemAlloc16(allocatedIndexBytes);
+		memset(tris->indexes, 0, allocatedIndexBytes);
 
 		for (int i = 0; i < 3; ++i)
 		{
@@ -331,6 +336,12 @@ namespace jsr {
 			tris->verts[i].SetColor(white);
 			tris->verts[i].SetNormal({ 0.0f,0.0f,1.0f });
 			tris->verts[i].SetTangent({ 1.0f,0.0f,0.0f,1.0f });
+		}
+
+		const elementIndex_t idx[] = { 0,1,2 };
+		for (int i = 0; i < 3; ++i)
+		{
+			tris->indexes[i] = idx[i];
 		}
 
 		tris->bounds.Extend({ -1.0f, -1.0f, 0.0f });
