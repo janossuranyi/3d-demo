@@ -1203,12 +1203,12 @@ namespace jsr {
 		auto* pm = renderSystem.programManager;
 		pm->UseProgram(PRG_GAUSS_FILTER);
 
-		vec4 params[JSR_R_SHARED_NUMPARAMS]{};
+		uboSharedData_t p{};
 
 		for (int i = 0; i < 2; ++i)
 		{
-			params[0].x = 1.0f;
-			params[0].y = 0.0f;
+			p.params[0].x = 1.0f;
+			p.params[0].y = 0.0f;
 			globalFramebuffers.blurFBO[0]->Bind();
 			if (i == 0)
 			{
@@ -1220,16 +1220,16 @@ namespace jsr {
 			}
 
 			//pm->UpdateSharedUniform();
-			AllocSharedUbo(params);
+			AllocSharedUbo(p.params);
 
 			R_DrawSurf(&unitRectSurface);
 
 			globalFramebuffers.blurFBO[1]->Bind();
 			globalImages.HDRblur[0]->Bind();
 
-			params[0].x = 0.0f;
-			params[0].y = 1.0f;
-			AllocSharedUbo(params);
+			p.params[0].x = 0.0f;
+			p.params[0].y = 1.0f;
+			AllocSharedUbo(p.params);
 
 			R_DrawSurf(&unitRectSurface);
 		}
