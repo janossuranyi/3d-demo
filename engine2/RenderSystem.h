@@ -28,7 +28,7 @@ namespace jsr {
 			defaultExpAttn(1.0f),
 			defaultLinearAttn(0.0f),
 			ambientColor(1.0f),
-			ambientScale(.03f),
+			ambientScale(.06f),
 			bloomScale(0.6f),
 			bloomDownsampleLevel(2),
 			ssaoResolutionScale(0.5f),

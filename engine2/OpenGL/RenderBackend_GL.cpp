@@ -819,7 +819,7 @@ namespace jsr {
 			if ( stage.coverage != COVERAGE_SOLID ) continue;
 			/**
 			if (glm::any(glm::greaterThan(stage.emissiveScale, vec4(0.0f)))
-				|| stage.images[IMU_EMMISIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
+				|| stage.images[IMU_EMISSIVE] != renderSystem.imageManager->globalImages.whiteImage) continue;
 				**/
 
 			renderSystem.programManager->BindUniformBlock(UBB_VS_DRAW_PARAMS, surf->space->VS_DrawParams);
@@ -873,7 +873,7 @@ namespace jsr {
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
 				if (surf->space->shadowOnly) continue;
 
-				if (glm::any(glm::greaterThan(vec3(stage.emissiveScale), vec3(0.0f))) || stage.images[IMU_EMMISIVE] != globalImages.whiteImage) continue;
+				if (glm::any(glm::greaterThan(vec3(stage.emissiveScale), vec3(0.0f))) || stage.images[IMU_EMISSIVE] != globalImages.whiteImage) continue;
 				
 				// setup textures
 				for (int j = 0; j < IMU_COUNT; ++j)
@@ -1100,11 +1100,11 @@ namespace jsr {
 				if (k == 1 && stage.coverage != COVERAGE_MASK) continue;
 				if (surf->space->shadowOnly) continue;
 
-				if (glm::all(glm::equal(vec3(stage.emissiveScale), vec3(0.0f))) && stage.images[IMU_EMMISIVE] == globalImages.whiteImage) continue;
+				if (glm::all(glm::equal(vec3(stage.emissiveScale), vec3(0.0f))) && stage.images[IMU_EMISSIVE] == globalImages.whiteImage) continue;
 
 				// setup textures
-				renderSystem.backend->SetCurrentTextureUnit(IMU_EMMISIVE);
-				stage.images[IMU_EMMISIVE]->Bind();
+				renderSystem.backend->SetCurrentTextureUnit(IMU_EMISSIVE);
+				stage.images[IMU_EMISSIVE]->Bind();
 				SetCullMode(stage.cullMode);
 
 				renderSystem.programManager->BindUniformBlock(UBB_VS_DRAW_PARAMS, surf->space->VS_DrawParams);
@@ -1330,7 +1330,7 @@ namespace jsr {
 		globalImages.HDRaccum->Bind();
 		SetCurrentTextureUnit(IMU_DIFFUSE);
 		globalImages.GBufferAlbedo->Bind();
-		SetCurrentTextureUnit(IMU_EMMISIVE);
+		SetCurrentTextureUnit(IMU_EMISSIVE);
 		globalImages.HDRblur[1]->Bind();
 		SetCurrentTextureUnit(IMU_AORM);
 		if (engineConfig.r_ssao)

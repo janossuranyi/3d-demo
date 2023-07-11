@@ -51,7 +51,7 @@ namespace jsr {
 		IMU_DIFFUSE,
 		IMU_NORMAL,
 		IMU_AORM,		// R:Ambient occlusion, G:Roughness, B:Metalness
-		IMU_EMMISIVE,
+		IMU_EMISSIVE,
 		IMU_DEPTH,
 		IMU_FRAGPOS,
 		IMU_HDR,

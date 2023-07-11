@@ -396,7 +396,7 @@ namespace jsr {
 		fragUbo.invProjMatrix = (view->unprojectionToCameraMatrix);
 		fragUbo.projectMatrix = projMatrix;
 		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
-		fragUbo.bloomParams.x = 0.0f;
+		fragUbo.bloomParams.x = 2.0f;
 		fragUbo.bloomParams.y = engineConfig.r_bloom ? renderGlobals.bloomScale : 0.0f;
 		fragUbo.bloomParams.z = 1.0f / (float(x) / bloomDiv);
 		fragUbo.bloomParams.w = 1.0f / (float(y) / bloomDiv);

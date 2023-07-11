@@ -121,7 +121,7 @@ namespace jsr {
 		s.SetImage(IMU_DIFFUSE, globalImages.whiteImage);
 		s.SetImage(IMU_AORM, globalImages.whiteImage);
 		s.SetImage(IMU_NORMAL, globalImages.flatNormal);
-		s.SetImage(IMU_EMMISIVE, globalImages.whiteImage);
+		s.SetImage(IMU_EMISSIVE, globalImages.whiteImage);
 		s.shader = PRG_TEXTURED;
 
 		int bloomdivisor = 1 << renderGlobals.bloomDownsampleLevel;

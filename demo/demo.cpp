@@ -32,7 +32,8 @@ int main(int argc, char** argv)
     engineConfig.r_bloom = true;
     engineConfig.r_fxaa = true;
     engineConfig.r_fbsrgb = true;
-    engineConfig.r_ssao_str = 2.0f;
+    engineConfig.r_ssao = true;
+    engineConfig.r_ssao_str = 1.5f;
 #if 0
     engineConfig.r_debug = true;
 #else

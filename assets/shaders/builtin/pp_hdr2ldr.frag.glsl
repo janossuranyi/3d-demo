@@ -4,7 +4,7 @@
 
 layout(binding = IMU_HDR)       uniform sampler2D tHDRAccum;
 layout(binding = IMU_DIFFUSE)   uniform sampler2D tDiffuse;
-layout(binding = IMU_EMMISIVE)  uniform sampler2D tBloom;
+layout(binding = IMU_EMISSIVE)  uniform sampler2D tBloom;
 
 out vec3 fragColor0;
 in vec2 texcoord;
@@ -22,5 +22,5 @@ void main()
     color += bloom * FS_ViewParams.bloomParams.y;
     color *= gExposure;
 
-    fragColor0 = tonemap_Reinhard( color );
+    fragColor0 = tonemap_unreal( color );
 }

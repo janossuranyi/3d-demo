@@ -7,7 +7,7 @@ in INTERFACE
     vec2 texCoord;
 } In;
 
-layout(binding = IMU_EMMISIVE)  uniform sampler2D tEmissive;
+layout(binding = IMU_EMISSIVE)  uniform sampler2D tEmissive;
 
 out vec4 fragColor;
 

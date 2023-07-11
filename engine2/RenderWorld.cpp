@@ -490,10 +490,10 @@ namespace jsr {
 			}
 			if (gmat.emissiveTexture.index > -1)
 			{
-				stage.images[IMU_EMMISIVE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.emissiveTexture.index]);
+				stage.images[IMU_EMISSIVE] = imageManager->GetImage(gltf_state->map_image_idx[gmat.emissiveTexture.index]);
 			}
 			else {
-				stage.images[IMU_EMMISIVE] = globalImages.whiteImage;
+				stage.images[IMU_EMISSIVE] = globalImages.whiteImage;
 			}
 			if (gmat.normalTexture.index > -1)
 			{
