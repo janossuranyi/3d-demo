@@ -24,6 +24,9 @@ namespace jsr {
 			return false;
 		}
 
+		int screen_width, screen_height;
+		renderSystem.backend->GetScreenSize(screen_width, screen_height);
+
 		globalImages.GBufferFragPos = AllocImage("_gbuffer_fragpos");
 		globalImages.GBufferAlbedo = AllocImage("_gbuffer_albedo");
 		globalImages.GBufferNormal = AllocImage("_gbuffer_normal");
@@ -53,8 +56,6 @@ namespace jsr {
 			globalImages.HDRbloom[i] = AllocImage("_hdrbloom_" + std::to_string(i));
 		}
 
-		int screen_width, screen_height;
-		renderSystem.backend->GetScreenSize(screen_width, screen_height);
 
 		imageOpts_t opts{};
 		opts.format = IMF_RGBA;
@@ -263,6 +264,37 @@ namespace jsr {
 			ssaoNoise.push_back(noise);
 		}
 		globalImages.ssaoNoise->UpdateImageData(4, 4, 0, 0, 0, 0, ssaoNoise.data());
+
+		// PBR-Bloom
+		int w = screen_width, h = screen_height, level = 0;
+		while (level < 6 && (w > 1 || h > 1))
+		{
+			auto* im = globalImages.PBRbloom.emplace_back(AllocImage("_PBRBloom_" + std::to_string(level)));
+
+			w >>= 1;
+			h >>= 1;
+			w = std::max(w, 1);
+			h = std::max(h, 1);
+
+			imageOpts_t opts{};
+			opts.format = IMF_R11G11B10F;
+			opts.shape = IMS_2D;
+			opts.usage = IMU_HDR;
+			opts.sizeX = w;
+			opts.sizeY = h;
+			opts.numLevel = 1;
+			opts.numLayer = 1;
+			opts.maxAnisotropy = 1.0f;
+			opts.autocompress = false;
+			opts.srgb = false;
+
+			if (!im->AllocImage(opts, IFL_LINEAR, IMR_CLAMP_TO_EDGE))
+			{
+				Error("[ImageManager]: Image _PBRBloom_%d allocation failed !", level);
+			}
+			++level;
+		}
+
 
 		initialized = true;
 		Image::Unbind();

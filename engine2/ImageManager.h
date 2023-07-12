@@ -15,6 +15,7 @@ namespace jsr {
 //		Image* HDRdepth;
 		Image* HDRblur[2];
 		std::vector<Image*> HDRbloom;
+		std::vector<Image*> PBRbloom;
 		Image* GBufferFragPos;
 		Image* GBufferAlbedo;
 		Image* GBufferNormal;

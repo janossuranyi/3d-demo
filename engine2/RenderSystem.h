@@ -29,7 +29,7 @@ namespace jsr {
 			defaultLinearAttn(0.0f),
 			ambientColor(1.0f),
 			ambientScale(.06f),
-			bloomScale(0.6f),
+			bloomScale(0.05f),
 			bloomDownsampleLevel(2),
 			ssaoResolutionScale(0.5f),
 			shadowBias(0.00001f) {}
@@ -73,10 +73,12 @@ namespace jsr {
 
 		Material* defaultMaterial;
 
+		drawSurf_t unitTriSurface_;
 		drawSurf_t unitRectSurface_;
 		drawSurf_t unitCubeSurface_;
 		drawSurf_t unitSphereSurface_;
 		drawSurf_t unitConeSurface_;
+		surface_t* unitTri;
 		surface_t* unitRectTris;
 		surface_t* unitCubeTris;
 		surface_t* unitSphereTris;

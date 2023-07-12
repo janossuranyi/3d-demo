@@ -32,7 +32,9 @@ namespace jsr {
 		{"gauss_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
 		{"bloom_filter",			SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
 		{"ssao_gen",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
-		{"kernel",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} }
+		{"kernel",					SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"downsample",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} },
+		{"upsample",				SHADER_STAGE_DEFAULT,	LAYOUT_DRAW_VERT,	INVALID_PROGRAM, {} }
 	};
 
 	static std::string GL_map_shader_to_str(GLenum stage)

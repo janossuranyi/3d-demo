@@ -49,6 +49,8 @@ namespace jsr {
 		materialManager = new MaterialManager();
 		defaultMaterial = {};
 
+		unitTriSurface_		= {};
+		unitTri				= {};
 		unitCubeSurface_	= {};
 		unitCubeTris		= {};
 		unitRectSurface_	= {};
@@ -103,7 +105,8 @@ namespace jsr {
 		Framebuffer::Init();
 		R_InitCommandBuffers();
 
-		unitRectTris = R_MakeFullScreenTri();
+		unitTri = R_MakeFullScreenTri();
+		unitRectTris = R_MakeFullScreenRect();
 		unitCubeTris = R_MakeZeroOneCube();
 		unitSphereTris = R_MakeZeroOneSphere();
 		unitConeTris = R_MakeZeroOneCone();
@@ -187,11 +190,12 @@ namespace jsr {
 		emptyCommand_t* cmds = R_SwapCommandBuffers(smpMode);
 		
 		vertexCache->Frame();
-
+		backend->unitTriSurface = unitTriSurface_;
 		backend->unitRectSurface = unitRectSurface_;
 		backend->unitCubeSurface = unitCubeSurface_;
 		backend->unitSphereSurface = unitSphereSurface_;
 		backend->unitConeSurface = unitConeSurface_;
+		R_CreateSurfFromTris(unitTriSurface_, *unitTri);
 		R_CreateSurfFromTris(unitRectSurface_, *unitRectTris);
 		R_CreateSurfFromTris(unitCubeSurface_, *unitCubeTris);
 		R_CreateSurfFromTris(unitSphereSurface_, *unitSphereTris);

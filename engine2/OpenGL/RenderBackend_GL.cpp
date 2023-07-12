@@ -572,6 +572,9 @@ namespace jsr {
 		RenderDeferred_Lighting();
 		RenderEmissive();
 		RenderBloom();
+		//
+		//RenderBloom_PBR();
+		//
 		RenderHDRtoLDR();
 
 		Framebuffer::Unbind();
@@ -589,7 +592,7 @@ namespace jsr {
 			SetCurrentTextureUnit(0);
 			globalImages.defaultImage->Bind();
 			renderSystem.programManager->UseProgram(PRG_KERNEL);
-			R_DrawSurf(&unitRectSurface);
+			R_DrawSurf(&unitTriSurface);
 		}
 
 
@@ -975,7 +978,7 @@ namespace jsr {
 		SetStencilState(stencilSt);
 		SetDepthState({ true, false, CMP_ALWAYS });
 		renderSystem.programManager->BindUniformBlock(UBB_LIGHT_DATA, view->viewSunLight->lightData);
-		R_DrawSurf(&unitRectSurface);
+		R_DrawSurf(&unitTriSurface);
 		
 		renderSystem.programManager->UseProgram(PRG_DEFERRED_LIGHT);
 
@@ -1190,7 +1193,7 @@ namespace jsr {
 
 		globalFramebuffers.bloomFBO[0]->Bind();
 		globalImages.HDRaccum->Bind();
-		R_DrawSurf(&unitRectSurface);
+		R_DrawSurf(&unitTriSurface);
 
 		w = w / 2.0f;
 		h = h / 2.0f;
@@ -1198,7 +1201,7 @@ namespace jsr {
 
 		globalFramebuffers.bloomFBO[1]->Bind();
 		globalImages.HDRbloom[0]->Bind();
-		R_DrawSurf(&unitRectSurface);
+		R_DrawSurf(&unitTriSurface);
 
 		auto* pm = renderSystem.programManager;
 		pm->UseProgram(PRG_GAUSS_FILTER);
@@ -1222,7 +1225,7 @@ namespace jsr {
 			//pm->UpdateSharedUniform();
 			AllocSharedUbo(p.params);
 
-			R_DrawSurf(&unitRectSurface);
+			R_DrawSurf(&unitTriSurface);
 
 			globalFramebuffers.blurFBO[1]->Bind();
 			globalImages.HDRblur[0]->Bind();
@@ -1231,8 +1234,60 @@ namespace jsr {
 			p.params[0].y = 1.0f;
 			AllocSharedUbo(p.params);
 
-			R_DrawSurf(&unitRectSurface);
+			R_DrawSurf(&unitTriSurface);
 		}
+	}
+
+	void RenderBackend::RenderBloom_PBR()
+	{
+		// downsample
+
+		SetCurrentTextureUnit(0);
+		Image* im = globalImages.HDRaccum;
+		renderSystem.programManager->UseProgram(PRG_DOWNSAMPLE);
+		stencilState_t stencil = glcontext.stencilState;
+		blendingState_t blend = glcontext.blendState;
+		blend.enabled = false;
+		SetBlendingState(blend);
+		SetCullMode(CULL_NONE);
+		stencil.enabled = false;
+		SetStencilState(stencil);
+
+		uboSharedData_t p;
+		for (int i = 0; i < globalFramebuffers.PBRbloomFBO.size(); ++i)
+		{
+			int x = im->opts.sizeX;
+			int y = im->opts.sizeY;
+			p.params[0] = { float(x),float(y),1.0f / float(x),1.0f / float(y) };
+			AllocSharedUbo(p.params);
+			globalFramebuffers.PBRbloomFBO[i]->Bind();
+			im->Bind();
+			SetViewport(0, 0, globalImages.PBRbloom[i]->opts.sizeX, globalImages.PBRbloom[i]->opts.sizeY);
+			R_DrawSurf(&unitTriSurface);
+			
+			im = globalImages.PBRbloom[i];
+		}
+
+		renderSystem.programManager->UseProgram(PRG_UPSAMPLE);
+		blend.enabled = true;
+		blend.opts.colorOp = BOP_ADD;
+		blend.opts.colSrc = BFUNC_ONE;
+		blend.opts.colDst = BFUNC_ONE;
+		SetBlendingState(blend);
+
+		for (int i = globalFramebuffers.PBRbloomFBO.size() - 1; i > 0; --i)
+		{
+			globalImages.PBRbloom[i]->Bind();
+			globalFramebuffers.PBRbloomFBO[i - 1]->Bind();
+			p.params[0].x = 2.f / float(globalImages.PBRbloom[i - 1]->opts.sizeX);
+			AllocSharedUbo(p.params);
+			SetViewport(0, 0, globalImages.PBRbloom[i - 1]->opts.sizeX, globalImages.PBRbloom[i - 1]->opts.sizeY);
+
+			R_DrawSurf(&unitTriSurface);
+		}
+		blend.enabled = false;
+		SetBlendingState(blend);
+
 	}
 
 	void RenderBackend::RenderSSAO()
@@ -1273,7 +1328,7 @@ namespace jsr {
 		params[1].z = engineConfig.r_ssao_str;
 		params[1].w = 2.0f / renderGlobals.ssaoResolutionScale;
 		AllocSharedUbo(params);
-		R_DrawSurf(&unitRectSurface);
+		R_DrawSurf(&unitTriSurface);
 #if 0
 		pm->UseProgram(PRG_KERNEL);
 		pm->g_backendData.params[0].x = 1.0f / float(hw);
@@ -1297,14 +1352,14 @@ namespace jsr {
 		SetCurrentTextureUnit(0);
 		globalFramebuffers.ssaoblurFBO[0]->Bind();
 		globalImages.ssaoMap->Bind();
-		R_DrawSurf(&unitRectSurface);
+		R_DrawSurf(&unitTriSurface);
 
 		globalFramebuffers.ssaoblurFBO[1]->Bind();
 		globalImages.ssaoblur[0]->Bind();
 		params[0].x = 1.0f;
 		params[0].y = 0.0f;
 		AllocSharedUbo(params);
-		R_DrawSurf(&unitRectSurface);
+		R_DrawSurf(&unitTriSurface);
 #endif
 	}
 
@@ -1332,6 +1387,7 @@ namespace jsr {
 		globalImages.GBufferAlbedo->Bind();
 		SetCurrentTextureUnit(IMU_EMISSIVE);
 		globalImages.HDRblur[1]->Bind();
+		//globalImages.PBRbloom[0]->Bind();
 		SetCurrentTextureUnit(IMU_AORM);
 		if (engineConfig.r_ssao)
 		{
@@ -1345,7 +1401,7 @@ namespace jsr {
 		renderSystem.programManager->UseProgram(PRG_PP_HDR);
 		globalFramebuffers.defaultFBO->Bind();
 
-		R_DrawSurf(&unitRectSurface);
+		R_DrawSurf(&unitTriSurface);
 	}
 
 	void RenderBackend::RenderAA()
@@ -1369,7 +1425,7 @@ namespace jsr {
 		SetCurrentTextureUnit(0);
 		globalImages.defaultImage->Bind();
 		renderSystem.programManager->UseProgram(PRG_FXAA3);
-		R_DrawSurf(&unitRectSurface);
+		R_DrawSurf(&unitTriSurface);
 		//R_DrawFullscreenTri();
 	}
 

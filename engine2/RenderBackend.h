@@ -176,12 +176,14 @@ namespace jsr {
 		void		RenderDeferred_Lighting();
 		void		RenderEmissive();
 		void		RenderBloom();
+		void		RenderBloom_PBR();
 		void		RenderSSAO();
 		void		RenderHDRtoLDR();
 		void		RenderAA();
 		void		AllocSharedUbo(const glm::vec4* data);
 	public:
 		Framebuffer* currentFramebuffer{};
+		drawSurf_t unitTriSurface{};
 		drawSurf_t unitRectSurface{};
 		drawSurf_t unitCubeSurface{};
 		drawSurf_t unitSphereSurface{};

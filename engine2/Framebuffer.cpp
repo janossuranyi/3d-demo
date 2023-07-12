@@ -126,6 +126,20 @@ namespace jsr {
 		}
 		globalFramebuffers.defaultFBO = fb;
 
+		for (int i = 0; i < globalImages.PBRbloom.size(); ++i)
+		{
+			auto* im = globalImages.PBRbloom[i];
+			fb = new Framebuffer("PBRBloomFBO_"+std::to_string(i), im->opts.sizeX, im->opts.sizeY);
+			fb->Bind();
+			fb->AttachImage2D(im, 0);
+			if (!fb->Check())
+			{
+				Error("[Framebuffer]: PBRBloomFBO_%d init failed!", i);
+			}
+			globalFramebuffers.PBRbloomFBO.emplace_back(fb);
+		}
+
+
 		Framebuffer::Unbind();
 	}
 	bool Framebuffer::IsDefaultFramebufferActive()

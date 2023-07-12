@@ -19,7 +19,7 @@ void main()
     vec2 texCoord = gl_FragCoord.xy * FS_ViewParams.screenSize.zw;
     vec3 color = texture(tHDRAccum, texCoord).xyz;
     vec3 bloom = texture(tBloom, texCoord).xyz;
-    color += bloom * FS_ViewParams.bloomParams.y;
+    color = mix(color, bloom, FS_ViewParams.bloomParams.y);
     color *= gExposure;
 
     fragColor0 = tonemap_unreal( color );
