@@ -87,11 +87,11 @@ void main()
             // We are writing to mip 0, so we need to apply Karis average to each block
             // of 4 samples to prevent fireflies (very bright subpixels, leads to pulsating
             // artifacts).
-            groups[0] = (a+b+d+e) * (0.125f/4.0f);
-            groups[1] = (b+c+e+f) * (0.125f/4.0f);
-            groups[2] = (d+e+g+h) * (0.125f/4.0f);
-            groups[3] = (e+f+h+i) * (0.125f/4.0f);
-            groups[4] = (j+k+l+m) * (0.5f/4.0f);
+            groups[0] = (a+b+d+e) * (0.125/4.0);
+            groups[1] = (b+c+e+f) * (0.125/4.0);
+            groups[2] = (d+e+g+h) * (0.125/4.0);
+            groups[3] = (e+f+h+i) * (0.125/4.0);
+            groups[4] = (j+k+l+m) * (0.5/4.0);
             groups[0] *= KarisAverage(groups[0]);
             groups[1] *= KarisAverage(groups[1]);
             groups[2] *= KarisAverage(groups[2]);
