@@ -572,9 +572,7 @@ namespace jsr {
 		RenderDeferred_Lighting();
 		RenderEmissive();
 		RenderBloom();
-		//
 		//RenderBloom_PBR();
-		//
 		RenderHDRtoLDR();
 
 		Framebuffer::Unbind();
@@ -1243,22 +1241,30 @@ namespace jsr {
 		// downsample
 
 		SetCurrentTextureUnit(0);
-		Image* im = globalImages.HDRaccum;
 		renderSystem.programManager->UseProgram(PRG_DOWNSAMPLE);
 		stencilState_t stencil = glcontext.stencilState;
 		blendingState_t blend = glcontext.blendState;
+		depthState_t Z = glcontext.depthState;
+
 		blend.enabled = false;
 		SetBlendingState(blend);
 		SetCullMode(CULL_NONE);
 		stencil.enabled = false;
 		SetStencilState(stencil);
+		Z.depthMask = false;
+		Z.func = CMP_ALWAYS;
+		SetDepthState(Z);
 
-		uboSharedData_t p;
+		Image* im = globalImages.HDRaccum;
+		uboSharedData_t p{};
 		for (int i = 0; i < globalFramebuffers.PBRbloomFBO.size(); ++i)
 		{
-			int x = im->opts.sizeX;
-			int y = im->opts.sizeY;
-			p.params[0] = { float(x),float(y),1.0f / float(x),1.0f / float(y) };
+			const int x = im->opts.sizeX;
+			const int y = im->opts.sizeY;
+			const float fx = float(x);
+			const float fy = float(y);
+			p.params[0] = { fx, fy, 1.0f / fx, 1.0f / fy };
+			p.params[1].x = float(i);
 			AllocSharedUbo(p.params);
 			globalFramebuffers.PBRbloomFBO[i]->Bind();
 			im->Bind();
@@ -1279,7 +1285,7 @@ namespace jsr {
 		{
 			globalImages.PBRbloom[i]->Bind();
 			globalFramebuffers.PBRbloomFBO[i - 1]->Bind();
-			p.params[0].x = 2.f / float(globalImages.PBRbloom[i - 1]->opts.sizeX);
+			p.params[0].x = renderGlobals.bloomUpsampleRadius / float(std::max(globalImages.PBRbloom[i - 1]->opts.sizeX, globalImages.PBRbloom[i - 1]->opts.sizeY));
 			AllocSharedUbo(p.params);
 			SetViewport(0, 0, globalImages.PBRbloom[i - 1]->opts.sizeX, globalImages.PBRbloom[i - 1]->opts.sizeY);
 

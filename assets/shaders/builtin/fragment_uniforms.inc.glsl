@@ -18,6 +18,8 @@
 
 #define gNearClipDistance FS_ViewParams.nearFarClip.x
 #define gFarClipDistance FS_ViewParams.nearFarClip.y
+#define gInvNearClipDistance FS_ViewParams.nearFarClip.z
+#define gInvFarClipDistance FS_ViewParams.nearFarClip.w
 #define gScreenSize FS_ViewParams.screenSize.xy
 #define gInvScreenSize FS_ViewParams.screenSize.zw
 #define gBloomParams FS_ViewParams.bloomParams

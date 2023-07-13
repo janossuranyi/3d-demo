@@ -47,8 +47,8 @@ void main()
         vec3 localTangent       = normalize( In.tangent.xyz );
         vec3 localNormal        = normalize( In.normal );
         vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
-        vec3 normalTS           = ReconstructNormal(texture(tNormal, In.texCoord).xyz) * vec3(1.0, -1.0, 1.0);
-        inputs.tbn              = mat3(localTangent,derivedBitangent,localNormal);
+        vec3 normalTS           = ReconstructNormal( texture( tNormal, In.texCoord ).xyz ) * vec3( 1.0, -1.0, 1.0 );
+        inputs.tbn              = mat3( localTangent,derivedBitangent,localNormal );
         inputs.normal           = inputs.tbn * normalTS;
         inputs.sampleAmbient    = FS_DrawParams.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );
     }
@@ -65,9 +65,10 @@ void main()
 
     inputs.samplePBR = texture( tAORM, In.texCoord ).yzxw * vec4(gRoughnessFactor, gMetallicFactor, 1.0, 1.0);
 
-    vec4 material = vec4( inputs.samplePBR.xy, saturate( ( 1-inputs.samplePBR.x ) / 127.75 ),0.0 );
+    //vec4 material = vec4( inputs.samplePBR.xy, saturate( ( 1-inputs.samplePBR.x ) / 127.75 ),0.0 );
+    vec4 material = vec4( inputs.samplePBR.xy, 0.0,0.0 );
 
-    outFragPos.x = -In.positionVS.z / gFarClipDistance;
+    outFragPos.x = -In.positionVS.z * gInvFarClipDistance;
     outAlbedo    = inputs.sampleAmbient;
     outSpec      = material;
     outNormal.xy = NormalOctEncode(inputs.normal,false);

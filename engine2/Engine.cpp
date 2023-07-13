@@ -157,6 +157,7 @@ namespace jsr {
 			ImGui::LabelText("Frame time", "%.2f", frameTime);
 			ImGui::DragFloat("Bloom scale", &renderGlobals.bloomScale, 0.01f, 0.0f, 1.0f);
 			ImGui::DragFloat("Bloom treshold", &bloomParams2_y, 0.01f, 0.0f, 20.0f);
+			ImGui::DragFloat("Bloom ups rad.", &renderGlobals.bloomUpsampleRadius, 0.1f, 0.1f, 10.0f);
 
 			ImGui::DragFloat("SSAO radius", &engineConfig.r_ssao_radius, 0.01f, 0.0f, 10.0f);
 			ImGui::DragFloat("SSAO bias", &engineConfig.r_ssao_bias, 0.001f, 0.0f, 10.0f);
@@ -388,7 +389,7 @@ namespace jsr {
 		vertUbo.viewMatrix = view->renderView.viewMatrix;
 		vertUbo.projectMatrix = view->projectionMatrix;
 		vertUbo.invProjectMatrix = view->unprojectionToCameraMatrix;
-		fragUbo.nearFarClip = { view->nearClipDistance,view->farClipDistance,0.f,0.f };
+		fragUbo.nearFarClip = { view->nearClipDistance,view->farClipDistance,1.0f / view->nearClipDistance,1.0f / view->farClipDistance };
 		fragUbo.screenSize = { float(x), float(y), 1.0f / (float)x, 1.0f / (float)y };
 		fragUbo.params.x = view->exposure;
 		fragUbo.params.y = engineConfig.r_gamma;
@@ -396,7 +397,7 @@ namespace jsr {
 		fragUbo.invProjMatrix = (view->unprojectionToCameraMatrix);
 		fragUbo.projectMatrix = projMatrix;
 		fragUbo.ambientColor = { renderGlobals.ambientColor, renderGlobals.ambientScale };
-		fragUbo.bloomParams.x = 0.0f;
+		fragUbo.bloomParams.x = 2.0f;
 		fragUbo.bloomParams.y = engineConfig.r_bloom ? renderGlobals.bloomScale : 0.0f;
 		fragUbo.bloomParams.z = 1.0f / (float(x) / bloomDiv);
 		fragUbo.bloomParams.w = 1.0f / (float(y) / bloomDiv);
