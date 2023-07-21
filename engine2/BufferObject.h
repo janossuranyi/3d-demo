@@ -1,6 +1,8 @@
 #pragma once
 
+#ifndef _USE_VULKAN
 #include <GL/glew.h>
+#endif
 #include <string>
 #include "./EngineTypes.h"
 
@@ -88,7 +90,9 @@ namespace jsr {
 		bool			isview;
 		bool			coherent;
 		// OpenGL
+#ifndef _USE_VULKAN
 		GLuint			apiObject;
+#endif
 		void*			buffer;
 	};
 

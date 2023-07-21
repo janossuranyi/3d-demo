@@ -86,6 +86,13 @@ namespace jsr {
 		bool operator()(const blendingState_t* a, const blendingState_t* b) const;
 	};
 
+	class GraphicsPipeline
+	{
+	private:
+		depthState_t _depthState;
+		stencilState_t _stencilState;
+
+	};
 	struct backendCounters_t
 	{
 		unsigned int drawElements{};

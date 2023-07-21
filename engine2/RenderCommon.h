@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <unordered_map>
 
 #include "./EngineTypes.h"
 #include "./VertexCache.h"
@@ -10,6 +11,8 @@
 //#include "./Model.h"
 
 namespace jsr {
+
+	using Properties = std::unordered_map<std::string, std::string>;
 
 	enum eLightType
 	{

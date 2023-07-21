@@ -2,7 +2,7 @@
 
 #include <string>
 #include <array>
-#include <unordered_map>
+#include <memory>
 #include <glm/glm.hpp>
 
 #include "./RenderCommon.h"
@@ -113,6 +113,7 @@ namespace jsr {
 
 	enum eShaderStage
 	{
+		SHADER_STAGE_EMPTY = 0,
 		SHADER_STAGE_VERTEX = 1,
 		SHADER_STAGE_FRAGMENT = 2,
 		SHADER_STAGE_GEOMETRY = 4,
@@ -120,13 +121,31 @@ namespace jsr {
 		SHADER_STAGE_DEFAULT = SHADER_STAGE_VERTEX | SHADER_STAGE_FRAGMENT
 	};
 
+
 	struct renderProgram_t
 	{
 		const char* name;
 		unsigned int stages;
 		eVertexLayout vertexLayout;
 		unsigned int prg;
-		std::unordered_map<std::string, std::string> defs;
+		Properties defs;
+	};
+
+	class ShaderStage
+	{
+	private:
+		eShaderStage _stage;
+		size_t _size;
+		uint8_t* _code;
+
+	public:
+		ShaderStage() = default;
+		~ShaderStage();
+		ShaderStage(eShaderStage stage, const std::string& code);
+		ShaderStage(eShaderStage stage, const std::vector<uint8_t>& code);
+		ShaderStage(eShaderStage stage, const uint8_t* code, size_t size);
+		const uint8_t* GetCode() const;
+		size_t GetSize() const;
 	};
 
 	class ProgramManager

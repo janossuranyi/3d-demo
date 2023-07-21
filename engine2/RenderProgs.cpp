@@ -47,4 +47,42 @@ namespace jsr {
 
 		return false;
 	}
+
+	ShaderStage::~ShaderStage()
+	{
+		if (_code) MemFree(_code);
+	}
+
+	ShaderStage::ShaderStage(eShaderStage stage, const std::string& code)
+	{
+		_stage = stage;
+		_size = code.size();
+		_code = (uint8_t*)MemAlloc((15 + _size) & ~15);
+		memcpy(_code, code.c_str(), code.size());
+
+	}
+
+	ShaderStage::ShaderStage(eShaderStage stage, const std::vector<uint8_t>& code) :
+		_stage(stage),
+		_size(code.size())
+	{
+		_code = (uint8_t*)MemAlloc(code.size());
+		memcpy(_code, code.data(), _size);
+	}
+	ShaderStage::ShaderStage(eShaderStage stage, const uint8_t* code, size_t size) :
+		_stage(stage),
+		_size(size)
+	{
+		_code = (uint8_t*)MemAlloc(size);
+		memcpy(_code, code, size);
+	}
+	const uint8_t* ShaderStage::GetCode() const
+	{
+		return _code;
+	}
+	size_t ShaderStage::GetSize() const
+	{
+		return _size;
+	}
+
 }
