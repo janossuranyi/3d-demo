@@ -571,8 +571,8 @@ namespace jsr {
 		}
 		RenderDeferred_Lighting();
 		RenderEmissive();
-		RenderBloom();
-		//RenderBloom_PBR();
+		//RenderBloom();
+		RenderBloom_PBR();
 		RenderHDRtoLDR();
 
 		Framebuffer::Unbind();
@@ -1392,8 +1392,8 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_DIFFUSE);
 		globalImages.GBufferAlbedo->Bind();
 		SetCurrentTextureUnit(IMU_EMISSIVE);
-		globalImages.HDRblur[1]->Bind();
-		//globalImages.PBRbloom[0]->Bind();
+		//globalImages.HDRblur[1]->Bind();
+		globalImages.PBRbloom[0]->Bind();
 		SetCurrentTextureUnit(IMU_AORM);
 		if (engineConfig.r_ssao)
 		{

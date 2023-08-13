@@ -47,7 +47,7 @@ void main()
         vec3 localTangent       = normalize( In.tangent.xyz );
         vec3 localNormal        = normalize( In.normal );
         vec3 derivedBitangent   = normalize( cross( localNormal, localTangent ) * In.tangent.w );
-        vec3 normalTS           = ReconstructNormal( texture( tNormal, In.texCoord ).xyz ) * vec3( 1.0, -1.0, 1.0 );
+        vec3 normalTS           = ReconstructNormal( texture( tNormal, In.texCoord ).xyz ) * vec3( 1.0, FS_DrawParams.params.y, 1.0 );
         inputs.tbn              = mat3( localTangent,derivedBitangent,localNormal );
         inputs.normal           = inputs.tbn * normalTS;
         inputs.sampleAmbient    = FS_DrawParams.matDiffuseFactor * SRGBlinear( texture( tDiffuse, In.texCoord ) );

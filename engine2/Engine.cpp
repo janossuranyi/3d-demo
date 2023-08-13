@@ -173,7 +173,7 @@ namespace jsr {
 			ImGui::Checkbox("Bloom", &engineConfig.r_bloom);
 			ImGui::Checkbox("FXAA", &engineConfig.r_fxaa);
 			ImGui::Checkbox("SSAO", &engineConfig.r_ssao);
-
+			ImGui::DragFloat("Normal Y scale", &renderGlobals.normalYscale, 1.0f, -1.0f, 1.0f);
 			ImGui::DragInt("CONV Type", &engineConfig.r_pp, 0.2f, 0, 8);
 			ImGui::DragInt("CONV Offset", &engineConfig.r_pp_offset, 0.2f, 1, 7);
 

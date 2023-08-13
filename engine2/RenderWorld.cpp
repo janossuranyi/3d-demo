@@ -914,6 +914,7 @@ namespace jsr {
 							fastfrag.matMRFactor.x = stageref.roughnessScale;
 							fastfrag.matMRFactor.y = stageref.metallicScale;
 							fastfrag.params.x = uintBitsToFloat(flg_x);
+							fastfrag.params.y = renderGlobals.normalYscale;
 							drawSurf->FS_DrawParams[stage] = vc.AllocTransientUniform(&fastfrag, sizeof(fastfrag));
 						}
 					}

@@ -23,6 +23,7 @@ namespace jsr {
 		int bloomDownsampleLevel;
 		float ssaoResolutionScale;
 		float bloomUpsampleRadius;
+		float normalYscale;
 		renderGlobals_t() :
 			shadowResolution(1024),
 			shadowScale(0.8f),
@@ -34,6 +35,7 @@ namespace jsr {
 			bloomDownsampleLevel(2),
 			ssaoResolutionScale(0.5f),
 			bloomUpsampleRadius(1.f),
+			normalYscale(1.0f),
 			shadowBias(0.00001f) {}
 	};
 
