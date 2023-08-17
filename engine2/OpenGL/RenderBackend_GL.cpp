@@ -571,8 +571,12 @@ namespace jsr {
 		}
 		RenderDeferred_Lighting();
 		RenderEmissive();
-		//RenderBloom();
-		RenderBloom_PBR();
+		if (renderGlobals.bloomType == 0) {
+			RenderBloom();
+		}
+		else {
+			RenderBloom_PBR();
+		}
 		RenderHDRtoLDR();
 
 		Framebuffer::Unbind();
@@ -1283,11 +1287,14 @@ namespace jsr {
 
 		for (int i = globalFramebuffers.PBRbloomFBO.size() - 1; i > 0; --i)
 		{
+			const int iw = globalImages.PBRbloom[i - 1]->opts.sizeX;
+			const int ih = globalImages.PBRbloom[i - 1]->opts.sizeY;
+
 			globalImages.PBRbloom[i]->Bind();
 			globalFramebuffers.PBRbloomFBO[i - 1]->Bind();
-			p.params[0].x = renderGlobals.bloomUpsampleRadius / float(std::max(globalImages.PBRbloom[i - 1]->opts.sizeX, globalImages.PBRbloom[i - 1]->opts.sizeY));
+			p.params[0].x = renderGlobals.bloomUpsampleRadius / float(std::max(iw, ih));
 			AllocSharedUbo(p.params);
-			SetViewport(0, 0, globalImages.PBRbloom[i - 1]->opts.sizeX, globalImages.PBRbloom[i - 1]->opts.sizeY);
+			SetViewport(0, 0, iw, ih);
 
 			R_DrawSurf(&unitTriSurface);
 		}
@@ -1392,8 +1399,13 @@ namespace jsr {
 		SetCurrentTextureUnit(IMU_DIFFUSE);
 		globalImages.GBufferAlbedo->Bind();
 		SetCurrentTextureUnit(IMU_EMISSIVE);
-		//globalImages.HDRblur[1]->Bind();
-		globalImages.PBRbloom[0]->Bind();
+		if (renderGlobals.bloomType == 0) {
+
+			globalImages.HDRblur[1]->Bind();
+		}
+		else {
+			globalImages.PBRbloom[0]->Bind();
+		}
 		SetCurrentTextureUnit(IMU_AORM);
 		if (engineConfig.r_ssao)
 		{

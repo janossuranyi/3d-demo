@@ -21,6 +21,7 @@ namespace jsr {
 		float ambientScale;
 		float bloomScale;
 		int bloomDownsampleLevel;
+		int bloomType;
 		float ssaoResolutionScale;
 		float bloomUpsampleRadius;
 		float normalYscale;
@@ -35,6 +36,7 @@ namespace jsr {
 			bloomDownsampleLevel(2),
 			ssaoResolutionScale(0.5f),
 			bloomUpsampleRadius(1.f),
+			bloomType(0),
 			normalYscale(1.0f),
 			shadowBias(0.00001f) {}
 	};

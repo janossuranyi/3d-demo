@@ -51,7 +51,7 @@ vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
 	const vec3 H = normalize( V + L );
 	float m = ( 0.2 + roughness * 0.8 );
 	m *= m;
-	m *= m;
+	//m *= m;
 	float m2 = m * m;
 	float NdotH = saturate( dot( N, H ) );
 	float spec = (NdotH * NdotH) * (m2 - 1) + 1;
@@ -62,6 +62,33 @@ vec4 specBRDF( vec3 N, vec3 V, vec3 L, vec3 f0, float roughness ) {
     vec4 res = vec4( fresnelSchlick( f0, dot( L, H ) ), spec );
 
 	return res;
+}
+
+vec4 specBRDF_j(vec3 N, vec3 V, vec3 L, vec3 F0, float r)
+{
+    const vec3 H = normalize(V + L);
+    const float HdotV  = max(dot(H, V), 0.0);
+    const float NdotH  = max(dot(N, H), 0.0);
+    const float NdotV  = max(dot(N, V), 0.0);
+    const float NdotL  = max(dot(N, L), 0.0);
+
+    // DistributionGGX
+    float a = r;
+    a *= a;
+    a *= a;
+    float denom = (NdotH * NdotH) * (a - 1.0) + 1.0;
+    float NDF = a / (PI * denom * denom);
+
+    // GeometrySmith
+    a = (r + 1.0);
+    float k   = (a*a) / 8.0;
+    float Gv  = NdotV / (NdotV * (1.0 - k) + k);
+    float Gl  = NdotL / (NdotL * (1.0 - k) + k);
+    float spec = (NDF * Gv * Gl) / (4.0 * NdotL * NdotL + 1e-8);
+
+    vec3 F = fresnelSchlick(F0, HdotV);
+
+    return vec4(F, spec);
 }
 
 // Performs shadow calculation with PCF
@@ -155,11 +182,12 @@ void main()
         }
 #   endif
         vec3 f0 = mix( vec3(0.04), inputs.sampleAmbient.xyz, inputs.samplePBR.y );
-        vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.x);
-        vec3 F = spec.rgb;
-        float Ks = spec.w;
-        vec3 Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.y);
-        float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
+        vec4 spec = specBRDF(inputs.normal, inputs.viewDir, inputs.lightDir, f0, inputs.samplePBR.x /* roughness */);
+
+        const vec3  F = spec.rgb;
+        const float Ks = spec.w;
+        const vec3  Kd = (vec3(1.0) - F) * (1.0 - inputs.samplePBR.y);
+        const float NdotL = saturate( dot(inputs.normal, inputs.lightDir) );
 
         float shadow = 1.0;
 

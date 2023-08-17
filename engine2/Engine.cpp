@@ -376,7 +376,7 @@ namespace jsr {
 
 		view->viewSunLight->origin = viewMatrix * normalize(vec4(0.0f, 1.0f, 2.0f, 0.0f));
 		view->viewSunLight->shader = PRG_DEFERRED_DIR_LIGHT;
-		view->viewSunLight->color = vec4(1.0f, 0.3f, 0.0f, 0.01f);
+		view->viewSunLight->color = vec4(1.0f, 0.3f, 0.0f, 0.2f);
 		view->viewSunLight->type = LIGHT_DIRECTED;
 		//mat4 sunOrtho = glm::ortho()
 		sunLight.color = view->viewSunLight->color;
